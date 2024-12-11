@@ -1,0 +1,39 @@
+From 4557d6178af17473f392968474b5ca0da56b1175 Mon Sep 17 00:00:00 2001
+From: Komal Bajaj <quic_kbajaj@quicinc.com>
+Date: Wed, 29 Nov 2023 12:28:14 +0530
+Subject: [PATCH 2/4] UPSTREAM: dt-bindings: arm: qcom: Add QCM6490 IDP and
+ QCS6490 RB3Gen2 board
+
+Document the qcom,qcm6490-idp and qcs6490-rb3gen2 boards.
+qcm6490-idp based off qcm6490 SoC derived from sc7280 meant for
+various form factor including IoT and qcs6490-rb3gen2 based off
+qcs6490 SoC derivative of qcm6490 without internal modem.
+
+Co-developed by: Naina Mehta <quic_nainmeht@quicinc.com>
+Signed-off-by: Naina Mehta <quic_nainmeht@quicinc.com>
+
+Signed-off-by: Komal Bajaj <quic_kbajaj@quicinc.com>
+Reviewed-by: Krzysztof Kozlowski <krzysztof.kozlowski@linaro.org>
+Link: https://lore.kernel.org/r/20231129065816.26409-2-quic_kbajaj@quicinc.com
+Signed-off-by: Bjorn Andersson <andersson@kernel.org>
+Upstream-Status: Backport [https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git 06fd1dd1efde4a0bcc874de03558f6e0ba3817eb]
+---
+ Documentation/devicetree/bindings/arm/qcom.yaml | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/Documentation/devicetree/bindings/arm/qcom.yaml b/Documentation/devicetree/bindings/arm/qcom.yaml
+index adee504bffdb..e45e293457d3 100644
+--- a/Documentation/devicetree/bindings/arm/qcom.yaml
++++ b/Documentation/devicetree/bindings/arm/qcom.yaml
+@@ -395,6 +395,8 @@ properties:
+       - items:
+           - enum:
+               - fairphone,fp5
++              - qcom,qcm6490-idp
++              - qcom,qcs6490-rb3gen2
+           - const: qcom,qcm6490
+ 
+       - description: Qualcomm Technologies, Inc. Distributed Unit 1000 platform
+-- 
+2.25.1
+

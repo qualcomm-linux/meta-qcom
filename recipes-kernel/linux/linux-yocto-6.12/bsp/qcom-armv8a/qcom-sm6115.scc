@@ -1,0 +1,4 @@
+# SPDX-License-Identifier: MIT
+
+kconf hardware qcom-rpm.cfg
+kconf hardware qcom-sm6115.cfg
