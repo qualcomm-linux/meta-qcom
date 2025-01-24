@@ -14,7 +14,10 @@ inherit uki
 UKI_FILENAME = "${EFI_LINUX_IMG}"
 
 # Remove leading 'qcom/' from KERNEL_DEVICEREE, we store the file in DEPLOY_DIR_IMAGE directly, not in the qcom/ subfolder
-KERNEL_DEVICETREE := "${@d.getVar('KERNEL_DEVICETREE').strip().replace('qcom/','')}"
+#KERNEL_DEVICETREE := "${@d.getVar('KERNEL_DEVICETREE').strip().replace('qcom/','')}"
+
+# Remove 'upstream' dtb, rely on EFI provided one
+KERNEL_DEVICETREE = ""
 
 IMAGE_FSTYPES = "vfat"
 IMAGE_FSTYPES_DEBUGFS = ""
