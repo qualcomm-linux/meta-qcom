@@ -5,15 +5,10 @@
 ESPFOLDER ?= "/EFI"
 
 do_ukiesp() {
-	mkdir -p ${IMAGE_ROOTFS}${ESPFOLDER}/loader/entries
 	mkdir -p ${IMAGE_ROOTFS}${ESPFOLDER}/EFI/Linux
 
 	# Copy over files from deploy into the rootfs
 	install -m 0755 ${DEPLOY_DIR_IMAGE}/${UKI_FILENAME} ${IMAGE_ROOTFS}${ESPFOLDER}/EFI/Linux
-
-	# Add global settings to systemd-boot config
-	echo "timeout 5" > ${IMAGE_ROOTFS}${ESPFOLDER}/loader/loader.conf
-
 }
 
 addtask ukiesp after do_deploy uki before do_image_complete do_image_wic
