@@ -1,6 +1,6 @@
 # meta-qcom
 
-[![Build Yocto](https://github.com/qualcomm-linux/meta-qcom/actions/workflows/build-yocto.yml/badge.svg?event=push)](https://github.com/qualcomm-linux/meta-qcom/actions/workflows/build-yocto.yml)
+[![Build on push](https://github.com/qualcomm-linux/meta-qcom/actions/workflows/push.yml/badge.svg)](https://github.com/qualcomm-linux/meta-qcom/actions/workflows/push.yml)
 [![Nightly Build](https://github.com/qualcomm-linux/meta-qcom/actions/workflows/nightly-build.yml/badge.svg)](https://github.com/qualcomm-linux/meta-qcom/actions/workflows/nightly-build.yml)
 
 ## Introduction
