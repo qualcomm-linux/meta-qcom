@@ -5,11 +5,11 @@ on:
     branches: [ main ]
   pull_request:
     branches: [ main ]
-  workflow_dispatch:  
+  workflow_dispatch:
 
 jobs:
   repolinter:
-    if: github.repository == 'qualcomm-linux/meta-qcom-hwe'
+    if: github.repository == 'qualcomm-linux/meta-qcom'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Repo

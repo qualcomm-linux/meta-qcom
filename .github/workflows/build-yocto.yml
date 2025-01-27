@@ -14,7 +14,7 @@ env:
 
 jobs:
   kas-lock:
-    if: github.repository == 'qualcomm-linux/meta-qcom-hwe'
+    if: github.repository == 'qualcomm-linux/meta-qcom'
     runs-on: [self-hosted, x86]
     steps:
       - uses: actions/checkout@v4
@@ -32,7 +32,7 @@ jobs:
 
   yocto-check-layer:
     needs: kas-lock
-    if: github.repository == 'qualcomm-linux/meta-qcom-hwe'
+    if: github.repository == 'qualcomm-linux/meta-qcom'
     runs-on: [self-hosted, x86]
     steps:
       - uses: actions/checkout@v4
@@ -50,7 +50,7 @@ jobs:
 
   yocto-patchreview:
     needs: kas-lock
-    if: github.repository == 'qualcomm-linux/meta-qcom-hwe'
+    if: github.repository == 'qualcomm-linux/meta-qcom'
     runs-on: [self-hosted, x86]
     steps:
       - uses: actions/checkout@v4
@@ -68,7 +68,7 @@ jobs:
 
   compile:
     needs: kas-lock
-    if: github.repository == 'qualcomm-linux/meta-qcom-hwe'
+    if: github.repository == 'qualcomm-linux/meta-qcom'
     strategy:
       fail-fast: true
       matrix:
