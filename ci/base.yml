@@ -10,7 +10,7 @@ defaults:
     branch: master
 
 repos:
-  meta-qcom-hwe:
+  meta-qcom:
 
   poky:
     url: https://git.yoctoproject.org/git/poky
