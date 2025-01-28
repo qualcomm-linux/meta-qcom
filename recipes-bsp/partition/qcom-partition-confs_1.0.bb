@@ -36,6 +36,10 @@ do_compile:prepend:qcs6490-rb3gen2-core-kit() {
     fixup_cdt
 }
 
+do_compile:prepend:sa8775p-ride-sx() {
+    fixup_cdt
+}
+
 do_compile() {
     gen_partition.py -i ${S}/${PARTCONF} -o ${B}/${MACHINE}-partition.xml
 }
