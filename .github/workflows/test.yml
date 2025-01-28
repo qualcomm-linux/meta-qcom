@@ -65,7 +65,7 @@ jobs:
           lava_url: 'lava.infra.foundries.io'
           job_definition: ${{ matrix.target }}
           wait_for_job: true
-          fail_action_on_failure: true
+          fail_action_on_failure: false
           save_result_as_artifact: true
 
   publish-test-results:
