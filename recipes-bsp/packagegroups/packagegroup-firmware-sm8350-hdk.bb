@@ -5,7 +5,7 @@ inherit packagegroup
 RRECOMMENDS:${PN} += " \
     ${@bb.utils.contains('DISTRO_FEATURES', 'opengl', 'linux-firmware-qcom-adreno-a660', '', d)} \
     ${@bb.utils.contains('DISTRO_FEATURES', 'bluetooth', 'linux-firmware-qca', '', d)} \
-    ${@bb.utils.contains('DISTRO_FEATURES', 'wifi', 'linux-firmware-ath11k', '', d)} \
+    ${@bb.utils.contains('DISTRO_FEATURES', 'wifi', 'linux-firmware-ath11k-wcn6855', '', d)} \
     firmware-qcom-sm8350-hdk \
     linux-firmware-lt9611uxc \
     linux-firmware-qcom-sm8350-adreno \
