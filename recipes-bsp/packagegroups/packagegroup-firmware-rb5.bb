@@ -4,7 +4,7 @@ inherit packagegroup
 
 RRECOMMENDS:${PN} += " \
     ${@bb.utils.contains('DISTRO_FEATURES', 'opengl', 'linux-firmware-qcom-adreno-a650 linux-firmware-qcom-sm8250-adreno', '', d)} \
-    ${@bb.utils.contains('DISTRO_FEATURES', 'wifi', 'linux-firmware-ath11k', '', d)} \
+    ${@bb.utils.contains('DISTRO_FEATURES', 'wifi', 'linux-firmware-ath11k-qca6390', '', d)} \
     ${@bb.utils.contains('DISTRO_FEATURES', 'bluetooth', 'linux-firmware-qca', '', d)} \
     linux-firmware-lt9611uxc \
     linux-firmware-qcom-sm8250-audio \
