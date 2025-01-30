@@ -105,7 +105,9 @@ jobs:
           mkdir -p $build_dir
           img_dir=$build_dir/${{ matrix.machine }}
           [ -d $img_dir ] && rm -rf $img_dir
-          mv ../kas/build/tmp/deploy/images/${{matrix.machine}} $img_dir
+          deploy_dir=../kas/build/tmp/deploy/images/${{matrix.machine}}
+          find $deploy_dir/ -maxdepth 1 -name "*.rootfs*.qcomflash" -exec rm -rf {} \;
+          mv $deploy_dir $img_dir
 
           # Instruct our file server to make these files available for download
           url="${BASE_ARTIFACT_URL}/${{ matrix.machine }}/"
