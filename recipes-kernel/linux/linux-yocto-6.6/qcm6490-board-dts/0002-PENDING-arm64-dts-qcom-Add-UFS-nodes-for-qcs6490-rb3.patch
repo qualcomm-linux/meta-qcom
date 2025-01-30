@@ -1,0 +1,49 @@
+From 4c0b2673c7d702483a526ebe279d57c4eece8f09 Mon Sep 17 00:00:00 2001
+From: Atul Dhudase <quic_adhudase@quicinc.com>
+Date: Fri, 22 Mar 2024 14:06:21 +0530
+Subject: [PATCH 2/2] PENDING: arm64: dts: qcom: Add UFS nodes for
+ qcs6490-rb3gen2
+
+Add UFS host controller and Phy nodes for Qualcomm
+qcs6490-rb3gen2 board.
+
+Signed-off-by: Manish Pandey <quic_mapa@quicinc.com>
+Signed-off-by: Atul Dhudase <quic_adhudase@quicinc.com>
+Upstream-Status: Pending
+---
+ arch/arm64/boot/dts/qcom/qcs6490-rb3gen2.dts | 19 +++++++++++++++++++
+ 1 file changed, 19 insertions(+)
+
+diff --git a/arch/arm64/boot/dts/qcom/qcs6490-rb3gen2.dts b/arch/arm64/boot/dts/qcom/qcs6490-rb3gen2.dts
+index 84137086c1f6..6dbeb182d014 100644
+--- a/arch/arm64/boot/dts/qcom/qcs6490-rb3gen2.dts
++++ b/arch/arm64/boot/dts/qcom/qcs6490-rb3gen2.dts
+@@ -446,6 +446,25 @@ &uart5 {
+ 	status = "okay";
+ };
+ 
++&ufs_mem_hc {
++	reset-gpios = <&tlmm 175 GPIO_ACTIVE_LOW>;
++	vcc-supply = <&vreg_l7b_2p952>;
++	vcc-max-microamp = <800000>;
++	vccq-supply = <&vreg_l9b_1p2>;
++	vccq-max-microamp = <900000>;
++	vccq2-supply = <&vreg_l9b_1p2>;
++	vccq2-max-microamp = <900000>;
++
++	status = "okay";
++};
++
++&ufs_mem_phy {
++	vdda-phy-supply = <&vreg_l10c_0p88>;
++	vdda-pll-supply = <&vreg_l6b_1p2>;
++
++	status = "okay";
++};
++
+ &usb_1 {
+ 	status = "okay";
+ };
+-- 
+2.25.1
+

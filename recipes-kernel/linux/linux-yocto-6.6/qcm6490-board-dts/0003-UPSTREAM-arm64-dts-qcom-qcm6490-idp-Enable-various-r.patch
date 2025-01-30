@@ -1,0 +1,51 @@
+From 22a42aa02019bb4d0c58209cd86d453421f82135 Mon Sep 17 00:00:00 2001
+From: Komal Bajaj <quic_kbajaj@quicinc.com>
+Date: Wed, 17 Apr 2024 17:39:27 +0530
+Subject: [PATCH 3/3] UPSTREAM: arm64: dts: qcom: qcm6490-idp: Enable various
+ remoteprocs
+
+Enable the ADSP, CDSP, MPSS and WPSS that are found on the SoC.
+
+Signed-off-by: Komal Bajaj <quic_kbajaj@quicinc.com>
+Link: https://lore.kernel.org/r/20240417120928.32344-2-quic_kbajaj@quicinc.com
+Signed-off-by: Bjorn Andersson <andersson@kernel.org>
+
+Upstream-Status: Backport [https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git 99a1c9eedf6098826c0f9dcbda2c23e5dad20244]
+---
+ arch/arm64/boot/dts/qcom/qcm6490-idp.dts | 20 ++++++++++++++++++++
+ 1 file changed, 20 insertions(+)
+
+diff --git a/arch/arm64/boot/dts/qcom/qcm6490-idp.dts b/arch/arm64/boot/dts/qcom/qcm6490-idp.dts
+index f45573f80ca4..1cf23184fdfe 100644
+--- a/arch/arm64/boot/dts/qcom/qcm6490-idp.dts
++++ b/arch/arm64/boot/dts/qcom/qcm6490-idp.dts
+@@ -445,6 +445,26 @@ &qupv3_id_0 {
+ 	status = "okay";
+ };
+ 
++&remoteproc_adsp {
++	firmware-name = "qcom/qcm6490/adsp.mbn";
++	status = "okay";
++};
++
++&remoteproc_cdsp {
++	firmware-name = "qcom/qcm6490/cdsp.mbn";
++	status = "okay";
++};
++
++&remoteproc_mpss {
++	firmware-name = "qcom/qcm6490/modem.mbn";
++	status = "okay";
++};
++
++&remoteproc_wpss {
++	firmware-name = "qcom/qcm6490/wpss.mbn";
++	status = "okay";
++};
++
+ &sdhc_1 {
+ 	non-removable;
+ 	no-sd;
+-- 
+2.25.1
+

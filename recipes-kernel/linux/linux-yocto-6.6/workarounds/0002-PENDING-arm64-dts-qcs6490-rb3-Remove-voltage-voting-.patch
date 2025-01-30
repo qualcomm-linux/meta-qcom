@@ -1,0 +1,60 @@
+From b9b8286e4a3d72353ee90181f10507e2dfb1fd2b Mon Sep 17 00:00:00 2001
+From: Umang Chheda <quic_uchheda@quicinc.com>
+Date: Wed, 18 Oct 2023 18:14:15 +0530
+Subject: [PATCH 2/2] PENDING: arm64: dts: qcs6490-rb3: Remove voltage voting
+ for USB rails
+
+USB driver does not vote for voltage on hsphy and ssphy
+rails. Due to which the initial voltage set by bootloader
+is overridden by regulator framework with min voltage specified
+on regulator registration.
+
+Fix this temporarily by removing voltage voting support, which
+will prevent regulator framework overriding the voltage set by
+bootloader for QCS6490 RB3 Platform.
+
+This commit will be reverted once voltage voting support is added
+in USB driver.
+
+Signed-off-by: Umang Chheda <quic_uchheda@quicinc.com>
+Signed-off-by: Atul Dhudase <quic_adhudase@quicinc.com>
+Upstream-Status: Pending
+---
+ arch/arm64/boot/dts/qcom/qcs6490-rb3gen2.dts | 14 ++++++++++++++
+ 1 file changed, 14 insertions(+)
+
+diff --git a/arch/arm64/boot/dts/qcom/qcs6490-rb3gen2.dts b/arch/arm64/boot/dts/qcom/qcs6490-rb3gen2.dts
+index 2b30e8900991..1e20395d07ae 100644
+--- a/arch/arm64/boot/dts/qcom/qcs6490-rb3gen2.dts
++++ b/arch/arm64/boot/dts/qcom/qcs6490-rb3gen2.dts
+@@ -488,6 +488,13 @@ &usb_1_qmpphy {
+ 	status = "okay";
+ };
+ 
++&vreg_l1b_0p912 {
++	/delete-property/regulator-min-microvolt;
++	/delete-property/regulator-max-microvolt;
++	regulator-allow-set-load;
++	regulator-allowed-modes = <RPMH_REGULATOR_MODE_LPM RPMH_REGULATOR_MODE_HPM>;
++};
++
+ &vreg_l7b_2p952 {
+ 	/delete-property/regulator-min-microvolt;
+ 	/delete-property/regulator-max-microvolt;
+@@ -502,6 +509,13 @@ &vreg_l9b_1p2 {
+ 	regulator-allowed-modes = <RPMH_REGULATOR_MODE_LPM RPMH_REGULATOR_MODE_HPM>;
+ };
+ 
++&vreg_l10c_0p88 {
++        /delete-property/regulator-min-microvolt;
++        /delete-property/regulator-max-microvolt;
++        regulator-allow-set-load;
++        regulator-allowed-modes = <RPMH_REGULATOR_MODE_LPM RPMH_REGULATOR_MODE_HPM>;
++};
++
+ &wifi {
+ 	memory-region = <&wlan_fw_mem>;
+ };
+-- 
+2.25.1
+

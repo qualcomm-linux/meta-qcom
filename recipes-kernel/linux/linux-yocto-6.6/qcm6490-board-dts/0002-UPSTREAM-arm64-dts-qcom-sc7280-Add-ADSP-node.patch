@@ -1,0 +1,155 @@
+From c1f29760a2988d9d65cae0b88e8c0afb3f82c4de Mon Sep 17 00:00:00 2001
+From: Luca Weiss <luca.weiss@fairphone.com>
+Date: Fri, 8 Dec 2023 16:08:04 +0100
+Subject: [PATCH 2/3] UPSTREAM: arm64: dts: qcom: sc7280: Add ADSP node
+
+Add the node for the ADSP found on the SC7280 SoC, using standard
+Qualcomm firmware.
+
+Acked-by: Konrad Dybcio <konrad.dybcio@linaro.org>
+Signed-off-by: Luca Weiss <luca.weiss@fairphone.com>
+Link: https://lore.kernel.org/r/20231208-sc7280-remoteprocs-v3-8-6aa394d33edf@fairphone.com
+Signed-off-by: Bjorn Andersson <andersson@kernel.org>
+Upstream-Status: Backport [https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git 3658e411efcbb4df882763b09ae49efaa86585b4]
+---
+ arch/arm64/boot/dts/qcom/qcm6490-idp.dts      |  1 +
+ arch/arm64/boot/dts/qcom/qcs6490-rb3gen2.dts  |  1 +
+ .../boot/dts/qcom/sc7280-chrome-common.dtsi   |  5 --
+ arch/arm64/boot/dts/qcom/sc7280.dtsi          | 74 +++++++++++++++++++
+ 4 files changed, 76 insertions(+), 5 deletions(-)
+
+diff --git a/arch/arm64/boot/dts/qcom/qcm6490-idp.dts b/arch/arm64/boot/dts/qcom/qcm6490-idp.dts
+index 7e792ec00243..db8ed29b8d81 100644
+--- a/arch/arm64/boot/dts/qcom/qcm6490-idp.dts
++++ b/arch/arm64/boot/dts/qcom/qcm6490-idp.dts
+@@ -13,6 +13,7 @@
+ 
+ /delete-node/ &ipa_fw_mem;
+ /delete-node/ &rmtfs_mem;
++/delete-node/ &adsp_mem;
+ /delete-node/ &video_mem;
+ /delete-node/ &wlan_ce_mem;
+ /delete-node/ &wpss_mem;
+diff --git a/arch/arm64/boot/dts/qcom/qcs6490-rb3gen2.dts b/arch/arm64/boot/dts/qcom/qcs6490-rb3gen2.dts
+index a6eb46f574e0..6f774812bf91 100644
+--- a/arch/arm64/boot/dts/qcom/qcs6490-rb3gen2.dts
++++ b/arch/arm64/boot/dts/qcom/qcs6490-rb3gen2.dts
+@@ -19,6 +19,7 @@
+ /delete-node/ &ipa_fw_mem;
+ /delete-node/ &remoteproc_mpss;
+ /delete-node/ &rmtfs_mem;
++/delete-node/ &adsp_mem;
+ /delete-node/ &video_mem;
+ /delete-node/ &wlan_ce_mem;
+ /delete-node/ &wpss_mem;
+diff --git a/arch/arm64/boot/dts/qcom/sc7280-chrome-common.dtsi b/arch/arm64/boot/dts/qcom/sc7280-chrome-common.dtsi
+index 349600297853..76f0a66b7dc1 100644
+--- a/arch/arm64/boot/dts/qcom/sc7280-chrome-common.dtsi
++++ b/arch/arm64/boot/dts/qcom/sc7280-chrome-common.dtsi
+@@ -24,11 +24,6 @@
+ 
+ / {
+ 	reserved-memory {
+-		adsp_mem: memory@86700000 {
+-			reg = <0x0 0x86700000 0x0 0x2800000>;
+-			no-map;
+-		};
+-
+ 		camera_mem: memory@8ad00000 {
+ 			reg = <0x0 0x8ad00000 0x0 0x500000>;
+ 			no-map;
+diff --git a/arch/arm64/boot/dts/qcom/sc7280.dtsi b/arch/arm64/boot/dts/qcom/sc7280.dtsi
+index 0ea186be7b6a..fff07fff5ef3 100644
+--- a/arch/arm64/boot/dts/qcom/sc7280.dtsi
++++ b/arch/arm64/boot/dts/qcom/sc7280.dtsi
+@@ -142,6 +142,11 @@ wlan_fw_mem: wlan-fw@80c00000 {
+ 			no-map;
+ 		};
+ 
++		adsp_mem: adsp@86700000 {
++			reg = <0x0 0x86700000 0x0 0x2800000>;
++			no-map;
++		};
++
+ 		video_mem: video@8b200000 {
+ 			reg = <0x0 0x8b200000 0x0 0x500000>;
+ 			no-map;
+@@ -3544,6 +3549,75 @@ qspi: spi@88dc000 {
+ 			status = "disabled";
+ 		};
+ 
++		remoteproc_adsp: remoteproc@3700000 {
++			compatible = "qcom,sc7280-adsp-pas";
++			reg = <0 0x03700000 0 0x100>;
++
++			interrupts-extended = <&pdc 6 IRQ_TYPE_LEVEL_HIGH>,
++					      <&adsp_smp2p_in 0 IRQ_TYPE_EDGE_RISING>,
++					      <&adsp_smp2p_in 1 IRQ_TYPE_EDGE_RISING>,
++					      <&adsp_smp2p_in 2 IRQ_TYPE_EDGE_RISING>,
++					      <&adsp_smp2p_in 3 IRQ_TYPE_EDGE_RISING>,
++					      <&adsp_smp2p_in 7 IRQ_TYPE_EDGE_RISING>;
++			interrupt-names = "wdog", "fatal", "ready", "handover",
++					  "stop-ack", "shutdown-ack";
++
++			clocks = <&rpmhcc RPMH_CXO_CLK>;
++			clock-names = "xo";
++
++			power-domains = <&rpmhpd SC7280_LCX>,
++					<&rpmhpd SC7280_LMX>;
++			power-domain-names = "lcx", "lmx";
++
++			memory-region = <&adsp_mem>;
++
++			qcom,qmp = <&aoss_qmp>;
++
++			qcom,smem-states = <&adsp_smp2p_out 0>;
++			qcom,smem-state-names = "stop";
++
++			status = "disabled";
++
++			glink-edge {
++				interrupts-extended = <&ipcc IPCC_CLIENT_LPASS
++							     IPCC_MPROC_SIGNAL_GLINK_QMP
++							     IRQ_TYPE_EDGE_RISING>;
++
++				mboxes = <&ipcc IPCC_CLIENT_LPASS
++						IPCC_MPROC_SIGNAL_GLINK_QMP>;
++
++				label = "lpass";
++				qcom,remote-pid = <2>;
++
++				fastrpc {
++					compatible = "qcom,fastrpc";
++					qcom,glink-channels = "fastrpcglink-apps-dsp";
++					label = "adsp";
++					qcom,non-secure-domain;
++					#address-cells = <1>;
++					#size-cells = <0>;
++
++					compute-cb@3 {
++						compatible = "qcom,fastrpc-compute-cb";
++						reg = <3>;
++						iommus = <&apps_smmu 0x1803 0x0>;
++					};
++
++					compute-cb@4 {
++						compatible = "qcom,fastrpc-compute-cb";
++						reg = <4>;
++						iommus = <&apps_smmu 0x1804 0x0>;
++					};
++
++					compute-cb@5 {
++						compatible = "qcom,fastrpc-compute-cb";
++						reg = <5>;
++						iommus = <&apps_smmu 0x1805 0x0>;
++					};
++				};
++			};
++		};
++
+ 		remoteproc_wpss: remoteproc@8a00000 {
+ 			compatible = "qcom,sc7280-wpss-pas";
+ 			reg = <0 0x08a00000 0 0x10000>;
+-- 
+2.25.1
+

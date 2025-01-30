@@ -1,0 +1,50 @@
+From b51bcd8342aaaffa4d08fd3474b1512f9992886e Mon Sep 17 00:00:00 2001
+From: Manish Pandey <quic_mapa@quicinc.com>
+Date: Tue, 17 Oct 2023 23:46:10 +0530
+Subject: [PATCH 1/2] PENDING: arm64: dts: qcom: qcm6490: Add UFS nodes for IDP
+
+Add UFS host controller and Phy nodes for Qualcomm
+qcm6490 IDP Board.
+
+Change-Id: If756cf2396ad0d82e7c607738068a634c5a1919a
+Signed-off-by: Manish Pandey <quic_mapa@quicinc.com>
+Signed-off-by: Salendarsingh Gaud <quic_sgaud@quicinc.com>
+Signed-off-by: Atul Dhudase <quic_adhudase@quicinc.com>
+Upstream-Status: Pending
+---
+ arch/arm64/boot/dts/qcom/qcm6490-idp.dts | 19 +++++++++++++++++++
+ 1 file changed, 19 insertions(+)
+
+diff --git a/arch/arm64/boot/dts/qcom/qcm6490-idp.dts b/arch/arm64/boot/dts/qcom/qcm6490-idp.dts
+index 3baea71e0248..424cd9c2b092 100644
+--- a/arch/arm64/boot/dts/qcom/qcm6490-idp.dts
++++ b/arch/arm64/boot/dts/qcom/qcm6490-idp.dts
+@@ -463,6 +463,25 @@ &uart5 {
+ 	status = "okay";
+ };
+ 
++&ufs_mem_hc {
++	reset-gpios = <&tlmm 175 GPIO_ACTIVE_LOW>;
++	vcc-supply = <&vreg_l7b_2p952>;
++	vcc-max-microamp = <800000>;
++	vccq-supply = <&vreg_l9b_1p2>;
++	vccq-max-microamp = <900000>;
++	vccq2-supply = <&vreg_l9b_1p2>;
++	vccq2-max-microamp = <900000>;
++
++	status = "okay";
++};
++
++&ufs_mem_phy {
++	vdda-phy-supply = <&vreg_l10c_0p88>;
++	vdda-pll-supply = <&vreg_l6b_1p2>;
++
++	status = "okay";
++};
++
+ &usb_1 {
+ 	status = "okay";
+ };
+-- 
+2.25.1
+
