@@ -18,7 +18,7 @@ QCOM_DTB_FILE ?= "dtb.bin"
 QCOM_ROOTFS_FILE ?= "rootfs.img"
 IMAGE_QCOMFLASH_FS_TYPE ??= "ext4"
 
-QCOMFLASH_DIR = "${WORKDIR}/qcomflash"
+QCOMFLASH_DIR = "${IMGDEPLOYDIR}/${IMAGE_NAME}.qcomflash"
 IMAGE_CMD:qcomflash = "create_qcomflash_pkg"
 do_image_qcomflash[dirs] = "${QCOMFLASH_DIR}"
 do_image_qcomflash[cleandirs] = "${QCOMFLASH_DIR}"
@@ -67,6 +67,9 @@ create_qcomflash_pkg() {
     for bfw in `find ${DEPLOY_DIR_IMAGE} -type f -name '*.elf' -o -name '*.mbn' -o -name '*.fv'`; do
         install -m 0644 ${bfw} .
     done
+
+    # Create symlink to ${QCOMFLASH_DIR} dir
+    ln -rsf ${QCOMFLASH_DIR} ${IMGDEPLOYDIR}/${IMAGE_LINK_NAME}.qcomflash
 
     # Create qcomflash tarball
     ${IMAGE_CMD_TAR} --sparse --numeric-owner --transform="s,^\./,${IMAGE_BASENAME}-${MACHINE}/," -cf- . | gzip -f -9 -n -c --rsyncable > ${IMGDEPLOYDIR}/${IMAGE_NAME}.qcomflash.tar.gz
