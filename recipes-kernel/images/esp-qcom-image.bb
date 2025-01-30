@@ -1,14 +1,25 @@
 DESCRIPTION = "EFI System Partition Image to boot Qualcomm boards"
 
 PACKAGE_INSTALL = " \
-    linux-qcom-uki \
     systemd-boot \
 "
 
 KERNELDEPMODDEPEND = ""
 KERNEL_DEPLOY_DEPEND = ""
 
-inherit image
+ESPFOLDER = ""
+inherit image uki-esp-image
+
+inherit uki
+UKI_FILENAME = "${EFI_LINUX_IMG}"
+
+UKI_CMDLINE="root=${QCOM_BOOTIMG_ROOTFS} rw rootwait"
+
+# Remove leading 'qcom/' from KERNEL_DEVICEREE, we store the file in DEPLOY_DIR_IMAGE directly, not in the qcom/ subfolder
+#KERNEL_DEVICETREE := "${@d.getVar('KERNEL_DEVICETREE').strip().replace('qcom/','')}"
+
+# Remove 'upstream' dtb, rely on EFI provided one
+KERNEL_DEVICETREE = ""
 
 IMAGE_FSTYPES = "vfat"
 IMAGE_FSTYPES_DEBUGFS = ""
