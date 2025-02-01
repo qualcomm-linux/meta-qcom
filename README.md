@@ -143,16 +143,11 @@ Make sure that ModemManager is not running, disable it if necessary.
    ```
 
 3. Plug in the USB-C cable from the host.
-4. Unpack the tarball stored in the deploy directory:
+
+4. Use the QDL tool (built in the previous section) to flash the images:
 
    ```
-   cd build/tmp/deploy/images/qcs6490-rb3gen2-core-kit/
-   tar zxvf core-image-base-qcs6490-rb3gen2-core-kit.rootfs.qcomflash.tar.gz
-   ```
-
-5. Use the QDL tool (built in the previous section) to flash the images:
-
-   ```
+   cd build/tmp/deploy/images/qcs6490-rb3gen2-core-kit/core-image-base-qcs6490-rb3gen2-core-kit.rootfs.qcomflash
    qdl --debug prog_firehose_ddr.elf rawprogram*.xml patch*.xml
    ```
 
@@ -165,7 +160,7 @@ Make sure that ModemManager is not running, disable it if necessary.
 
    Serial can be obtained using `lsusb -v -d 05c6:9008` command.
 
-6. Ensure that the device is booted in Emergency Download (EDL) mode
+5. Ensure that the device is booted in Emergency Download (EDL) mode
    (please refer to Quick Start Guide for your board). The process of
    flashing should start automatically:
 
