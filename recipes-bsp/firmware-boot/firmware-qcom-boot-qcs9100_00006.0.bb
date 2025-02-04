@@ -12,9 +12,9 @@ BOOTBINARIES = "QCS9100_bootbinaries"
 SRC_URI = "https://${FW_ARTIFACTORY}/${FW_BUILD_ID}/${FW_BIN_PATH}/${BOOTBINARIES}.zip;downloadfilename=${BOOTBINARIES}_r1.0_${PV}.zip;name=bootbinaries"
 SRC_URI[bootbinaries.sha256sum] = "480682759e27d63b0e44501ae2517b3671bea6dad21071880a22ed5feb5a458b"
 
-SRC_URI:append:sa8775p-ride-sx = " https://artifacts.codelinaro.org/artifactory/codelinaro-le/Qualcomm_Linux/QCS9100/cdt/ride-sx.zip;downloadfilename=cdt-sa8775p-ride-sx_${PV}.zip;name=sa8775p-ride-sx"
-SRC_URI[sa8775p-ride-sx.sha256sum] = "f5e37d1260627e9d6976827ea5bdc7ffa81c90b7561acfccf24a94bc1313dea5"
+SRC_URI:append:qcs9100-ride-sx = " https://artifacts.codelinaro.org/artifactory/codelinaro-le/Qualcomm_Linux/QCS9100/cdt/ride-sx.zip;downloadfilename=cdt-qcs9100-ride-sx_${PV}.zip;name=qcs9100-ride-sx"
+SRC_URI[qcs9100-ride-sx.sha256sum] = "f5e37d1260627e9d6976827ea5bdc7ffa81c90b7561acfccf24a94bc1313dea5"
 
-CDT_FILE:sa8775p-ride-sx ?= "cdt_ride_sx"
+CDT_FILE:qcs9100-ride-sx ?= "cdt_ride_sx"
 
 include firmware-qcom-boot-common.inc

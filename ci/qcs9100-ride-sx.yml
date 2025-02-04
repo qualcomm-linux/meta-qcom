@@ -5,4 +5,4 @@ header:
   includes:
   - ci/base.yml
 
-machine: sa8775p-ride-sx
+machine: qcs9100-ride-sx

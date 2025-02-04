@@ -36,7 +36,7 @@ do_compile:prepend:qcs6490-rb3gen2-core-kit() {
     fixup_cdt
 }
 
-do_compile:prepend:sa8775p-ride-sx() {
+do_compile:prepend:qcs9100-ride-sx() {
     fixup_cdt
 }
 
