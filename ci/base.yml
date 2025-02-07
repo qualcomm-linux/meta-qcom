@@ -12,10 +12,19 @@ defaults:
 repos:
   meta-qcom:
 
-  poky:
-    url: https://git.yoctoproject.org/git/poky
+  oe-core:
+    url: https://git.openembedded.org/openembedded-core
     layers:
       meta:
+
+  bitbake:
+    url: https://git.openembedded.org/bitbake
+    layers:
+      .: excluded
+
+  meta-yocto:
+    url: https://git.yoctoproject.org/git/meta-yocto
+    layers:
       meta-poky:
 
 local_conf_header:
