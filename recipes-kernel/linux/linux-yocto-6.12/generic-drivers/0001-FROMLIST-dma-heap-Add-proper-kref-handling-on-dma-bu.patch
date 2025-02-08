@@ -1,0 +1,105 @@
+From e52cbbbaefd8a735eb541d7c136ff365c837e834 Mon Sep 17 00:00:00 2001
+From: John Stultz <jstultz@google.com>
+Date: Sat, 20 Jul 2024 15:15:43 +0800
+Subject: [PATCH 1/2] FROMLIST: dma-heap: Add proper kref handling on dma-buf
+ heaps
+
+Add proper reference counting on the dma_heap structure. While
+existing heaps are built-in, we may eventually have heaps loaded
+from modules, and we'll need to be able to properly handle the
+references to the heaps
+
+Signed-off-by: John Stultz <jstultz@google.com>
+Signed-off-by: T.J. Mercier <tjmercier@google.com>
+Signed-off-by: Yong Wu <yong.wu@mediatek.com>
+[Yong: Just add comment for "minor" and "refcount"]
+Signed-off-by: Yunfei Dong <yunfei.dong@mediatek.com>
+[Yunfei: Change reviewer's comments]
+Upstream-Status: Submitted [https://lore.kernel.org/lkml/20240720071606.27930-6-yunfei.dong@mediatek.com/]
+---
+ drivers/dma-buf/dma-heap.c | 29 +++++++++++++++++++++++++++++
+ include/linux/dma-heap.h   |  2 ++
+ 2 files changed, 31 insertions(+)
+
+diff --git a/drivers/dma-buf/dma-heap.c b/drivers/dma-buf/dma-heap.c
+index 3cbe87d4a464..7cfcdcf24310 100644
+--- a/drivers/dma-buf/dma-heap.c
++++ b/drivers/dma-buf/dma-heap.c
+@@ -11,6 +11,7 @@
+ #include <linux/dma-buf.h>
+ #include <linux/dma-heap.h>
+ #include <linux/err.h>
++#include <linux/kref.h>
+ #include <linux/list.h>
+ #include <linux/nospec.h>
+ #include <linux/syscalls.h>
+@@ -30,6 +31,7 @@
+  * @heap_devt:		heap device node
+  * @list:		list head connecting to list of heaps
+  * @heap_cdev:		heap char device
++ * @refcount:		reference counter for this heap device
+  *
+  * Represents a heap of memory from which buffers can be made.
+  */
+@@ -40,6 +42,7 @@ struct dma_heap {
+ 	dev_t heap_devt;
+ 	struct list_head list;
+ 	struct cdev heap_cdev;
++	struct kref refcount;
+ };
+ 
+ static LIST_HEAD(heap_list);
+@@ -240,6 +243,7 @@ struct dma_heap *dma_heap_add(const struct dma_heap_export_info *exp_info)
+ 	if (!heap)
+ 		return ERR_PTR(-ENOMEM);
+ 
++	kref_init(&heap->refcount);
+ 	heap->name = exp_info->name;
+ 	heap->ops = exp_info->ops;
+ 	heap->priv = exp_info->priv;
+@@ -304,6 +308,31 @@ struct dma_heap *dma_heap_add(const struct dma_heap_export_info *exp_info)
+ 	return err_ret;
+ }
+ 
++static void dma_heap_release(struct kref *ref)
++{
++	struct dma_heap *heap = container_of(ref, struct dma_heap, refcount);
++	unsigned int minor = MINOR(heap->heap_devt);
++
++	mutex_lock(&heap_list_lock);
++	list_del(&heap->list);
++	mutex_unlock(&heap_list_lock);
++
++	device_destroy(dma_heap_class, heap->heap_devt);
++	cdev_del(&heap->heap_cdev);
++	xa_erase(&dma_heap_minors, minor);
++
++	kfree(heap);
++}
++
++/**
++ * dma_heap_put - drops a reference to a dmabuf heap, potentially freeing it
++ * @heap: DMA-Heap whose reference count to decrement
++ */
++void dma_heap_put(struct dma_heap *heap)
++{
++	kref_put(&heap->refcount, dma_heap_release);
++}
++
+ static char *dma_heap_devnode(const struct device *dev, umode_t *mode)
+ {
+ 	return kasprintf(GFP_KERNEL, "dma_heap/%s", dev_name(dev));
+diff --git a/include/linux/dma-heap.h b/include/linux/dma-heap.h
+index 27d15f60950a..bcf385d8d557 100644
+--- a/include/linux/dma-heap.h
++++ b/include/linux/dma-heap.h
+@@ -46,4 +46,6 @@ const char *dma_heap_get_name(struct dma_heap *heap);
+ 
+ struct dma_heap *dma_heap_add(const struct dma_heap_export_info *exp_info);
+ 
++void dma_heap_put(struct dma_heap *heap);
++
+ #endif /* _DMA_HEAPS_H */
+-- 
+2.39.5
+
