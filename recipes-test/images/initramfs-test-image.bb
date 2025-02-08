@@ -52,6 +52,7 @@ PACKAGE_INSTALL_openembedded-layer += " \
     lmsensors-sensors \
     media-ctl \
     read-edid \
+    v4l-utils \
     yavta \
 "
 
