@@ -1,5 +1,11 @@
 # Common configurations and variables for Qualcomm platforms.
 
+# Supported BSP selections are: base, custom.
+# Specific MACHINEs or DISTROs may change this
+# selection as needed in their configuration.
+QCOM_SELECTED_BSP ??= "none"
+MACHINEOVERRIDES =. "${@bb.utils.contains_any('QCOM_SELECTED_BSP', 'base custom', 'qcom-${QCOM_SELECTED_BSP}-bsp:', '', d)}"
+
 # Provider for linux kernel
 PREFERRED_PROVIDER_virtual/kernel ?= "linux-yocto-dev"
 
