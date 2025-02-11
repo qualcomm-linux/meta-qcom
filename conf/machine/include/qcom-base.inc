@@ -9,6 +9,7 @@ MACHINEOVERRIDES =. "${@bb.utils.contains('QCOM_SELECTED_BSP', 'custom', 'qcom-b
 
 # Provider for linux kernel
 PREFERRED_PROVIDER_virtual/kernel ?= "linux-yocto-dev"
+PREFERRED_PROVIDER_virtual/kernel:qcom-base-bsp ?= "linux-qcom"
 
 KERNEL_IMAGETYPE ?= "Image"
 KERNEL_IMAGETYPES ?= "Image.gz"
