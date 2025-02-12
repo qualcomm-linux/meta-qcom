@@ -12,6 +12,9 @@ LINUX_QCOM_GIT ?= "git://git.codelinaro.org/clo/la/kernel/qcom.git;protocol=http
 SRCBRANCH ?= "qclinux.6.12.y"
 SRC_URI = "${LINUX_QCOM_GIT};branch=${SRCBRANCH}"
 
+# Patch to address a compilation issue in ice driver with GCC 14.2
+SRC_URI:append = " file://0001-QCLINUX-soc-qcom-ice-Type-cast-return-error-code-as-.patch"
+
 SRCREV = "608736233891ff0d6575f440d94cc2c821a7b87f"
 PV = "6.12+git${SRCPV}"
 
