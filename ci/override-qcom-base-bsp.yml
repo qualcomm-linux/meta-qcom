@@ -1,0 +1,6 @@
+header:
+  version: 14
+
+local_conf_header:
+  bspoverride: |
+    QCOM_SELECTED_BSP = "base"
