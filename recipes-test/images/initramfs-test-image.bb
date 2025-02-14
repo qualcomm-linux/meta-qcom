@@ -9,7 +9,6 @@ PACKAGE_INSTALL += " \
     alsa-utils-speakertest \
     bluez5 \
     bootrr \
-    debugcc \
     dhcpcd \
     diag \
     dropbear \
@@ -19,7 +18,6 @@ PACKAGE_INSTALL += " \
     e2fsprogs-resize2fs \
     e2fsprogs-tune2fs \
     ethtool \
-    fastrpc \
     gptfdisk \
     i2c-tools \
     iw \
@@ -27,11 +25,7 @@ PACKAGE_INSTALL += " \
     lrzsz \
     mybw \
     pciutils \
-    pd-mapper \
-    qrtr \
-    rmtfs \
     strace \
-    tqftpserv \
     usbutils \
     util-linux-lscpu \
     util-linux-taskset \

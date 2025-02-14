@@ -8,6 +8,15 @@ PACKAGE_INSTALL = " \
     udev \
 "
 
+PACKAGE_INSTALL += " \
+    debugcc \
+    fastrpc \
+    pd-mapper \
+    qrtr \
+    rmtfs \
+    tqftpserv \
+"
+
 # Do not pollute the initrd image with rootfs features
 IMAGE_FEATURES = "allow-empty-password empty-root-password allow-root-login post-install-logging"
 IMAGE_LINGUAS = ""
