@@ -1,0 +1,41 @@
+From e06b31ea954e8908a9a81d5c5c6c4da4239df7a8 Mon Sep 17 00:00:00 2001
+From: Shivendra Pratap <quic_spratap@quicinc.com>
+Date: Tue, 11 Feb 2025 21:52:52 +0530
+Subject: [PATCH] QCLINUX: soc: qcom: ice: Type cast return error code as per
+ return type
+
+Type cast base pointer as per return type of the function. Change
+PTR_ERR(base) with ERR_CAST(base) to match return type of the
+function.
+
+Signed-off-by: Shivendra Pratap <quic_spratap@quicinc.com>
+
+Upstream-Status: Pending
+---
+ drivers/soc/qcom/ice.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/drivers/soc/qcom/ice.c b/drivers/soc/qcom/ice.c
+index 976e572a4888..12a9f7c5d971 100644
+--- a/drivers/soc/qcom/ice.c
++++ b/drivers/soc/qcom/ice.c
+@@ -5,6 +5,7 @@
+  * Copyright (c) 2013-2019, The Linux Foundation. All rights reserved.
+  * Copyright (c) 2019, Google LLC
+  * Copyright (c) 2023, Linaro Limited
++ * Copyright (c) 2025 Qualcomm Innovation Center, Inc. All rights reserved.
+  */
+ 
+ #include <linux/bitfield.h>
+@@ -632,7 +633,7 @@ struct qcom_ice *of_qcom_ice_get(struct device *dev)
+ 	base = devm_platform_ioremap_resource(pdev, 0);
+ 	if (IS_ERR(base)) {
+ 		dev_warn(&pdev->dev, "ICE registers not found\n");
+-		return PTR_ERR(base);
++		return ERR_CAST(base);
+ 	}
+ 
+ 	ice = qcom_ice_create(&pdev->dev, base);
+-- 
+2.25.1
+
