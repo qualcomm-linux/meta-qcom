@@ -28,5 +28,5 @@ do_deploy() {
 }
 addtask deploy before do_build after do_compile
 
-COMPATIBLE_MACHINE = "(qcm6490|qcs9100)"
+COMPATIBLE_MACHINE = "(qcm6490|qcs9100|qrb2210)"
 PACKAGE_ARCH = "${MACHINE_ARCH}"
