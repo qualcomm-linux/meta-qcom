@@ -26,4 +26,9 @@ PACKAGE_INSTALL += " \
     packagegroup-firmware-sm8650-hdk \
 "
 
+# Other Qualcomm DevKits
+PACKAGE_INSTALL += " \
+    packagegroup-firmware-qar2130p \
+"
+
 require initramfs-firmware-image.inc
