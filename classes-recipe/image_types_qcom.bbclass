@@ -18,7 +18,7 @@ QCOM_DTB_FILE ?= "dtb.bin"
 QCOM_ROOTFS_FILE ?= "rootfs.img"
 IMAGE_QCOMFLASH_FS_TYPE ??= "ext4"
 
-QCOMFLASH_DIR = "${IMGDEPLOYDIR}/${IMAGE_NAME}.qcomflash"
+QCOMFLASH_DIR ?= "${IMGDEPLOYDIR}/${IMAGE_NAME}.qcomflash"
 IMAGE_CMD:qcomflash = "create_qcomflash_pkg"
 do_image_qcomflash[dirs] = "${QCOMFLASH_DIR}"
 do_image_qcomflash[cleandirs] = "${QCOMFLASH_DIR}"
