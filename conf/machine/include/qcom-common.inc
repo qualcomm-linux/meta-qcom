@@ -24,6 +24,22 @@ PREFERRED_PROVIDER_android-tools-conf = "android-tools-conf-configfs"
 
 PREFERRED_VERSION_linux-yocto ?= "6.12%"
 
+# Add a default set of upstream kernel modules that are needed to make
+# the included hardware work in core-image-* derivatives. Since they end
+# up as runtime recommendations for the package manager, the build will
+# succeed if they are missing, this is behaviour both desired and by
+# design.
+
+MACHINE_ESSENTIAL_EXTRA_RRECOMMENDS += " \
+	kernel-module-fastrpc \
+	kernel-module-msm \
+	kernel-module-qcom-stats \
+	kernel-module-rtc-pm8xxx \
+	kernel-module-venus-dec \
+	kernel-module-venus-enc \
+	"
+
+
 # Fastboot expects an ext4 image, which needs to be 4096 aligned
 IMAGE_FSTYPES ?= "ext4.gz"
 IMAGE_ROOTFS_ALIGNMENT ?= "4096"
