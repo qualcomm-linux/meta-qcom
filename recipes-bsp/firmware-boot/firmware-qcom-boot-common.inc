@@ -13,6 +13,10 @@ do_compile[noexec] = "1"
 inherit deploy
 
 do_deploy() {
+    find "${UNPACKDIR}/${BOOTBINARIES}" -name 'gpt_main*.bin' -exec rm -f {} \;
+    find "${UNPACKDIR}/${BOOTBINARIES}" -name 'gpt_backup*.bin' -exec rm -f {} \;
+    find "${UNPACKDIR}/${BOOTBINARIES}" -name 'gpt_both*.bin' -exec rm -f {} \;
+
     find "${UNPACKDIR}/${BOOTBINARIES}" -name '*.bin' -exec install -m 0644 {} ${DEPLOYDIR} \;
     find "${UNPACKDIR}/${BOOTBINARIES}" -name '*.elf' -exec install -m 0644 {} ${DEPLOYDIR} \;
     find "${UNPACKDIR}/${BOOTBINARIES}" -name '*.fv' -exec install -m 0644 {} ${DEPLOYDIR} \;

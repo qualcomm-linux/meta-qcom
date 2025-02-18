@@ -9,6 +9,7 @@ DEPENDS += "qcom-gen-partitions-tool-native"
 SRC_URI = " \
     file://qcm6490-partitions.conf \
     file://qcs9100-partitions.conf \
+    file://qrb2210-partitions.conf \
 "
 
 PROVIDES += "virtual/partconf"
@@ -26,6 +27,7 @@ do_configure[noexec] = "1"
 PARTCONF ?= ""
 PARTCONF:qcm6490 ?= "qcm6490-partitions.conf"
 PARTCONF:qcs9100 ?= "qcs9100-partitions.conf"
+PARTCONF:qrb2210 ?= "qrb2210-partitions.conf"
 
 # For machines with a published cdt file, let's make sure we flash it
 fixup_cdt() {
@@ -53,5 +55,5 @@ do_deploy() {
 }
 addtask deploy after do_install
 
-COMPATIBLE_MACHINE = "(qcm6490|qcs9100)"
+COMPATIBLE_MACHINE = "(qcm6490|qcs9100|qrb2210)"
 PACKAGE_ARCH = "${MACHINE_ARCH}"
