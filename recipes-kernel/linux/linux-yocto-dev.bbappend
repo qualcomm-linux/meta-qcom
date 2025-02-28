@@ -1,6 +1,9 @@
 # do not override KBRANCH and SRCREV_machine, use default ones.
 COMPATIBLE_MACHINE:qcom = "(qcom)"
 
+# HACK: needed on RB1 until we fix the EFI boot
+inherit linux-qcom-bootimg
+
 FILESEXTRAPATHS:prepend:qcom := "${THISDIR}/${PN}:"
 
 SRC_URI:append:qcom = " \
