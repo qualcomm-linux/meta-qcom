@@ -9,3 +9,13 @@ repos:
   meta-qcom-distro:
     url: https://github.com/qualcomm-linux/meta-qcom-distro
     branch: main
+
+  meta-openembedded:
+    url: https://github.com/openembedded/meta-openembedded
+    layers:
+      meta-oe:
+      meta-xfce:
+      meta-gnome:
+      meta-python:
+      meta-networking:
+      meta-multimedia: 
