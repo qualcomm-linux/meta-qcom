@@ -8,3 +8,6 @@ PACKAGECONFIG_FREEDRENO = "\
 "
 
 PACKAGECONFIG:append:qcom = "${PACKAGECONFIG_FREEDRENO}"
+
+SRC_URI:append:qcom = " \
+    file://freedreno-gpu-check.patch;patch=1"

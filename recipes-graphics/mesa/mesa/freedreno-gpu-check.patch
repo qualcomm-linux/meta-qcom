@@ -1,0 +1,71 @@
+From b8a90fcfb4a182e8ca4066cba1e2f059c2913fdd Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Lo=C3=AFc=20Minier?= <loic.minier@oss.qualcomm.com>
+Date: Fri, 28 Feb 2025 20:12:11 +0000
+Subject: [PATCH] freedreno: check if GPU support in fd_pipe_new2
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+fd_pipe_new2 can segfault when trying to set the is_64bit flag on new
+pipes. This can happen when the current GPU is not be listed in the
+fd_dev_recs table because it's not supported by mesa, but is supported by
+the kernel.
+
+Add a helper function to test if the current GPU is in the supported table,
+and use it in fd_pipe_new2.
+
+Signed-off-by: Loïc Minier <loic.minier@oss.qualcomm.com>
+Upstream-Status: Submitted [https://gitlab.freedesktop.org/mesa/mesa/-/merge_requests/33830]
+---
+ src/freedreno/common/freedreno_dev_info.h | 9 +++++++++
+ src/freedreno/drm/freedreno_pipe.c        | 7 +++++++
+ 2 files changed, 16 insertions(+)
+
+diff --git a/src/freedreno/common/freedreno_dev_info.h b/src/freedreno/common/freedreno_dev_info.h
+index b925d778bb59a..a3858bc20c3f9 100644
+--- a/src/freedreno/common/freedreno_dev_info.h
++++ b/src/freedreno/common/freedreno_dev_info.h
+@@ -9,6 +9,7 @@
+ 
+ #include <assert.h>
+ #include <stdbool.h>
++#include <stddef.h>
+ #include <stdint.h>
+ 
+ #ifdef __cplusplus
+@@ -379,6 +380,14 @@ fd_dev_gpu_id(const struct fd_dev_id *id)
+ /* Unmodified dev info as defined in freedreno_devices.py */
+ const struct fd_dev_info *fd_dev_info_raw(const struct fd_dev_id *id);
+ 
++/* Helper to check if GPU is known before going any further */
++static uint8_t
++fd_dev_is_supported(const struct fd_dev_id *id) {
++   assert(id);
++   assert(id->gpu_id || id->chip_id);
++   return fd_dev_info_raw(id) != NULL;
++}
++
+ /* Final dev info with dbg options and everything else applied.  */
+ const struct fd_dev_info fd_dev_info(const struct fd_dev_id *id);
+ 
+diff --git a/src/freedreno/drm/freedreno_pipe.c b/src/freedreno/drm/freedreno_pipe.c
+index ab53c55152d08..8373488368a72 100644
+--- a/src/freedreno/drm/freedreno_pipe.c
++++ b/src/freedreno/drm/freedreno_pipe.c
+@@ -45,6 +45,13 @@ fd_pipe_new2(struct fd_device *dev, enum fd_pipe_id id, uint32_t prio)
+    fd_pipe_get_param(pipe, FD_CHIP_ID, &val);
+    pipe->dev_id.chip_id = val;
+ 
++   if (!fd_dev_is_supported(&pipe->dev_id)) {
++      ERROR_MSG("unsupported GPU id 0x%" PRIx32 " / chip id 0x%" PRIx64,
++                pipe->dev_id.gpu_id,
++                pipe->dev_id.chip_id);
++      return NULL;
++   }
++
+    pipe->is_64bit = fd_dev_64b(&pipe->dev_id);
+ 
+    /* Use the _NOSYNC flags because we don't want the control_mem bo to hold
+-- 
+GitLab
+
