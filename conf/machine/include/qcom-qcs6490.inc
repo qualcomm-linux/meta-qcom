@@ -9,4 +9,8 @@ require conf/machine/include/arm/arch-armv8-2a.inc
 
 KERNEL_CMDLINE_EXTRA ?= "pcie_pme=nomsi earlycon"
 
+MACHINE_ESSENTIAL_EXTRA_RRECOMMENDS += " \
+    pd-mapper \
+"
+
 EXTRA_IMAGEDEPENDS += "firmware-qcom-boot-qcs6490 qcom-gen-partition-bins"
