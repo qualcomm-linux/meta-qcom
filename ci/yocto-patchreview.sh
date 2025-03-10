@@ -9,7 +9,7 @@ TOPDIR=$(realpath $(dirname $(readlink -f $0))/..)
 export KAS_WORK_DIR=$(realpath ${KAS_WORK_DIR:-$(mktemp -d)})
 
 echo "Running kas in $KAS_WORK_DIR"
-kas shell $TOPDIR/ci/base.yml --command "$KAS_WORK_DIR/poky/scripts/contrib/patchreview.py -v -b -j status.json $TOPDIR"
+kas shell $TOPDIR/ci/base.yml --command "$KAS_WORK_DIR/oe-core/scripts/contrib/patchreview.py -v -b -j status.json $TOPDIR"
 
 # return an error if any malformed patch is found
 cat $KAS_WORK_DIR/build/status.json |

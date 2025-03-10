@@ -14,7 +14,7 @@ SRC_URI = " \
 	file://ath11k-generate-ahb-board-2_json.sh \
 "
 
-PV = "0.0+${SRCPV}"
+PV = "0.0+"
 S = "${WORKDIR}/git"
 
 do_install () {

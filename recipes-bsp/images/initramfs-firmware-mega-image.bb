@@ -7,23 +7,40 @@ PACKAGE_INSTALL = " \
 
 # Qualcomm Dragonboard / Robotics platforms
 PACKAGE_INSTALL += " \
-    packagegroup-firmware-dragonboard-apq8074 \
-    packagegroup-firmware-dragonboard410c \
-    packagegroup-firmware-dragonboard820c \
-    packagegroup-firmware-dragonboard845c \
-    packagegroup-firmware-rb1 \
-    packagegroup-firmware-rb2 \
-    packagegroup-firmware-rb3gen2 \
-    packagegroup-firmware-rb5 \
+    packagegroup-dragonboard-apq8074-firmware \
+    packagegroup-dragonboard410c-firmware \
+    packagegroup-dragonboard820c-firmware \
+    packagegroup-dragonboard845c-firmware \
+    packagegroup-rb1-firmware \
+    packagegroup-rb2-firmware \
+    packagegroup-rb3gen2-firmware \
+    packagegroup-rb5-firmware \
+    packagegroup-dragonboard820c-hexagon-dsp-binaries \
+    packagegroup-dragonboard845c-hexagon-dsp-binaries \
+    packagegroup-rb1-hexagon-dsp-binaries \
+    packagegroup-rb2-hexagon-dsp-binaries \
+    packagegroup-rb3gen2-hexagon-dsp-binaries \
+    packagegroup-rb5-hexagon-dsp-binaries \
 "
 
 # Qualcomm HDKs
 PACKAGE_INSTALL += " \
-    packagegroup-firmware-sm8150-hdk \
-    packagegroup-firmware-sm8350-hdk \
-    packagegroup-firmware-sm8450-hdk \
-    packagegroup-firmware-sm8550-hdk \
-    packagegroup-firmware-sm8650-hdk \
+    packagegroup-sm8150-hdk-firmware \
+    packagegroup-sm8350-hdk-firmware \
+    packagegroup-sm8450-hdk-firmware \
+    packagegroup-sm8550-hdk-firmware \
+    packagegroup-sm8650-hdk-firmware \
+    packagegroup-sm8150-hdk-hexagon-dsp-binaries \
+    packagegroup-sm8350-hdk-hexagon-dsp-binaries \
+    packagegroup-sm8450-hdk-hexagon-dsp-binaries \
+    packagegroup-sm8550-hdk-hexagon-dsp-binaries \
+    packagegroup-sm8650-hdk-hexagon-dsp-binaries \
+"
+
+# Other Qualcomm DevKits
+PACKAGE_INSTALL += " \
+    packagegroup-qar2130p-firmware \
+    packagegroup-qar2130p-hexagon-dsp-binaries \
 "
 
 require initramfs-firmware-image.inc

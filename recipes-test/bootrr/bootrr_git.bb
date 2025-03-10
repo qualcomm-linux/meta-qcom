@@ -10,7 +10,7 @@ SRC_URI = "\
 
 S = "${WORKDIR}/git"
 
-PV = "0.0+git${SRCPV}"
+PV = "0.0+git"
 
 inherit allarch
 

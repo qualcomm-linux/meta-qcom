@@ -1,6 +1,9 @@
 SOC_FAMILY:prepend = "qcom:"
 require conf/machine/include/soc-family.inc
 
+# Set a default set of MACHINE_FEATURES, indivudual MACHINEs can append it
+MACHINE_FEATURES = "alsa bluetooth usbgadget usbhost wifi"
+
 XSERVER_OPENGL ?= " \
     xf86-video-modesetting \
     xserver-xorg-extension-glx \

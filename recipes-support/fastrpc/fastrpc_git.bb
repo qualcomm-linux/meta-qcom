@@ -16,7 +16,7 @@ SRC_URI = "\
     file://mount-dsp.sh \
 "
 
-PV = "0.0+${SRCPV}"
+PV = "0.0+"
 
 S = "${WORKDIR}/git"
 

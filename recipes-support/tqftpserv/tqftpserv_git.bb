@@ -1,5 +1,5 @@
 SUMMARY = "Qualcomm tqftpserv application"
-HOMEPAGE = "https://github.com/andersson/tqftpserv.git"
+HOMEPAGE = "https://github.com/linux-msm/tqftpserv.git"
 SECTION = "devel"
 
 LICENSE = "BSD-3-Clause"
@@ -10,10 +10,10 @@ DEPENDS = "qrtr"
 inherit systemd
 
 SRCREV = "de42697a2466cc5ee267ffe36ab4e8494f005fb0"
-SRC_URI = "git://github.com/andersson/${BPN}.git;branch=master;protocol=https \
+SRC_URI = "git://github.com/linux-msm/${BPN}.git;branch=master;protocol=https \
 "
 
-PV = "0.0+${SRCPV}"
+PV = "0.0+"
 
 S = "${WORKDIR}/git"
 

@@ -1,7 +1,7 @@
 DESCRIPTION = "Tiny ramdisk image with SM8350 HDK devices firmware files"
 
 PACKAGE_INSTALL += " \
-    packagegroup-firmware-sm8350-hdk \
+    packagegroup-sm8350-hdk-firmware \
 "
 
 BAD_RECOMMENDATIONS = " \

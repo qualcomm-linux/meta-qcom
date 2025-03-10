@@ -14,7 +14,7 @@ SRC_URI = "git://git.codelinaro.org/linaro/qcomlt/partioning_tool.git;branch=mas
 
 SRCREV = "3484fc0a88088dea00397774fc93f9acd3a23ce0"
 
-PV = "0.0+git${SRCPV}"
+PV = "0.0+git"
 S = "${WORKDIR}/git"
 
 inherit python3native

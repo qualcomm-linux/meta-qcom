@@ -1,5 +1,5 @@
 SUMMARY = "MDT to MBN conversion tool"
-HOMEPAGE = "https://github.com/andersson/pil-squasher.git"
+HOMEPAGE = "https://github.com/linux-msm/pil-squasher.git"
 SECTION = "devel"
 
 LICENSE = "BSD-3-Clause"
@@ -10,7 +10,7 @@ SRC_URI = " \
 	git://github.com/linux-msm/${BPN}.git;branch=master;protocol=https \
 "
 
-PV = "0.0+${SRCPV}"
+PV = "0.0+"
 
 S = "${WORKDIR}/git"
 

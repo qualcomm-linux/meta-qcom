@@ -1,8 +1,13 @@
-SUMMARY = "Firmware packages for the SM8150-HDK (aka HDK855) board"
+SUMMARY = "Packages for the SM8150-HDK (aka HDK855) board"
 
 inherit packagegroup
 
-RRECOMMENDS:${PN} += " \
+PACKAGES = " \
+    ${PN}-firmware \
+    ${PN}-hexagon-dsp-binaries \
+"
+
+RRECOMMENDS:${PN}-firmware = " \
     ${@bb.utils.contains('DISTRO_FEATURES', 'opengl', 'linux-firmware-qcom-adreno-a640 linux-firmware-qcom-sm8150-adreno', '', d)} \
     ${@bb.utils.contains('DISTRO_FEATURES', 'bluetooth', 'linux-firmware-qca-wcn399x', '', d)} \
     ${@bb.utils.contains('DISTRO_FEATURES', 'wifi', 'linux-firmware-ath10k-wcn3990', '', d)} \
@@ -12,4 +17,10 @@ RRECOMMENDS:${PN} += " \
     linux-firmware-qcom-sm8150-ipa \
     linux-firmware-qcom-sm8150-modem \
     linux-firmware-qcom-sm8150-sensors \
+"
+
+RRECOMMENDS:${PN}-hexagon-dsp-binaries = " \
+    hexagon-dsp-binaries-qcom-sm8150-hdk-adsp \
+    hexagon-dsp-binaries-qcom-sm8150-hdk-cdsp \
+    hexagon-dsp-binaries-qcom-sm8150-hdk-sdsp \
 "

@@ -15,7 +15,7 @@ CMD="$CMD $TOPDIR"
 # Disable auto layer discovery
 CMD="$CMD --no-auto"
 # Layers to process for dependencies
-CMD="$CMD --dependency $KAS_WORK_DIR/poky/meta"
+CMD="$CMD --dependency $KAS_WORK_DIR/oe-core/meta"
 # Disable automatic testing of dependencies
 CMD="$CMD --no-auto-dependency"
 # Set machines to all machines defined in this BSP layer

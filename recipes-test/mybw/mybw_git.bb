@@ -10,7 +10,7 @@ SRC_URI = "git://github.com/andersson/mybw;protocol=https;branch=main \
 
 S = "${WORKDIR}/git"
 
-PV = "0.0+git${SRCPV}"
+PV = "0.0+git"
 
 do_compile () {
 	oe_runmake

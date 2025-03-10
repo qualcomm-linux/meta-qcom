@@ -2,10 +2,10 @@
 
 header:
   version: 14
-  includes:
-  - ci/base.yml
 
-local_conf_header:
-  qcomflash: |
+distro: qcom-wayland
 
-machine: qcom-armv7a-modem
+repos:
+  meta-qcom-distro:
+    url: https://github.com/qualcomm-linux/meta-qcom-distro
+    branch: main

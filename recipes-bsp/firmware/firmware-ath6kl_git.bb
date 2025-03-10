@@ -11,7 +11,7 @@ NO_GENERIC_LICENSE[Firmware-qualcommAthos_ath6kl] = "LICENSE.qca_firmware"
 SRC_URI = "git://github.com/qca/ath6kl-firmware;protocol=https;branch=master"
 SRCREV = "2e02576c1dab6fd35118eea1004f50aaaed3794f"
 
-PV = "3.5.0.349-1+git${SRCPV}"
+PV = "3.5.0.349-1+git"
 
 S = "${WORKDIR}/git"
 

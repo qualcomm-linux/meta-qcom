@@ -8,7 +8,7 @@ was submitted for revision and it takes some time to become part of a stable \
 version, or because it is not applicable for upstreaming."
 
 BASEPV = "2024.10"
-PV = "${BASEPV}+git${SRCPV}"
+PV = "${BASEPV}+git"
 
 require recipes-bsp/u-boot/u-boot.inc
 require u-boot-qcom-common_${BASEPV}.inc

@@ -12,8 +12,8 @@ BOOTBINARIES = "QCS9100_bootbinaries"
 SRC_URI = "https://${FW_ARTIFACTORY}/${FW_BUILD_ID}/${FW_BIN_PATH}/${BOOTBINARIES}.zip;downloadfilename=${BOOTBINARIES}_r1.0_${PV}.zip;name=bootbinaries"
 SRC_URI[bootbinaries.sha256sum] = "bd024ffe419f13b19907b285d0369bf9dfdf77b7e95052b9e4869957ddcaf07f"
 
-SRC_URI:append:qcs9100-ride-sx = " https://artifacts.codelinaro.org/artifactory/codelinaro-le/Qualcomm_Linux/QCS9100/cdt/ride-sx.zip;downloadfilename=cdt-qcs9100-ride-sx_${PV}.zip;name=qcs9100-ride-sx"
-SRC_URI[qcs9100-ride-sx.sha256sum] = "f5e37d1260627e9d6976827ea5bdc7ffa81c90b7561acfccf24a94bc1313dea5"
+SRC_URI:append:qcs9100-ride-sx = " https://artifacts.codelinaro.org/artifactory/codelinaro-le/Qualcomm_Linux/QCS9100/cdt/ride-sx_v3.zip;downloadfilename=cdt-qcs9100-ride-sx-v3_${PV}.zip;name=qcs9100-ride-sx"
+SRC_URI[qcs9100-ride-sx.sha256sum] = "377a8405899ac82199deaf70bca3648c15b924a3fcef8f109555e661ed70f4b9"
 
 CDT_FILE:qcs9100-ride-sx ?= "cdt_ride_sx"
 

@@ -10,11 +10,8 @@ PACKAGE_INSTALL = " \
 
 PACKAGE_INSTALL += " \
     debugcc \
-    fastrpc \
-    pd-mapper \
-    qrtr \
-    rmtfs \
-    tqftpserv \
+    packagegroup-qcom-boot-additional \
+    packagegroup-qcom-boot-essential \
 "
 
 # Do not pollute the initrd image with rootfs features
