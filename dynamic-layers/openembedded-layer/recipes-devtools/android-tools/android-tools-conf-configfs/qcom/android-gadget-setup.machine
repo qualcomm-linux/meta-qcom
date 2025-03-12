@@ -1,5 +1,6 @@
 manufacturer=Qualcomm
 model=`hostname`
 androidserial="$(sed -n -e '/androidboot.serialno/  s/.*androidboot.serialno=\([^ ]*\).*/\1/gp ' /proc/cmdline)"
+[ -z "$androidserial" ] && androidserial="$(hexdump -e '1/1 "%02x"' /proc/device-tree/firmware/qcom,platform-parts-info/serial-number)"
 [ -n "$androidserial" ] && serial="$androidserial"
 true
