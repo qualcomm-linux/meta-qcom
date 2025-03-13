@@ -1,0 +1,133 @@
+From 6364f1eef332977bec795bd5237c8b1aa33bb88b Mon Sep 17 00:00:00 2001
+From: Jorge Ramirez-Ortiz <jorge.ramirez@oss.qualcomm.com>
+Date: Wed, 5 Mar 2025 11:11:22 +0100
+Subject: [PATCH] dts: rb3gen2: enable Renesas xHCI
+
+Make sure relevant power is on and resets are let go of, to make the USB
+Ethernet adapter show up.
+
+Ported  to 6.14 from an original patch by Bjorn Andersson.
+
+Link: https://github.com/quic-bjorande/linux/commit/ef0d4badf252c10883a369e8fb217799868158b0
+Signed-off-by: Bjorn Andersson <bjorn.andersson@oss.qualcomm.com>
+Upstream-Status: Pending
+---
+ arch/arm64/boot/dts/qcom/qcs6490-rb3gen2.dts | 76 ++++++++++++++++++++
+ 1 file changed, 76 insertions(+)
+
+diff --git a/arch/arm64/boot/dts/qcom/qcs6490-rb3gen2.dts b/arch/arm64/boot/dts/qcom/qcs6490-rb3gen2.dts
+index 13dbb24a3179..73959e5095bf 100644
+--- a/arch/arm64/boot/dts/qcom/qcs6490-rb3gen2.dts
++++ b/arch/arm64/boot/dts/qcom/qcs6490-rb3gen2.dts
+@@ -243,6 +243,31 @@ vdd_ntn_1p8: regulator-vdd-ntn-1p8 {
+ 		regulator-enable-ramp-delay = <10000>;
+ 	};
+ 
++        vreg-pcie0-1p05v {
++		compatible = "regulator-fixed";
++		regulator-name = "PCIE0_1.05V";
++		gpio = <&pm7250b_gpios 4 GPIO_ACTIVE_HIGH>;
++		regulator-min-microvolt = <1050000>;
++		regulator-max-microvolt = <1050000>;
++		enable-active-high;
++		pinctrl-0 = <&upd_pwr_en2_state>;
++		pinctrl-names = "default";
++
++		regulator-always-on;
++	};
++
++	vreg-pcie0_3p3v-dual {
++		compatible = "regulator-fixed";
++		regulator-name = "PCIE0_3.3V_Dual";
++		gpio = <&pm7250b_gpios 1 GPIO_ACTIVE_HIGH>;
++		regulator-min-microvolt = <3300000>;
++		regulator-max-microvolt = <3300000>;
++		enable-active-high;
++		pinctrl-0 = <&upd_pwr_en1_state>;
++		pinctrl-names = "default";
++
++		regulator-always-on;
++	};
+ };
+ 
+ &apps_rsc {
+@@ -780,6 +805,9 @@ pcie@0,0 {
+ 
+ 		i2c-parent = <&i2c0 0x77>;
+ 
++		pinctrl-0 = <&tc956x_rst_state>, <&upd_hub_rst_state>, <&usb_hub_rst_state>;
++		pinctrl-names = "default";
++
+ 		reset-gpios = <&pm8350c_gpios 1 GPIO_ACTIVE_LOW>;
+ 
+ 		pcie@1,0 {
+@@ -953,6 +981,27 @@ ntn_1p8_en: ntn-1p8-en-state {
+ 		output-enable;
+ 		power-source = <0>;
+ 	};
++
++	upd_hub_rst_state: upd-hub-rst-state {
++		pins = "gpio4";
++		function = "normal";
++
++		bias-disable;
++		input-disable;
++		output-enable;
++		output-high;
++		power-source = <0>;
++	};
++
++	tc956x_rst_state: tc956x-rst-state {
++		pins = "gpio1";
++		function = "normal";
++
++		bias-disable;
++		input-disable;
++		output-enable;
++		power-source = <0>;
++	};
+ };
+ 
+ &tlmm {
+@@ -1048,6 +1097,24 @@ &edp_hot_plug_det {
+ };
+ 
+ &pm7250b_gpios {
++	upd_pwr_en1_state: upd-pwr-en1-state {
++		pins = "gpio1";
++		function = "normal";
++
++		output-enable;
++		input-disable;
++		power-source = <0>;
++	};
++
++	upd_pwr_en2_state: upd-pwr-en2-state {
++		pins = "gpio4";
++		function = "normal";
++
++		output-enable;
++		input-disable;
++		power-source = <0>;
++	};
++
+ 	lt9611_rst_pin: lt9611-rst-state {
+ 		pins = "gpio2";
+ 		function = "normal";
+@@ -1101,4 +1168,13 @@ sd_cd: sd-cd-state {
+ 		function = "gpio";
+ 		bias-pull-up;
+ 	};
++
++	usb_hub_rst_state: usb-hub-rst-state {
++		pins = "gpio162";
++		function = "gpio";
++
++		drive-strength = <2>;
++		output-low;
++		bias-disable;
++       };
+ };
+-- 
+2.34.1
+
