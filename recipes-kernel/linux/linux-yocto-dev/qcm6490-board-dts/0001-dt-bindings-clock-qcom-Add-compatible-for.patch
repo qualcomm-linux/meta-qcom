@@ -1,0 +1,43 @@
+From d6e1925bc276590b40943d233cf198a64fb9bd19 Mon Sep 17 00:00:00 2001
+From: Taniya Das <quic_tdas@quicinc.com>
+Date: Wed, 5 Mar 2025 16:19:25 +0100
+Subject: [PATCH 1/4] dt-bindings: clock: qcom: Add compatible for
+
+On the QCM6490 boards, the LPASS firmware controls the complete clock
+controller functionalities and associated power domains. However, only
+the LPASS resets required to be controlled by the high level OS. Thus,
+add the new QCM6490 compatible to support the reset functionality for
+Low Power Audio subsystem.
+
+Signed-off-by: Taniya Das <quic_tdas@quicinc.com>
+Upstream-Status: Submitted [https://lore.kernel.org/linux-arm-msm/20250221-lpass_qcm6490_resets-v5-1-6be0c0949a83@quicinc.com/]
+---
+ .../devicetree/bindings/clock/qcom,sc7280-lpasscorecc.yaml   | 5 ++++-
+ 1 file changed, 4 insertions(+), 1 deletion(-)
+
+diff --git a/Documentation/devicetree/bindings/clock/qcom,sc7280-lpasscorecc.yaml b/Documentation/devicetree/bindings/clock/qcom,sc7280-lpasscorecc.yaml
+index 488d63959424..99ab9106009f 100644
+--- a/Documentation/devicetree/bindings/clock/qcom,sc7280-lpasscorecc.yaml
++++ b/Documentation/devicetree/bindings/clock/qcom,sc7280-lpasscorecc.yaml
+@@ -20,6 +20,7 @@ description: |
+ properties:
+   compatible:
+     enum:
++      - qcom,qcm6490-lpassaudiocc
+       - qcom,sc7280-lpassaoncc
+       - qcom,sc7280-lpassaudiocc
+       - qcom,sc7280-lpasscorecc
+@@ -68,7 +69,9 @@ allOf:
+       properties:
+         compatible:
+           contains:
+-            const: qcom,sc7280-lpassaudiocc
++            enum:
++              - qcom,qcm6490-lpassaudiocc
++              - qcom,sc7280-lpassaudiocc
+ 
+     then:
+       properties:
+-- 
+2.34.1
+
