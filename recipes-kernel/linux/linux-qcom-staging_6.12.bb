@@ -27,7 +27,7 @@ S = "${WORKDIR}/git"
 KERNEL_CONFIG ?= "qcom_defconfig"
 
 # Additional fragment for qcom value add features
-KERNEL_CONFIG_FRAGMENTS += " ${S}/arch/arm64/configs/qcom_addons.config"
+KERNEL_CONFIG_FRAGMENTS:append:qcom-custom-bsp = " ${S}/arch/arm64/configs/qcom_addons.config"
 
 do_configure:prepend() {
     if [ ! -f "${S}/arch/${ARCH}/configs/${KERNEL_CONFIG}" ]; then
