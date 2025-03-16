@@ -60,6 +60,8 @@ create_qcomflash_pkg() {
 
     if [ -n "${QCOM_CDT_FILE}" ]; then
         install -m 0644 ${DEPLOY_DIR_IMAGE}/${QCOM_CDT_FILE}.bin cdt.bin
+        # For machines with a published cdt file, let's make sure we flash it
+        sed -i '/label="cdt"/ s/filename=""/filename="cdt.bin"/' rawprogram*.xml
     fi
 
     for logfs in `find ${DEPLOY_DIR_IMAGE} -maxdepth 1 -type f -name 'logfs_*.bin'`; do

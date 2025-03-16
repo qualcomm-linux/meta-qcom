@@ -29,19 +29,6 @@ PARTCONF:qcm6490 ?= "qcm6490-partitions.conf"
 PARTCONF:qcs9100 ?= "qcs9100-partitions.conf"
 PARTCONF:qcm2290 ?= "qcm2290-partitions.conf"
 
-# For machines with a published cdt file, let's make sure we flash it
-fixup_cdt() {
-    sed -i '/name=cdt/ s/$/ --filename=cdt.bin/' ${S}/${PARTCONF}
-}
-
-do_compile:prepend:qcs6490-rb3gen2-core-kit() {
-    fixup_cdt
-}
-
-do_compile:prepend:qcs9100-ride-sx() {
-    fixup_cdt
-}
-
 do_compile() {
     gen_partition.py -i ${S}/${PARTCONF} -o ${B}/${MACHINE}-partition.xml
 }
