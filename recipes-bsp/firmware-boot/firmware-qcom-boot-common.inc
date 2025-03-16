@@ -3,8 +3,6 @@
 S = "${WORKDIR}/sources"
 UNPACKDIR = "${S}"
 
-QCOM_CDT_FILE ?= ""
-
 INHIBIT_DEFAULT_DEPS = "1"
 
 do_configure[noexec] = "1"
@@ -20,9 +18,7 @@ do_deploy() {
     find "${UNPACKDIR}/${BOOTBINARIES}" -name '*.mbn' -exec install -m 0644 {} ${DEPLOYDIR} \;
     find "${UNPACKDIR}/${BOOTBINARIES}" -name '*.melf' -exec install -m 0644 {} ${DEPLOYDIR} \;
 
-    if [ -f "${UNPACKDIR}/${QCOM_CDT_FILE}.bin" ]; then
-        install -m 0644 ${UNPACKDIR}/${QCOM_CDT_FILE}.bin ${DEPLOYDIR}/cdt.bin
-    fi
+    find "${UNPACKDIR}" -name 'cdt*bin' -exec install -m 0644 {} ${DEPLOYDIR} \;
 }
 addtask deploy before do_build after do_install
 

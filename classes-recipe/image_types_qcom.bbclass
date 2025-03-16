@@ -48,14 +48,20 @@ create_qcomflash_pkg() {
 
     # partition bins
     for pbin in `find ${DEPLOY_DIR_IMAGE} -maxdepth 1 -type f -name 'gpt_main*.bin' \
-                -o -name 'gpt_backup*.bin' -o -name 'patch*.xml' -o -name 'cdt.bin'`; do
+                -o -name 'gpt_backup*.bin' -o -name 'patch*.xml'`; do
         install -m 0644 ${pbin} .
     done
+
     # skip BLANK_GPT and WIPE_PARTITIONS for rawprogram xml files
     for rawpg in `find ${DEPLOY_DIR_IMAGE} -maxdepth 1 -type f -name 'rawprogram*.xml' \
                 ! -name 'rawprogram*_BLANK_GPT.xml' ! -name 'rawprogram*_WIPE_PARTITIONS.xml'`; do
         install -m 0644 ${rawpg} .
     done
+
+    if [ -n "${QCOM_CDT_FILE}" ]; then
+        install -m 0644 ${DEPLOY_DIR_IMAGE}/${QCOM_CDT_FILE}.bin cdt.bin
+    fi
+
     for logfs in `find ${DEPLOY_DIR_IMAGE} -maxdepth 1 -type f -name 'logfs_*.bin'`; do
         install -m 0644 ${logfs} .
     done
