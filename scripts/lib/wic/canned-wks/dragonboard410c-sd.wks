@@ -5,13 +5,13 @@
 # partitions sec and devinfo are not created for now, because WIC can't create
 # empty partition yet and they are not mandatory for Little Kernel
 
-part --ondisk mmcblk1 --size 512K  --part-name sbl1  --part-type DEA0BA2C-CBDD-4805-B4F9-F428251C3E98 --source rawcopy --sourceparams "file=sbl1.mbn" --align 65536
-part --ondisk mmcblk1 --size 512K  --part-name rpm   --part-type 098DF793-D712-413D-9D4E-89D711772228 --source rawcopy --sourceparams "file=rpm.mbn"
-part --ondisk mmcblk1 --size 1024K --part-name tz    --part-type A053AA7F-40B8-4B1C-BA08-2F68AC71A4F4 --source rawcopy --sourceparams "file=tz.mbn"
-part --ondisk mmcblk1 --size 512K  --part-name hyp   --part-type E1A6A689-0C8D-4CC6-B4E8-55A4320FBD8A --source rawcopy --sourceparams "file=hyp.mbn"
+part --ondisk mmcblk1 --size 512K  --part-name sbl1  --part-type DEA0BA2C-CBDD-4805-B4F9-F428251C3E98 --source rawcopy --sourceparams "file=dragonboard410c/sbl1.mbn" --align 65536
+part --ondisk mmcblk1 --size 512K  --part-name rpm   --part-type 098DF793-D712-413D-9D4E-89D711772228 --source rawcopy --sourceparams "file=dragonboard410c/rpm.mbn"
+part --ondisk mmcblk1 --size 1024K --part-name tz    --part-type A053AA7F-40B8-4B1C-BA08-2F68AC71A4F4 --source rawcopy --sourceparams "file=dragonboard410c/tz.mbn"
+part --ondisk mmcblk1 --size 512K  --part-name hyp   --part-type E1A6A689-0C8D-4CC6-B4E8-55A4320FBD8A --source rawcopy --sourceparams "file=dragonboard410c/hyp.mbn"
 # part --ondisk mmcblk1 --size 16K   --part-name sec   --part-type 303E6AC3-AF15-4C54-9E9B-D9A8FBECF401 --source empty --align 65536
-part --ondisk mmcblk1 --size 1024K --part-name aboot --part-type 400FFDCD-22E0-47E7-9A23-F16ED9382388 --source rawcopy --sourceparams "file=emmc_appsboot.mbn"
-part --ondisk mmcblk1 --size 64M   --part-name boot  --part-type 20117F86-E985-4357-B9EE-374BC1D8487D --source rawcopy --sourceparams "file=boot-sd-dragonboard-410c.img"
+part --ondisk mmcblk1 --size 1024K --part-name aboot --part-type 400FFDCD-22E0-47E7-9A23-F16ED9382388 --source rawcopy --sourceparams "file=dragonboard410c/emmc_appsboot.mbn"
+part --ondisk mmcblk1 --size 64M   --part-name boot  --part-type 20117F86-E985-4357-B9EE-374BC1D8487D --source rawcopy --sourceparams "file=dragonboard410c/boot-sd-dragonboard-410c.img"
 # part --ondisk mmcblk1 --size 1024K --part-name devinfo --part-type 1B81E7E6-F50D-419B-A739-2AEEF8DA3335 --source empty
 part / --ondisk mmcblk1  --fstype=ext4 --source rootfs --part-name rootfs
 

@@ -9,4 +9,6 @@ SRC_URI[sha256sum] = "9885f915ebd4986432340cf1d03b8fd2bfdd97ad6a4a7466200fddbe41
 
 BOOTBINARIES = ""
 
+QCOM_BOOT_IMG_SUBDIR = "dragonboard410c"
+
 include firmware-qcom-boot-common.inc
