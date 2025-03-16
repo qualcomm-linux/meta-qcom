@@ -22,6 +22,8 @@ INHIBIT_DEFAULT_DEPS = "1"
 do_configure[noexec] = "1"
 do_install[noexec] = "1"
 
+QCOM_PARTCONF_SUBDIR ?= ""
+
 PARTCONF ?= ""
 PARTCONF:qcm6490 ?= "qcm6490-partitions.conf"
 PARTCONF:qcs9100 ?= "qcs9100-partitions.conf"
@@ -33,14 +35,15 @@ do_compile() {
 }
 
 do_deploy() {
-    install -m 0644 ${B}/gpt_backup*.bin -D ${DEPLOYDIR}
-    install -m 0644 ${B}/gpt_both*.bin -D ${DEPLOYDIR}
-    install -m 0644 ${B}/gpt_empty*.bin -D ${DEPLOYDIR}
-    install -m 0644 ${B}/gpt_main*.bin -D ${DEPLOYDIR}
-    install -m 0644 ${B}/patch*.xml -D ${DEPLOYDIR}
-    install -m 0644 ${B}/rawprogram*.xml -D ${DEPLOYDIR}
-    install -m 0644 ${B}/zeros_*.bin -D ${DEPLOYDIR}
-    install -m 0644 ${B}/wipe_rawprogram_PHY*.xml -D ${DEPLOYDIR}
+    install -d ${DEPLOYDIR}/${QCOM_PARTCONF_SUBDIR}
+    install -m 0644 ${B}/gpt_backup*.bin -D ${DEPLOYDIR}/${QCOM_PARTCONF_SUBDIR}
+    install -m 0644 ${B}/gpt_both*.bin -D ${DEPLOYDIR}/${QCOM_PARTCONF_SUBDIR}
+    install -m 0644 ${B}/gpt_empty*.bin -D ${DEPLOYDIR}/${QCOM_PARTCONF_SUBDIR}
+    install -m 0644 ${B}/gpt_main*.bin -D ${DEPLOYDIR}/${QCOM_PARTCONF_SUBDIR}
+    install -m 0644 ${B}/patch*.xml -D ${DEPLOYDIR}/${QCOM_PARTCONF_SUBDIR}
+    install -m 0644 ${B}/rawprogram*.xml -D ${DEPLOYDIR}/${QCOM_PARTCONF_SUBDIR}
+    install -m 0644 ${B}/zeros_*.bin -D ${DEPLOYDIR}/${QCOM_PARTCONF_SUBDIR}
+    install -m 0644 ${B}/wipe_rawprogram_PHY*.xml -D ${DEPLOYDIR}/${QCOM_PARTCONF_SUBDIR}
 }
 addtask deploy before do_build after do_compile
 
