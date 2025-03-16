@@ -1,18 +1,15 @@
 SUMMARY = "Qualcomm machine specific partition configuration"
-DESCRIPTION = "Machine partition configuration used by qcom-gen-partitions-tool \
-for generating the machine specific partition.xml file."
+DESCRIPTION = "GPT partition binaries and QDL scripts for supported machines."
 LICENSE = "BSD-3-Clause-Clear"
 LIC_FILES_CHKSUM = "file://${COMMON_LICENSE_DIR}/BSD-3-Clause-Clear;md5=7a434440b651f4a472ca93716d01033a"
 
-DEPENDS += "qcom-gen-partitions-tool-native"
+DEPENDS += "qcom-gen-partitions-tool-native qcom-ptool-native"
 
 SRC_URI = " \
     file://qcm6490-partitions.conf \
     file://qcs9100-partitions.conf \
     file://qcm2290-partitions.conf \
 "
-
-PROVIDES += "virtual/partconf"
 
 S = "${WORKDIR}/sources"
 UNPACKDIR = "${S}"
@@ -23,6 +20,7 @@ inherit python3native deploy
 INHIBIT_DEFAULT_DEPS = "1"
 
 do_configure[noexec] = "1"
+do_install[noexec] = "1"
 
 PARTCONF ?= ""
 PARTCONF:qcm6490 ?= "qcm6490-partitions.conf"
@@ -30,17 +28,20 @@ PARTCONF:qcs9100 ?= "qcs9100-partitions.conf"
 PARTCONF:qcm2290 ?= "qcm2290-partitions.conf"
 
 do_compile() {
-    gen_partition.py -i ${S}/${PARTCONF} -o ${B}/${MACHINE}-partition.xml
-}
-
-do_install() {
-    install -D -m0644 ${B}/${MACHINE}-partition.xml ${D}${datadir}/qcom-partition-confs/${MACHINE}-partition.xml
+    gen_partition.py -i ${S}/${PARTCONF} -o ${B}/partition.xml
+    ptool.py -x ${B}/partition.xml
 }
 
 do_deploy() {
-    install -m 0644 ${B}/${MACHINE}-partition.xml -D ${DEPLOYDIR}/partition.xml
+    install -m 0644 ${B}/gpt_backup*.bin -D ${DEPLOYDIR}
+    install -m 0644 ${B}/gpt_both*.bin -D ${DEPLOYDIR}
+    install -m 0644 ${B}/gpt_empty*.bin -D ${DEPLOYDIR}
+    install -m 0644 ${B}/gpt_main*.bin -D ${DEPLOYDIR}
+    install -m 0644 ${B}/patch*.xml -D ${DEPLOYDIR}
+    install -m 0644 ${B}/rawprogram*.xml -D ${DEPLOYDIR}
+    install -m 0644 ${B}/zeros_*.bin -D ${DEPLOYDIR}
+    install -m 0644 ${B}/wipe_rawprogram_PHY*.xml -D ${DEPLOYDIR}
 }
-addtask deploy after do_install
+addtask deploy before do_build after do_compile
 
 COMPATIBLE_MACHINE = "(qcm6490|qcs9100|qcm2290)"
-PACKAGE_ARCH = "${MACHINE_ARCH}"

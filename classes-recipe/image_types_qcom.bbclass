@@ -22,7 +22,7 @@ QCOMFLASH_DIR = "${IMGDEPLOYDIR}/${IMAGE_NAME}.qcomflash"
 IMAGE_CMD:qcomflash = "create_qcomflash_pkg"
 do_image_qcomflash[dirs] = "${QCOMFLASH_DIR}"
 do_image_qcomflash[cleandirs] = "${QCOMFLASH_DIR}"
-do_image_qcomflash[depends] += "qcom-gen-partition-bins:do_deploy virtual/kernel:do_deploy \
+do_image_qcomflash[depends] += "qcom-partition-confs:do_deploy virtual/kernel:do_deploy \
 				${@'${QCOM_ESP_IMAGE}:do_image_complete' if d.getVar('QCOM_ESP_IMAGE') != '' else  ''}"
 IMAGE_TYPEDEP:qcomflash += "${IMAGE_QCOMFLASH_FS_TYPE}"
 
