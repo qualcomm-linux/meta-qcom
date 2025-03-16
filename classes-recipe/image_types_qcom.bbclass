@@ -15,6 +15,8 @@ QCOM_ESP_FILE ?= "${@'efi.bin' if d.getVar('QCOM_ESP_IMAGE') else ''}"
 QCOM_DTB_DEFAULT ?= "${@os.path.basename(d.getVar('KERNEL_DEVICETREE').split()[0][:-4]) if d.getVar('KERNEL_DEVICETREE') else ''}"
 QCOM_DTB_FILE ?= "dtb.bin"
 
+QCOM_BOOT_FILES_SUBDIR ?= ""
+
 QCOM_ROOTFS_FILE ?= "rootfs.img"
 IMAGE_QCOMFLASH_FS_TYPE ??= "ext4"
 
@@ -47,32 +49,32 @@ create_qcomflash_pkg() {
     install -m 0644 ${IMGDEPLOYDIR}/${IMAGE_LINK_NAME}.${IMAGE_QCOMFLASH_FS_TYPE} ${QCOM_ROOTFS_FILE}
 
     # partition bins
-    for pbin in `find ${DEPLOY_DIR_IMAGE} -maxdepth 1 -type f -name 'gpt_main*.bin' \
+    for pbin in `find ${DEPLOY_DIR_IMAGE}/${QCOM_BOOT_FILES_SUBDIR} -maxdepth 1 -type f -name 'gpt_main*.bin' \
                 -o -name 'gpt_backup*.bin' -o -name 'patch*.xml'`; do
         install -m 0644 ${pbin} .
     done
 
     # skip BLANK_GPT and WIPE_PARTITIONS for rawprogram xml files
-    for rawpg in `find ${DEPLOY_DIR_IMAGE} -maxdepth 1 -type f -name 'rawprogram*.xml' \
+    for rawpg in `find ${DEPLOY_DIR_IMAGE}/${QCOM_BOOT_FILES_SUBDIR} -maxdepth 1 -type f -name 'rawprogram*.xml' \
                 ! -name 'rawprogram*_BLANK_GPT.xml' ! -name 'rawprogram*_WIPE_PARTITIONS.xml'`; do
         install -m 0644 ${rawpg} .
     done
 
     if [ -n "${QCOM_CDT_FILE}" ]; then
-        install -m 0644 ${DEPLOY_DIR_IMAGE}/${QCOM_CDT_FILE}.bin cdt.bin
+        install -m 0644 ${DEPLOY_DIR_IMAGE}/${QCOM_BOOT_FILES_SUBDIR}/${QCOM_CDT_FILE}.bin cdt.bin
         # For machines with a published cdt file, let's make sure we flash it
         sed -i '/label="cdt"/ s/filename=""/filename="cdt.bin"/' rawprogram*.xml
     fi
 
-    for logfs in `find ${DEPLOY_DIR_IMAGE} -maxdepth 1 -type f -name 'logfs_*.bin'`; do
+    for logfs in `find ${DEPLOY_DIR_IMAGE}/${QCOM_BOOT_FILES_SUBDIR} -maxdepth 1 -type f -name 'logfs_*.bin'`; do
         install -m 0644 ${logfs} .
     done
-    for zeros in `find ${DEPLOY_DIR_IMAGE} -maxdepth 1 -type f -name 'zeros_*.bin'`; do
+    for zeros in `find ${DEPLOY_DIR_IMAGE}/${QCOM_BOOT_FILES_SUBDIR} -maxdepth 1 -type f -name 'zeros_*.bin'`; do
         install -m 0644 ${zeros} .
     done
 
     # boot firmware
-    for bfw in `find ${DEPLOY_DIR_IMAGE} -maxdepth 1 -type f -name '*.elf' -o -name '*.mbn' -o -name '*.fv'`; do
+    for bfw in `find ${DEPLOY_DIR_IMAGE}/${QCOM_BOOT_FILES_SUBDIR} -maxdepth 1 -type f -name '*.elf' -o -name '*.mbn' -o -name '*.fv'`; do
         install -m 0644 ${bfw} .
     done
 
