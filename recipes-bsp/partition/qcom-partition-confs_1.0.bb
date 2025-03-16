@@ -25,6 +25,7 @@ do_install[noexec] = "1"
 QCOM_PARTCONF_SUBDIR ?= ""
 QCOM_PARTCONF_SUBDIR:qcm6490 ?= "qcm6490"
 QCOM_PARTCONF_SUBDIR:qcs9100 ?= "qcs9100"
+QCOM_PARTCONF_SUBDIR:qcm2290 ?= "qrb2210"
 
 PARTCONF ?= ""
 PARTCONF:qcm6490 ?= "qcm6490-partitions.conf"
