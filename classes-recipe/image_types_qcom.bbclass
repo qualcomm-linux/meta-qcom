@@ -47,24 +47,24 @@ create_qcomflash_pkg() {
     install -m 0644 ${IMGDEPLOYDIR}/${IMAGE_LINK_NAME}.${IMAGE_QCOMFLASH_FS_TYPE} ${QCOM_ROOTFS_FILE}
 
     # partition bins
-    for pbin in `find ${DEPLOY_DIR_IMAGE} -type f -name 'gpt_main*.bin' \
+    for pbin in `find ${DEPLOY_DIR_IMAGE} -maxdepth 1 -type f -name 'gpt_main*.bin' \
                 -o -name 'gpt_backup*.bin' -o -name 'patch*.xml' -o -name 'cdt.bin'`; do
         install -m 0644 ${pbin} .
     done
     # skip BLANK_GPT and WIPE_PARTITIONS for rawprogram xml files
-    for rawpg in `find ${DEPLOY_DIR_IMAGE} -type f -name 'rawprogram*.xml' \
+    for rawpg in `find ${DEPLOY_DIR_IMAGE} -maxdepth 1 -type f -name 'rawprogram*.xml' \
                 ! -name 'rawprogram*_BLANK_GPT.xml' ! -name 'rawprogram*_WIPE_PARTITIONS.xml'`; do
         install -m 0644 ${rawpg} .
     done
-    for logfs in `find ${DEPLOY_DIR_IMAGE} -type f -name 'logfs_*.bin'`; do
+    for logfs in `find ${DEPLOY_DIR_IMAGE} -maxdepth 1 -type f -name 'logfs_*.bin'`; do
         install -m 0644 ${logfs} .
     done
-    for zeros in `find ${DEPLOY_DIR_IMAGE} -type f -name 'zeros_*.bin'`; do
+    for zeros in `find ${DEPLOY_DIR_IMAGE} -maxdepth 1 -type f -name 'zeros_*.bin'`; do
         install -m 0644 ${zeros} .
     done
 
     # boot firmware
-    for bfw in `find ${DEPLOY_DIR_IMAGE} -type f -name '*.elf' -o -name '*.mbn' -o -name '*.fv'`; do
+    for bfw in `find ${DEPLOY_DIR_IMAGE} -maxdepth 1 -type f -name '*.elf' -o -name '*.mbn' -o -name '*.fv'`; do
         install -m 0644 ${bfw} .
     done
 
