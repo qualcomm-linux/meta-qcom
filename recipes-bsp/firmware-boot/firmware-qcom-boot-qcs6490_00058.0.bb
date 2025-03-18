@@ -15,6 +15,6 @@ SRC_URI[bootbinaries.sha256sum] = "08c0798f1ab9f380c94b54141847c7b365c87f2a072a2
 SRC_URI:append:qcs6490-rb3gen2-core-kit = " https://artifacts.codelinaro.org/artifactory/codelinaro-le/Qualcomm_Linux/QCS6490/cdt/rb3gen2-core-kit.zip;downloadfilename=cdt-rb3gen2-core-kit_${PV}.zip;name=rb3gen2-core-kit"
 SRC_URI[rb3gen2-core-kit.sha256sum] = "0fe1c0b4050cf54203203812b2c1f0d9698823d8defc8b6516414a4e5e0c557e"
 
-CDT_FILE:qcs6490-rb3gen2-core-kit ?= "cdt_core_kit"
+QCOM_CDT_FILE:qcs6490-rb3gen2-core-kit ?= "cdt_core_kit"
 
 include firmware-qcom-boot-common.inc

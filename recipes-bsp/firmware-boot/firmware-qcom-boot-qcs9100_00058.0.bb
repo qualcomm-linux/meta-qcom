@@ -15,6 +15,6 @@ SRC_URI[bootbinaries.sha256sum] = "bd024ffe419f13b19907b285d0369bf9dfdf77b7e9505
 SRC_URI:append:qcs9100-ride-sx = " https://artifacts.codelinaro.org/artifactory/codelinaro-le/Qualcomm_Linux/QCS9100/cdt/ride-sx_v3.zip;downloadfilename=cdt-qcs9100-ride-sx-v3_${PV}.zip;name=qcs9100-ride-sx"
 SRC_URI[qcs9100-ride-sx.sha256sum] = "377a8405899ac82199deaf70bca3648c15b924a3fcef8f109555e661ed70f4b9"
 
-CDT_FILE:qcs9100-ride-sx ?= "cdt_ride_sx"
+QCOM_CDT_FILE:qcs9100-ride-sx ?= "cdt_ride_sx"
 
 include firmware-qcom-boot-common.inc
