@@ -8,4 +8,4 @@ require conf/machine/include/arm/armv8a/tune-cortexa53.inc
 
 KERNEL_CMDLINE_EXTRA ?= "earlycon clk_ignore_unused pd_ignore_unused"
 
-EXTRA_IMAGEDEPENDS += "firmware-qcom-boot-qrb2210-rb1 qcom-partition-confs"
+EXTRA_IMAGEDEPENDS += "firmware-qcom-boot-qrb2210-rb1"
