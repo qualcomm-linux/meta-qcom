@@ -8,4 +8,6 @@ SRC_URI[sha256sum] = "c75b6c63eb24c8ca36dad08ba4d4e93f3f4cd7dce60cf1b6dfb5790dc1
 
 BOOTBINARIES = "rb1-bootloader-emmc-linux-47528"
 
+QCOM_BOOT_IMG_SUBDIR = "qrb2210"
+
 include firmware-qcom-boot-common.inc

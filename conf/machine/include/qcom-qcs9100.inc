@@ -17,4 +17,4 @@ MACHINE_EXTRA_RRECOMMENDS += " \
     packagegroup-qcom-boot-additional \
 "
 
-EXTRA_IMAGEDEPENDS += "firmware-qcom-boot-qcs9100 qcom-gen-partition-bins"
+EXTRA_IMAGEDEPENDS += "firmware-qcom-boot-qcs9100"

@@ -3,7 +3,7 @@
 S = "${WORKDIR}/sources"
 UNPACKDIR = "${S}"
 
-CDT_FILE ?= ""
+QCOM_BOOT_IMG_SUBDIR ?= ""
 
 INHIBIT_DEFAULT_DEPS = "1"
 
@@ -13,17 +13,16 @@ do_compile[noexec] = "1"
 inherit deploy
 
 do_deploy() {
+    install -d ${DEPLOYDIR}/${QCOM_BOOT_IMG_SUBDIR}
     find "${UNPACKDIR}/${BOOTBINARIES}" -name 'gpt_*.bin' -delete
-    find "${UNPACKDIR}/${BOOTBINARIES}" -name '*.bin' -exec install -m 0644 {} ${DEPLOYDIR} \;
-    find "${UNPACKDIR}/${BOOTBINARIES}" -name '*.elf' -exec install -m 0644 {} ${DEPLOYDIR} \;
-    find "${UNPACKDIR}/${BOOTBINARIES}" -name '*.fv' -exec install -m 0644 {} ${DEPLOYDIR} \;
-    find "${UNPACKDIR}/${BOOTBINARIES}" -name '*.mbn' -exec install -m 0644 {} ${DEPLOYDIR} \;
-    find "${UNPACKDIR}/${BOOTBINARIES}" -name '*.melf' -exec install -m 0644 {} ${DEPLOYDIR} \;
+    find "${UNPACKDIR}/${BOOTBINARIES}" -name '*.bin' -exec install -m 0644 {} ${DEPLOYDIR}/${QCOM_BOOT_IMG_SUBDIR} \;
+    find "${UNPACKDIR}/${BOOTBINARIES}" -name '*.elf' -exec install -m 0644 {} ${DEPLOYDIR}/${QCOM_BOOT_IMG_SUBDIR} \;
+    find "${UNPACKDIR}/${BOOTBINARIES}" -name '*.fv' -exec install -m 0644 {} ${DEPLOYDIR}/${QCOM_BOOT_IMG_SUBDIR} \;
+    find "${UNPACKDIR}/${BOOTBINARIES}" -name '*.mbn' -exec install -m 0644 {} ${DEPLOYDIR}/${QCOM_BOOT_IMG_SUBDIR} \;
+    find "${UNPACKDIR}/${BOOTBINARIES}" -name '*.melf' -exec install -m 0644 {} ${DEPLOYDIR}/${QCOM_BOOT_IMG_SUBDIR} \;
 
-    if [ -f "${UNPACKDIR}/${CDT_FILE}.bin" ]; then
-        install -m 0644 ${UNPACKDIR}/${CDT_FILE}.bin ${DEPLOYDIR}/cdt.bin
-    fi
+    find "${UNPACKDIR}" -name 'cdt*bin' -exec install -m 0644 {} ${DEPLOYDIR}/${QCOM_BOOT_IMG_SUBDIR} \;
 }
 addtask deploy before do_build after do_install
 
-PACKAGE_ARCH = "${MACHINE_ARCH}"
+inherit allarch
