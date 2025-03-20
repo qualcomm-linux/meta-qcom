@@ -1,0 +1,209 @@
+From 895966befa17707e5fe89385c8eda7426e8e6dfd Mon Sep 17 00:00:00 2001
+From: C Stout <cstout@google.com>
+Date: Thu, 17 Oct 2024 06:06:15 -0700
+Subject: [PATCH] freedreno: A702 fixes for deqp-vk
+
+Tested on Pixel Watch 2 (Android, KGSL).
+Running only the subset of tests that fail from vulkan-cts-1.3.9:
+
+10-31 15:11:17.996  4471  4489 I dEQP    : Test run totals:
+10-31 15:11:17.996  4471  4489 I dEQP    :   Passed:        19/3470 (0.5%)
+10-31 15:11:17.996  4471  4489 I dEQP    :   Failed:        515/3470 (14.8%)
+10-31 15:11:17.996  4471  4489 I dEQP    :   Not supported: 2936/3470 (84.6%)
+10-31 15:11:17.996  4471  4489 I dEQP    :   Warnings:      0/3470 (0.0%)
+10-31 15:11:17.996  4471  4489 I dEQP    :   Waived:        0/3470 (0.0%)
+
+Change-Id: I895ff33e758cb45e44ce61c7e1963308424ebde5
+Signed-off-by: Dmitry Baryshkov <dmitry.baryshkov@oss.qualcomm.com>
+Upstream-Status: Submitted [https://gitlab.freedesktop.org/mesa/mesa/-/merge_requests/27665]
+---
+ src/freedreno/vulkan/tu_device.cc             |  2 +-
+ src/freedreno/vulkan/tu_formats.cc            | 87 ++++++++++++++++++-
+ src/freedreno/vulkan/tu_image.cc              |  6 +-
+ .../drivers/freedreno/freedreno_screen.c      |  2 +
+ .../drivers/freedreno/freedreno_screen.h      |  6 ++
+ 5 files changed, 98 insertions(+), 5 deletions(-)
+
+diff --git a/src/freedreno/vulkan/tu_device.cc b/src/freedreno/vulkan/tu_device.cc
+index c5874808535b..5115ed4be4ce 100644
+--- a/src/freedreno/vulkan/tu_device.cc
++++ b/src/freedreno/vulkan/tu_device.cc
+@@ -232,7 +232,7 @@ get_device_extensions(const struct tu_physical_device *device,
+       .KHR_shader_subgroup_rotate = true,
+       .KHR_shader_subgroup_uniform_control_flow = true,
+       .KHR_shader_terminate_invocation = true,
+-      .KHR_spirv_1_4 = true,
++      .KHR_spirv_1_4 = device->info->a6xx.has_hw_multiview || TU_DEBUG(NOCONFORM),
+       .KHR_storage_buffer_storage_class = true,
+ #ifdef TU_USE_WSI_PLATFORM
+       .KHR_swapchain = true,
+diff --git a/src/freedreno/vulkan/tu_formats.cc b/src/freedreno/vulkan/tu_formats.cc
+index cb134a979c60..56508f228342 100644
+--- a/src/freedreno/vulkan/tu_formats.cc
++++ b/src/freedreno/vulkan/tu_formats.cc
+@@ -57,11 +57,92 @@ tu6_format_color(enum pipe_format format, enum a6xx_tile_mode tile_mode,
+ }
+ 
+ static bool
+-tu6_format_texture_supported(enum pipe_format format)
++tu6_format_texture_supported(struct tu_physical_device *physical_device, enum pipe_format format)
+ {
++   if (physical_device->info->a6xx.is_a702) {
++      switch (format) {
++         case PIPE_FORMAT_RGTC1_UNORM:
++         case PIPE_FORMAT_RGTC1_SNORM:
++         case PIPE_FORMAT_RGTC2_UNORM:
++         case PIPE_FORMAT_RGTC2_SNORM:
++         case PIPE_FORMAT_BPTC_RGBA_UNORM:
++         case PIPE_FORMAT_BPTC_SRGBA:
++         case PIPE_FORMAT_BPTC_RGB_FLOAT:
++         case PIPE_FORMAT_BPTC_RGB_UFLOAT:
++            return false;
++      }
++   }
+    return fd6_texture_format(format, TILE6_LINEAR, false) != FMT6_NONE;
+ }
+ 
++static bool
++tu_format_texture_linear_filtering_supported(struct tu_physical_device *physical_device, VkFormat vk_format)
++{
++   if (physical_device->info->a6xx.is_a702) {
++      switch (vk_format) {
++         case VK_FORMAT_D16_UNORM:
++         case VK_FORMAT_D24_UNORM_S8_UINT:
++         case VK_FORMAT_X8_D24_UNORM_PACK32:
++         case VK_FORMAT_D32_SFLOAT:
++         case VK_FORMAT_D32_SFLOAT_S8_UINT:
++         case VK_FORMAT_R16_UNORM:
++         case VK_FORMAT_R16_SNORM:
++         case VK_FORMAT_R16_USCALED:
++         case VK_FORMAT_R16_SSCALED:
++         case VK_FORMAT_R16_UINT:
++         case VK_FORMAT_R16_SINT:
++         case VK_FORMAT_R16_SFLOAT:
++         case VK_FORMAT_R16G16_UNORM:
++         case VK_FORMAT_R16G16_SNORM:
++         case VK_FORMAT_R16G16_USCALED:
++         case VK_FORMAT_R16G16_SSCALED:
++         case VK_FORMAT_R16G16_UINT:
++         case VK_FORMAT_R16G16_SINT:
++         case VK_FORMAT_R16G16_SFLOAT:
++         case VK_FORMAT_R16G16B16_UNORM:
++         case VK_FORMAT_R16G16B16_SNORM:
++         case VK_FORMAT_R16G16B16_USCALED:
++         case VK_FORMAT_R16G16B16_SSCALED:
++         case VK_FORMAT_R16G16B16_UINT:
++         case VK_FORMAT_R16G16B16_SINT:
++         case VK_FORMAT_R16G16B16_SFLOAT:
++         case VK_FORMAT_R16G16B16A16_UNORM:
++         case VK_FORMAT_R16G16B16A16_SNORM:
++         case VK_FORMAT_R16G16B16A16_USCALED:
++         case VK_FORMAT_R16G16B16A16_SSCALED:
++         case VK_FORMAT_R16G16B16A16_UINT:
++         case VK_FORMAT_R16G16B16A16_SINT:
++         case VK_FORMAT_R16G16B16A16_SFLOAT:
++         case VK_FORMAT_R32_UINT:
++         case VK_FORMAT_R32_SINT:
++         case VK_FORMAT_R32_SFLOAT:
++         case VK_FORMAT_R32G32_UINT:
++         case VK_FORMAT_R32G32_SINT:
++         case VK_FORMAT_R32G32_SFLOAT:
++         case VK_FORMAT_R32G32B32_UINT:
++         case VK_FORMAT_R32G32B32_SINT:
++         case VK_FORMAT_R32G32B32_SFLOAT:
++         case VK_FORMAT_R32G32B32A32_UINT:
++         case VK_FORMAT_R32G32B32A32_SINT:
++         case VK_FORMAT_R32G32B32A32_SFLOAT:
++         case VK_FORMAT_R64_UINT:
++         case VK_FORMAT_R64_SINT:
++         case VK_FORMAT_R64_SFLOAT:
++         case VK_FORMAT_R64G64_UINT:
++         case VK_FORMAT_R64G64_SINT:
++         case VK_FORMAT_R64G64_SFLOAT:
++         case VK_FORMAT_R64G64B64_UINT:
++         case VK_FORMAT_R64G64B64_SINT:
++         case VK_FORMAT_R64G64B64_SFLOAT:
++         case VK_FORMAT_R64G64B64A64_UINT:
++         case VK_FORMAT_R64G64B64A64_SINT:
++         case VK_FORMAT_R64G64B64A64_SFLOAT:
++            return false;
++      }
++   }
++   return !vk_format_is_int(vk_format);
++}
++
+ struct tu_native_format
+ tu6_format_texture(enum pipe_format format, enum a6xx_tile_mode tile_mode,
+                    bool is_mutable)
+@@ -119,7 +200,7 @@ tu_physical_device_get_format_properties(
+ 
+    bool supported_vtx = tu6_format_vtx_supported(format);
+    bool supported_color = tu6_format_color_supported(format);
+-   bool supported_tex = tu6_format_texture_supported(format);
++   bool supported_tex = tu6_format_texture_supported(physical_device, format);
+    bool is_npot = !util_is_power_of_two_or_zero(desc->block.bits);
+ 
+    if (format == PIPE_FORMAT_NONE ||
+@@ -169,7 +250,7 @@ tu_physical_device_get_format_properties(
+          optimal |= VK_FORMAT_FEATURE_2_BLIT_SRC_BIT;
+       }
+ 
+-      if (!vk_format_is_int(vk_format)) {
++      if (tu_format_texture_linear_filtering_supported(physical_device, vk_format)) {
+          optimal |= VK_FORMAT_FEATURE_2_SAMPLED_IMAGE_FILTER_LINEAR_BIT;
+ 
+          if (physical_device->vk.supported_extensions.EXT_filter_cubic)
+diff --git a/src/freedreno/vulkan/tu_image.cc b/src/freedreno/vulkan/tu_image.cc
+index 10ed35a25c9e..70693bc942c6 100644
+--- a/src/freedreno/vulkan/tu_image.cc
++++ b/src/freedreno/vulkan/tu_image.cc
+@@ -341,6 +341,10 @@ ubwc_possible(struct tu_device *device,
+               uint32_t mip_levels,
+               bool use_z24uint_s8uint)
+ {
++   /* TODO: enable for a702 */
++   if (info->a6xx.is_a702)
++      return false;
++
+    /* no UBWC with compressed formats, E5B9G9R9, S8_UINT
+     * (S8_UINT because separate stencil doesn't have UBWC-enable bit)
+     */
+@@ -739,7 +743,7 @@ tu_image_init(struct tu_device *device, struct tu_image *image,
+       }
+    }
+ 
+-   if (TU_DEBUG(NOUBWC) || device->physical_device->info->a6xx.is_a702) {
++   if (TU_DEBUG(NOUBWC)) {
+       image->ubwc_enabled = false;
+    }
+ 
+diff --git a/src/gallium/drivers/freedreno/freedreno_screen.c b/src/gallium/drivers/freedreno/freedreno_screen.c
+index e41699ab86cc..68cc141172c5 100644
+--- a/src/gallium/drivers/freedreno/freedreno_screen.c
++++ b/src/gallium/drivers/freedreno/freedreno_screen.c
+@@ -214,6 +214,8 @@ fd_screen_get_shader_param(struct pipe_screen *pscreen,
+    case PIPE_SHADER_TESS_CTRL:
+    case PIPE_SHADER_TESS_EVAL:
+    case PIPE_SHADER_GEOMETRY:
++      if (is_a702(screen))
++         return 0;
+       if (is_a6xx(screen))
+          break;
+       return 0;
+diff --git a/src/gallium/drivers/freedreno/freedreno_screen.h b/src/gallium/drivers/freedreno/freedreno_screen.h
+index bdd446b06c15..3355044c2e93 100644
+--- a/src/gallium/drivers/freedreno/freedreno_screen.h
++++ b/src/gallium/drivers/freedreno/freedreno_screen.h
+@@ -259,6 +259,12 @@ is_a6xx(struct fd_screen *screen)
+    return screen->gen >= 6;
+ }
+ 
++static inline bool
++is_a702(struct fd_screen *screen)
++{
++   return screen->gpu_id == 702;
++}
++
+ /* is it using the ir3 compiler (shader isa introduced with a3xx)? */
+ static inline bool
+ is_ir3(struct fd_screen *screen)

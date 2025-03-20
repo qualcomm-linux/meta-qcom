@@ -1,0 +1,27 @@
+From d6ef4c989fedf5cb7a8e63fcaa6402b2da7a533a Mon Sep 17 00:00:00 2001
+From: Dmitry Baryshkov <dmitry.baryshkov@oss.qualcomm.com>
+Date: Wed, 19 Mar 2025 20:45:56 +0200
+Subject: [PATCH] freedreno: fix compilation
+
+Signed-off-by: Dmitry Baryshkov <dmitry.baryshkov@oss.qualcomm.com>
+Upstream-Status: Pending
+---
+ src/gallium/drivers/freedreno/a6xx/fd6_rasterizer.cc | 5 +++--
+ 1 file changed, 3 insertions(+), 2 deletions(-)
+
+diff --git a/src/gallium/drivers/freedreno/a6xx/fd6_rasterizer.cc b/src/gallium/drivers/freedreno/a6xx/fd6_rasterizer.cc
+index 1da50349f657..925ee7e84c67 100644
+--- a/src/gallium/drivers/freedreno/a6xx/fd6_rasterizer.cc
++++ b/src/gallium/drivers/freedreno/a6xx/fd6_rasterizer.cc
+@@ -99,8 +99,9 @@ __fd6_setup_rasterizer_stateobj(struct fd_context *ctx,
+    OUT_REG(ring, A6XX_VPC_POLYGON_MODE(mode));
+    OUT_REG(ring, PC_POLYGON_MODE(CHIP, mode));
+ 
+-   if (CHIP == A7XX) {
+-      OUT_REG(ring, A7XX_VPC_POLYGON_MODE2(mode));
++   if (CHIP == A7XX ||
++       CHIP == A6XX && ctx->screen->info->a6xx.is_a702) {
++      OUT_REG(ring, A6XX_VPC_POLYGON_MODE2(mode));
+    }
+ 
+    /* With a7xx the hw doesn't do the clamping for us.  When depth clamp
