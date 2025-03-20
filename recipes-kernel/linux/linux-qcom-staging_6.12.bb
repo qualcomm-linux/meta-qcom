@@ -29,6 +29,9 @@ KERNEL_CONFIG ?= "qcom_defconfig"
 # Additional fragment for qcom value add features
 KERNEL_CONFIG_FRAGMENTS += " ${S}/arch/arm64/configs/qcom_addons.config"
 
+# Add '-@' option to compile DTB with symbols.
+KERNEL_DTC_FLAGS += "-@"
+
 do_configure:prepend() {
     if [ ! -f "${S}/arch/${ARCH}/configs/${KERNEL_CONFIG}" ]; then
         bbfatal "KERNEL_CONFIG '${KERNEL_CONFIG}' was specified, but not present in the source tree"
