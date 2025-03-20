@@ -1,5 +1,11 @@
 # Common configurations and variables for Qualcomm platforms.
 
+# 'custom' BSP selection on top of the default BSP, provides additional functionality
+# such as addon DT overlays, downstream DLKMs, and QCOM-specific user space frameworks.
+# Specific MACHINEs or DISTROs may choose this configuration to utilize addon features.
+QCOM_SELECTED_BSP ??= ""
+MACHINEOVERRIDES =. "${@bb.utils.contains('QCOM_SELECTED_BSP', 'custom', 'qcom-custom-bsp:', '', d)}"
+
 # Provider for linux kernel
 PREFERRED_PROVIDER_virtual/kernel ?= "linux-yocto-dev"
 
