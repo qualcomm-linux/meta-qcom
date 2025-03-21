@@ -1,0 +1,373 @@
+From 8850ccda22c24905d6a799da177d6ef9c8f2b350 Mon Sep 17 00:00:00 2001
+From: Mohammad Rafi Shaik <quic_mohs@quicinc.com>
+Date: Wed, 5 Mar 2025 16:38:57 +0100
+Subject: [PATCH] arch: arm64: dts: qcom: Audio device tree changes for rb3gen2
+
+Early drop validating functionality for Embedded World 2025.
+
+Signed-off-by: Mohammad Rafi Shaik <quic_mohs@quicinc.com>
+Upstream-Status: Pending
+---
+ arch/arm64/boot/dts/qcom/qcs6490-rb3gen2.dts | 189 +++++++++++++++++++
+ arch/arm64/boot/dts/qcom/sc7280.dtsi         | 103 ++++++++++
+ 2 files changed, 292 insertions(+)
+
+diff --git a/arch/arm64/boot/dts/qcom/qcs6490-rb3gen2.dts b/arch/arm64/boot/dts/qcom/qcs6490-rb3gen2.dts
+index ecbb0373e2ab..f7c3bb89d2f0 100644
+--- a/arch/arm64/boot/dts/qcom/qcs6490-rb3gen2.dts
++++ b/arch/arm64/boot/dts/qcom/qcs6490-rb3gen2.dts
+@@ -12,6 +12,8 @@
+ #include <dt-bindings/leds/common.h>
+ #include <dt-bindings/pinctrl/qcom,pmic-gpio.h>
+ #include <dt-bindings/regulator/qcom,rpmh-regulator.h>
++#include <dt-bindings/soc/qcom,gpr.h>
++#include <dt-bindings/sound/qcom,q6afe.h>
+ #include "sc7280.dtsi"
+ #include "pm7250b.dtsi"
+ #include "pm7325.dtsi"
+@@ -155,6 +157,55 @@ debug_vm_mem: debug-vm@d0600000 {
+ 		};
+ 	};
+ 
++	sound: sound {
++		compatible = "qcom,qcs6490-rb3gen2-sndcard";
++		model = "qcs6490-rb3gen2-snd-card";
++
++		audio-routing =
++			"SpkrLeft IN", "WSA_SPK1 OUT",
++			"SpkrRight IN", "WSA_SPK2 OUT",
++			"VA DMIC0", "vdd-micb",
++			"VA DMIC1", "vdd-micb",
++			"VA DMIC2", "vdd-micb",
++			"VA DMIC3", "vdd-micb";
++
++			#address-cells = <1>;
++			#size-cells = <0>;
++
++		wsa-dai-link {
++			link-name = "CODEC_DMA-LPAIF_WSA-RX-0";
++
++			cpu {
++				sound-dai = <&q6apmbedai WSA_CODEC_DMA_RX_0>;
++			};
++
++			codec {
++				sound-dai = <&left_spkr>, <&right_spkr>, <&swr2 0>,
++					    <&lpass_wsa_macro 0>;
++			};
++
++			platform {
++				sound-dai = <&q6apm>;
++			};
++		};
++
++		va-dai-link {
++			link-name = "CODEC_DMA-LPAIF_VA-TX-0";
++
++			cpu {
++				sound-dai = <&q6apmbedai VA_CODEC_DMA_TX_0>;
++			};
++
++			codec {
++				sound-dai = <&lpass_va_macro 0>;
++			};
++
++			platform {
++				sound-dai = <&q6apm>;
++			};
++		};
++	};
++
+ 	gpio-keys {
+ 		compatible = "gpio-keys";
+ 
+@@ -691,6 +742,108 @@ redriver_usb_con_sbu: endpoint {
+ 	};
+ };
+ 
++
++&lpass_rx_macro {
++	/delete-property/ power-domains;
++	/delete-property/ power-domain-names;
++	clocks = <&q6prmcc LPASS_CLK_ID_TX_CORE_MCLK LPASS_CLK_ATTRIBUTE_COUPLE_NO>,
++		 <&q6prmcc LPASS_CLK_ID_TX_CORE_NPL_MCLK  LPASS_CLK_ATTRIBUTE_COUPLE_NO>,
++		 <&q6prmcc LPASS_HW_MACRO_VOTE LPASS_CLK_ATTRIBUTE_COUPLE_NO>,
++		 <&q6prmcc LPASS_HW_DCODEC_VOTE LPASS_CLK_ATTRIBUTE_COUPLE_NO>,
++		 <&lpass_va_macro>;
++	clock-names = "mclk", "npl", "macro", "dcodec", "fsgen";
++
++	status = "okay";
++};
++
++&lpass_tlmm {
++	clocks = <&q6prmcc LPASS_HW_MACRO_VOTE LPASS_CLK_ATTRIBUTE_COUPLE_NO>,
++		 <&q6prmcc LPASS_HW_DCODEC_VOTE LPASS_CLK_ATTRIBUTE_COUPLE_NO>;
++	clock-names = "core", "audio";
++
++	lpass_dmic45_clk: dmic45-clk-state {
++		pins = "gpio12";
++		function = "dmic3_clk";
++	};
++
++	lpass_dmic45_data: dmic45-data-state {
++		pins = "gpio13";
++		function = "dmic3_data";
++	};
++};
++
++&lpass_tx_macro {
++	/delete-property/ power-domains;
++	/delete-property/ power-domain-names;
++	clocks = <&q6prmcc LPASS_CLK_ID_TX_CORE_MCLK LPASS_CLK_ATTRIBUTE_COUPLE_NO>,
++		 <&q6prmcc LPASS_CLK_ID_TX_CORE_NPL_MCLK  LPASS_CLK_ATTRIBUTE_COUPLE_NO>,
++		 <&q6prmcc LPASS_HW_MACRO_VOTE LPASS_CLK_ATTRIBUTE_COUPLE_NO>,
++		 <&q6prmcc LPASS_HW_DCODEC_VOTE LPASS_CLK_ATTRIBUTE_COUPLE_NO>,
++		 <&lpass_va_macro>;
++	clock-names = "mclk", "npl", "macro", "dcodec", "fsgen";
++
++	status = "okay";
++};
++
++&lpass_va_macro {
++	/delete-property/ power-domains;
++	/delete-property/ power-domain-names;
++	clocks = <&q6prmcc LPASS_CLK_ID_VA_CORE_MCLK LPASS_CLK_ATTRIBUTE_COUPLE_NO>,
++		 <&q6prmcc LPASS_HW_MACRO_VOTE LPASS_CLK_ATTRIBUTE_COUPLE_NO>,
++		 <&q6prmcc LPASS_HW_DCODEC_VOTE LPASS_CLK_ATTRIBUTE_COUPLE_NO>;
++	clock-names = "mclk", "macro", "dcodec";
++
++	pinctrl-names = "default";
++	pinctrl-0 = <&lpass_dmic01_clk>, <&lpass_dmic01_data>,
++		    <&lpass_dmic23_clk>, <&lpass_dmic23_data>,
++		    <&lpass_dmic45_clk>, <&lpass_dmic45_data>;
++
++	status = "okay";
++};
++
++&lpass_wsa_macro {
++	/delete-property/ power-domains;
++	/delete-property/ power-domain-names;
++	clocks = <&q6prmcc LPASS_CLK_ID_TX_CORE_MCLK LPASS_CLK_ATTRIBUTE_COUPLE_NO>,
++		 <&q6prmcc LPASS_CLK_ID_TX_CORE_NPL_MCLK LPASS_CLK_ATTRIBUTE_COUPLE_NO>,
++		 <&q6prmcc LPASS_HW_MACRO_VOTE LPASS_CLK_ATTRIBUTE_COUPLE_NO>,
++		 <&q6prmcc LPASS_HW_DCODEC_VOTE LPASS_CLK_ATTRIBUTE_COUPLE_NO>,
++		 <&lpass_va_macro>;
++	clock-names = "mclk", "npl", "macro", "dcodec", "fsgen";
++
++	status = "okay";
++};
++
++&lpass_dmic01_clk {
++	drive-strength = <8>;
++	bias-disable;
++};
++
++&lpass_dmic01_data {
++	bias-pull-down;
++};
++
++&lpass_dmic23_clk {
++	drive-strength = <8>;
++	bias-disable;
++};
++
++&lpass_dmic23_data {
++	bias-pull-down;
++};
++
++&lpass_wsa_swr_clk {
++	drive-strength = <2>;
++	slew-rate = <1>;
++	bias-disable;
++};
++
++&lpass_wsa_swr_data {
++	drive-strength = <2>;
++	slew-rate = <1>;
++	bias-bus-hold;
++};
++
+ &mdss {
+ 	status = "okay";
+ };
+@@ -921,6 +1074,42 @@ &remoteproc_wpss {
+ 	status = "okay";
+ };
+ 
++&swr2 {
++	left_spkr: speaker@0,1 {
++		compatible = "sdw10217020200";
++		reg = <0 1>;
++		powerdown-gpios = <&tlmm 158 GPIO_ACTIVE_LOW>;
++		#sound-dai-cells = <0>;
++		sound-name-prefix = "SpkrLeft";
++		#thermal-sensor-cells = <0>;
++		vdd-supply = <&vreg_l18b_1p8>;
++		qcom,port-mapping = <1 2 3 7>;
++	};
++
++	right_spkr: speaker@0,2 {
++		compatible = "sdw10217020200";
++		reg = <0 2>;
++		powerdown-gpios = <&tlmm 158 GPIO_ACTIVE_LOW>;
++		#sound-dai-cells = <0>;
++		sound-name-prefix = "SpkrRight";
++		#thermal-sensor-cells = <0>;
++		vdd-supply = <&vreg_l18b_1p8>;
++		qcom,port-mapping = <4 5 6 8>;
++	};
++};
++
++&swr0 {
++	status = "okay";
++};
++
++&swr1 {
++	status = "okay";
++};
++
++&swr2 {
++	status = "okay";
++};
++
+ &sdhc_2 {
+ 	pinctrl-0 = <&sdc2_clk>, <&sdc2_cmd>, <&sdc2_data>, <&sd_cd>;
+ 	pinctrl-1 = <&sdc2_clk_sleep>, <&sdc2_cmd_sleep>, <&sdc2_data_sleep>, <&sd_cd>;
+diff --git a/arch/arm64/boot/dts/qcom/sc7280.dtsi b/arch/arm64/boot/dts/qcom/sc7280.dtsi
+index 7c4f48783656..8f65d8d27e18 100644
+--- a/arch/arm64/boot/dts/qcom/sc7280.dtsi
++++ b/arch/arm64/boot/dts/qcom/sc7280.dtsi
+@@ -25,6 +25,7 @@
+ #include <dt-bindings/reset/qcom,sdm845-aoss.h>
+ #include <dt-bindings/reset/qcom,sdm845-pdc.h>
+ #include <dt-bindings/soc/qcom,apr.h>
++#include <dt-bindings/soc/qcom,gpr.h>
+ #include <dt-bindings/soc/qcom,rpmh-rsc.h>
+ #include <dt-bindings/sound/qcom,lpass.h>
+ #include <dt-bindings/thermal/thermal.h>
+@@ -2608,6 +2609,64 @@ swr1: soundwire@3230000 {
+ 			status = "disabled";
+ 		};
+ 
++		swr2: soundwire@3250000 {
++			compatible = "qcom,soundwire-v1.6.0";
++			reg = <0x0 0x03250000 0x0 0x2000>;
++
++			interrupts = <GIC_SPI 170 IRQ_TYPE_LEVEL_HIGH>;
++			clocks = <&lpass_wsa_macro>;
++			clock-names = "iface";
++
++			qcom,din-ports = <2>;
++			qcom,dout-ports = <6>;
++
++			resets = <&lpass_audiocc LPASS_AUDIO_SWR_WSA_CGCR>;
++			reset-names = "swr_audio_cgcr";
++
++			qcom,ports-sinterval-low = /bits/ 8 <0x07 0x1f 0x3f 0x07
++							0x1f 0x3f 0x0f 0x0f>;
++			qcom,ports-offset1 = /bits/ 8 <0x01 0x02 0x0c 0x06 0x12 0x0d 0x07 0x0a>;
++			qcom,ports-offset2 = /bits/ 8 <0xff 0x00 0x1f 0xff 0x00 0x1f 0x00 0x00>;
++			qcom,ports-hstart = /bits/ 8 <0xff 0xff 0xff 0xff 0xff 0xff 0xff 0xff>;
++			qcom,ports-hstop = /bits/ 8 <0xff 0xff 0xff 0xff 0xff 0xff 0xff 0xff>;
++			qcom,ports-word-length = /bits/ 8 <0xff 0xff 0xff 0xff 0xff 0xff 0xff 0xff>;
++			qcom,ports-block-pack-mode = /bits/ 8 <0xff 0xff 0x01 0xff 0xff 0x01
++						0xff 0xff>;
++			qcom,ports-block-group-count = /bits/ 8 <0xff 0xff 0xff 0xff 0xff 0xff
++						0xff 0xff>;
++			qcom,ports-lane-control = /bits/ 8 <0xff 0xff 0xff 0xff 0xff 0xff
++						0xff 0xff>;
++
++			#address-cells = <2>;
++			#size-cells = <0>;
++			#sound-dai-cells = <1>;
++
++			status = "disabled";
++		};
++
++		lpass_wsa_macro: codec@3240000 {
++			compatible = "qcom,sc7280-lpass-wsa-macro";
++			reg = <0x0 0x03240000 0x0 0x1000>;
++
++			pinctrl-names = "default";
++			pinctrl-0 = <&lpass_wsa_swr_clk>, <&lpass_wsa_swr_data>;
++
++			clocks = <&lpass_aon LPASS_AON_CC_TX_MCLK_CLK>,
++				<&lpass_aon LPASS_AON_CC_TX_MCLK_2X_CLK>,
++				 <&lpass_va_macro>;
++			clock-names = "mclk", "npl", "fsgen";
++
++			power-domains = <&lpass_hm LPASS_CORE_CC_LPASS_CORE_HM_GDSC>,
++					 <&lpass_aon LPASS_AON_CC_LPASS_AUDIO_HM_GDSC>;
++			power-domain-names = "macro", "dcodec";
++
++			#clock-cells = <0>;
++			clock-output-names = "mclk";
++			#sound-dai-cells = <1>;
++
++			status = "disabled";
++		};
++
+ 		lpass_audiocc: clock-controller@3300000 {
+ 			compatible = "qcom,sc7280-lpassaudiocc";
+ 			reg = <0 0x03300000 0 0x30000>,
+@@ -2814,6 +2873,16 @@ lpass_tx_swr_data: tx-swr-data-state {
+ 				pins = "gpio1", "gpio2", "gpio14";
+ 				function = "swr_tx_data";
+ 			};
++
++			lpass_wsa_swr_clk: wsa-swr-clk-state {
++				pins = "gpio10";
++				function = "wsa_swr_clk";
++			};
++
++			lpass_wsa_swr_data: wsa-swr-data-state {
++				pins = "gpio11";
++				function = "wsa_swr_data";
++			};
+ 		};
+ 
+ 		gpu: gpu@3d00000 {
+@@ -3891,6 +3960,40 @@ compute-cb@5 {
+ 						iommus = <&apps_smmu 0x1805 0x0>;
+ 					};
+ 				};
++
++				gpr {
++					compatible = "qcom,gpr";
++					qcom,glink-channels = "adsp_apps";
++					qcom,domain = <GPR_DOMAIN_ID_ADSP>;
++					qcom,intents = <512 20>;
++					#address-cells = <1>;
++					#size-cells = <0>;
++
++					q6apm: service@1 {
++						compatible = "qcom,q6apm";
++						reg = <GPR_APM_MODULE_IID>;
++						#sound-dai-cells = <0>;
++						q6apmdai: dais {
++							compatible = "qcom,q6apm-dais";
++							iommus = <&apps_smmu 0x1801 0x0>;
++						};
++
++						q6apmbedai: bedais {
++							compatible = "qcom,q6apm-lpass-dais";
++							#sound-dai-cells = <1>;
++						};
++					};
++
++					q6prm: service@2 {
++						compatible = "qcom,q6prm";
++						reg = <GPR_PRM_MODULE_IID>;
++
++						q6prmcc: clock-controller {
++							compatible = "qcom,q6prm-lpass-clocks";
++							#clock-cells = <2>;
++						};
++					};
++				};
+ 			};
+ 		};
+ 
+-- 
+2.34.1
+
