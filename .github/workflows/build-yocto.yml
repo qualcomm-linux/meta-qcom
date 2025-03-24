@@ -92,8 +92,13 @@ jobs:
           - qrb2210-rb1-core-kit
           - qcom-armv8a
           - qcom-armv7a
+        distro:
+          - name: poky/systemd
+            yamlfile: ""
+          - name: qcom
+            yamlfile: 'ci/distro.yml:'
     runs-on: [self-hosted, x86]
-    name: ${{ matrix.machine }}/poky/systemd
+    name: ${{ matrix.machine }}/${{ matrix.distro.name }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -110,7 +115,7 @@ jobs:
           export SSTATE_DIR=${CACHE_DIR}/sstate-cache
           export KAS_WORK_DIR=$PWD/../kas
           mkdir $KAS_WORK_DIR
-          kas build ci/mirror.yml:ci/${{ matrix.machine }}.yml
+          kas build ci/mirror.yml:${{ matrix.distro.yamlfile }}ci/${{ matrix.machine }}.yml
           ci/yocto-pybootchartgui.sh && mv $KAS_WORK_DIR/build/buildchart.svg .
 
       - uses: actions/upload-artifact@v4
