@@ -96,8 +96,13 @@ jobs:
           - qrb2210-rb1-core-kit
           - qcom-armv8a
           - qcom-armv7a
+        distro:
+          - name: poky-altcfg
+            yamlfile: ""
+          - name: qcom
+            yamlfile: 'ci/distro.yml:'
     runs-on: [self-hosted, x86]
-    name: ${{ matrix.machine }}/poky-altcfg
+    name: ${{ matrix.machine }}/${{ matrix.distro.name }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -116,7 +121,7 @@ jobs:
           mkdir $KAS_WORK_DIR
           ${KAS_CONTAINER} dump --resolve-env --resolve-local --resolve-refs \
               ci/mirror.yml:ci/${{ matrix.machine }}.yml > kas-build.yml
-          ${KAS_CONTAINER} build ci/mirror.yml:ci/${{ matrix.machine }}.yml
+          ${KAS_CONTAINER} build ci/mirror.yml:${{ matrix.distro.yamlfile }}ci/${{ matrix.machine }}.yml
           ci/kas-container-shell-helper.sh ci/yocto-pybootchartgui.sh
           mv $KAS_WORK_DIR/build/buildchart.svg .
 
@@ -126,12 +131,12 @@ jobs:
 
       - uses: actions/upload-artifact@v4
         with:
-          name: buildchart-${{ matrix.machine }}
+          name: buildchart-${{ matrix.distro.name }}-${{ matrix.machine }}
           path: buildchart.svg
 
       - uses: actions/upload-artifact@v4
         with:
-          name: kas-build-${{ matrix.machine }}
+          name: kas-build-${{ matrix.distro.name }}-${{ matrix.machine }}
           path: kas-build.yml
 
       - name: Stage build artifacts for publishing
@@ -140,8 +145,8 @@ jobs:
           # expects file to be relative to our PWD. deploy_dir is outside
           # that, so we move things around:
           deploy_dir=../kas/build/tmp/deploy/images/${{matrix.machine}}
-          uploads_dir=./uploads
-          mkdir $uploads_dir
+          uploads_dir=./uploads/${{ matrix.distro.name }}
+          mkdir -p $uploads_dir
           find $deploy_dir/ -maxdepth 1 -name "*.rootfs*.qcomflash" -exec rm -rf {} \;
           cp buildchart.svg kas-build.yml $deploy_dir/
           mv $deploy_dir $uploads_dir/
