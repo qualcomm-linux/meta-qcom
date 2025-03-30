@@ -32,6 +32,13 @@ SRC_URI:append:qcom = " \
     file://drivers/0008-PCI-pwrctrl-Add-power-control-driver-for-tc956x.patch \
     file://drivers/0001-media-qcom-camss-update-clock-names-for-sc7280.patch \
     file://drivers/0004-clk-qcom-lpassaudiocc-sc7280-Add-support-for-LPASS-r.patch \
+    file://drivers/0001-dt-bindings-net-bluetooth-qualcomm-document-WCN3950.patch \
+    file://drivers/0002-Bluetooth-qca-simplify-WCN399x-NVM-loading.patch \
+    file://drivers/0003-Bluetooth-qca-add-WCN3950-support.patch \
+    file://drivers/0001-Bluetooth-qca-fix-NV-variant-for-one-of-WCN3950-SoCs.patch \
+    file://qrb2210-board-dts/0004-arm64-dts-qcom-qcm2290-fix-some-of-QUP-interconnects.patch \
+    file://qrb2210-board-dts/0005-arm64-dts-qcom-qcm2290-add-UART3-device.patch \
+    file://qrb2210-board-dts/0006-arm64-dts-qcom-qrb2210-rb1-add-Bluetooth-support.patch \
 "
 
 # Include additional kernel configs.
