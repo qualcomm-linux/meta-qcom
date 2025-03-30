@@ -1,0 +1,35 @@
+From 394d7aab802ce9bf6406d22524ab14cad7ace83a Mon Sep 17 00:00:00 2001
+From: Dmitry Baryshkov <dmitry.baryshkov@linaro.org>
+Date: Fri, 7 Feb 2025 22:41:15 +0200
+Subject: [PATCH] dt-bindings: net: bluetooth: qualcomm: document WCN3950
+
+WCN3950 is another member of the WiFi/BT WCN39xx family of the chips. It
+requires different firmware, so document it as a new compat string.
+
+Reviewed-by: Krzysztof Kozlowski <krzysztof.kozlowski@linaro.org>
+Signed-off-by: Dmitry Baryshkov <dmitry.baryshkov@linaro.org>
+Upstream-Status: Backport [https://git.kernel.org/bluetooth/bluetooth-next/c/a3d5067f33d1]
+---
+ .../devicetree/bindings/net/bluetooth/qualcomm-bluetooth.yaml   | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/Documentation/devicetree/bindings/net/bluetooth/qualcomm-bluetooth.yaml b/Documentation/devicetree/bindings/net/bluetooth/qualcomm-bluetooth.yaml
+index a72152f7e29b..6353a336f382 100644
+--- a/Documentation/devicetree/bindings/net/bluetooth/qualcomm-bluetooth.yaml
++++ b/Documentation/devicetree/bindings/net/bluetooth/qualcomm-bluetooth.yaml
+@@ -19,6 +19,7 @@ properties:
+       - qcom,qca2066-bt
+       - qcom,qca6174-bt
+       - qcom,qca9377-bt
++      - qcom,wcn3950-bt
+       - qcom,wcn3988-bt
+       - qcom,wcn3990-bt
+       - qcom,wcn3991-bt
+@@ -138,6 +139,7 @@ allOf:
+         compatible:
+           contains:
+             enum:
++              - qcom,wcn3950-bt
+               - qcom,wcn3988-bt
+               - qcom,wcn3990-bt
+               - qcom,wcn3991-bt
