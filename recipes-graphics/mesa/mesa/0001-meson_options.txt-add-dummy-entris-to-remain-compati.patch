@@ -1,0 +1,38 @@
+From ac749733e0cfd5cd61fd958a2e3737049c98a0da Mon Sep 17 00:00:00 2001
+From: Dmitry Baryshkov <dmitry.baryshkov@oss.qualcomm.com>
+Date: Thu, 20 Mar 2025 06:48:40 +0200
+Subject: [PATCH] meson_options.txt: add dummy entris to remain compatible with
+ old branch
+
+The mesa.inc in OE-Core uses several options that were removed in the
+more recent Mesa branches. Since we can not update OE-Core version,
+provide backwards compatible options.
+
+Upstream-Status: Inappropriate [OE Specific to make 25.x compatible with OE-Core]
+Signed-off-by: Dmitry Baryshkov <dmitry.baryshkov@oss.qualcomm.com>
+---
+ meson_options.txt | 14 ++++++++++++++
+ 1 file changed, 14 insertions(+)
+
+diff --git a/meson_options.txt b/meson_options.txt
+index 84e0f20dcfde..78fdb20cd05e 100644
+--- a/meson_options.txt
++++ b/meson_options.txt
+@@ -795,3 +795,17 @@ option(
+   value : false,
+   description : 'Install the drivers internal shader compilers (if needed for cross builds).'
+ )
++
++option(
++  'dri3',
++  type : 'feature',
++  value : 'disabled',
++  description : 'backwards-compatibility dummy option',
++)
++
++option(
++  'opencl-spirv',
++  type : 'boolean',
++  value : false,
++  description : 'backwards-compatibility dummy option',
++)
