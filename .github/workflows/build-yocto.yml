@@ -9,7 +9,7 @@ on:
 
 env:
   CACHE_DIR: /srv/gh-runners/quic-yocto
-  KAS_REPO_REF_DIR: /srv/gh-runners/quic-yocto/kas-mirrors
+  KAS_CLONE_DEPTH: 1
   BASE_ARTIFACT_URL: "https://quic-yocto-fileserver-1029608027416.us-central1.run.app/${{ github.run_id }}"
 
 jobs:
