@@ -1,4 +1,9 @@
 # Create an ESP image that has a type #2 EFI UKI and systemd-boot
+#
+# Copyright (c) 2025 Qualcomm Innovation Center, Inc.
+#
+# SPDX-License-Identifier: MIT
+#
 
 # Optional subfolder, dependant on where the ESP partition gets mounted
 # intended to only have a leading slash, no trailing slash e.g. '/EFI', or just empty, ''
