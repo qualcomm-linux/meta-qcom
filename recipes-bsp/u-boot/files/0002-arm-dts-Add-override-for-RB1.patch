@@ -1,0 +1,36 @@
+From 2d0ba1d67ca519153ade199f0a25a7edf0d98789 Mon Sep 17 00:00:00 2001
+From: Sumit Garg <sumit.garg@oss.qualcomm.com>
+Date: Fri, 28 Mar 2025 17:24:33 +0530
+Subject: [PATCH 2/4] arm: dts: Add override for RB1
+
+Add U-Boot override for RB1 to for USB in host mode as OTG mode isn't
+supported. Also, disable sdhc_2 as it's currently not supported, sdhc_1
+works fine though.
+
+Upstream-Status: Submitted [https://patchwork.ozlabs.org/project/uboot/patch/20250407132810.35149-2-sumit.garg@kernel.org/]
+Signed-off-by: Sumit Garg <sumit.garg@oss.qualcomm.com>
+---
+ arch/arm/dts/qrb2210-rb1-u-boot.dtsi | 11 +++++++++++
+ 1 file changed, 11 insertions(+)
+ create mode 100644 arch/arm/dts/qrb2210-rb1-u-boot.dtsi
+
+diff --git a/arch/arm/dts/qrb2210-rb1-u-boot.dtsi b/arch/arm/dts/qrb2210-rb1-u-boot.dtsi
+new file mode 100644
+index 0000000000..1e136ee405
+--- /dev/null
++++ b/arch/arm/dts/qrb2210-rb1-u-boot.dtsi
+@@ -0,0 +1,11 @@
++// SPDX-License-Identifier: GPL-2.0
++
++/* This is usually OTG but U-Boot doesn't support that properly */
++&usb_dwc3 {
++	dr_mode = "host";
++};
++
++/* SDHC_2 isn't supported in U-Boot as of now */
++&sdhc_2 {
++	status = "disabled";
++};
+-- 
+2.34.1
+

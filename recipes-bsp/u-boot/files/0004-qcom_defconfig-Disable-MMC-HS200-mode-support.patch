@@ -1,0 +1,32 @@
+From 9d728182ef1726209d9fd303bc52eb2958c523ed Mon Sep 17 00:00:00 2001
+From: Sumit Garg <sumit.garg@oss.qualcomm.com>
+Date: Wed, 2 Apr 2025 18:02:09 +0530
+Subject: [PATCH 4/4] qcom_defconfig: Disable MMC HS200 mode support
+
+Currently the msm_sdhci doesn't yet support DLL configurations which are
+required to enable bus speeds greater that 100MHz. So disable HS200 mode
+support as of now as it requires bus speeds of 200MHz.
+
+This should fix eMMC issues reported on RB1.
+
+Upstream-Status: Submitted [https://patchwork.ozlabs.org/project/uboot/patch/20250407132810.35149-3-sumit.garg@kernel.org/]
+Signed-off-by: Sumit Garg <sumit.garg@oss.qualcomm.com>
+---
+ configs/qcom_defconfig | 1 -
+ 1 file changed, 1 deletion(-)
+
+diff --git a/configs/qcom_defconfig b/configs/qcom_defconfig
+index 661a484f7b..4840a09e35 100644
+--- a/configs/qcom_defconfig
++++ b/configs/qcom_defconfig
+@@ -75,7 +75,6 @@ CONFIG_QCOM_HYP_SMMU=y
+ CONFIG_MISC=y
+ CONFIG_NVMEM=y
+ CONFIG_I2C_EEPROM=y
+-CONFIG_MMC_HS200_SUPPORT=y
+ CONFIG_MMC_SDHCI=y
+ CONFIG_MMC_SDHCI_ADMA=y
+ CONFIG_MMC_SDHCI_MSM=y
+-- 
+2.34.1
+
