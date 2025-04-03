@@ -26,6 +26,11 @@ repos:
     url: https://git.yoctoproject.org/meta-yocto
     layers:
       meta-poky:
+  
+  meta-openembedded:
+    url: https://github.com/openembedded/meta-openembedded
+    layers:
+      meta-oe:
 
 local_conf_header:
   base: |
