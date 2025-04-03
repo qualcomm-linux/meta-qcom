@@ -90,6 +90,7 @@ jobs:
           - qcs6490-rb3gen2-core-kit
           - qcs9100-ride-sx
           - qrb2210-rb1-core-kit
+          - qcs615-adp-air
           - qcom-armv8a
           - qcom-armv7a
     runs-on: [self-hosted, x86]
