@@ -4,6 +4,8 @@ SOC_FAMILY = "qcm2290"
 require conf/machine/include/qcom-base.inc
 require conf/machine/include/qcom-common.inc
 
+QCOM_VFAT_SECTOR_SIZE = "512"
+
 require conf/machine/include/arm/armv8a/tune-cortexa53.inc
 
 KERNEL_CMDLINE_EXTRA ?= "earlycon clk_ignore_unused pd_ignore_unused"
