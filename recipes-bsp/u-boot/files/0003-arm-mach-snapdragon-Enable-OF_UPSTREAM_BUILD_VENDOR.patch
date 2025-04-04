@@ -1,0 +1,26 @@
+From 42c10a8a63612acb77b193f06f63a7b874007a28 Mon Sep 17 00:00:00 2001
+From: Sumit Garg <sumit.garg@oss.qualcomm.com>
+Date: Fri, 28 Mar 2025 17:35:37 +0530
+Subject: [PATCH 3/4] arm: mach-snapdragon: Enable OF_UPSTREAM_BUILD_VENDOR
+
+Upstream-Status: Pending
+Signed-off-by: Sumit Garg <sumit.garg@oss.qualcomm.com>
+---
+ arch/arm/Kconfig | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/arch/arm/Kconfig b/arch/arm/Kconfig
+index da6f117493..0900966b93 100644
+--- a/arch/arm/Kconfig
++++ b/arch/arm/Kconfig
+@@ -1118,6 +1118,7 @@ config ARCH_SNAPDRAGON
+ 	select SAVE_PREV_BL_FDT_ADDR
+ 	select LINUX_KERNEL_IMAGE_HEADER if !ENABLE_ARM_SOC_BOOT0_HOOK
+ 	imply OF_UPSTREAM
++	imply OF_UPSTREAM_BUILD_VENDOR
+ 	imply CMD_DM
+ 
+ config ARCH_SOCFPGA
+-- 
+2.34.1
+
