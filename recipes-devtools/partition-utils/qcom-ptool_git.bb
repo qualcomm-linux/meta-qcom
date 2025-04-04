@@ -1,18 +1,15 @@
 SUMMARY = "Qualcomm partitioning tool"
 DESCRIPTION = "Partitioning tool, generates the GPT and/or Partition MBN"
-HOMEPAGE = "https://git.codelinaro.org/linaro/qcomlt/partioning_tool"
+HOMEPAGE = "https://github.com/qualcomm-linux/qcom-ptool"
 SECTION = "devel"
 LICENSE = "BSD-3-Clause"
-LIC_FILES_CHKSUM = "file://LICENSE;md5=7530c1d01d9cfee94e67d6a55e886db5"
+LIC_FILES_CHKSUM = "file://LICENSE;md5=b0a8acd90d872086b279ead88af03369"
 
 RDEPENDS:${PN} += "python3-xml"
 
-SRC_URI = "git://git.codelinaro.org/linaro/qcomlt/partioning_tool.git;branch=master;protocol=https \
-	   file://0001-ptool.py-Generate-zero-files-in-output-folder-when-s.patch \
-	   file://0002-ptool.py-Python-3-support.patch \
-"
+SRC_URI = "git://github.com/qualcomm-linux/qcom-ptool.git;branch=main;protocol=https"
 
-SRCREV = "3484fc0a88088dea00397774fc93f9acd3a23ce0"
+SRCREV = "34d6580574bafd38751f526e1674eec3167546dc"
 
 PV = "0.0+git"
 S = "${WORKDIR}/git"
@@ -27,6 +24,7 @@ do_compile[noexec] = "1"
 do_install() {
    install -d ${D}${bindir}
    install -m 755 ${S}/ptool.py ${D}${bindir}/ptool.py
+   install -m 755 ${S}/gen_partition.py ${D}${bindir}/gen_partition.py
 }
 
 BBCLASSEXTEND = "native nativesdk"
