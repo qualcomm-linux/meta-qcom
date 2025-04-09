@@ -94,7 +94,7 @@ jobs:
           - qcom-armv7a
         distro:
           - name: poky/systemd
-            yamlfile: ""
+            yamlfile: 'ci/localconfmods.yml:'
           - name: qcom
             yamlfile: 'ci/distro.yml:'
     runs-on: [self-hosted, x86]
