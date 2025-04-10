@@ -20,12 +20,15 @@ do_compile[depends] += "virtual/kernel:do_deploy"
 uboot_compile_config:append:qcom() {
     cd ${B}/${config}
 
-    # Strip whitespace from ${KERNEL_DEVICETREE}
-    UBOOT_DTB=""
+    # Iterate over all entries in KERNEL_DEVICETREE to generate Android
+    # boot images
     for dtb in ${KERNEL_DEVICETREE} ; do
         UBOOT_DTB="$dtb"
-        # Most machines in meta-qcom put their DTBs strait in the deploy
-        # folder instead of using their vendor subfolder
+	# KERNEL_DEVICETREE contains the relative path to the DTBs in
+	# the kernel tree, but most, if not all MACHINEs in OE put the
+	# DTB file straight into DEPLOY_DIR_IMAGE. Support both by
+	# falling back to the bare file if it doesn't exist in a
+	# subfolder.
         if ! [ -e ${DEPLOY_DIR_IMAGE}/$UBOOT_DTB ] ; then
             UBOOT_DTB="$(basename $dtb)"
         fi
