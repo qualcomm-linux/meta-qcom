@@ -21,6 +21,7 @@ uboot_compile_config:append:qcom() {
     cd ${B}/${config}
     rm -f u-boot-nodtb.bin.gz
     gzip -k u-boot-nodtb.bin
+    touch empty-file
 
     # Iterate over all entries in KERNEL_DEVICETREE to generate Android
     # boot images
@@ -35,7 +36,7 @@ uboot_compile_config:append:qcom() {
             UBOOT_DTB="$(basename $dtb)"
         fi
         cat u-boot-nodtb.bin.gz ${DEPLOY_DIR_IMAGE}/$UBOOT_DTB > u-boot-nodtb.bin.gz-dtb
-        ${STAGING_BINDIR_NATIVE}/skales/mkbootimg --base 0x80000000 --pagesize 4096 --kernel u-boot-nodtb.bin.gz-dtb  --cmdline "root=/dev/notreal" --ramdisk u-boot.bin --output ${MACHINE}-u-boot-$(basename $dtb .dtb)-${PV}-boot.img
+        ${STAGING_BINDIR_NATIVE}/skales/mkbootimg --base 0x80000000 --pagesize 4096 --kernel u-boot-nodtb.bin.gz-dtb  --cmdline "root=/dev/notreal" --ramdisk empty-file --output ${MACHINE}-u-boot-$(basename $dtb .dtb)-${PV}-boot.img
     done
 
 }
