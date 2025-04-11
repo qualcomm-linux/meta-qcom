@@ -1,0 +1,371 @@
+From d7db8fb8d715a86d0939797bc08073895c475989 Mon Sep 17 00:00:00 2001
+From: Pulkit Singh Tak <quic_ptak@quicinc.com>
+Date: Thu, 13 Feb 2025 17:55:08 +0530
+Subject: [PATCH] PENDING: Removed cluster euclidean in fastcv ext
+
+Signed-off-by: Pulkit Singh Tak <quic_ptak@quicinc.com>
+Upstream-Status: Pending
+---
+ modules/fastcv/include/opencv2/fastcv.hpp     |   1 -
+ .../fastcv/include/opencv2/fastcv/cluster.hpp |  43 ------
+ .../fastcv/perf/perf_cluster_euclidean.cpp    |  79 -----------
+ modules/fastcv/src/cluster_euclidean.cpp      |  66 ----------
+ .../fastcv/test/test_cluster_euclidean.cpp    | 124 ------------------
+ 5 files changed, 313 deletions(-)
+ delete mode 100644 modules/fastcv/include/opencv2/fastcv/cluster.hpp
+ delete mode 100644 modules/fastcv/perf/perf_cluster_euclidean.cpp
+ delete mode 100644 modules/fastcv/src/cluster_euclidean.cpp
+ delete mode 100644 modules/fastcv/test/test_cluster_euclidean.cpp
+
+diff --git a/modules/fastcv/include/opencv2/fastcv.hpp b/modules/fastcv/include/opencv2/fastcv.hpp
+index af188dfc..c5deb5e0 100644
+--- a/modules/fastcv/include/opencv2/fastcv.hpp
++++ b/modules/fastcv/include/opencv2/fastcv.hpp
+@@ -11,7 +11,6 @@
+ #include "opencv2/fastcv/arithm.hpp"
+ #include "opencv2/fastcv/bilateralFilter.hpp"
+ #include "opencv2/fastcv/blur.hpp"
+-#include "opencv2/fastcv/cluster.hpp"
+ #include "opencv2/fastcv/draw.hpp"
+ #include "opencv2/fastcv/edges.hpp"
+ #include "opencv2/fastcv/fast10.hpp"
+diff --git a/modules/fastcv/include/opencv2/fastcv/cluster.hpp b/modules/fastcv/include/opencv2/fastcv/cluster.hpp
+deleted file mode 100644
+index 46ac7ad1..00000000
+--- a/modules/fastcv/include/opencv2/fastcv/cluster.hpp
++++ /dev/null
+@@ -1,43 +0,0 @@
+-/*
+- * Copyright (c) 2024 Qualcomm Innovation Center, Inc. All rights reserved.
+- * SPDX-License-Identifier: Apache-2.0
+-*/
+-
+-#ifndef OPENCV_FASTCV_CLUSTER_HPP
+-#define OPENCV_FASTCV_CLUSTER_HPP
+-
+-#include <opencv2/core.hpp>
+-
+-namespace cv {
+-namespace fastcv {
+-
+-//! @addtogroup fastcv
+-//! @{
+-
+-/**
+- * @brief Clusterizes N input points in D-dimensional space into K clusters
+- *        Accepts 8-bit unsigned integer points
+- *        Provides faster execution time than cv::kmeans on Qualcomm's processors
+- * @param points            Points array of type 8u, each row represets a point.
+- *                          Size is N rows by D columns, can be non-continuous.
+- * @param clusterCenters    Initial cluster centers array of type 32f, each row represents a center.
+- *                          Size is K rows by D columns, can be non-continuous.
+- * @param newClusterCenters Resulting cluster centers array of type 32f, each row represents found center.
+- *                          Size is set to be K rows by D columns.
+- * @param clusterSizes      Resulting cluster member counts array of type uint32, size is set to be 1 row by K columns.
+- * @param clusterBindings   Resulting points indices array of type uint32, each index tells to which cluster the corresponding point belongs to.
+- *                          Size is set to be 1 row by numPointsUsed columns.
+- * @param clusterSumDists   Resulting distance sums array of type 32f, each number is a sum of distances between each cluster center to its belonging points.
+- *                          Size is set to be 1 row by K columns
+- * @param numPointsUsed     Number of points to clusterize starting from 0 to numPointsUsed-1 inclusively. Sets to N if negative.
+- */
+-CV_EXPORTS_W void clusterEuclidean(InputArray points, InputArray clusterCenters, OutputArray newClusterCenters,
+-                                   OutputArray clusterSizes, OutputArray clusterBindings, OutputArray clusterSumDists,
+-                                   int numPointsUsed = -1);
+-
+-//! @}
+-
+-} // fastcv::
+-} // cv::
+-
+-#endif // OPENCV_FASTCV_CLUSTER_HPP
+diff --git a/modules/fastcv/perf/perf_cluster_euclidean.cpp b/modules/fastcv/perf/perf_cluster_euclidean.cpp
+deleted file mode 100644
+index 20bc31a7..00000000
+--- a/modules/fastcv/perf/perf_cluster_euclidean.cpp
++++ /dev/null
+@@ -1,79 +0,0 @@
+-/*
+- * Copyright (c) 2024 Qualcomm Innovation Center, Inc. All rights reserved.
+- * SPDX-License-Identifier: Apache-2.0
+-*/
+-
+-#include "perf_precomp.hpp"
+-
+-namespace opencv_test {
+-
+-typedef std::tuple<int /* nPts */, int /*nDims*/, int /*nClusters*/> ClusterEuclideanPerfParams;
+-typedef perf::TestBaseWithParam<ClusterEuclideanPerfParams> ClusterEuclideanPerfTest;
+-
+-PERF_TEST_P(ClusterEuclideanPerfTest, run,
+-            ::testing::Combine(::testing::Values(100, 1000, 10000), // nPts
+-                               ::testing::Values(2, 10, 32),        // nDims
+-                               ::testing::Values(5, 10, 16))        // nClusters
+-           )
+-{
+-    auto p = GetParam();
+-    int nPts      = std::get<0>(p);
+-    int nDims     = std::get<1>(p);
+-    int nClusters = std::get<2>(p);
+-
+-    Mat points(nPts, nDims, CV_8U);
+-    Mat clusterCenters(nClusters, nDims, CV_32F);
+-
+-    Mat trueMeans(nClusters, nDims, CV_32F);
+-    Mat stddevs(nClusters, nDims, CV_32F);
+-    std::vector<int> trueClusterSizes(nClusters, 0);
+-    std::vector<int> trueClusterBindings(nPts, 0);
+-    std::vector<float> trueSumDists(nClusters, 0);
+-
+-    cv::RNG& rng = cv::theRNG();
+-    for (int i = 0; i < nClusters; i++)
+-    {
+-        Mat mean(1, nDims, CV_64F), stdev(1, nDims, CV_64F);
+-        rng.fill(mean,  cv::RNG::UNIFORM, 0, 256);
+-        rng.fill(stdev, cv::RNG::UNIFORM, 5.f, 16);
+-        int lo =    i    * nPts / nClusters;
+-        int hi = (i + 1) * nPts / nClusters;
+-
+-        for (int d = 0; d < nDims; d++)
+-        {
+-            rng.fill(points.col(d).rowRange(lo, hi), cv::RNG::NORMAL,
+-                     mean.at<double>(d), stdev.at<double>(d));
+-        }
+-
+-        float sd = 0;
+-        for (int j = lo; j < hi; j++)
+-        {
+-            Mat pts64f;
+-            points.row(j).convertTo(pts64f, CV_64F);
+-            sd += cv::norm(mean, pts64f, NORM_L2);
+-            trueClusterBindings.at(j) = i;
+-            trueClusterSizes.at(i)++;
+-        }
+-        trueSumDists.at(i) = sd;
+-
+-        // let's shift initial cluster center a bit
+-        Mat(mean + stdev * 0.5).copyTo(clusterCenters.row(i));
+-
+-        mean.copyTo(trueMeans.row(i));
+-        stdev.copyTo(stddevs.row(i));
+-    }
+-
+-    while(next())
+-    {
+-        Mat newClusterCenters;
+-        std::vector<int> clusterSizes, clusterBindings;
+-        std::vector<float> clusterSumDists;
+-        startTimer();
+-        cv::fastcv::clusterEuclidean(points, clusterCenters, newClusterCenters, clusterSizes, clusterBindings, clusterSumDists);
+-        stopTimer();
+-    }
+-
+-    SANITY_CHECK_NOTHING();
+-}
+-
+-} // namespace
+diff --git a/modules/fastcv/src/cluster_euclidean.cpp b/modules/fastcv/src/cluster_euclidean.cpp
+deleted file mode 100644
+index a50b027c..00000000
+--- a/modules/fastcv/src/cluster_euclidean.cpp
++++ /dev/null
+@@ -1,66 +0,0 @@
+-/*
+- * Copyright (c) 2024 Qualcomm Innovation Center, Inc. All rights reserved.
+- * SPDX-License-Identifier: Apache-2.0
+-*/
+-
+-#include "precomp.hpp"
+-
+-namespace cv {
+-namespace fastcv {
+-
+-void clusterEuclidean(InputArray _points, InputArray _clusterCenters, OutputArray _newClusterCenters,
+-                      OutputArray _clusterSizes, OutputArray _clusterBindings, OutputArray _clusterSumDists,
+-                      int numPointsUsed)
+-{
+-    INITIALIZATION_CHECK;
+-
+-    CV_Assert(!_points.empty() && _points.type() == CV_8UC1);
+-    int nPts      = _points.rows();
+-    int nDims     = _points.cols();
+-    int ptsStride = _points.step();
+-
+-    CV_Assert(!_clusterCenters.empty() && _clusterCenters.depth() == CV_32F);
+-    int nClusters           = _clusterCenters.rows();
+-    int clusterCenterStride = _clusterCenters.step();
+-
+-    CV_Assert(_clusterCenters.cols() == nDims);
+-
+-    CV_Assert(numPointsUsed <= nPts);
+-    if (numPointsUsed < 0)
+-    {
+-        numPointsUsed = nPts;
+-    }
+-
+-    _newClusterCenters.create(nClusters, nDims, CV_32FC1);
+-    _clusterSizes.create(1, nClusters, CV_32SC1);
+-    _clusterBindings.create(1, numPointsUsed, CV_32SC1);
+-    _clusterSumDists.create(1, nClusters, CV_32FC1);
+-
+-    Mat points            = _points.getMat();
+-    Mat clusterCenters    = _clusterCenters.getMat();
+-    Mat newClusterCenters = _newClusterCenters.getMat();
+-    Mat clusterSizes      = _clusterSizes.getMat();
+-    Mat clusterBindings   = _clusterBindings.getMat();
+-    Mat clusterSumDists   = _clusterSumDists.getMat();
+-
+-    int result = fcvClusterEuclideanu8(points.data,
+-                                       nPts,
+-                                       nDims,
+-                                       ptsStride,
+-                                       numPointsUsed,
+-                                       nClusters,
+-                                       (float32_t*)clusterCenters.data,
+-                                       clusterCenterStride,
+-                                       (float32_t*)newClusterCenters.data,
+-                                       (uint32_t*)clusterSizes.data,
+-                                       (uint32_t*)clusterBindings.data,
+-                                       (float32_t*)clusterSumDists.data);
+-
+-    if (result)
+-    {
+-        CV_Error(cv::Error::StsInternal, cv::format("Failed to clusterize, error code: %d", result));
+-    }
+-}
+-
+-} // fastcv::
+-} // cv::
+diff --git a/modules/fastcv/test/test_cluster_euclidean.cpp b/modules/fastcv/test/test_cluster_euclidean.cpp
+deleted file mode 100644
+index c108f754..00000000
+--- a/modules/fastcv/test/test_cluster_euclidean.cpp
++++ /dev/null
+@@ -1,124 +0,0 @@
+-/*
+- * Copyright (c) 2024 Qualcomm Innovation Center, Inc. All rights reserved.
+- * SPDX-License-Identifier: Apache-2.0
+-*/
+-
+-#include "test_precomp.hpp"
+-
+-namespace opencv_test { namespace {
+-
+-// nPts, nDims, nClusters
+-typedef std::tuple<int, int, int> ClusterEuclideanTestParams;
+-class ClusterEuclideanTest : public ::testing::TestWithParam<ClusterEuclideanTestParams> {};
+-
+-TEST_P(ClusterEuclideanTest, accuracy)
+-{
+-    auto p = GetParam();
+-    int nPts      = std::get<0>(p);
+-    int nDims     = std::get<1>(p);
+-    int nClusters = std::get<2>(p);
+-
+-    Mat points(nPts, nDims, CV_8U);
+-    Mat clusterCenters(nClusters, nDims, CV_32F);
+-
+-    Mat trueMeans(nClusters, nDims, CV_32F);
+-    Mat stddevs(nClusters, nDims, CV_32F);
+-    std::vector<int> trueClusterSizes(nClusters, 0);
+-    std::vector<int> trueClusterBindings(nPts, 0);
+-    std::vector<float> trueSumDists(nClusters, 0);
+-
+-    cv::RNG& rng = cv::theRNG();
+-    for (int i = 0; i < nClusters; i++)
+-    {
+-        Mat mean(1, nDims, CV_64F), stdev(1, nDims, CV_64F);
+-        rng.fill(mean,  cv::RNG::UNIFORM, 0, 256);
+-        rng.fill(stdev, cv::RNG::UNIFORM, 5.f, 16);
+-        int lo =    i    * nPts / nClusters;
+-        int hi = (i + 1) * nPts / nClusters;
+-
+-        for (int d = 0; d < nDims; d++)
+-        {
+-            rng.fill(points.col(d).rowRange(lo, hi), cv::RNG::NORMAL,
+-                     mean.at<double>(d), stdev.at<double>(d));
+-        }
+-
+-        float sd = 0;
+-        for (int j = lo; j < hi; j++)
+-        {
+-            Mat pts64f;
+-            points.row(j).convertTo(pts64f, CV_64F);
+-            sd += cv::norm(mean, pts64f, NORM_L2);
+-            trueClusterBindings.at(j) = i;
+-            trueClusterSizes.at(i)++;
+-        }
+-        trueSumDists.at(i) = sd;
+-
+-        // let's shift initial cluster center a bit
+-        Mat(mean + stdev * 0.5).copyTo(clusterCenters.row(i));
+-
+-        mean.copyTo(trueMeans.row(i));
+-        stdev.copyTo(stddevs.row(i));
+-    }
+-
+-    Mat newClusterCenters;
+-    std::vector<int> clusterSizes, clusterBindings;
+-    std::vector<float> clusterSumDists;
+-    cv::fastcv::clusterEuclidean(points, clusterCenters, newClusterCenters, clusterSizes, clusterBindings, clusterSumDists);
+-
+-    if (cvtest::debugLevel > 0 && nDims == 2)
+-    {
+-        Mat draw(256, 256, CV_8UC3, Scalar(0));
+-        for (int i = 0; i < nPts; i++)
+-        {
+-            int x = std::rint(points.at<uchar>(i, 0));
+-            int y = std::rint(points.at<uchar>(i, 1));
+-            draw.at<Vec3b>(y, x) = Vec3b::all(128);
+-        }
+-        for (int i = 0; i < nClusters; i++)
+-        {
+-            float cx = trueMeans.at<double>(i, 0);
+-            float cy = trueMeans.at<double>(i, 1);
+-            draw.at<Vec3b>(cy, cx) = Vec3b(0, 255, 0);
+-
+-            float sx = stddevs.at<double>(i, 0);
+-            float sy = stddevs.at<double>(i, 1);
+-            cv::ellipse(draw, Point(cx, cy), Size(sx, sy), 0, 0, 360, Scalar(255, 0, 0));
+-
+-            float ox = clusterCenters.at<float>(i, 0);
+-            float oy = clusterCenters.at<float>(i, 1);
+-            draw.at<Vec3b>(oy, ox) = Vec3b(0, 0, 255);
+-
+-            float nx = newClusterCenters.at<float>(i, 0);
+-            float ny = newClusterCenters.at<float>(i, 1);
+-            draw.at<Vec3b>(ny, nx) = Vec3b(255, 255, 0);
+-        }
+-        cv::imwrite(cv::format("draw_%d_%d_%d.png", nPts, nDims, nClusters), draw);
+-    }
+-
+-    {
+-        std::vector<double> diffs;
+-        for (int i = 0; i < nClusters; i++)
+-        {
+-            double cs = std::abs((trueClusterSizes[i] - clusterSizes[i]) / double(trueClusterSizes[i]));
+-            diffs.push_back(cs);
+-        }
+-        double normL2  = cv::norm(diffs, NORM_L2) / nClusters;
+-
+-        EXPECT_LT(normL2, 0.392);
+-    }
+-
+-    {
+-        Mat bindings8u, trueBindings8u;
+-        Mat(clusterBindings).convertTo(bindings8u, CV_8U);
+-        Mat(trueClusterBindings).convertTo(trueBindings8u, CV_8U);
+-        double normH = cv::norm(bindings8u, trueBindings8u, NORM_HAMMING) / nPts;
+-        EXPECT_LT(normH, 0.658);
+-    }
+-}
+-
+-INSTANTIATE_TEST_CASE_P(FastCV_Extension, ClusterEuclideanTest,
+-                        ::testing::Combine(::testing::Values(100, 1000, 10000), // nPts
+-                                           ::testing::Values(2, 10, 32),        // nDims
+-                                           ::testing::Values(5, 10, 16)));      // nClusters
+-
+-}} // namespaces opencv_test, ::
+\ No newline at end of file
+-- 
+2.34.1
+
