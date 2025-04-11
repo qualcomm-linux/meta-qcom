@@ -1,0 +1,31 @@
+From fc160e32123cd323ba23543491e8eb2a98b0ac81 Mon Sep 17 00:00:00 2001
+From: Caleb Connolly <caleb.connolly@linaro.org>
+Date: Fri, 14 Feb 2025 15:54:40 +0000
+Subject: [PATCH 1/4] clk: stub: generic rpm-requests compatible
+
+Now that the rpm node has a generic compatible, replace the sm6115
+specific one with that. This fixed clk stub not binding for rpmcc on
+qcm2290/qrb2210 and enables MMC on RB1.
+
+Upstream-Status: Pending
+Signed-off-by: Caleb Connolly <caleb.connolly@linaro.org>
+---
+ drivers/clk/clk-stub.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/clk/clk-stub.c b/drivers/clk/clk-stub.c
+index 5fbbb07b7f..38ed0d094f 100644
+--- a/drivers/clk/clk-stub.c
++++ b/drivers/clk/clk-stub.c
+@@ -14,7 +14,7 @@
+ static const struct udevice_id nop_parent_ids[] = {
+ 	{ .compatible = "qcom,rpm-proc" },
+ 	{ .compatible = "qcom,glink-rpm" },
+-	{ .compatible = "qcom,rpm-sm6115" },
++	{ .compatible = "qcom,glink-smd-rpm" },
+ 	{ }
+ };
+ 
+-- 
+2.34.1
+
