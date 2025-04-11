@@ -28,18 +28,10 @@ repos:
       meta-poky:
 
 local_conf_header:
-  base: |
-    CONF_VERSION = "2"
-    INIT_MANAGER = "systemd"
-    PACKAGE_CLASSES = "package_ipk"
-    INHERIT += "buildstats buildstats-summary"
-    INHERIT += "buildhistory"
-    INHERIT += "rm_work"
   qcomflash: |
     IMAGE_CLASSES += "image_types_qcom"
     IMAGE_FSTYPES += "qcomflash"
   extra: |
-    DISTRO_FEATURES:append = " efi pni-names"
     EXTRA_IMAGE_FEATURES = "allow-empty-password empty-root-password allow-root-login"
     IMAGE_ROOTFS_EXTRA_SPACE = "307200"
 
