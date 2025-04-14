@@ -93,7 +93,7 @@ jobs:
           - qcom-armv8a
           - qcom-armv7a
         distro:
-          - name: poky/systemd
+          - name: poky-systemd
             yamlfile: ""
           - name: qcom
             yamlfile: 'ci/distro.yml:'
