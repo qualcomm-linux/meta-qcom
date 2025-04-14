@@ -126,7 +126,7 @@ jobs:
       - name: Publish image
         run: |
           build_dir=${CACHE_DIR}/builds/${BUILD_ID}
-          mkdir -p $build_dir
+          mkdir -p $build_dir/${{ matrix.distro.name }}
           img_dir=$build_dir/${{ matrix.distro.name }}/${{ matrix.machine }}
           [ -d $img_dir ] && rm -rf $img_dir
           deploy_dir=../kas/build/tmp/deploy/images/${{matrix.machine}}
