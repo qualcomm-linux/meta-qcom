@@ -82,6 +82,7 @@ jobs:
   compile:
     needs: kas-lock
     if: github.repository == 'qualcomm-linux/meta-qcom'
+    runs-on: [self-hosted, x86]
     strategy:
       fail-fast: true
       matrix:
@@ -92,7 +93,6 @@ jobs:
           - qrb2210-rb1-core-kit
           - qcom-armv8a
           - qcom-armv7a
-    runs-on: [self-hosted, x86]
     name: ${{ matrix.machine }}/poky/systemd
     steps:
       - uses: actions/checkout@v4
