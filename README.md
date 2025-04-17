@@ -79,6 +79,13 @@ an easy way to setup bitbake based projects. For more details, visit the
 
 For a manual build without KAS, refer to the [Yocto Project Quick Build](https://docs.yoctoproject.org/brief-yoctoprojectqs/index.html).
 
+
+If you get this error during build `Please use a umask which allows a+rx and u+rwx`, then run this command and try again:
+
+````
+umask 022
+````
+
 ## Flash
 
 ### Build QDL tool
