@@ -17,6 +17,11 @@ jobs:
   kas-mirror:
     if: github.repository == 'qualcomm-linux/meta-qcom'
     runs-on: [self-hosted, x86]
+    container:
+      image: ghcr.io/siemens/kas/kas:4.7
+      volumes:
+        - ${KAS_REPO_REF_DIR}:${KAS_REPO_REF_DIR}
+      options: --privileged --user=builder
     steps:
       - name: Update kas mirrors
         run: |
@@ -29,6 +34,11 @@ jobs:
     needs:  kas-mirror
     if: github.repository == 'qualcomm-linux/meta-qcom'
     runs-on: [self-hosted, x86]
+    container:
+      image: ghcr.io/siemens/kas/kas:4.7
+      volumes:
+        - ${KAS_REPO_REF_DIR}:${KAS_REPO_REF_DIR}
+      options: --privileged --user=builder
     steps:
       - uses: actions/checkout@v4
         with:
@@ -47,6 +57,10 @@ jobs:
     needs: kas-lock
     if: github.repository == 'qualcomm-linux/meta-qcom'
     runs-on: [self-hosted, x86]
+    container:
+      image: ghcr.io/siemens/kas/kas:4.7
+      volumes:
+        - ${KAS_REPO_REF_DIR}:${KAS_REPO_REF_DIR}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -65,6 +79,10 @@ jobs:
     needs: kas-lock
     if: github.repository == 'qualcomm-linux/meta-qcom'
     runs-on: [self-hosted, x86]
+    container:
+      image: ghcr.io/siemens/kas/kas:4.7
+      volumes:
+        - ${KAS_REPO_REF_DIR}:${KAS_REPO_REF_DIR}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -83,6 +101,10 @@ jobs:
     needs: kas-lock
     if: github.repository == 'qualcomm-linux/meta-qcom'
     runs-on: [self-hosted, x86]
+    container:
+      image: ghcr.io/siemens/kas/kas:4.7
+      volumes:
+        - ${KAS_REPO_REF_DIR}:${KAS_REPO_REF_DIR}
     strategy:
       fail-fast: true
       matrix:
@@ -103,6 +125,12 @@ jobs:
         with:
           name: kas-lock
           path: ci/
+
+      - name: Install build deps
+        run: |
+          sudo apt update -y
+          sudo apt install -y libcairo-dev meson python3-dev
+          sudo pip install -U pycairo==1.26.1 --break-system-packages
 
       - name: Kas build
         run: |
