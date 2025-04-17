@@ -16,4 +16,5 @@ RRECOMMENDS:${PN}-boot-essential = " \
 
 RRECOMMENDS:${PN}-boot-additional = " \
     fastrpc \
+    opencv \
 "
