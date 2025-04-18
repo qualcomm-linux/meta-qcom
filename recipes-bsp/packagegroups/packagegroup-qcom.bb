@@ -5,6 +5,7 @@ inherit packagegroup
 PACKAGES = " \
     ${PN}-boot-essential \
     ${PN}-boot-additional \
+    ${PN}-miscellaneous \
 "
 
 RRECOMMENDS:${PN}-boot-essential = " \
@@ -16,4 +17,8 @@ RRECOMMENDS:${PN}-boot-essential = " \
 
 RRECOMMENDS:${PN}-boot-additional = " \
     fastrpc \
+"
+
+RRECOMMENDS:${PN}-miscellaneous = " \
+    libdmabufheap \
 "
