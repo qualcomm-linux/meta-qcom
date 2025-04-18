@@ -23,4 +23,5 @@ RDEPENDS:${PN}-boot-additional = " \
 
 RRECOMMENDS:${PN}-miscellaneous = " \
     libdmabufheap \
+    libvmmem \
 "
