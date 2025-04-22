@@ -31,7 +31,7 @@ jobs:
 
       - name: Run kas lock
         run: |
-          kas dump --update --lock --inplace ci/base.yml
+          kas-container dump --update --lock --inplace ci/base.yml
 
       - uses: actions/upload-artifact@v4
         with:
@@ -54,7 +54,9 @@ jobs:
 
       - name: Run yocto-check-layer
         run: |
-          ci/yocto-check-layer.sh
+          export KAS_WORK_DIR=$PWD/../kas
+          mkdir $KAS_WORK_DIR
+          kas-container shell ci/base.yml -c /repo/ci/yocto-check-layer.sh
 
   yocto-patchreview:
     needs: kas-setup
@@ -72,7 +74,7 @@ jobs:
 
       - name: Run Yocto patchreview
         run: |
-          ci/yocto-patchreview.sh
+          kas-container shell ci/base.yml -c /repo/ci/yocto-patchreview.sh
 
   compile:
     needs: kas-setup
@@ -107,11 +109,12 @@ jobs:
           export SSTATE_DIR=${CACHE_DIR}/sstate-cache
           export KAS_WORK_DIR=$PWD/../kas
           mkdir $KAS_WORK_DIR
-          kas build ci/mirror.yml:ci/${{ matrix.machine }}.yml
-          ci/yocto-pybootchartgui.sh && mv $KAS_WORK_DIR/build/buildchart.svg .
+          kas-container build ci/mirror.yml:ci/${{ matrix.machine }}.yml
+          kas-container shell ci/base.yml -c /repo/ci/yocto-pybootchartgui.sh
+          mv $KAS_WORK_DIR/build/buildchart.svg .
 
           if [ "${{ matrix.machine }}" = "qcom-armv8a" ]; then
-            kas build ci/mirror.yml:ci/${{ matrix.machine }}.yml:ci/initramfs-test.yml
+            kas-container build ci/mirror.yml:ci/${{ matrix.machine }}.yml:ci/initramfs-test.yml
           fi
 
       - uses: actions/upload-artifact@v4
