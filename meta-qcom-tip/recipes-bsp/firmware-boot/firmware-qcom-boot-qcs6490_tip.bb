@@ -1,4 +1,5 @@
 require recipes-bsp/firmware-boot/firmware-qcom-boot-qcs6490.inc
+require firmware-qcom-boot-tip.inc
 
-SRC_URI[bootbinaries.sha256sum] = "38e6f424e02a8f99b9edf953e9d62b02489cb936426c58c48daf399ec6d5b60c"
+QCOM_FW_SOC = "qcm6490"
 SRC_URI[rb3gen2-core-kit.sha256sum] = "0fe1c0b4050cf54203203812b2c1f0d9698823d8defc8b6516414a4e5e0c557e"
