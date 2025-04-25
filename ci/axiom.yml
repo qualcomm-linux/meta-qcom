@@ -1,0 +1,26 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/siemens/kas/master/kas/schema-kas.json
+
+header:
+  version: 14
+
+
+repos:
+  meta-qcom:
+    url: https://github.com/qualcomm-linux/meta-qcom
+    branch: master
+    layers:
+      meta-axiom-ci:
+      "":
+  meta-openembedded:
+    url: https://github.com/openembedded/meta-openembedded
+    layers:
+      meta-oe:
+      meta-xfce:
+      meta-gnome:
+      meta-python:
+      meta-networking:
+      meta-multimedia: 
+
+local_conf_header:
+  base: |
+    DISTROOVERRIDES:prepend = "qcom-axiom-ci:"
