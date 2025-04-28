@@ -118,6 +118,32 @@ jobs:
           name: buildchart-${{ matrix.machine }}
           path: buildchart.svg
 
+      - name: Publish image for LAVA
+        env:
+          TOKEN: ${{ secrets.FIO_FILESERVER_TOKEN }}
+        run: |
+          set -e
+          set -o pipefail
+
+          if [ -z "${TOKEN}" ] ; then
+              echo "ERROR: Missing FIO_FILESERVER_TOKEN"
+              exit 1
+          fi
+          cd ../kas/build/tmp/deploy/images/${{matrix.machine}}
+
+          file=$(find ./ -type f -name \*qcomflash.tar.gz\* | head -n1 | sed 's/.\///')
+          if [ -z "$file" ] ; then
+              echo "No file found for LAVA"
+              exit 0
+          fi
+
+          echo "Found ${file}"
+          url=$(curl -v -w '%header{location}' -X PUT -H "Authentication: token ${TOKEN}" \
+                ${BASE_ARTIFACT_URL}/${BUILD_ID}/${{ matrix.machine }}/${file})
+          echo "Uploading to ${url}"
+
+          curl -v -X PUT --progress-bar -H "Content-Type: application/octet-stream" --upload-file ${file} "${url}" | cat
+
       - name: Publish image
         run: |
           build_dir=${CACHE_DIR}/builds/${BUILD_ID}
