@@ -121,17 +121,41 @@ jobs:
           path: buildchart.svg
 
       - name: Publish image
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          build_dir=${CACHE_DIR}/builds/${BUILD_ID}
+          mkdir -p $build_dir
+          img_dir=$build_dir/${{ matrix.machine }}
+          [ -d $img_dir ] && rm -rf $img_dir
           deploy_dir=../kas/build/tmp/deploy/images/${{matrix.machine}}
           find $deploy_dir/ -maxdepth 1 -name "*.rootfs*.qcomflash" -exec rm -rf {} \;
+          mv $deploy_dir $img_dir
 
           # Instruct our file server to make these files available for download
-          export URL="${BASE_ARTIFACT_URL}/${BUILD_ID}/${{ matrix.machine }}/"
-          export BUILD_DIR="$(readlink -f $deploy_dir)"
-          .github/workflows/publish_artifacts.py
-          echo Image available at: ${URL}
+          url="${BASE_ARTIFACT_URL}/${BUILD_ID}/${{ matrix.machine }}/"
+
+          retries=8
+          okay=0
+          shopt -s lastpipe  # allows us to capture the value of `okay` in the while loop below
+          for ((i=0; i<retries; i++)); do
+              curl -X POST -H "Accept: text/event-stream" -i --fail-with-body -s -N ${url} | \
+                  while read line; do
+                      echo $line
+                      if [[ $line == STATUS=* ]]; then
+                          if [[ $line == "STATUS=OK" ]]; then
+                              okay=1
+                              break
+                          fi
+                      fi
+                  done
+              [ $okay -eq 1 ] && break
+              echo # new line break in case response doesn't have one
+              echo "Error: unable to publish artifacts, sleep and retry"
+              sleep 2
+          done
+          (( retries == i )) && { echo 'Failed to publish artifacts'; exit 1; }
+
+          echo # new line break in case response doesn't have one
+          echo Image available at: ${url}
 
   create-output:
     needs: compile
