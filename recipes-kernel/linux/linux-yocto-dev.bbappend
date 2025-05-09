@@ -24,6 +24,8 @@ SRC_URI:append:qcom = " \
     file://qcm6490-board-dts/0001-dts-rb3gen2-soundwire-checkin.patch \
     file://workarounds/0001-QCLINUX-arm64-dts-qcom-qcm6490-disable-sdhc1-for-ufs.patch \
     file://workarounds/0001-PENDING-arm64-dts-qcom-Remove-voltage-vote-support-f.patch \
+    file://workarounds/0002-arm64-dts-qcom-Remove-CPUidle-states-for-QCS615.patch \
+    file://workarounds/0003-arm64-dts-qcom-Add-i2c2-support-for-QCS615-RIDE-boar.patch \
     file://drivers/0003-PCI-Add-new-start_link-stop_link-function-ops.patch \
     file://drivers/0004-PCI-dwc-Add-host_start_link-host_start_link-hooks-fo.patch \
     file://drivers/0005-PCI-dwc-Implement-.start_link-.stop_link-hooks.patch \
@@ -44,6 +46,7 @@ SRC_URI:append:qcom = " \
     file://qcs9075-board-dts/0003-arm64-dts-qcom-Add-support-for-QCS9075-Ride-Ride-r3.patch \
     file://qcs9075-board-dts/0004-arm64-dts-qcom-Enable-cpu-cooling-devices-for-QCS907.patch \
     file://qcs9075-board-dts/0001-arm64-dts-qcom-qcs9075-rb8-enable-UFS.patch \
+    file://qcs615-board-dts/0001-arm64-dts-qcom-qcs615-Add-Command-DB-support.patch \
 "
 
 # Include additional kernel configs.

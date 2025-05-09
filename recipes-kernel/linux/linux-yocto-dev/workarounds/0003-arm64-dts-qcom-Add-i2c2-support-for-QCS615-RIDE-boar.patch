@@ -1,0 +1,45 @@
+From ee40cb39d1ade4280e7ff2f17440ffa040c67eb9 Mon Sep 17 00:00:00 2001
+From: Li Liu <quic_lliu6@quicinc.com>
+Date: Tue, 15 Oct 2024 10:58:10 +0800
+Subject: [PATCH 3/3] arm64: dts: qcom: Add i2c2 support for QCS615 RIDE board
+
+Add i2c2 configuration for QCS615.
+
+Signed-off-by: Li Liu <quic_lliu6@quicinc.com>
+Signed-off-by: Yuanjie Yang <quic_yuanjiey@quicinc.com>
+Upstream-Status: Inappropriate [Currently systemmd-boot have
+some boot up issues, add i2c2 Node as a workaround to normal boot]
+---
+ arch/arm64/boot/dts/qcom/qcs615-ride.dts | 16 ++++++++++++++++
+ 1 file changed, 16 insertions(+)
+
+diff --git a/arch/arm64/boot/dts/qcom/qcs615-ride.dts b/arch/arm64/boot/dts/qcom/qcs615-ride.dts
+index 514726708125..8c7dc6f28a7d 100644
+--- a/arch/arm64/boot/dts/qcom/qcs615-ride.dts
++++ b/arch/arm64/boot/dts/qcom/qcs615-ride.dts
+@@ -275,6 +275,22 @@ &gcc {
+ 		 <&sleep_clk>;
+ };
+ 
++&i2c2 {
++	clock-frequency = <400000>;
++	status = "okay";
++
++	ioexp: gpio@3e {
++		compatible = "semtech,sx1509q";
++		reg = <0x3e>;
++		interrupts-extended = <&tlmm 58 IRQ_TYPE_EDGE_FALLING>;
++		gpio-controller;
++		#gpio-cells = <2>;
++		interrupt-controller;
++		#interrupt-cells = <2>;
++		semtech,probe-reset;
++	};
++};
++
+ &pm8150_gpios {
+ 	usb2_en: usb2-en-state {
+ 		pins = "gpio10";
+-- 
+2.34.1
+

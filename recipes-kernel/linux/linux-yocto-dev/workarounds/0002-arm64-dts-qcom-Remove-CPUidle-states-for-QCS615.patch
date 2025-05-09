@@ -1,0 +1,154 @@
+From 7f6b9fb790c5bb28406ff49e46b9b2d757bab233 Mon Sep 17 00:00:00 2001
+From: Sneh Mankad <quic_smankad@quicinc.com>
+Date: Wed, 26 Mar 2025 09:37:20 +0530
+Subject: [PATCH 2/3] arm64: dts: qcom: Remove CPUidle states for QCS615
+
+Remove idle states and domain idle states to disable LPMs.
+
+Signed-off-by: Sneh Mankad <quic_smankad@quicinc.com>
+Upstream-Status: Inappropriate [Currently systemmd-boot can not support CPU idle states]
+---
+ arch/arm64/boot/dts/qcom/qcs615.dtsi | 81 ----------------------------
+ 1 file changed, 81 deletions(-)
+
+diff --git a/arch/arm64/boot/dts/qcom/qcs615.dtsi b/arch/arm64/boot/dts/qcom/qcs615.dtsi
+index 4a96202aea99..6180314b992c 100644
+--- a/arch/arm64/boot/dts/qcom/qcs615.dtsi
++++ b/arch/arm64/boot/dts/qcom/qcs615.dtsi
+@@ -231,76 +231,6 @@ eud_in: endpoint {
+ 		};
+ 	};
+ 
+-	idle-states {
+-		entry-method = "psci";
+-
+-		little_cpu_sleep_0: cpu-sleep-0-0 {
+-			compatible = "arm,idle-state";
+-			idle-state-name = "silver-power-collapse";
+-			arm,psci-suspend-param = <0x40000003>;
+-			entry-latency-us = <549>;
+-			exit-latency-us = <901>;
+-			min-residency-us = <1774>;
+-			local-timer-stop;
+-		};
+-
+-		little_cpu_sleep_1: cpu-sleep-0-1 {
+-			compatible = "arm,idle-state";
+-			idle-state-name = "silver-rail-power-collapse";
+-			arm,psci-suspend-param = <0x40000004>;
+-			entry-latency-us = <702>;
+-			exit-latency-us = <915>;
+-			min-residency-us = <4001>;
+-			local-timer-stop;
+-		};
+-
+-		big_cpu_sleep_0: cpu-sleep-1-0 {
+-			compatible = "arm,idle-state";
+-			idle-state-name = "gold-power-collapse";
+-			arm,psci-suspend-param = <0x40000003>;
+-			entry-latency-us = <523>;
+-			exit-latency-us = <1244>;
+-			min-residency-us = <2207>;
+-			local-timer-stop;
+-		};
+-
+-		big_cpu_sleep_1: cpu-sleep-1-1 {
+-			compatible = "arm,idle-state";
+-			idle-state-name = "gold-rail-power-collapse";
+-			arm,psci-suspend-param = <0x40000004>;
+-			entry-latency-us = <526>;
+-			exit-latency-us = <1854>;
+-			min-residency-us = <5555>;
+-			local-timer-stop;
+-		};
+-	};
+-
+-	domain-idle-states {
+-		cluster_sleep_0: cluster-sleep-0 {
+-			compatible = "domain-idle-state";
+-			arm,psci-suspend-param = <0x41000044>;
+-			entry-latency-us = <2752>;
+-			exit-latency-us = <3048>;
+-			min-residency-us = <6118>;
+-		};
+-
+-		cluster_sleep_1: cluster-sleep-1 {
+-			compatible = "domain-idle-state";
+-			arm,psci-suspend-param = <0x41001344>;
+-			entry-latency-us = <3263>;
+-			exit-latency-us = <4562>;
+-			min-residency-us = <8467>;
+-		};
+-
+-		cluster_sleep_2: cluster-sleep-2 {
+-			compatible = "domain-idle-state";
+-			arm,psci-suspend-param = <0x4100b344>;
+-			entry-latency-us = <3638>;
+-			exit-latency-us = <6562>;
+-			min-residency-us = <9826>;
+-		};
+-	};
+-
+ 	memory@80000000 {
+ 		device_type = "memory";
+ 		/* We expect the bootloader to fill in the size */
+@@ -359,56 +289,45 @@ psci {
+ 		cpu_pd0: power-domain-cpu0 {
+ 			#power-domain-cells = <0>;
+ 			power-domains = <&cluster_pd>;
+-			domain-idle-states = <&little_cpu_sleep_0 &little_cpu_sleep_1>;
+ 		};
+ 
+ 		cpu_pd1: power-domain-cpu1 {
+ 			#power-domain-cells = <0>;
+ 			power-domains = <&cluster_pd>;
+-			domain-idle-states = <&little_cpu_sleep_0 &little_cpu_sleep_1>;
+ 		};
+ 
+ 		cpu_pd2: power-domain-cpu2 {
+ 			#power-domain-cells = <0>;
+ 			power-domains = <&cluster_pd>;
+-			domain-idle-states = <&little_cpu_sleep_0 &little_cpu_sleep_1>;
+ 		};
+ 
+ 		cpu_pd3: power-domain-cpu3 {
+ 			#power-domain-cells = <0>;
+ 			power-domains = <&cluster_pd>;
+-			domain-idle-states = <&little_cpu_sleep_0 &little_cpu_sleep_1>;
+ 		};
+ 
+ 		cpu_pd4: power-domain-cpu4 {
+ 			#power-domain-cells = <0>;
+ 			power-domains = <&cluster_pd>;
+-			domain-idle-states = <&little_cpu_sleep_0 &little_cpu_sleep_1>;
+ 		};
+ 
+ 		cpu_pd5: power-domain-cpu5 {
+ 			#power-domain-cells = <0>;
+ 			power-domains = <&cluster_pd>;
+-			domain-idle-states = <&little_cpu_sleep_0 &little_cpu_sleep_1>;
+ 		};
+ 
+ 		cpu_pd6: power-domain-cpu6 {
+ 			#power-domain-cells = <0>;
+ 			power-domains = <&cluster_pd>;
+-			domain-idle-states = <&big_cpu_sleep_0 &big_cpu_sleep_1>;
+ 		};
+ 
+ 		cpu_pd7: power-domain-cpu7 {
+ 			#power-domain-cells = <0>;
+ 			power-domains = <&cluster_pd>;
+-			domain-idle-states = <&big_cpu_sleep_0 &big_cpu_sleep_1>;
+ 		};
+ 
+ 		cluster_pd: power-domain-cluster {
+ 			#power-domain-cells = <0>;
+-			domain-idle-states = <&cluster_sleep_0
+-					      &cluster_sleep_1
+-					      &cluster_sleep_2>;
+ 		};
+ 	};
+ 
+-- 
+2.34.1
+
