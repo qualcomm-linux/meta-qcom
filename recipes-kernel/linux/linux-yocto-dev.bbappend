@@ -37,6 +37,7 @@ SRC_URI:append:qcom = " \
     file://qcs9075-board-dts/0003-arm64-dts-qcom-Add-support-for-QCS9075-Ride-Ride-r3.patch \
     file://qcs9075-board-dts/0004-arm64-dts-qcom-Enable-cpu-cooling-devices-for-QCS907.patch \
     file://qcs9075-board-dts/0001-arm64-dts-qcom-qcs9075-rb8-enable-UFS.patch \
+    file://workarounds/0001-iommu-Fix-crash-in-report_iommu_fault.patch \
 "
 
 # Include additional kernel configs.

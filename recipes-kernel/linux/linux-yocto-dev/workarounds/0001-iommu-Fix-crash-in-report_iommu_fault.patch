@@ -1,0 +1,74 @@
+From df4bf3fa1b1e8d03380206fa027f956a62de517b Mon Sep 17 00:00:00 2001
+From: Fedor Pchelkin <pchelkin@ispras.ru>
+Date: Wed, 9 Apr 2025 00:33:41 +0300
+Subject: [PATCH] iommu: Fix crash in report_iommu_fault()
+
+The following crash is observed while handling an IOMMU fault with a
+recent kernel:
+
+kernel tried to execute NX-protected page - exploit attempt? (uid: 0)
+BUG: unable to handle page fault for address: ffff8c708299f700
+PGD 19ee01067 P4D 19ee01067 PUD 101c10063 PMD 80000001028001e3
+Oops: Oops: 0011 [#1] SMP NOPTI
+CPU: 4 UID: 0 PID: 139 Comm: irq/25-AMD-Vi Not tainted 6.15.0-rc1+ #20 PREEMPT(lazy)
+Hardware name: LENOVO 21D0/LNVNB161216, BIOS J6CN50WW 09/27/2024
+RIP: 0010:0xffff8c708299f700
+Call Trace:
+ <TASK>
+ ? report_iommu_fault+0x78/0xd3
+ ? amd_iommu_report_page_fault+0x91/0x150
+ ? amd_iommu_int_thread+0x77/0x180
+ ? __pfx_irq_thread_fn+0x10/0x10
+ ? irq_thread_fn+0x23/0x60
+ ? irq_thread+0xf9/0x1e0
+ ? __pfx_irq_thread_dtor+0x10/0x10
+ ? __pfx_irq_thread+0x10/0x10
+ ? kthread+0xfc/0x240
+ ? __pfx_kthread+0x10/0x10
+ ? ret_from_fork+0x34/0x50
+ ? __pfx_kthread+0x10/0x10
+ ? ret_from_fork_asm+0x1a/0x30
+ </TASK>
+
+report_iommu_fault() checks for an installed handler comparing the
+corresponding field to NULL. It can (and could before) be called for a
+domain with a different cookie type - IOMMU_COOKIE_DMA_IOVA, specifically.
+Cookie is represented as a union so we may end up with a garbage value
+treated there if this happens for a domain with another cookie type.
+
+Formerly there were two exclusive cookie types in the union.
+IOMMU_DOMAIN_SVA has a dedicated iommu_report_device_fault().
+
+Call the fault handler only if the passed domain has a required cookie
+type.
+
+Found by Linux Verification Center (linuxtesting.org).
+
+Fixes: 6aa63a4ec947 ("iommu: Sort out domain user data")
+Signed-off-by: Fedor Pchelkin <pchelkin@ispras.ru>
+Reviewed-by: Kevin Tian <kevin.tian@intel.com>
+Reviewed-by: Jason Gunthorpe <jgg@nvidia.com>
+Link: https://lore.kernel.org/r/20250408213342.285955-1-pchelkin@ispras.ru
+Signed-off-by: Joerg Roedel <jroedel@suse.de>
+Upstream-Status: Backport [https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/patch/?id=df4bf3fa1b1e8d03380206fa027f956a62de517b]
+---
+ drivers/iommu/iommu.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/drivers/iommu/iommu.c b/drivers/iommu/iommu.c
+index c8033ca66377..5729e8ecdda3 100644
+--- a/drivers/iommu/iommu.c
++++ b/drivers/iommu/iommu.c
+@@ -2717,7 +2717,8 @@ int report_iommu_fault(struct iommu_domain *domain, struct device *dev,
+ 	 * if upper layers showed interest and installed a fault handler,
+ 	 * invoke it.
+ 	 */
+-	if (domain->handler)
++	if (domain->cookie_type == IOMMU_COOKIE_FAULT_HANDLER &&
++	    domain->handler)
+ 		ret = domain->handler(domain, dev, iova, flags,
+ 						domain->handler_token);
+ 
+-- 
+2.39.5
+
