@@ -10,6 +10,7 @@ on:
 env:
   CACHE_DIR: /srv/gh-runners/quic-yocto
   KAS_REPO_REF_DIR: /srv/gh-runners/quic-yocto/kas-mirrors
+  KAS_IMAGE_VERSION: latest
 
 jobs:
   kas-setup:
