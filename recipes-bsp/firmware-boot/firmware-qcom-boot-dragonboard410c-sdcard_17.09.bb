@@ -7,7 +7,7 @@ SRC_URI = "https://releases.linaro.org/96boards/dragonboard410c/linaro/rescue/17
 SRC_URI[md5sum] = "e15da2a623442d66587aea506599fb69"
 SRC_URI[sha256sum] = "9885f915ebd4986432340cf1d03b8fd2bfdd97ad6a4a7466200fddbe41cdcf5c"
 
-BOOTBINARIES = ""
+BOOTBINARIES = "."
 
 QCOM_BOOT_IMG_SUBDIR = "dragonboard410c"
 

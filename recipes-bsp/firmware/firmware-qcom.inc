@@ -12,9 +12,6 @@ FW_QCOM_SUBDIR ?= "${FW_QCOM_NAME}"
 FW_QCOM_BASE_PATH = "${nonarch_base_libdir}/firmware/qcom"
 FW_QCOM_PATH = "${FW_QCOM_BASE_PATH}/${FW_QCOM_SUBDIR}"
 
-DSP_QCOM_BASE_PATH = "${datadir}/qcom"
-DSP_QCOM_PATH = "${DSP_QCOM_BASE_PATH}/${FW_QCOM_SUBDIR}"
-
 SPLIT_FIRMWARE_PACKAGES ?= ""
 
 PACKAGE_BEFORE_PN += "${SPLIT_FIRMWARE_PACKAGES}"
@@ -25,9 +22,10 @@ RRECOMMENDS:${PN} += "${@ ' '.join(filter(lambda p: not p.endswith('-split'), d.
 FILES:linux-firmware-qcom-${FW_QCOM_NAME}-adreno = "${FW_QCOM_PATH}/*_zap.mbn"
 FILES:linux-firmware-qcom-${FW_QCOM_NAME}-audio = "${FW_QCOM_PATH}/adsp.mbn ${FW_QCOM_PATH}/adsp_dtb.mbn ${FW_QCOM_PATH}/adsp*.jsn ${FW_QCOM_PATH}/battmgr.jsn"
 FILES:linux-firmware-qcom-${FW_QCOM_NAME}-audio-split = "${FW_QCOM_PATH}/adsp.mdt ${FW_QCOM_PATH}/adsp.b*"
-FILES:linux-firmware-qcom-${FW_QCOM_NAME}-compute = "${FW_QCOM_PATH}/cdsp.mbn ${FW_QCOM_PATH}/cdsp_dtb.mbn ${FW_QCOM_PATH}/cdsp*.jsn"
+FILES:linux-firmware-qcom-${FW_QCOM_NAME}-compute = "${FW_QCOM_PATH}/cdsp*.mbn ${FW_QCOM_PATH}/cdsp_dtb.mbn ${FW_QCOM_PATH}/cdsp*.jsn"
 FILES:linux-firmware-qcom-${FW_QCOM_NAME}-compute-split = "${FW_QCOM_PATH}/cdsp.mdt ${FW_QCOM_PATH}/cdsp.b*"
 FILES:linux-firmware-qcom-${FW_QCOM_NAME}-dsps = "${FW_QCOM_PATH}/dsps.mbn"
+FILES:linux-firmware-qcom-${FW_QCOM_NAME}-generalpurpose = "${FW_QCOM_PATH}/gpdsp*.mbn"
 FILES:linux-firmware-qcom-${FW_QCOM_NAME}-gss = "${FW_QCOM_PATH}/gss.mbn"
 FILES:linux-firmware-qcom-${FW_QCOM_NAME}-ipa = "${FW_QCOM_PATH}/ipa_fws.mbn ${FW_QCOM_PATH}/ipa_fws.elf"
 FILES:linux-firmware-qcom-${FW_QCOM_NAME}-modem = "${FW_QCOM_PATH}/mba.mbn ${FW_QCOM_PATH}/modem.mbn ${FW_QCOM_PATH}/modem*.jsn"
