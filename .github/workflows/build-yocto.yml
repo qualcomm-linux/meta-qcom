@@ -120,6 +120,14 @@ jobs:
           name: buildchart-${{ matrix.machine }}
           path: buildchart.svg
 
+      - name: Sstate-cache cleanup
+        if: github.event_name == 'push'
+        run: |
+          export SSTATE_DIR=${CACHE_DIR}/sstate-cache
+          export KAS_WORK_DIR=$PWD/../kas
+          SSTATE_CACHE_MANAGEMENT="${KAS_WORK_DIR}/oe-core/scripts/sstate-cache-management.py --cache-dir ${SSTATE_DIR} --remove-duplicated --remove-orphans --debug --yes"
+          flock ${SSTATE_DIR}-lock --command "kas shell ci/${{ matrix.machine }}.yml --command \"$SSTATE_CACHE_MANAGEMENT\""
+
       - name: Publish image
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
