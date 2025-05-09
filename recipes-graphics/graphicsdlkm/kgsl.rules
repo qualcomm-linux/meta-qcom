@@ -1,0 +1,1 @@
+KERNEL=="kgsl-3d0", MODE="0666"
