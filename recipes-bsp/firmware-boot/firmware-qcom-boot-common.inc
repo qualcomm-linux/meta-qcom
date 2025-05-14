@@ -21,6 +21,7 @@ do_deploy() {
     find "${UNPACKDIR}/${BOOTBINARIES}" -name '*.fv' -exec install -m 0644 {} ${DEPLOYDIR}/${QCOM_BOOT_IMG_SUBDIR} \;
     find "${UNPACKDIR}/${BOOTBINARIES}" -name '*.mbn' -exec install -m 0644 {} ${DEPLOYDIR}/${QCOM_BOOT_IMG_SUBDIR} \;
     find "${UNPACKDIR}/${BOOTBINARIES}" -name '*.melf' -exec install -m 0644 {} ${DEPLOYDIR}/${QCOM_BOOT_IMG_SUBDIR} \;
+    find "${UNPACKDIR}/${BOOTBINARIES}" -name 'contents.xml' -exec install -m 0644 {} ${DEPLOYDIR}/${QCOM_BOOT_IMG_SUBDIR} \;
 
     find "${UNPACKDIR}" -name 'cdt*bin' -exec install -m 0644 {} ${DEPLOYDIR}/${QCOM_BOOT_IMG_SUBDIR} \;
 }
