@@ -12,7 +12,7 @@ SRC_URI = " \
     https://artifacts.codelinaro.org/artifactory/codelinaro-le/Qualcomm_Linux/QCS9100/cdt/ride-sx_v3.zip;downloadfilename=cdt-qcs9100-ride-sx-v3_${PV}.zip;name=qcs9100-ride-sx \
     https://artifacts.codelinaro.org/artifactory/codelinaro-le/Qualcomm_Linux/QCS9100/cdt/rb8_core_kit.zip;downloadfilename=cdt-qcs9100-rb8-core-kit_${PV}.zip;name=qcs9100-rb8-ck \
     "
-SRC_URI[bootbinaries.sha256sum] = "c8042ef4668761f75021886b931d678339ca9cbab936a20f951a6ba747a77303"
+SRC_URI[bootbinaries.sha256sum] = "10a0f1859021ef8e0e8e367c5050faf16573af99c4e4ffc608f5e0804093ff01"
 SRC_URI[qcs9100-rb8-ck.sha256sum] = "a252244f800d7c9e15883e12935af4113f9f2ecba6490e46cd9b943169f15bfa"
 SRC_URI[qcs9100-ride-sx.sha256sum] = "377a8405899ac82199deaf70bca3648c15b924a3fcef8f109555e661ed70f4b9"
 
