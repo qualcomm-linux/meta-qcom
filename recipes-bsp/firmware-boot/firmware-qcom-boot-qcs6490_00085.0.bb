@@ -11,7 +11,7 @@ SRC_URI = " \
     https://${FW_ARTIFACTORY}/${FW_BUILD_ID}/${FW_BIN_PATH}/${BOOTBINARIES}.zip;downloadfilename=${BOOTBINARIES}_r1.0_${PV}.zip;name=bootbinaries \
     https://artifacts.codelinaro.org/artifactory/codelinaro-le/Qualcomm_Linux/QCS6490/cdt/rb3gen2-core-kit.zip;downloadfilename=cdt-rb3gen2-core-kit_${PV}.zip;name=rb3gen2-core-kit \
     "
-SRC_URI[bootbinaries.sha256sum] = "38e6f424e02a8f99b9edf953e9d62b02489cb936426c58c48daf399ec6d5b60c"
+SRC_URI[bootbinaries.sha256sum] = "9b2b38e22c18896765d789609ed321f47b25e4f9574204995f591abc1b598ec4"
 SRC_URI[rb3gen2-core-kit.sha256sum] = "0fe1c0b4050cf54203203812b2c1f0d9698823d8defc8b6516414a4e5e0c557e"
 
 QCOM_BOOT_IMG_SUBDIR = "qcm6490"

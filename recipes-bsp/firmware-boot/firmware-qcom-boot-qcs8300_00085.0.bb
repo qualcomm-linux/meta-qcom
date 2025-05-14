@@ -11,7 +11,7 @@ SRC_URI = " \
     https://${FW_ARTIFACTORY}/${FW_BUILD_ID}/${FW_BIN_PATH}/${BOOTBINARIES}.zip;downloadfilename=${BOOTBINARIES}_r1.0_${PV}.zip;name=bootbinaries \
     https://artifacts.codelinaro.org/artifactory/codelinaro-le/Qualcomm_Linux/QCS8300/cdt/ride-sx.zip;downloadfilename=cdt-qcs8300-ride-sx_${PV}.zip;name=qcs8300-ride-sx \
     "
-SRC_URI[bootbinaries.sha256sum] = "826599d4ef60337f38de935f3049134489e3f703b874dd592996b013f8e9e40a"
+SRC_URI[bootbinaries.sha256sum] = "5f82e10d64afb10fe812bb6741aa74894718fd05654f39d1466f54ebe81dbb42"
 SRC_URI[qcs8300-ride-sx.sha256sum] = "d7fc667372b28383a36d586333097d84b9d9c104f4dd1845d33904e2d6b39f80"
 
 QCOM_BOOT_IMG_SUBDIR = "qcs8300"
