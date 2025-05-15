@@ -2,9 +2,12 @@ SUMMARY = "Extra userspace packages for QCOM platforms"
 
 inherit packagegroup
 
+PACKAGE_ARCH = "{MACHINE_ARCH}"
+
 PACKAGES = " \
     ${PN}-boot-essential \
     ${PN}-boot-additional \
+    ${PN}-miscellaneous \
 "
 
 RDEPENDS:${PN}-boot-essential = " \
@@ -16,4 +19,9 @@ RDEPENDS:${PN}-boot-essential = " \
 
 RDEPENDS:${PN}-boot-additional = " \
     fastrpc \
+"
+
+RRECOMMENDS:${PN}-miscellaneous = " \
+    libdmabufheap \
+    libvmmem \
 "
