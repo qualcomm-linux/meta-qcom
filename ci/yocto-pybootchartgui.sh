@@ -4,12 +4,13 @@
 
 TOPDIR=$(realpath $(dirname $(readlink -f $0))/..)
 
-if [ -z $KAS_WORK_DIR ]; then
-    echo "KAS_WORK_DIR is empty and it needs to point to populated work dir"
+if [ ! -d /build ] || [ ! -d /work/build ] || [ "$TOPDIR" != "/repo" ] ; then
+    echo "ERROR: This script is designed to run inside kas-container"
+    exit 1
 fi
 
 # pybootchartgui tool
-CMD="$CMD $KAS_WORK_DIR/oe-core/scripts/pybootchartgui/pybootchartgui.py"
+CMD="$CMD /work/oe-core/scripts/pybootchartgui/pybootchartgui.py"
 # display time in minutes instead of seconds
 CMD="$CMD --minutes"
 # image format (png, svg, pdf); default format png
@@ -17,6 +18,6 @@ CMD="$CMD --format=svg"
 # output path (file or directory) where charts are stored
 CMD="$CMD --output=buildchart"
 # /path/to/tmp/buildstats/<recipe-machine>/<BUILDNAME>/
-CMD="$CMD $KAS_WORK_DIR/build/tmp/buildstats"
+CMD="$CMD /work/build/tmp/buildstats"
 
-exec kas shell $TOPDIR/ci/base.yml --command "$CMD"
+exec $CMD
