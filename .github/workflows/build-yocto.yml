@@ -137,6 +137,18 @@ jobs:
           .github/workflows/publish_artifacts.py
           echo Image available at: ${URL}
 
+      # For PR, we might have new recipes not included in any image we build
+      # let's try to build any new or modified recipes, just in case.
+      # In most case it should be a quick no-op.
+      - name: Poor man's meta-qcom world build
+        if: github.event_name == 'pull_request'
+        run: |
+          export DL_DIR=${CACHE_DIR}/downloads
+          export SSTATE_DIR=${CACHE_DIR}/sstate-cache
+          export KAS_WORK_DIR=$PWD/../kas
+          RECIPES=$(git diff --name-only ${{ github.event.pull_request.base.sha }} -- *.{bb,bbappend} | sed -e 's!.*/!!g' -e 's!\(_.*\)\?\.bb\(append\)\?!!g')
+          if [ -n "$RECIPES" ]; then kas shell ci/mirror.yml:ci/${{ matrix.machine }}.yml --command "bitbake $RECIPES" ; fi
+
   create-output:
     needs: compile
     outputs:
