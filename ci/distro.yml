@@ -3,7 +3,7 @@
 header:
   version: 14
 
-distro: qcom-wayland
+distro: qcom
 
 repos:
   meta-qcom-distro:
