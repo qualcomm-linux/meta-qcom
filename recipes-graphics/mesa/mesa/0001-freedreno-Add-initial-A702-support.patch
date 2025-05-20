@@ -1,4 +1,4 @@
-From 502a42545f015f547546af52475e279602b7db26 Mon Sep 17 00:00:00 2001
+From 4233f127c5f1ab7e46b86df025f7d60e17f3b8a4 Mon Sep 17 00:00:00 2001
 From: Konrad Dybcio <konrad.dybcio@linaro.org>
 Date: Fri, 16 Feb 2024 20:50:59 +0100
 Subject: [PATCH] freedreno: Add initial A702 support
@@ -8,6 +8,7 @@ Can we forget this SKU exists?
 Turns out, not really.. But at least we can get GPU accel on watches!
 
 Signed-off-by: Konrad Dybcio <konrad.dybcio@linaro.org>
+Signed-off-by: Ricardo Salveti <ricardo.salveti@oss.qualcomm.com>
 Upstream-Status: Submitted [https://gitlab.freedesktop.org/mesa/mesa/-/merge_requests/27665]
 ---
  src/freedreno/common/freedreno_dev_info.h     |  3 ++
@@ -23,10 +24,10 @@ Upstream-Status: Submitted [https://gitlab.freedesktop.org/mesa/mesa/-/merge_req
  10 files changed, 75 insertions(+), 16 deletions(-)
 
 diff --git a/src/freedreno/common/freedreno_dev_info.h b/src/freedreno/common/freedreno_dev_info.h
-index c8b7884ee8ae..03d3368f018a 100644
+index 6b20f84506c..4b56f89d297 100644
 --- a/src/freedreno/common/freedreno_dev_info.h
 +++ b/src/freedreno/common/freedreno_dev_info.h
-@@ -207,6 +207,9 @@ struct fd_dev_info {
+@@ -219,6 +219,9 @@ struct fd_dev_info {
        /* Whether the sad instruction (iadd3) is supported. */
        bool has_sad;
  
@@ -37,10 +38,10 @@ index c8b7884ee8ae..03d3368f018a 100644
           uint32_t PC_POWER_CNTL;
           uint32_t TPL1_DBG_ECO_CNTL;
 diff --git a/src/freedreno/common/freedreno_devices.py b/src/freedreno/common/freedreno_devices.py
-index 0e7e74c6a141..c5d28cf34bcc 100644
+index 6b41d22574d..6897e63c706 100644
 --- a/src/freedreno/common/freedreno_devices.py
 +++ b/src/freedreno/common/freedreno_devices.py
-@@ -819,6 +819,58 @@ add_gpus([
+@@ -825,6 +825,58 @@ add_gpus([
          ],
      ))
  
@@ -100,10 +101,10 @@ index 0e7e74c6a141..c5d28cf34bcc 100644
  a7xx_base = A6XXProps(
          has_gmem_fast_clear = True,
 diff --git a/src/freedreno/registers/adreno/a6xx.xml b/src/freedreno/registers/adreno/a6xx.xml
-index d49919f6344c..dbf94dbaefab 100644
+index 17d26f49260..9aa117357fe 100644
 --- a/src/freedreno/registers/adreno/a6xx.xml
 +++ b/src/freedreno/registers/adreno/a6xx.xml
-@@ -4353,7 +4353,7 @@ to upconvert to 32b float internally?
+@@ -4352,7 +4352,7 @@ to upconvert to 32b float internally?
  	<reg32 offset="0x9306" name="VPC_SO_DISABLE" usage="rp_blit">
  		<bitfield name="DISABLE" pos="0" type="boolean"/>
  	</reg32>
@@ -113,20 +114,20 @@ index d49919f6344c..dbf94dbaefab 100644
  	</reg32>
  	<reg32 offset="0x9308" name="VPC_ATTR_BUF_SIZE_GMEM" variants="A7XX-" usage="rp_blit">
 diff --git a/src/freedreno/vulkan/tu_cmd_buffer.cc b/src/freedreno/vulkan/tu_cmd_buffer.cc
-index 3e3a9f5f1e95..92965586c16e 100644
+index e0eb0849e80..1a92534babe 100644
 --- a/src/freedreno/vulkan/tu_cmd_buffer.cc
 +++ b/src/freedreno/vulkan/tu_cmd_buffer.cc
-@@ -1094,7 +1094,8 @@ tu6_emit_tile_select(struct tu_cmd_buffer *cmd,
- 
-       tu_cs_emit_pkt7(cs, CP_SET_BIN_DATA5_OFFSET, 4);
-       tu_cs_emit(cs, tiling->pipe_sizes[pipe] |
--                     CP_SET_BIN_DATA5_0_VSC_N(slot));
-+                     CP_SET_BIN_DATA5_0_VSC_N(slot)
-+                     /* A702 also sets BIT(0) but that hangchecks */);
-       tu_cs_emit(cs, pipe * cmd->vsc_draw_strm_pitch);
-       tu_cs_emit(cs, pipe * 4);
-       tu_cs_emit(cs, pipe * cmd->vsc_prim_strm_pitch);
-@@ -1373,7 +1374,7 @@ tu6_init_static_regs(struct tu_device *dev, struct tu_cs *cs)
+@@ -1212,7 +1212,8 @@ tu6_emit_tile_select(struct tu_cmd_buffer *cmd,
+       tu_cs_emit(cs, vsc->pipe_sizes[tile->pipe] |
+                      CP_SET_BIN_DATA5_0_VSC_N(slot) |
+                      CP_SET_BIN_DATA5_0_VSC_MASK(tile->slot_mask >> slot) |
+-                     COND(abs_mask, CP_SET_BIN_DATA5_0_ABS_MASK(ABS_MASK)));
++                     COND(abs_mask, CP_SET_BIN_DATA5_0_ABS_MASK(ABS_MASK))
++		     /* A702 also sets BIT(0) but that hangchecks */);
+       if (abs_mask)
+          tu_cs_emit(cs, tile->slot_mask);
+       tu_cs_emit(cs, tile->pipe * cmd->vsc_draw_strm_pitch);
+@@ -1455,7 +1456,7 @@ tu6_init_static_regs(struct tu_device *dev, struct tu_cs *cs)
     tu_cs_emit_write_reg(cs, REG_A6XX_SP_DBG_ECO_CNTL,
                          phys_dev->info->a6xx.magic.SP_DBG_ECO_CNTL);
     tu_cs_emit_write_reg(cs, REG_A6XX_SP_PERFCTR_ENABLE, 0x3f);
@@ -136,10 +137,10 @@ index 3e3a9f5f1e95..92965586c16e 100644
     tu_cs_emit_write_reg(cs, REG_A6XX_TPL1_DBG_ECO_CNTL,
                          phys_dev->info->a6xx.magic.TPL1_DBG_ECO_CNTL);
 diff --git a/src/freedreno/vulkan/tu_device.cc b/src/freedreno/vulkan/tu_device.cc
-index 7b18dcf24f9f..c5874808535b 100644
+index dd79caf6927..2a808284378 100644
 --- a/src/freedreno/vulkan/tu_device.cc
 +++ b/src/freedreno/vulkan/tu_device.cc
-@@ -318,7 +318,7 @@ get_device_extensions(const struct tu_physical_device *device,
+@@ -324,7 +324,7 @@ get_device_extensions(const struct tu_physical_device *device,
  #endif
        .EXT_texel_buffer_alignment = true,
        .EXT_tooling_info = true,
@@ -148,7 +149,7 @@ index 7b18dcf24f9f..c5874808535b 100644
        .EXT_vertex_attribute_divisor = true,
        .EXT_vertex_input_dynamic_state = true,
  
-@@ -352,15 +352,15 @@ tu_get_features(struct tu_physical_device *pdevice,
+@@ -359,15 +359,15 @@ tu_get_features(struct tu_physical_device *pdevice,
     features->fullDrawIndexUint32 = true;
     features->imageCubeArray = true;
     features->independentBlend = true;
@@ -167,7 +168,7 @@ index 7b18dcf24f9f..c5874808535b 100644
     features->fillModeNonSolid = true;
     features->depthBounds = true;
     features->wideLines = pdevice->info->a6xx.line_width_max > 1.0;
-@@ -502,7 +502,7 @@ tu_get_features(struct tu_physical_device *pdevice,
+@@ -509,7 +509,7 @@ tu_get_features(struct tu_physical_device *pdevice,
     features->indexTypeUint8 = true;
  
     /* VK_KHR_line_rasterization */
@@ -176,7 +177,7 @@ index 7b18dcf24f9f..c5874808535b 100644
     features->bresenhamLines = true;
     features->smoothLines = false;
     features->stippledRectangularLines = false;
-@@ -1039,7 +1039,7 @@ tu_get_properties(struct tu_physical_device *pdevice,
+@@ -1059,7 +1059,7 @@ tu_get_properties(struct tu_physical_device *pdevice,
     props->subPixelInterpolationOffsetBits = 4;
     props->maxFramebufferWidth = (1 << 14);
     props->maxFramebufferHeight = (1 << 14);
@@ -186,10 +187,10 @@ index 7b18dcf24f9f..c5874808535b 100644
     props->framebufferDepthSampleCounts = sample_counts;
     props->framebufferStencilSampleCounts = sample_counts;
 diff --git a/src/freedreno/vulkan/tu_image.cc b/src/freedreno/vulkan/tu_image.cc
-index da5e1e520a4c..10ed35a25c9e 100644
+index a31b1847b6f..b3b311d9a3c 100644
 --- a/src/freedreno/vulkan/tu_image.cc
 +++ b/src/freedreno/vulkan/tu_image.cc
-@@ -739,7 +739,7 @@ tu_image_init(struct tu_device *device, struct tu_image *image,
+@@ -742,7 +742,7 @@ tu_image_init(struct tu_device *device, struct tu_image *image,
        }
     }
  
@@ -199,12 +200,12 @@ index da5e1e520a4c..10ed35a25c9e 100644
     }
  
 diff --git a/src/freedreno/vulkan/tu_pipeline.cc b/src/freedreno/vulkan/tu_pipeline.cc
-index a9dc691bfa19..308830797656 100644
+index 9b4a63e6279..e12a60e3685 100644
 --- a/src/freedreno/vulkan/tu_pipeline.cc
 +++ b/src/freedreno/vulkan/tu_pipeline.cc
-@@ -3106,7 +3106,9 @@ tu6_rast_size(struct tu_device *dev,
-               bool multiview,
-               bool per_view_viewport)
+@@ -3204,7 +3204,9 @@ tu6_rast_size(struct tu_device *dev,
+               bool per_view_viewport,
+               bool disable_fs)
  {
 -   if (CHIP == A6XX) {
 +   if (CHIP == A6XX && dev->physical_device->info->a6xx.is_a702) {
@@ -212,8 +213,8 @@ index a9dc691bfa19..308830797656 100644
 +   } else if (CHIP == A6XX) {
        return 15 + (dev->physical_device->info->a6xx.has_legacy_pipeline_shading_rate ? 8 : 0);
     } else {
-       return 25;
-@@ -3155,9 +3157,9 @@ tu6_emit_rast(struct tu_cs *cs,
+       return 27;
+@@ -3254,9 +3256,9 @@ tu6_emit_rast(struct tu_cs *cs,
     tu_cs_emit_regs(cs,
                     PC_POLYGON_MODE(CHIP, polygon_mode));
  
@@ -226,7 +227,7 @@ index a9dc691bfa19..308830797656 100644
  
     tu_cs_emit_regs(cs, PC_RASTER_CNTL(CHIP,
 diff --git a/src/gallium/drivers/freedreno/a6xx/fd6_emit.cc b/src/gallium/drivers/freedreno/a6xx/fd6_emit.cc
-index 89ed01437d40..2a36c3fcdf9d 100644
+index a0a2968f281..8e98ce79d62 100644
 --- a/src/gallium/drivers/freedreno/a6xx/fd6_emit.cc
 +++ b/src/gallium/drivers/freedreno/a6xx/fd6_emit.cc
 @@ -900,7 +900,7 @@ fd6_emit_static_regs(struct fd_context *ctx, struct fd_ringbuffer *ring)
@@ -239,7 +240,7 @@ index 89ed01437d40..2a36c3fcdf9d 100644
     WRITE(REG_A6XX_TPL1_DBG_ECO_CNTL, screen->info->a6xx.magic.TPL1_DBG_ECO_CNTL);
     if (CHIP == A6XX) {
 diff --git a/src/gallium/drivers/freedreno/a6xx/fd6_gmem.cc b/src/gallium/drivers/freedreno/a6xx/fd6_gmem.cc
-index 309ac5006b91..d346caf6e328 100644
+index 7cf9e35a9a0..7bdca163672 100644
 --- a/src/gallium/drivers/freedreno/a6xx/fd6_gmem.cc
 +++ b/src/gallium/drivers/freedreno/a6xx/fd6_gmem.cc
 @@ -1278,7 +1278,8 @@ fd6_emit_tile_prep(struct fd_batch *batch, const struct fd_tile *tile)
@@ -253,7 +254,7 @@ index 309ac5006b91..d346caf6e328 100644
                  (tile->p * fd6_ctx->vsc_draw_strm_pitch), 0, 0);
        OUT_RELOC(
 diff --git a/src/gallium/drivers/freedreno/freedreno_resource.c b/src/gallium/drivers/freedreno/freedreno_resource.c
-index 4a1dc734d3c5..f91964ad97e8 100644
+index 4a1dc734d3c..f91964ad97e 100644
 --- a/src/gallium/drivers/freedreno/freedreno_resource.c
 +++ b/src/gallium/drivers/freedreno/freedreno_resource.c
 @@ -1302,7 +1302,7 @@ get_best_layout(struct fd_screen *screen,
@@ -265,3 +266,6 @@ index 4a1dc734d3c5..f91964ad97e8 100644
     if (FD_DBG(NOUBWC))
        ubwc_ok = false;
  
+-- 
+2.34.1
+
