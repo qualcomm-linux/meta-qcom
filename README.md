@@ -30,7 +30,7 @@ revision: HEAD
 
 The dependency is optional, and not strictly required. When meta-oe is enabled
 in the build (e.g. it is used in BBLAYERS) then additional recipes from
-meta-qcom are added to the metadata. You can refer to meta-qcom/conf/layer.conf
+meta-qcom are added to the metadata. You can refer to meta-qcom/meta-qcom/conf/layer.conf
 for the implementation details.
 
 ## Branches

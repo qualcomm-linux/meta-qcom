@@ -11,6 +11,8 @@ defaults:
 
 repos:
   meta-qcom:
+    layers:
+      meta-qcom:
 
   oe-core:
     url: https://github.com/openembedded/openembedded-core
