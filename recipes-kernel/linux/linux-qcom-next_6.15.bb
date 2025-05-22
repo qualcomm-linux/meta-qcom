@@ -11,6 +11,7 @@ COMPATIBLE_MACHINE = "(qcom)"
 SRCBRANCH ?= "qcom-next"
 SRC_URI = " \
             git://github.com/qualcomm-linux/kernel.git;protocol=https;branch=${SRCBRANCH} \
+            file://0001-drivers-gpu-drm-msm-registers-improve-reproducibilit.patch \
           "
 
 # To build bleeding edge qcom-next staging kernel set preferred
