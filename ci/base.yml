@@ -11,6 +11,7 @@ defaults:
 
 repos:
   meta-qcom:
+    url: https://github.com/qualcomm-linux/meta-qcom
 
   oe-core:
     url: https://github.com/openembedded/openembedded-core
