@@ -16,6 +16,11 @@ jobs:
     if: github.repository == 'qualcomm-linux/meta-qcom'
     runs-on: [self-hosted, x86]
     steps:
+      - name: Update kas-container
+        run: |
+          wget -qO ${KAS_REPO_REF_DIR}/kas-container https://github.com/siemens/kas/raw/refs/heads/master/kas-container
+          chmod +x ${KAS_REPO_REF_DIR}/kas-container
+
       - name: Update kas mirrors
         run: |
           for r in $(find ${KAS_REPO_REF_DIR}/* -maxdepth 0 -type d); do
