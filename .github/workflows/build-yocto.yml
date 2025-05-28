@@ -10,12 +10,19 @@ on:
 env:
   CACHE_DIR: /srv/gh-runners/quic-yocto
   KAS_REPO_REF_DIR: /srv/gh-runners/quic-yocto/kas-mirrors
+  KAS_CONTAINER: /srv/gh-runners/quic-yocto/kas-mirrors/kas-container
 
 jobs:
   kas-setup:
     if: github.repository == 'qualcomm-linux/meta-qcom'
     runs-on: [self-hosted, x86]
     steps:
+      - name: Update kas-container
+        run: |
+          LATEST=$(git ls-remote --tags --refs --sort="v:refname" https://github.com/siemens/kas | tail -n1 | sed 's/.*\///')
+          wget -qO ${KAS_CONTAINER} https://raw.githubusercontent.com/siemens/kas/refs/tags/$LATEST/kas-container
+          chmod +x ${KAS_CONTAINER}
+
       - name: Update kas mirrors
         run: |
           for r in $(find ${KAS_REPO_REF_DIR}/* -maxdepth 0 -type d); do
