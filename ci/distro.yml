@@ -13,6 +13,9 @@ repos:
   meta-openembedded:
     url: https://github.com/openembedded/meta-openembedded
     layers:
-      meta-oe:
+      meta-gnome:
+      meta-multimedia: 
       meta-networking:
+      meta-oe:
       meta-python:
+      meta-xfce:

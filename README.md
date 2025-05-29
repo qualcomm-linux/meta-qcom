@@ -184,6 +184,10 @@ Pull requests will be discussed within the GitHub pull-request infrastructure.
 Branch **kirkstone** is not open for direct contributions, please raise an issue
 with the suggested change instead.
 
+### Qualcomm Internal
+
+Please make sure to visit go/GitHubBasicsDoc and go/OSSBestPractices before proposing changes.
+
 ## Communication
 
 - **GitHub Issues:** [meta-qcom issues](https://github.com/qualcomm-linux/meta-qcom/issues)

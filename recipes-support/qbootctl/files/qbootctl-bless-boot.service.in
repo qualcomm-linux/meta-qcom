@@ -21,3 +21,6 @@ Before=shutdown.target
 Type=oneshot
 RemainAfterExit=yes
 ExecStart=@bindir@/qbootctl -m
+
+[Install]
+WantedBy=multi-user.target

@@ -107,6 +107,8 @@ jobs:
           export SSTATE_DIR=${CACHE_DIR}/sstate-cache
           export KAS_WORK_DIR=$PWD/../kas
           mkdir $KAS_WORK_DIR
+          kas dump --resolve-env --resolve-local --resolve-refs \
+              ci/mirror.yml:ci/${{ matrix.machine }}.yml > kas-build.yml
           kas build ci/mirror.yml:ci/${{ matrix.machine }}.yml
           ci/yocto-pybootchartgui.sh && mv $KAS_WORK_DIR/build/buildchart.svg .
 
@@ -119,6 +121,11 @@ jobs:
           name: buildchart-${{ matrix.machine }}
           path: buildchart.svg
 
+      - uses: actions/upload-artifact@v4
+        with:
+          name: kas-build-${{ matrix.machine }}
+          path: kas-build.yml
+
       - name: Stage build artifacts for publishing
         run: |
           # The upload-private-artifact-action runs from a container that
@@ -129,6 +136,7 @@ jobs:
           mkdir $uploads_dir
           find $deploy_dir/ -maxdepth 1 -name "*.rootfs*.qcomflash" -exec rm -rf {} \;
           mv $deploy_dir $uploads_dir/
+          cp buildchart.svg kas-build.yml $uploads_dir/
 
       - name: Upload private artifacts
         uses: qualcomm-linux/upload-private-artifact-action@v1

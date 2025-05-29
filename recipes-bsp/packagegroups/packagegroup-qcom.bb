@@ -24,4 +24,5 @@ RRECOMMENDS:${PN}-miscellaneous = " \
     hexagonrpc \
     ${@bb.utils.contains("BBLAYERS", "openembedded-layer", "libssc","", d)} \
     libdmabufheap-dev \
+    libvmmem-dev \
 "

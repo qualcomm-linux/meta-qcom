@@ -6,7 +6,7 @@ on:
 jobs:
   schema-check:
     runs-on: ubuntu-latest
-    container: lavasoftware/lava-server:2024.09
+    container: lavasoftware/lava-server:2025.04
     steps:
       - name: Clone repository
         uses: actions/checkout@v4
