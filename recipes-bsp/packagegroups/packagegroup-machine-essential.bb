@@ -42,6 +42,7 @@ RRECOMMENDS:${PN}-qcom-generic += " \
     kernel-module-phy-qcom-qmp-usbc \
     kernel-module-phy-qcom-qusb2 \
     kernel-module-phy-qcom-snps-femto-v \
+    kernel-module-qcom-iris \
     kernel-module-qcom-pmic-tcpm \
     kernel-module-qcom-pon \
     kernel-module-qcom-q6v5-mss \
