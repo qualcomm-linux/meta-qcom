@@ -64,6 +64,7 @@ RRECOMMENDS:${PN}-qcom-generic += " \
     kernel-module-spi-geni-qcom \
     kernel-module-venus-dec \
     kernel-module-venus-enc \
+    ${@bb.utils.contains('PREFERRED_PROVIDER_virtual/kernel', 'linux-yocto', '', 'kernel-module-qcom-iris', d)} \
 "
 
 # The packagegroups below are SoC specific
