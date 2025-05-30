@@ -20,7 +20,7 @@ RDEPENDS:${PN}-boot-additional = " \
 "
 
 # libssc depends on libqmi and protobuf which are part of meta-oe
-RRECOMMENDS:${PN}-miscellaneous = " \
+RDEPENDS:${PN}-miscellaneous = " \
     hexagonrpc \
     ${@bb.utils.contains("BBLAYERS", "openembedded-layer", "libssc","", d)} \
     libvmmem-dev \
