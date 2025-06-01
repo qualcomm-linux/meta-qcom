@@ -1,0 +1,54 @@
+From 7647889f53e68ff9faad7fbace655f8567b60299 Mon Sep 17 00:00:00 2001
+From: Li Liu <quic_lliu6@quicinc.com>
+Date: Tue, 15 Oct 2024 10:58:10 +0800
+Subject: [PATCH 2/2] arm64: dts: qcom: Add i2c2 support for QCS615 RIDE board
+
+When all consumers and suppliers of a device are ready.
+Interconnerct module will call dev_sync_state to sync clock
+of all device consumers and device suppliers. This sync
+process need to be supported by bootloader, currently Talos
+QCS615 bootloader(systemmd-boot) will crash during
+dev_sync_state process.
+
+Do a workaround to add i2c2 configuration for Talos QCS615.
+Currently i2c2 driver can't be ready due to bootloader, so
+dev_sync_state process can't be executed, kernel can boot up
+normally.
+
+Signed-off-by: Li Liu <quic_lliu6@quicinc.com>
+Signed-off-by: Yuanjie Yang <quic_yuanjiey@quicinc.com>
+Upstream-Status: Inappropriate
+---
+ arch/arm64/boot/dts/qcom/qcs615-ride.dts | 16 ++++++++++++++++
+ 1 file changed, 16 insertions(+)
+
+diff --git a/arch/arm64/boot/dts/qcom/qcs615-ride.dts b/arch/arm64/boot/dts/qcom/qcs615-ride.dts
+index 514726708125..8c7dc6f28a7d 100644
+--- a/arch/arm64/boot/dts/qcom/qcs615-ride.dts
++++ b/arch/arm64/boot/dts/qcom/qcs615-ride.dts
+@@ -275,6 +275,22 @@ &gcc {
+ 		 <&sleep_clk>;
+ };
+ 
++&i2c2 {
++	clock-frequency = <400000>;
++	status = "okay";
++
++	ioexp: gpio@3e {
++		compatible = "semtech,sx1509q";
++		reg = <0x3e>;
++		interrupts-extended = <&tlmm 58 IRQ_TYPE_EDGE_FALLING>;
++		gpio-controller;
++		#gpio-cells = <2>;
++		interrupt-controller;
++		#interrupt-cells = <2>;
++		semtech,probe-reset;
++	};
++};
++
+ &pm8150_gpios {
+ 	usb2_en: usb2-en-state {
+ 		pins = "gpio10";
+-- 
+2.34.1
+

@@ -25,6 +25,8 @@ SRC_URI:append:qcom = " \
     file://workarounds/0001-scsi-ufs-qcom-Check-gear-against-max-gear-in-vop-fre.patch \
     file://workarounds/0002-scsi-ufs-qcom-Map-devfreq-OPP-freq-to-UniPro-Core-Cl.patch \
     file://workarounds/0003-scsi-ufs-qcom-Call-ufs_qcom_cfg_timers-in-clock-scal.patch \
+    file://workarounds/0001-arm64-dts-qcom-Remove-CPUidle-states-for-QCS615.patch \
+    file://workarounds/0002-arm64-dts-qcom-Add-i2c2-support-for-QCS615-RIDE-boar.patch \
     file://drivers/0003-PCI-Add-new-start_link-stop_link-function-ops.patch \
     file://drivers/0004-PCI-dwc-Add-host_start_link-host_start_link-hooks-fo.patch \
     file://drivers/0005-PCI-dwc-Implement-.start_link-.stop_link-hooks.patch \
@@ -39,6 +41,7 @@ SRC_URI:append:qcom = " \
     file://qcs9075-board-dts/0003-arm64-dts-qcom-qcs9075-Introduce-QCS9075M-SOM.patch \
     file://qcs9075-board-dts/0004-arm64-dts-qcom-Add-support-for-qcs9075-IQ-9075-EVK.patch \
     file://qcs9075-board-dts/0001-arm64-dts-qcom-qcs9075-iq-9075-evk-enable-UFS.patch \
+    file://qcs615-board-dts/0001-arm64-dts-qcom-qcs615-Add-Command-DB-support.patch \
 "
 
 # Include additional kernel configs.
