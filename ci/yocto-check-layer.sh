@@ -1,25 +1,31 @@
-#!/bin/sh -e
+#!/bin/bash -e
 # Copyright (c) 2024 Qualcomm Innovation Center, Inc. All rights reserved.
 # SPDX-License-Identifier: MIT
 
 TOPDIR=$(realpath $(dirname $(readlink -f $0))/..)
 
-# Ensure KAS workspace is outside of the checked out repo
-# Allows the caller to specify KAS_WORK_DIR, otherwise make temp one
-export KAS_WORK_DIR=$(realpath ${KAS_WORK_DIR:-$(mktemp -d)})
+if [ ! -d /work/build ] || [ "$TOPDIR" != "/repo" ] ; then
+    echo "ERROR: This script is designed to run inside kas-container"
+    exit 1
+fi
+
+# Creates a temporary build directory to run the yocto-check-layer
+# script to avoid a contaminated environment.
+BUILDDIR="$(mktemp -p /work/build -d -t yocto-check-layer-XXXX)"
+source /work/oe-core/oe-init-build-env $BUILDDIR
+git -c advice.detachedHead=false clone --quiet --shared /repo meta-qcom
 
 # Yocto Project layer checking tool
-CMD="yocto-check-layer-wrapper"
+CMD="yocto-check-layer"
 # Layer to check
-CMD="$CMD $TOPDIR"
+CMD="$CMD meta-qcom"
 # Disable auto layer discovery
 CMD="$CMD --no-auto"
 # Layers to process for dependencies
-CMD="$CMD --dependency $KAS_WORK_DIR/oe-core/meta"
+CMD="$CMD --dependency /work/oe-core/meta"
 # Disable automatic testing of dependencies
 CMD="$CMD --no-auto-dependency"
 # Set machines to all machines defined in this BSP layer
-CMD="$CMD --machines $(echo $(find $TOPDIR/conf/machine/ -maxdepth 1 -name *.conf -exec basename {} .conf \; ))"
+CMD="$CMD --machines $(echo $(find meta-qcom/conf/machine/ -maxdepth 1 -name *.conf -exec basename {} .conf \; ))"
 
-echo "Running kas in $KAS_WORK_DIR"
-exec kas shell $TOPDIR/ci/base.yml --command "$CMD"
+exec $CMD
