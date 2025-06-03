@@ -4,7 +4,7 @@ actions:
       image:
         headers:
           Authentication: Q_GITHUB_TOKEN
-        url: "{{BUILD_DOWNLOAD_URL}}"
+        url: "{{BUILD_DOWNLOAD_URL}}/{{DEVICE_TYPE}}/core-image-base-{{DEVICE_TYPE}}.rootfs.qcomflash.tar.gz"
     postprocess:
       docker:
         image: ghcr.io/foundriesio/lava-lmp-sign:main
@@ -21,7 +21,7 @@ actions:
 - deploy:
     images:
       image:
-        url: downloads://{{BUILD_FILE_NAME}}
+        url: downloads://core-image-base-{{DEVICE_TYPE}}.rootfs.qcomflash.tar.gz
       settings:
         url: downloads://flash.settings
       overlay:

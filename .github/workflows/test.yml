@@ -49,12 +49,10 @@ jobs:
           FIND_PATH="${TARGET#*/}"
           DEVICE_TYPE_PATH="${FIND_PATH%/*}"
           DEVICE_TYPE="${DEVICE_TYPE_PATH#*/}"
-          BUILD_FILE_NAME="core-image-base-${DEVICE_TYPE}.rootfs.qcomflash.tar.gz"
-          BUILD_DOWNLOAD_URL="${{inputs.url}}/${DEVICE_TYPE}/${BUILD_FILE_NAME}"
+          BUILD_DOWNLOAD_URL="${{inputs.url}}"
           sed -i "s|{{DEVICE_TYPE}}|${DEVICE_TYPE}|g" "${{ matrix.target }}"
           sed -i "s|{{GITHUB_SHA}}|${GITHUB_SHA}|g" "${{ matrix.target }}"
           sed -i "s|{{BUILD_DOWNLOAD_URL}}|${BUILD_DOWNLOAD_URL}|g" "${{ matrix.target }}"
-          sed -i "s|{{BUILD_FILE_NAME}}|${BUILD_FILE_NAME}|g" "${{ matrix.target }}"
           sed -i "s|{{GITHUB_RUN_ID}}|${GITHUB_RUN_ID}|g" "${{ matrix.target }}"
           cat "${{ matrix.target }}"
 
