@@ -89,8 +89,18 @@ jobs:
           - qrb2210-rb1-core-kit
           - qcom-armv8a
           - qcom-armv7a
+        kernel:
+          - linux-qcom-next
+          - linux-yocto
+          - linux-yocto-dev
+        include:
+          # Default builds (machine with its default kernel)
+          - machine: qcom-armv7a
+            kernel: default
+          - machine: qcom-armv8a
+            kernel: default
     runs-on: [self-hosted, x86]
-    name: ${{ matrix.machine }}/poky/systemd
+    name: Build ${{ matrix.machine }} with ${{ matrix.kernel }}/poky/systemd
     steps:
       - uses: actions/checkout@v4
         with:
@@ -107,11 +117,18 @@ jobs:
           export SSTATE_DIR=${CACHE_DIR}/sstate-cache
           export KAS_WORK_DIR=$PWD/../kas
           mkdir $KAS_WORK_DIR
-          kas dump --resolve-env --resolve-local --resolve-refs \
-              ci/mirror.yml:ci/${{ matrix.machine }}.yml > kas-build.yml
-          kas build ci/mirror.yml:ci/${{ matrix.machine }}.yml
+          if [ "${{ matrix.kernel }}" = "default" ]; then
+              kas dump --resolve-env --resolve-local --resolve-refs \
+                  ci/mirror.yml:ci/${{ matrix.machine }}.yml > kas-build.yml
+              kas build ci/mirror.yml:ci/${{ matrix.machine }}.yml
+          else
+              kas dump --resolve-env --resolve-local --resolve-refs \
+                  ci/mirror.yml:ci/${{ matrix.machine }}.yml:ci/${{ matrix.kernel }}.yml > kas-build.yml
+              kas build ci/mirror.yml:ci/${{ matrix.machine }}.yml:ci/${{ matrix.kernel }}.yml
+          fi
           ci/yocto-pybootchartgui.sh && mv $KAS_WORK_DIR/build/buildchart.svg .
 
+          # Build test initramfs images only for qcom-armv8a machine
           if [ "${{ matrix.machine }}" = "qcom-armv8a" ]; then
             kas build ci/mirror.yml:ci/${{ matrix.machine }}.yml:ci/initramfs-test.yml
           fi
