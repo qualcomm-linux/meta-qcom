@@ -24,4 +24,5 @@ RDEPENDS:${PN}-miscellaneous = " \
     hexagonrpc \
     ${@bb.utils.contains("BBLAYERS", "openembedded-layer", "libssc","", d)} \
     libvmmem-dev \
+    libdmabufheap-dev \
 "
