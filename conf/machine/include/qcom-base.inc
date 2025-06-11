@@ -1,7 +1,7 @@
 # Common configurations and variables for Qualcomm platforms.
 
 # Provider for linux kernel
-PREFERRED_PROVIDER_virtual/kernel ?= "linux-yocto-dev"
+PREFERRED_PROVIDER_virtual/kernel ?= "linux-qcom-next"
 
 KERNEL_IMAGETYPE ?= "Image"
 KERNEL_ALT_IMAGETYPE ?= "vmlinux"
