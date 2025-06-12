@@ -82,6 +82,7 @@ jobs:
       matrix:
         machine:
           - qcm6490-idp
+          - qcs615-adp-air
           - qcs6490-rb3gen2-core-kit
           - qcs8300-ride-sx
           - qcs9075-iq-9075-evk
