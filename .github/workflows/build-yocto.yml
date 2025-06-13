@@ -89,8 +89,23 @@ jobs:
           - qrb2210-rb1-core-kit
           - qcom-armv8a
           - qcom-armv7a
+        kernel:
+          - linux-qcom-next
+          - linux-yocto-dev
+        include:
+          # Additional builds for specific machines
+          - machine: qcom-armv7a
+            kernel: linux-yocto
+          - machine: qcom-armv8a
+            kernel: linux-yocto
+        exclude:
+          # Known bad builds (machine with its incompatible kernels)
+          - machine: qcom-armv7a
+            kernel: linux-qcom-next
+          - machine: qcom-armv8a
+            kernel: linux-qcom-next
     runs-on: [self-hosted, x86]
-    name: ${{ matrix.machine }}/poky/systemd
+    name: ${{ matrix.machine }}/${{ matrix.kernel }}/poky/systemd
     steps:
       - uses: actions/checkout@v4
         with:
@@ -108,8 +123,9 @@ jobs:
           export KAS_WORK_DIR=$PWD/../kas
           mkdir $KAS_WORK_DIR
           kas dump --resolve-env --resolve-local --resolve-refs \
-              ci/mirror.yml:ci/${{ matrix.machine }}.yml > kas-build.yml
-          kas build ci/mirror.yml:ci/${{ matrix.machine }}.yml
+              ci/mirror.yml:ci/${{ matrix.machine }}.yml:ci/${{ matrix.kernel }}.yml > kas-build.yml
+          kas build ci/mirror.yml:ci/${{ matrix.machine }}.yml:ci/${{ matrix.kernel }}.yml
+
           ci/yocto-pybootchartgui.sh && mv $KAS_WORK_DIR/build/buildchart.svg .
 
           if [ "${{ matrix.machine }}" = "qcom-armv8a" ]; then
