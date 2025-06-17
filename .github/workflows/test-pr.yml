@@ -22,35 +22,15 @@ jobs:
       url: ${{ steps.set-build-url.outputs.url }}
     steps:
       - name: 'Download build URL'
-        uses: actions/github-script@v6
+        id: download-artifact
+        uses: dawidd6/action-download-artifact@v11
         with:
-          script: |
-            let allArtifacts = await github.rest.actions.listWorkflowRunArtifacts({
-               owner: context.repo.owner,
-               repo: context.repo.repo,
-               run_id: context.payload.workflow_run.id,
-            });
-            let matchArtifact = allArtifacts.data.artifacts.filter((artifact) => {
-              return artifact.name == "build_url"
-            })[0];
-            let download = await github.rest.actions.downloadArtifact({
-               owner: context.repo.owner,
-               repo: context.repo.repo,
-               artifact_id: matchArtifact.id,
-               archive_format: 'zip',
-            });
-            const fs = require('fs');
-            const path = require('path');
-            const temp = '${{ runner.temp }}/artifacts';
-            if (!fs.existsSync(temp)){
-              fs.mkdirSync(temp);
-            }
-            fs.writeFileSync(path.join(temp, 'build_url.zip'), Buffer.from(download.data));
+          run_id: ${{ github.event.workflow_run.id }}
+          name: build_url
 
       - name: 'Setup build URL'
         id: set-build-url
         run: |
-          unzip "${{ runner.temp }}/artifacts/build_url.zip"
           BUILD_URL=$(cat build_url)
           echo "Build URL: ${BUILD_URL}"
           echo "url=${BUILD_URL}" >> $GITHUB_OUTPUT
