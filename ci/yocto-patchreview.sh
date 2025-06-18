@@ -26,4 +26,4 @@ $WORK_DIR/oe-core/scripts/contrib/patchreview.py -v -b -j status.json $REPO_DIR
 
 # return an error if any malformed patch is found
 cat $WORK_DIR/build/status.json |
-    python -c "import json,sys;obj=json.load(sys.stdin); sys.exit(1) if 'malformed-sob' in obj[0] or 'malformed-upstream-status' in obj[0] else sys.exit(0)"
+    python3 -c "import json,sys;obj=json.load(sys.stdin); sys.exit(1) if 'malformed-sob' in obj[0] or 'malformed-upstream-status' in obj[0] else sys.exit(0)"
