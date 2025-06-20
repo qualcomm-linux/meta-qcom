@@ -90,7 +90,7 @@ jobs:
           - qcom-armv8a
           - qcom-armv7a
     runs-on: [self-hosted, x86]
-    name: ${{ matrix.machine }}/poky/systemd
+    name: ${{ matrix.machine }}/poky-altcfg
     steps:
       - uses: actions/checkout@v4
         with:
