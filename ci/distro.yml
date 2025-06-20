@@ -19,3 +19,7 @@ repos:
       meta-oe:
       meta-python:
       meta-xfce:
+    patches:
+      unbreak:
+        repo: meta-qcom
+        path: ci/meta-oe-fix.patch
