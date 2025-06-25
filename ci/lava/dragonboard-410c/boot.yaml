@@ -7,11 +7,11 @@ actions:
       boot:
         headers:
           Authentication: Q_GITHUB_TOKEN
-        url: "{{BUILD_DOWNLOAD_URL}}/qcom-armv8a/boot-apq8016-sbc-qcom-armv8a.img"
+        url: "{{BUILD_DOWNLOAD_URL}}/poky-altcfg/qcom-armv8a/boot-apq8016-sbc-qcom-armv8a.img"
       rootfs:
         headers:
           Authentication: Q_GITHUB_TOKEN
-        url: "{{BUILD_DOWNLOAD_URL}}/qcom-armv8a/core-image-base-qcom-armv8a.rootfs.ext4.gz"
+        url: "{{BUILD_DOWNLOAD_URL}}/poky-altcfg/qcom-armv8a/core-image-base-qcom-armv8a.rootfs.ext4.gz"
         compression: gz
     postprocess:
       docker:

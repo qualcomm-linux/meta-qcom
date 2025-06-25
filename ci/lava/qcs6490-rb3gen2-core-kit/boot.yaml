@@ -4,7 +4,7 @@ actions:
       image:
         headers:
           Authentication: Q_GITHUB_TOKEN
-        url: "{{BUILD_DOWNLOAD_URL}}/{{DEVICE_TYPE}}/core-image-base-{{DEVICE_TYPE}}.rootfs.qcomflash.tar.gz"
+        url: "{{BUILD_DOWNLOAD_URL}}/poky-altcfg/{{DEVICE_TYPE}}/core-image-base-{{DEVICE_TYPE}}.rootfs.qcomflash.tar.gz"
     postprocess:
       docker:
         image: ghcr.io/foundriesio/lava-lmp-sign:main
