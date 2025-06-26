@@ -8,8 +8,6 @@ SRC_URI = "\
 	git://github.com/linux-msm/bootrr.git;branch=master;protocol=https \
 "
 
-S = "${WORKDIR}/git"
-
 PV = "0.0+git"
 
 inherit allarch

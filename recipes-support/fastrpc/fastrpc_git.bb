@@ -16,8 +16,6 @@ SRC_URI = "\
 
 PV = "0.0+"
 
-S = "${WORKDIR}/git"
-
 inherit autotools systemd
 
 PACKAGES += "${PN}-systemd"

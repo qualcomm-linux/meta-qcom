@@ -10,12 +10,19 @@ on:
 env:
   CACHE_DIR: /srv/gh-runners/quic-yocto
   KAS_REPO_REF_DIR: /srv/gh-runners/quic-yocto/kas-mirrors
+  KAS_CONTAINER: /srv/gh-runners/quic-yocto/kas-mirrors/kas-container
 
 jobs:
   kas-setup:
     if: github.repository == 'qualcomm-linux/meta-qcom'
     runs-on: [self-hosted, x86]
     steps:
+      - name: Update kas-container
+        run: |
+          LATEST=$(git ls-remote --tags --refs --sort="v:refname" https://github.com/siemens/kas | tail -n1 | sed 's/.*\///')
+          wget -qO ${KAS_CONTAINER} https://raw.githubusercontent.com/siemens/kas/refs/tags/$LATEST/kas-container
+          chmod +x ${KAS_CONTAINER}
+
       - name: Update kas mirrors
         run: |
           for r in $(find ${KAS_REPO_REF_DIR}/* -maxdepth 0 -type d); do
@@ -29,7 +36,7 @@ jobs:
 
       - name: Run kas lock
         run: |
-          kas dump --update --lock --inplace ci/base.yml
+          ${KAS_CONTAINER} dump --update --lock --inplace ci/base.yml
 
       - uses: actions/upload-artifact@v4
         with:
@@ -52,7 +59,7 @@ jobs:
 
       - name: Run yocto-check-layer
         run: |
-          ci/yocto-check-layer.sh
+          ci/kas-container-shell-helper.sh ci/yocto-check-layer.sh
 
   yocto-patchreview:
     needs: kas-setup
@@ -70,7 +77,7 @@ jobs:
 
       - name: Run Yocto patchreview
         run: |
-          ci/yocto-patchreview.sh
+          ci/kas-container-shell-helper.sh ci/yocto-patchreview.sh
 
   compile:
     needs: kas-setup
@@ -90,7 +97,7 @@ jobs:
           - qcom-armv8a
           - qcom-armv7a
     runs-on: [self-hosted, x86]
-    name: ${{ matrix.machine }}/poky/systemd
+    name: ${{ matrix.machine }}/poky-altcfg
     steps:
       - uses: actions/checkout@v4
         with:
@@ -107,13 +114,14 @@ jobs:
           export SSTATE_DIR=${CACHE_DIR}/sstate-cache
           export KAS_WORK_DIR=$PWD/../kas
           mkdir $KAS_WORK_DIR
-          kas dump --resolve-env --resolve-local --resolve-refs \
+          ${KAS_CONTAINER} dump --resolve-env --resolve-local --resolve-refs \
               ci/mirror.yml:ci/${{ matrix.machine }}.yml > kas-build.yml
-          kas build ci/mirror.yml:ci/${{ matrix.machine }}.yml
-          ci/yocto-pybootchartgui.sh && mv $KAS_WORK_DIR/build/buildchart.svg .
+          ${KAS_CONTAINER} build ci/mirror.yml:ci/${{ matrix.machine }}.yml
+          ci/kas-container-shell-helper.sh ci/yocto-pybootchartgui.sh
+          mv $KAS_WORK_DIR/build/buildchart.svg .
 
           if [ "${{ matrix.machine }}" = "qcom-armv8a" ]; then
-            kas build ci/mirror.yml:ci/${{ matrix.machine }}.yml:ci/initramfs-test.yml
+            ${KAS_CONTAINER} build ci/mirror.yml:ci/${{ matrix.machine }}.yml:ci/initramfs-test.yml
           fi
 
       - uses: actions/upload-artifact@v4

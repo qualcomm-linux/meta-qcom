@@ -11,7 +11,6 @@ LIC_FILES_CHKSUM += "\
     "
 
 SRCREV = "2b88e9bc6030893b8e9b46ae85999c8de103858d"
-S = "${WORKDIR}/git"
 
 PV = "0.0+git"
 

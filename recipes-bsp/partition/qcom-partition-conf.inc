@@ -7,8 +7,7 @@ DEPENDS += "qcom-ptool-native"
 
 SRC_URI = "file://${PARTCONF}"
 
-S = "${WORKDIR}/sources"
-UNPACKDIR = "${S}"
+S = "${UNPACKDIR}"
 B = "${WORKDIR}/build"
 
 inherit python3native deploy

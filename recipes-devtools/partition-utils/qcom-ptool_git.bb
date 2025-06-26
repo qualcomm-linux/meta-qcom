@@ -12,7 +12,6 @@ SRC_URI = "git://github.com/qualcomm-linux/qcom-ptool.git;branch=main;protocol=h
 SRCREV = "be9d04e7940c777d361f05f0468e260ee493b76e"
 
 PV = "0.0+git"
-S = "${WORKDIR}/git"
 
 inherit python3native
 

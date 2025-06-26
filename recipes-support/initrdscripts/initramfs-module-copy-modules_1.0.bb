@@ -5,12 +5,11 @@ RDEPENDS:${PN} = "initramfs-framework-base ${VIRTUAL-RUNTIME_base-utils}"
 
 SRC_URI = "file://copy-modules.sh"
 
-S = "${WORKDIR}/sources"
-UNPACKDIR = "${S}"
+S = "${UNPACKDIR}"
 
 do_install() {
     install -d ${D}/init.d
-    install -m 0755 ${UNPACKDIR}/copy-modules.sh ${D}/init.d/95-copy_modules
+    install -m 0755 ${S}/copy-modules.sh ${D}/init.d/95-copy_modules
 }
 
 FILES:${PN} = "/init.d/"

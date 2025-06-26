@@ -13,6 +13,4 @@ SRCREV = "6444cf924b53b8453c2285cde48b6c52e5960089"
 
 PV = "0.0+git"
 
-S = "${WORKDIR}/git"
-
 inherit meson

@@ -8,8 +8,6 @@ SRCREV = "ce6ba20f4ead008e5b522a81179c98dd48ccf06e"
 
 INHIBIT_DEFAULT_DEPS = "1"
 
-S = "${WORKDIR}/git"
-
 inherit python3native
 
 do_install() {

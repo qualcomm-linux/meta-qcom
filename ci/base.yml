@@ -3,7 +3,7 @@
 header:
   version: 14
 
-distro: poky
+distro: poky-altcfg
 
 defaults:
   repos:
@@ -30,8 +30,6 @@ repos:
 local_conf_header:
   base: |
     CONF_VERSION = "2"
-    INIT_MANAGER = "systemd"
-    PACKAGE_CLASSES = "package_ipk"
     INHERIT += "buildstats buildstats-summary"
     INHERIT += "buildhistory"
     INHERIT += "rm_work"

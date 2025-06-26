@@ -13,8 +13,6 @@ SRCREV = "2e02576c1dab6fd35118eea1004f50aaaed3794f"
 
 PV = "3.5.0.349-1+git"
 
-S = "${WORKDIR}/git"
-
 inherit allarch
 
 CLEANBROKEN = "1"

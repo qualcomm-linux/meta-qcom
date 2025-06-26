@@ -10,8 +10,6 @@ SRCREV = "5e699fc97d92684c6882741fc9f71cb57a33e25b"
 
 PV = "0.2.2+"
 
-S = "${WORKDIR}/git"
-
 inherit meson pkgconfig gobject-introspection
 
 # There is no separate meson option

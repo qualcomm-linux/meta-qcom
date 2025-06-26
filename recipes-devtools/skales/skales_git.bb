@@ -13,8 +13,6 @@ SRC_URI = "git://git.codelinaro.org/clo/qsdk/oss/tools/skales.git;protocol=https
           file://0002-mkbootimg-use-python3.patch \
           "
 
-S = "${WORKDIR}/git"
-
 do_install () {
     install -d ${D}${bindir}/skales
     install -m 0755 ${S}/mkbootimg ${D}${bindir}/skales

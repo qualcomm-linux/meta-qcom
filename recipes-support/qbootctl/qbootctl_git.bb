@@ -8,8 +8,6 @@ SRC_URI = "git://github.com/linux-msm/qbootctl.git;protocol=https;branch=main \
            file://qbootctl-bless-boot.service.in \
            "
 
-S = "${WORKDIR}/git"
-
 PV = "0.2.2"
 
 inherit meson systemd

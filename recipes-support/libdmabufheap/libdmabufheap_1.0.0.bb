@@ -11,6 +11,5 @@ SRCREV = "5ead341efb667cbd2cf519bfaf2837ee8e97b747"
 SRC_URI = " \
 git://git.codelinaro.org//clo/le/platform/system/memory/libdmabufheap.git;branch=memory-le-apps.lnx.3.0;protocol=https \
 "
-S = "${WORKDIR}/git"
 
 inherit autotools pkgconfig

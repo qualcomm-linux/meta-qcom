@@ -10,8 +10,6 @@ SRC_URI = "git://github.com/linux-msm/${BPN}.git;branch=master;protocol=https"
 
 PV = "0.0+"
 
-S = "${WORKDIR}/git"
-
 BBCLASSEXTEND = "native nativesdk"
 
 do_install () {

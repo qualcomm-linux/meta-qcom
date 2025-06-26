@@ -15,8 +15,6 @@ SRC_URI = "git://github.com/linux-msm/${BPN}.git;branch=master;protocol=https \
 
 PV = "0.0+"
 
-S = "${WORKDIR}/git"
-
 do_install () {
     oe_runmake install DESTDIR=${D} prefix=${prefix} servicedir=${systemd_unitdir}/system
 }

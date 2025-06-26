@@ -22,8 +22,6 @@ SRCREV:class-devupstream = "${AUTOREV}"
 SRCREV = "6613b499fc6956027cc6d24f36c59f0d986a19f3"
 PV = "6.14+git"
 
-S = "${WORKDIR}/git"
-
 KERNEL_CONFIG ?= "qcom_defconfig"
 
 # Additional fragment for qcom value add features

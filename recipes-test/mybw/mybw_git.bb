@@ -8,8 +8,6 @@ SRC_URI = "git://github.com/andersson/mybw;protocol=https;branch=main \
            file://0001-makefile-Allow-CFLAGS-LDFLAGS-from-environment.patch \
            "
 
-S = "${WORKDIR}/git"
-
 PV = "0.0+git"
 
 do_compile () {

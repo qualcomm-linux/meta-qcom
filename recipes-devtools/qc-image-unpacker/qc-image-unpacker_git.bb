@@ -13,7 +13,7 @@ SRC_URI = " \
 SRCREV = "28a783a9fc25dc87b7416b6d5b6f9ccd497d1c2e"
 
 PV = "0.2.0+"
-S = "${WORKDIR}/git/src"
+S = "${UNPACKDIR}/${BP}/src"
 
 DEPENDS = "zlib"
 

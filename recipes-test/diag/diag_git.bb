@@ -8,8 +8,6 @@ SRC_URI = "git://github.com/linux-msm/${BPN}.git;branch=master;protocol=https"
 PV = "0.0+git"
 SRCREV = "d06e599d197790c9e84ac41a51bf124a69768c4f"
 
-S = "${WORKDIR}/git"
-
 DEPENDS = "qrtr udev"
 
 do_compile () {

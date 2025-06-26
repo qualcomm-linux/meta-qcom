@@ -13,8 +13,6 @@ DEPENDS = "qmic-native qrtr udev"
 
 PV = "0.2+"
 
-S = "${WORKDIR}/git"
-
 do_install () {
     oe_runmake install DESTDIR=${D} prefix=${prefix} servicedir=${systemd_unitdir}/system
 }

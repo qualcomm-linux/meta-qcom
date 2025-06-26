@@ -24,8 +24,6 @@ SRC_URI = " \
 
 SRCREV = "4195fbd4da54f3830af2c01d141c30051f446e51"
 
-S = "${WORKDIR}/git"
-
 inherit allarch
 
 INHIBIT_PACKAGE_DEBUG_SPLIT = "1"
