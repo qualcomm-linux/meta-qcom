@@ -28,6 +28,7 @@ SRC_URI:append:qcom = " \
     file://workarounds/0001-media-venus-protect-against-spurious-interrupts-duri.patch \
     file://workarounds/0001-media-venus-hfi-explicitly-release-IRQ-during-teardo.patch \
     file://workarounds/0001-media-venus-Fix-probe-error-handling.patch \
+    file://workarounds/0001-arm64-dts-qcom-Remove-CPUidle-states-for-QCS615.patch \
     file://drivers/0003-PCI-Add-new-start_link-stop_link-function-ops.patch \
     file://drivers/0004-PCI-dwc-Add-host_start_link-host_start_link-hooks-fo.patch \
     file://drivers/0005-PCI-dwc-Implement-.start_link-.stop_link-hooks.patch \
@@ -42,6 +43,7 @@ SRC_URI:append:qcom = " \
     file://qcs9075-board-dts/0003-arm64-dts-qcom-qcs9075-Introduce-QCS9075M-SOM.patch \
     file://qcs9075-board-dts/0004-arm64-dts-qcom-Add-support-for-qcs9075-IQ-9075-EVK.patch \
     file://qcs9075-board-dts/0001-arm64-dts-qcom-qcs9075-iq-9075-evk-enable-UFS.patch \
+    file://qcs615-board-dts/0001-arm64-dts-qcom-qcs615-Add-Command-DB-support.patch \
 "
 
 # Include additional kernel configs.
