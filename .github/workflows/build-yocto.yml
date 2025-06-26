@@ -129,6 +129,14 @@ jobs:
             ${KAS_CONTAINER} build ci/mirror.yml:ci/${{ matrix.machine }}.yml:ci/initramfs-test.yml
           fi
 
+      - name: Sstate-cache cleanup
+        run: |
+          export SSTATE_DIR=${CACHE_DIR}/sstate-cache
+          export KAS_WORK_DIR=$PWD/../kas
+          SSTATE_CACHE_MANAGEMENT="/work/oe-core/scripts/sstate-cache-management.py --cache-dir /sstate-cache --remove-duplicated --remove-orphans --debug --yes"
+          SSTATE_CACHE_MANAGEMENT+=" --dry-run"
+          flock ${SSTATE_DIR}-lock --command "${KAS_CONTAINER} shell ci/${{ matrix.machine }}.yml --command \"$SSTATE_CACHE_MANAGEMENT\""
+
       - uses: actions/upload-artifact@v4
         with:
           name: buildchart-${{ matrix.distro.name }}-${{ matrix.machine }}
