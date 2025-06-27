@@ -61,6 +61,7 @@ SRC_URI:append:qcom = " \
 KCONFIG_MODE:qcom = "--alldefconfig"
 
 KBUILD_DEFCONFIG:qcom ?= "defconfig"
+KBUILD_DEFCONFIG:qcom-armv7a = "qcom_defconfig"
 
 do_install:append:qcom() {
 	sed -i 's:${TMPDIR}::g' ${WORKDIR}/linux-${PACKAGE_ARCH}-${LINUX_KERNEL_TYPE}-build/drivers/gpu/drm/msm/generated/*

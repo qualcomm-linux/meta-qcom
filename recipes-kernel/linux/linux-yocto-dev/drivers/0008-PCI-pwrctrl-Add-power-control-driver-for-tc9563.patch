@@ -65,7 +65,7 @@ new file mode 100644
 index 00000000000000..547c764a6f405a
 --- /dev/null
 +++ b/drivers/pci/pwrctrl/pci-pwrctrl-tc9563.c
-@@ -0,0 +1,628 @@
+@@ -0,0 +1,629 @@
 +// SPDX-License-Identifier: GPL-2.0-only
 +/*
 + * Copyright (c) 2024 Qualcomm Innovation Center, Inc. All rights reserved.
@@ -73,6 +73,7 @@ index 00000000000000..547c764a6f405a
 +
 +#include <linux/delay.h>
 +#include <linux/device.h>
++#include <linux/gpio/consumer.h>
 +#include <linux/i2c.h>
 +#include <linux/mod_devicetable.h>
 +#include <linux/module.h>
