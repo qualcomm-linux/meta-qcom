@@ -36,7 +36,7 @@ jobs:
 
       - name: Run kas lock
         run: |
-          ${KAS_CONTAINER} dump --update --lock --inplace ci/base.yml
+          ${KAS_CONTAINER} lock --update ci/base.yml:ci/distro.yml
 
       - uses: actions/upload-artifact@v4
         with:
@@ -100,7 +100,7 @@ jobs:
           - name: poky-altcfg
             yamlfile: ""
           - name: qcom
-            yamlfile: 'ci/distro.yml:'
+            yamlfile: ':ci/distro.yml'
     runs-on: [self-hosted, x86]
     name: ${{ matrix.machine }}/${{ matrix.distro.name }}
     steps:
@@ -120,8 +120,8 @@ jobs:
           export KAS_WORK_DIR=$PWD/../kas
           mkdir $KAS_WORK_DIR
           ${KAS_CONTAINER} dump --resolve-env --resolve-local --resolve-refs \
-              ci/mirror.yml:ci/${{ matrix.machine }}.yml > kas-build.yml
-          ${KAS_CONTAINER} build ci/mirror.yml:${{ matrix.distro.yamlfile }}ci/${{ matrix.machine }}.yml
+              ci/mirror.yml:ci/${{ matrix.machine }}.yml${{ matrix.distro.yamlfile }} > kas-build.yml
+          ${KAS_CONTAINER} build ci/mirror.yml:ci/${{ matrix.machine }}.yml${{ matrix.distro.yamlfile }}
           ci/kas-container-shell-helper.sh ci/yocto-pybootchartgui.sh
           mv $KAS_WORK_DIR/build/buildchart.svg .
 

@@ -19,3 +19,6 @@ repos:
       meta-oe:
       meta-python:
       meta-xfce:
+
+target:
+  - qcom-multimedia-image

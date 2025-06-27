@@ -20,7 +20,7 @@ repos:
   bitbake:
     url: https://github.com/openembedded/bitbake
     layers:
-      .: excluded
+      .: disabled
 
   meta-yocto:
     url: https://git.yoctoproject.org/meta-yocto
