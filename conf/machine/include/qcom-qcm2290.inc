@@ -18,5 +18,3 @@ MACHINE_ESSENTIAL_EXTRA_RRECOMMENDS += " \
 MACHINE_EXTRA_RRECOMMENDS += " \
     packagegroup-qcom-boot-additional \
 "
-
-EXTRA_IMAGEDEPENDS += "firmware-qcom-boot-qrb2210-rb1"

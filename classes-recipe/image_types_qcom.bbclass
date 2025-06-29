@@ -5,6 +5,8 @@ inherit image_types
 
 IMAGE_TYPES += "qcomflash"
 
+QCOM_BOOT_FIRMWARE ?= ""
+
 QCOM_ESP_IMAGE ?= "esp-qcom-image"
 QCOM_ESP_FILE ?= "${@'efi.bin' if d.getVar('QCOM_ESP_IMAGE') else ''}"
 
@@ -19,8 +21,9 @@ QCOM_DTB_DEFAULT ?= "${@os.path.basename(d.getVar('KERNEL_DEVICETREE').split()[0
 QCOM_DTB_FILE ?= "dtb.bin"
 
 QCOM_BOOT_FILES_SUBDIR ?= ""
+QCOM_PARTITION_FILES_SUBDIR ?= "${QCOM_BOOT_FILES_SUBDIR}"
 
-QCOM_PARTITION_CONF ?= ""
+QCOM_PARTITION_CONF ?= "qcom-partition-conf"
 
 QCOM_ROOTFS_FILE ?= "rootfs.img"
 IMAGE_QCOMFLASH_FS_TYPE ??= "ext4"
@@ -30,6 +33,7 @@ IMAGE_CMD:qcomflash = "create_qcomflash_pkg"
 do_image_qcomflash[dirs] = "${QCOMFLASH_DIR}"
 do_image_qcomflash[cleandirs] = "${QCOMFLASH_DIR}"
 do_image_qcomflash[depends] += "${@ ['', '${QCOM_PARTITION_CONF}:do_deploy'][d.getVar('QCOM_PARTITION_CONF') != '']} \
+                                ${@ ['', '${QCOM_BOOT_FIRMWARE}:do_deploy'][d.getVar('QCOM_BOOT_FIRMWARE') != '']} \
                                 virtual/kernel:do_deploy \
 				${@'virtual/bootloader:do_deploy' if d.getVar('PREFERRED_PROVIDER_virtual/bootloader') else  ''} \
 				${@'${QCOM_ESP_IMAGE}:do_image_complete' if d.getVar('QCOM_ESP_IMAGE') != '' else  ''}"
@@ -74,13 +78,13 @@ create_qcomflash_pkg() {
     install -m 0644 ${IMGDEPLOYDIR}/${IMAGE_LINK_NAME}.${IMAGE_QCOMFLASH_FS_TYPE} ${QCOM_ROOTFS_FILE}
 
     # partition bins
-    for pbin in `find ${DEPLOY_DIR_IMAGE}/${QCOM_BOOT_FILES_SUBDIR} -maxdepth 1 -type f -name 'gpt_main*.bin' \
+    for pbin in `find ${DEPLOY_DIR_IMAGE}/${QCOM_PARTITION_FILES_SUBDIR} -maxdepth 1 -type f -name 'gpt_main*.bin' \
                 -o -name 'gpt_backup*.bin' -o -name 'patch*.xml'`; do
         install -m 0644 ${pbin} .
     done
 
     # skip BLANK_GPT and WIPE_PARTITIONS for rawprogram xml files
-    for rawpg in `find ${DEPLOY_DIR_IMAGE}/${QCOM_BOOT_FILES_SUBDIR} -maxdepth 1 -type f -name 'rawprogram*.xml' \
+    for rawpg in `find ${DEPLOY_DIR_IMAGE}/${QCOM_PARTITION_FILES_SUBDIR} -maxdepth 1 -type f -name 'rawprogram*.xml' \
                 ! -name 'rawprogram*_BLANK_GPT.xml' ! -name 'rawprogram*_WIPE_PARTITIONS.xml'`; do
         install -m 0644 ${rawpg} .
     done
@@ -94,7 +98,7 @@ create_qcomflash_pkg() {
     for logfs in `find ${DEPLOY_DIR_IMAGE}/${QCOM_BOOT_FILES_SUBDIR} -maxdepth 1 -type f -name 'logfs_*.bin'`; do
         install -m 0644 ${logfs} .
     done
-    for zeros in `find ${DEPLOY_DIR_IMAGE}/${QCOM_BOOT_FILES_SUBDIR} -maxdepth 1 -type f -name 'zeros_*.bin'`; do
+    for zeros in `find ${DEPLOY_DIR_IMAGE}/${QCOM_PARTITION_FILES_SUBDIR} -maxdepth 1 -type f -name 'zeros_*.bin'`; do
         install -m 0644 ${zeros} .
     done
 
