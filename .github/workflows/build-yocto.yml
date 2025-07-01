@@ -106,12 +106,12 @@ jobs:
       matrix:
         machine:
           - qcm6490-idp
-          - qcs615-adp-air
-          - qcs8300-ride-sx
-          - qcs9075-iq-9075-evk
-          - qcs9100-ride-sx
+          #- qcs615-adp-air
+          #- qcs8300-ride-sx
+          #- qcs9075-iq-9075-evk
+          #- qcs9100-ride-sx
           - qrb2210-rb1-core-kit
-          - qcom-armv7a
+          #- qcom-armv7a
         distro:
           - name: poky-altcfg
             yamlfile: ""
@@ -155,24 +155,21 @@ jobs:
           cache_dir: ${CACHE_DIR}
           kas: ${KAS_CONTAINER}
 
-  create-output:
-    needs: compile
-    outputs:
-      url: ${{ steps.print-output.outputs.url }}
-    runs-on: ubuntu-latest
-    steps:
       - name: "Print output"
         id: print-output
-        env:
-          build_url: ${{ needs.compile.outputs.url }}
         run: |
-          echo "Downloads URL: ${build_url}"
-          echo "url=\"${build_url}\"" >> $GITHUB_OUTPUT
-          echo "${build_url}" > build_url
-          echo "## Download URL" >> $GITHUB_STEP_SUMMARY
-          echo "[${build_url}](${build_url})" >> $GITHUB_STEP_SUMMARY
+          KERNEL_DIRNAME="${{ matrix.kernel.dirname }}"
+          if [ -n "${KERNEL_DIRNAME}" ]; then
+              KERNEL_DIRNAME="-${KERNEL_DIRNAME}"
+          fi
+          BUILDNAME="${{ matrix.machine }}-${{ matrix.distro.name }}${KERNEL_DIRNAME}"
+          FILENAME="build_url-${BUILDNAME}"
+          echo "${{ steps.compile_kas.outputs.url }}" > "${FILENAME}"
+          echo "## ${BUILDNAME} download URL" >> $GITHUB_STEP_SUMMARY
+          echo "[${{ steps.compile_kas.outputs.url }}](${{ steps.compile_kas.outputs.url }})" >> $GITHUB_STEP_SUMMARY
+          echo "filename=${FILENAME}" >> $GITHUB_OUTPUT
       - name: Upload build URL
         uses: actions/upload-artifact@v4
         with:
-          name: build_url
-          path: build_url
+          name: ${{ steps.print-output.outputs.filename }}
+          path: ${{ steps.print-output.outputs.filename }}
