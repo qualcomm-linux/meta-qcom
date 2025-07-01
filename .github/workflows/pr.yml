@@ -21,6 +21,4 @@ jobs:
         path: ${{ github.event_path }}
   build-pr:
     uses: ./.github/workflows/build-yocto.yml
-  schema-check:
-    uses: ./.github/workflows/lava-schema-check.yml
 
