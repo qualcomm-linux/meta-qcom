@@ -96,3 +96,23 @@ runs:
         path: ./uploads
         destination: ${{ github.repository_owner }}/${{ github.event.repository.name }}/${{ github.run_id }}-${{ github.run_attempt }}/
         s3_bucket: qcom-prd-gh-artifacts
+
+    - name: "Print output"
+      shell: bash
+      id: print-output
+      run: |
+        KERNEL_DIRNAME="${{ inputs.kernel_dirname }}"
+        if [ -n "${KERNEL_DIRNAME}" ]; then
+            KERNEL_DIRNAME="_${KERNEL_DIRNAME}"
+        fi
+        BUILDNAME="${{ inputs.machine }}_${{ inputs.distro_name }}${KERNEL_DIRNAME}"
+        FILENAME="build-url_${BUILDNAME}"
+        echo "${{ steps.upload_artifacts.outputs.url }}" > "${FILENAME}"
+        echo "filename=${FILENAME}" >> $GITHUB_OUTPUT
+    - name: Upload build URL
+      uses: actions/upload-artifact@v4
+      with:
+        overwrite: true
+        name: ${{ steps.print-output.outputs.filename }}
+        path: ${{ steps.print-output.outputs.filename }}
+
