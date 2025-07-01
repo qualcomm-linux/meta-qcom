@@ -82,8 +82,6 @@ jobs:
   compile:
     needs: kas-setup
     if: github.repository == 'qualcomm-linux/meta-qcom'
-    outputs:
-      url: ${{ steps.upload_artifacts.outputs.url }}
     strategy:
       fail-fast: true
       matrix:
@@ -156,25 +154,14 @@ jobs:
         id: upload_artifacts
         with:
           path: ./uploads
-
-  create-output:
-    needs: compile
-    outputs:
-      url: ${{ steps.print-output.outputs.url }}
-    runs-on: [self-hosted, x86]
-    steps:
-      - name: "Print output"
-        id: print-output
-        env:
-          build_url: ${{ needs.compile.outputs.url }}
+      - name: Save URL
+        id: save-url
         run: |
-          echo "Downloads URL: ${build_url}"
-          echo "url=\"${build_url}\"" >> $GITHUB_OUTPUT
-          echo "${build_url}" > build_url
-          echo "## Download URL" >> $GITHUB_STEP_SUMMARY
-          echo "[${build_url}](${build_url})" >> $GITHUB_STEP_SUMMARY
+          echo "${{ steps.compile.outputs.url }}" > build_url-${{ matrix.machine }}
+          echo "## ${{ matrix.machine }} download URL" >> $GITHUB_STEP_SUMMARY
+          echo "[${{ steps.compile.outputs.url }}](${{ steps.compile.outputs.url }})" >> $GITHUB_STEP_SUMMARY
       - name: Upload build URL
         uses: actions/upload-artifact@v4
         with:
-          name: build_url
-          path: build_url
+          name: build_url-${{ matrix.machine }}
+          path: build_url-${{ matrix.machine }}

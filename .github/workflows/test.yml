@@ -3,7 +3,7 @@ name: Tests
 on:
   workflow_call:
     inputs:
-      url:
+      build_id:
         required: true
         type: string
 
@@ -42,6 +42,12 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+      - name: 'Download build URLs'
+        uses: actions/download-artifact@v4
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          run-id: ${{ inputs.build_id }}
+          pattern: build_url-*
 
       - name: "Update test definition ${{ matrix.target }}"
         run: |
@@ -50,6 +56,14 @@ jobs:
           DEVICE_TYPE_PATH="${FIND_PATH%/*}"
           DEVICE_TYPE="${DEVICE_TYPE_PATH#*/}"
           BUILD_DOWNLOAD_URL="${{inputs.url}}"
+          if [ -d "build_url-${DEVICE_TYPE}" ]; then
+              BUILD_DOWNLOAD_URL=$(cat "build_url-${DEVICE_TYPE}/build_url-${DEVICE_TYPE}")
+          else
+              # fail the job because of missing URL file
+              echo "Build URL file build_url-${DEVICE_TYPE} is missing"
+              exit 1
+          fi
+
           FILE_NAME=$(echo "${FIND_PATH%.yaml}" | tr "/" "-")
           sed -i "s|{{DEVICE_TYPE}}|${DEVICE_TYPE}|g" "${{ matrix.target }}"
           sed -i "s|{{GITHUB_SHA}}|${GITHUB_SHA}|g" "${{ matrix.target }}"
