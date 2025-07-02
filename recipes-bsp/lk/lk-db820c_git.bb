@@ -1,0 +1,9 @@
+require lk.inc
+
+EXTRA_OEMAKE += "VERIFIED_BOOT=1"
+
+LK_BRANCH = "release/LA.HB.1.3.2-19600-8x96.0"
+LK_REVISION = "80e6b971bcb1d229ea90824b724b51398658c29a"
+LK_SOC = "msm8996"
+LK_MACHINE = "dragonboard-820c"
+LK_FLAVOUR = ""
