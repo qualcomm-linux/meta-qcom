@@ -21,4 +21,4 @@ jobs:
     needs: [build, schema-check]
     secrets: inherit
     with:
-      url: ${{ needs.build.outputs.artifacts_url }}
+      build_id: ${{ github.run_id }}

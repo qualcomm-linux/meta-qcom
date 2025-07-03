@@ -20,4 +20,4 @@ jobs:
     needs: build-nightly
     secrets: inherit
     with:
-      url: ${{ needs.build-nightly.outputs.artifacts_url }}
+      build_id: ${{ github.run_id }}
