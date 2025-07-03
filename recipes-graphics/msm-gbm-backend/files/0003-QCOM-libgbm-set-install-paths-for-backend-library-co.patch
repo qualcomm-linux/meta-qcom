@@ -1,0 +1,52 @@
+From 177b57a842aa6928a518316f95683bceed213ca1 Mon Sep 17 00:00:00 2001
+From: Devanshi Bansal <quic_devanshi@quicinc.com>
+Date: Tue, 2 Sep 2025 16:59:25 +0530
+Subject: [PATCH 3/3] QCOM:libgbm: set install paths for backend library,
+ config file and header
+
+Retrieve gbmbackendspath from gbm pkg-config and use it as the install_dir for msm_gbm.so
+Install default_fmt_alignment.xml to ${sysconfdir}/gbm
+Install shared header gbm_msm.h
+
+Change-Id: I8d7c37edf233c91f2684acfe1c6e0bcd43ddcdd0
+Signed-off-by: Devanshi Bansal <quic_devanshi@quicinc.com>
+Upstream-Status: Pending
+---
+ meson.build     | 1 +
+ src/meson.build | 8 ++++++++
+ 2 files changed, 9 insertions(+)
+
+diff --git a/meson.build b/meson.build
+index c54da91..4359314 100644
+--- a/meson.build
++++ b/meson.build
+@@ -17,6 +17,7 @@ ext_includes = include_directories('external')
+ gbm = dependency('gbm', version : ['>=21.2'])
+ dep_libxml2 = dependency('libxml-2.0')
+ 
++gbmbackendspath = gbm.get_variable('gbmbackendspath')
+ sysconfdir = get_option('sysconfdir')
+ 
+ c_args = ['-DSYSCONFDIR="' + sysconfdir + '"']
+diff --git a/src/meson.build b/src/meson.build
+index 8fcc2cb..f94d665 100644
+--- a/src/meson.build
++++ b/src/meson.build
+@@ -33,6 +33,14 @@ msm_gbm = library('msm_gbm',
+     include_directories : ext_includes,
+     version : meson.project_version(),
+     install : true,
++    install_dir: gbmbackendspath,
+     name_prefix: '',
+     c_args: c_args,
+ )
++
++install_data(
++    'default_fmt_alignment.xml',
++    install_dir: sysconfdir + '/gbm'
++)
++
++install_headers('gbm_msm.h')
+-- 
+2.34.1
+
