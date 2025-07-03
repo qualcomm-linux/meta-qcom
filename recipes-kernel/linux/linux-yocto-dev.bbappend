@@ -1,6 +1,8 @@
 # do not override KBRANCH and SRCREV_machine, use default ones.
 COMPATIBLE_MACHINE:qcom = "(qcom)"
 
+require recipes-kernel/linux/linux-qcom.inc
+
 FILESEXTRAPATHS:prepend:qcom := "${THISDIR}/${PN}:"
 
 SRC_URI:append:qcom = " \
