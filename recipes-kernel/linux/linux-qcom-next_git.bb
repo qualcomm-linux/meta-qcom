@@ -8,12 +8,12 @@ inherit kernel
 
 COMPATIBLE_MACHINE = "(qcom)"
 
-LINUX_VERSION ?= "6.16-rc3"
+LINUX_VERSION ?= "6.16-rc4"
 
 PV = "${LINUX_VERSION}+git"
 
-# tag: qcom-next-6.16-rc3-20250701
-SRCREV ?= "54f158d766ac86c95e97a17c9e51db880d2d30dd"
+# tag: qcom-next-6.16-rc4-20250704
+SRCREV ?= "52f18bdf8da147f2659862cfb77aeccddd40cb67"
 
 SRC_URI = "git://github.com/qualcomm-linux/kernel.git;branch=qcom-next;protocol=https"
 
