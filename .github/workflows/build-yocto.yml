@@ -15,7 +15,7 @@ env:
 jobs:
   kas-setup:
     if: github.repository == 'qualcomm-linux/meta-qcom'
-    runs-on: [self-hosted, qcom-u2404, amd64-dev]
+    runs-on: [self-hosted, qcom-u2404, amd64]
     steps:
       - name: Update kas-container
         run: |
@@ -46,7 +46,7 @@ jobs:
   yocto-check-layer:
     needs: kas-setup
     if: github.repository == 'qualcomm-linux/meta-qcom'
-    runs-on: [self-hosted, qcom-u2404, amd64-dev]
+    runs-on: [self-hosted, qcom-u2404, amd64]
     steps:
       - uses: actions/checkout@v4
         with:
@@ -64,7 +64,7 @@ jobs:
   yocto-patchreview:
     needs: kas-setup
     if: github.repository == 'qualcomm-linux/meta-qcom'
-    runs-on: [self-hosted, qcom-u2404, amd64-dev]
+    runs-on: [self-hosted, qcom-u2404, amd64]
     steps:
       - uses: actions/checkout@v4
         with:
@@ -102,7 +102,7 @@ jobs:
             yamlfile: ""
           - name: qcom
             yamlfile: ':ci/distro.yml'
-    runs-on: [self-hosted, qcom-u2404, amd64-dev]
+    runs-on: [self-hosted, qcom-u2404, amd64]
     name: ${{ matrix.machine }}/${{ matrix.distro.name }}
     steps:
       - uses: actions/checkout@v4
@@ -162,7 +162,7 @@ jobs:
     needs: compile
     outputs:
       url: ${{ steps.print-output.outputs.url }}
-    runs-on: [self-hosted, qcom-u2404, amd64-dev]
+    runs-on: [self-hosted, qcom-u2404, amd64]
     steps:
       - name: "Print output"
         id: print-output
