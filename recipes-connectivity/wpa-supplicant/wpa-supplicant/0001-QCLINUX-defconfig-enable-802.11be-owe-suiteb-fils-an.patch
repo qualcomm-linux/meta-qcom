@@ -1,0 +1,59 @@
+From d68637f8fac56d9f180a7ca37d13a9216e0b7153 Mon Sep 17 00:00:00 2001
+From: Miaoqing Pan <miaoqing.pan@oss.qualcomm.com>
+Date: Tue, 8 Jul 2025 10:49:35 +0800
+Subject: [PATCH] QCLINUX: defconfig: enable 802.11be, owe, suiteb, fils and
+ mbo
+
+Signed-off-by: Miaoqing Pan <miaoqing.pan@oss.qualcomm.com>
+Upstream-Status: Pending
+---
+ wpa_supplicant/defconfig | 13 +++++++++----
+ 1 file changed, 9 insertions(+), 4 deletions(-)
+
+diff --git a/wpa_supplicant/defconfig b/wpa_supplicant/defconfig
+index 52befd8..ad710d6 100644
+--- a/wpa_supplicant/defconfig
++++ b/wpa_supplicant/defconfig
+@@ -510,7 +510,7 @@ CONFIG_IEEE80211AX=y
+ # Note: This is experimental and work in progress. The definitions are still
+ # subject to change and this should not be expected to interoperate with the
+ # final IEEE 802.11be version.
+-#CONFIG_IEEE80211BE=y
++CONFIG_IEEE80211BE=y
+ 
+ # Wireless Network Management (IEEE Std 802.11v-2011)
+ # Note: This is experimental and not complete implementation.
+@@ -607,10 +607,10 @@ CONFIG_WIFI_DISPLAY=y
+ #CONFIG_ACS=y
+ 
+ # Support Multi Band Operation
+-#CONFIG_MBO=y
++CONFIG_MBO=y
+ 
+ # Fast Initial Link Setup (FILS) (IEEE 802.11ai)
+-#CONFIG_FILS=y
++CONFIG_FILS=y
+ # FILS shared key authentication with PFS
+ #CONFIG_FILS_SK_PFS=y
+ 
+@@ -639,7 +639,7 @@ CONFIG_BGSCAN_SIMPLE=y
+ 
+ # Opportunistic Wireless Encryption (OWE)
+ # Experimental implementation of draft-harkins-owe-07.txt
+-#CONFIG_OWE=y
++CONFIG_OWE=y
+ 
+ # Device Provisioning Protocol (DPP) (also known as Wi-Fi Easy Connect)
+ CONFIG_DPP=y
+@@ -686,3 +686,8 @@ CONFIG_DPP2=y
+ 
+ # Wi-Fi Aware unsynchronized service discovery (NAN USD)
+ #CONFIG_NAN_USD=y
++
++# Enable support for SuiteB
++CONFIG_SUITEB=y
++CONFIG_SUITEB192=y
++
+-- 
+2.34.1
+
