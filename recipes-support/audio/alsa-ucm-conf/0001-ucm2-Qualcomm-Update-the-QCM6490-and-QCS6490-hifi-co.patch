@@ -1,0 +1,44 @@
+From e7ec0f1ac3eebfa04e18a944d511bbb5fa57239d Mon Sep 17 00:00:00 2001
+From: Mohammad Rafi Shaik <mohammad.rafi.shaik@oss.qualcomm.com>
+Date: Tue, 10 Jun 2025 16:46:59 +0530
+Subject: [PATCH 1/2] ucm2: Qualcomm: Update the QCM6490 and QCS6490 hifi conf
+ files
+
+Rename the HiFi conf files for QCM6490-IDP and QCS6490-RB3Gen2 boards
+to match with soundcard name.
+
+Closes: https://github.com/alsa-project/alsa-ucm-conf/pull/577
+Signed-off-by: Mohammad Rafi Shaik <mohammad.rafi.shaik@oss.qualcomm.com>
+Signed-off-by: Jaroslav Kysela <perex@perex.cz>
+
+Upstream-Status: Backport [https://github.com/alsa-project/alsa-ucm-conf/commit/e7ec0f1ac3eebfa04e18a944d511bbb5fa57239d]
+---
+ .../QCM6490-IDP/{QCM6490-IDP.conf => qcm6490-idp-snd-card.conf}   | 0
+ .../{QCS6490-RB3Gen2.conf => qcs6490-rb3gen2-snd-card.conf}       | 0
+ .../qcm6490/{QCM6490-IDP.conf => qcm6490-idp-snd-card.conf}       | 0
+ .../{QCS6490-RB3Gen2.conf => qcs6490-rb3gen2-snd-card.conf}       | 0
+ 4 files changed, 0 insertions(+), 0 deletions(-)
+ rename ucm2/Qualcomm/qcm6490/QCM6490-IDP/{QCM6490-IDP.conf => qcm6490-idp-snd-card.conf} (100%)
+ rename ucm2/Qualcomm/qcs6490/QCS6490-RB3Gen2/{QCS6490-RB3Gen2.conf => qcs6490-rb3gen2-snd-card.conf} (100%)
+ rename ucm2/conf.d/qcm6490/{QCM6490-IDP.conf => qcm6490-idp-snd-card.conf} (100%)
+ rename ucm2/conf.d/qcs6490/{QCS6490-RB3Gen2.conf => qcs6490-rb3gen2-snd-card.conf} (100%)
+
+diff --git a/ucm2/Qualcomm/qcm6490/QCM6490-IDP/QCM6490-IDP.conf b/ucm2/Qualcomm/qcm6490/QCM6490-IDP/qcm6490-idp-snd-card.conf
+similarity index 100%
+rename from ucm2/Qualcomm/qcm6490/QCM6490-IDP/QCM6490-IDP.conf
+rename to ucm2/Qualcomm/qcm6490/QCM6490-IDP/qcm6490-idp-snd-card.conf
+diff --git a/ucm2/Qualcomm/qcs6490/QCS6490-RB3Gen2/QCS6490-RB3Gen2.conf b/ucm2/Qualcomm/qcs6490/QCS6490-RB3Gen2/qcs6490-rb3gen2-snd-card.conf
+similarity index 100%
+rename from ucm2/Qualcomm/qcs6490/QCS6490-RB3Gen2/QCS6490-RB3Gen2.conf
+rename to ucm2/Qualcomm/qcs6490/QCS6490-RB3Gen2/qcs6490-rb3gen2-snd-card.conf
+diff --git a/ucm2/conf.d/qcm6490/QCM6490-IDP.conf b/ucm2/conf.d/qcm6490/qcm6490-idp-snd-card.conf
+similarity index 100%
+rename from ucm2/conf.d/qcm6490/QCM6490-IDP.conf
+rename to ucm2/conf.d/qcm6490/qcm6490-idp-snd-card.conf
+diff --git a/ucm2/conf.d/qcs6490/QCS6490-RB3Gen2.conf b/ucm2/conf.d/qcs6490/qcs6490-rb3gen2-snd-card.conf
+similarity index 100%
+rename from ucm2/conf.d/qcs6490/QCS6490-RB3Gen2.conf
+rename to ucm2/conf.d/qcs6490/qcs6490-rb3gen2-snd-card.conf
+-- 
+2.34.1
+
