@@ -25,5 +25,5 @@ RDEPENDS:${PN}-miscellaneous = " \
     ${@bb.utils.contains("BBLAYERS", "openembedded-layer", "libssc","", d)} \
     libvmmem-dev \
     libdmabufheap-dev \
-    graphicsdlkm \
+    ${@oe.utils.conditional("PREFERRED_PROVIDER_virtual/kernel", "linux-yocto-dev", "graphicsdlkm", "", d)} \
 "
