@@ -1,0 +1,53 @@
+From a98b12220989e2187a47b0e06ac9145c92232a8e Mon Sep 17 00:00:00 2001
+From: Mohammad Rafi Shaik <mohammad.rafi.shaik@oss.qualcomm.com>
+Date: Wed, 18 Jun 2025 16:46:18 +0530
+Subject: [PATCH 2/2] ucm2: Qualcomm: Update the HIFI enable mixer commands for
+ qcm6490-idp and qcs6490-rb3gen2
+
+Closes: https://github.com/alsa-project/alsa-ucm-conf/pull/577
+Signed-off-by: Mohammad Rafi Shaik <mohammad.rafi.shaik@oss.qualcomm.com>
+Signed-off-by: Jaroslav Kysela <perex@perex.cz>
+
+Upstream-Status: Backport [https://github.com/alsa-project/alsa-ucm-conf/commit/a98b12220989e2187a47b0e06ac9145c92232a8e]
+---
+ ucm2/Qualcomm/qcm6490/QCM6490-IDP/HiFi.conf     | 8 ++++----
+ ucm2/Qualcomm/qcs6490/QCS6490-RB3Gen2/HiFi.conf | 4 ++--
+ 2 files changed, 6 insertions(+), 6 deletions(-)
+
+diff --git a/ucm2/Qualcomm/qcm6490/QCM6490-IDP/HiFi.conf b/ucm2/Qualcomm/qcm6490/QCM6490-IDP/HiFi.conf
+index 0d6497e..0a0d331 100644
+--- a/ucm2/Qualcomm/qcm6490/QCM6490-IDP/HiFi.conf
++++ b/ucm2/Qualcomm/qcm6490/QCM6490-IDP/HiFi.conf
+@@ -3,10 +3,10 @@ SectionVerb {
+ 		TQ "HiFi"
+ 	}
+ 	EnableSequence [
+-		cset "name='WSA_CODEC_DMA_RX_0 Audio Mixer MULTIMEDIA0' 1"
+-		cset "name='MULTIMEDIA1 Audio Mixer VA_CODEC_DMA_TX_0' 1"
+-		cset "name='RX_CODEC_DMA_RX_0 Audio Mixer MULTIMEDIA2' 1"
+-		cset "name='MULTIMEDIA3 Audio Mixer TX_CODEC_DMA_TX_3' 1"
++		cset "name='WSA_CODEC_DMA_RX_0 Audio Mixer MultiMedia1' 1"
++		cset "name='MultiMedia2 Mixer VA_CODEC_DMA_TX_0' 1"
++		cset "name='RX_CODEC_DMA_RX_0 Audio Mixer MultiMedia3' 1"
++		cset "name='MultiMedia4 Mixer TX_CODEC_DMA_TX_3' 1"
+ 	]
+ 
+ 	Include.wsae.File "/codecs/wsa883x/DefaultEnableSeq.conf"
+diff --git a/ucm2/Qualcomm/qcs6490/QCS6490-RB3Gen2/HiFi.conf b/ucm2/Qualcomm/qcs6490/QCS6490-RB3Gen2/HiFi.conf
+index 954dbfa..2488523 100644
+--- a/ucm2/Qualcomm/qcs6490/QCS6490-RB3Gen2/HiFi.conf
++++ b/ucm2/Qualcomm/qcs6490/QCS6490-RB3Gen2/HiFi.conf
+@@ -3,8 +3,8 @@ SectionVerb {
+ 		TQ "HiFi"
+ 	}
+ 	EnableSequence [
+-		cset "name='WSA_CODEC_DMA_RX_0 Audio Mixer MULTIMEDIA0' 1"
+-		cset "name='MULTIMEDIA1 Audio Mixer VA_CODEC_DMA_TX_0' 1"
++		cset "name='WSA_CODEC_DMA_RX_0 Audio Mixer MultiMedia1' 1"
++		cset "name='MultiMedia2 Mixer VA_CODEC_DMA_TX_0' 1"
+ 	]
+ 
+ 	Include.wsae.File "/codecs/wsa883x/DefaultEnableSeq.conf"
+-- 
+2.34.1
+
