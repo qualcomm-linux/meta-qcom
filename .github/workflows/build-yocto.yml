@@ -116,7 +116,7 @@ jobs:
                 type: additional
                 dirname: "+linux-yocto-dev"
                 yamlfile: ":ci/linux-yocto-dev.yml"
-    runs-on: [self-hosted, x86]
+    runs-on: [self-hosted, qcom-u2404, amd64-dev]
     name: ${{ matrix.machine }}/${{ matrix.distro.name }}${{ matrix.kernel.dirname }}
     steps:
       - uses: actions/checkout@v4
