@@ -26,9 +26,9 @@ index 273dd8c66f4eff..acef728530e36d 100644
  int pciehp_card_present_or_link_active(struct controller *ctrl);
  int pciehp_check_link_status(struct controller *ctrl);
 -int pciehp_check_link_active(struct controller *ctrl);
+ bool pciehp_device_replaced(struct controller *ctrl);
  void pciehp_release_ctrl(struct controller *ctrl);
  
- int pciehp_sysfs_enable_slot(struct hotplug_slot *hotplug_slot);
 diff --git a/drivers/pci/hotplug/pciehp_ctrl.c b/drivers/pci/hotplug/pciehp_ctrl.c
 index d603a7aa74838c..36468a9c31d669 100644
 --- a/drivers/pci/hotplug/pciehp_ctrl.c
@@ -105,9 +105,9 @@ index 8a09fb6083e276..278bc21d531dd2 100644
  	 * Synthesize it to ensure that it is acted on.
  	 */
  	down_read_nested(&ctrl->reset_lock, ctrl->depth);
--	if (!pciehp_check_link_active(ctrl))
-+	if (!pcie_link_is_active(ctrl_dev(ctrl)))
- 		pciehp_request(ctrl, PCI_EXP_SLTSTA_DLLSC);
+-	if (!pciehp_check_link_active(ctrl) || pciehp_device_replaced(ctrl))
++	if (!pcie_link_is_active(ctrl_dev(ctrl)) || pciehp_device_replaced(ctrl))
+ 		pciehp_request(ctrl, ignored_events);
  	up_read(&ctrl->reset_lock);
  }
 @@ -884,7 +857,7 @@ int pciehp_slot_reset(struct pcie_device *dev)
