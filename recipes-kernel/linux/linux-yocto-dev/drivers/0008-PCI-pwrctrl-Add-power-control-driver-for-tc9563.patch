@@ -36,11 +36,10 @@ diff --git a/drivers/pci/pwrctrl/Kconfig b/drivers/pci/pwrctrl/Kconfig
 index 990cab67d41332..d14ef2b0ffd84f 100644
 --- a/drivers/pci/pwrctrl/Kconfig
 +++ b/drivers/pci/pwrctrl/Kconfig
-@@ -21,3 +21,13 @@ config PCI_PWRCTL_SLOT
- 	  This is a generic driver that controls the power state of different
+@@ -22,6 +22,16 @@ config PCI_PWRCTL_SLOT
  	  PCI slots. The voltage regulators powering the rails of the PCI slots
  	  are expected to be defined in the devicetree node of the PCI bridge.
-+
+ 
 +config PCI_PWRCTRL_TC9563
 +	tristate "PCI Power Control driver for TC9563 PCIe switch"
 +	select PCI_PWRCTL
@@ -50,14 +49,18 @@ index 990cab67d41332..d14ef2b0ffd84f 100644
 +
 +	  This driver enables power and configures the TC9563 PCIe switch
 +	  through i2c.
++
+ # deprecated
+ config HAVE_PWRCTL
+ 	bool
 diff --git a/drivers/pci/pwrctrl/Makefile b/drivers/pci/pwrctrl/Makefile
 index ddfb12c5aadf68..5d0163c75878d5 100644
 --- a/drivers/pci/pwrctrl/Makefile
 +++ b/drivers/pci/pwrctrl/Makefile
 @@ -7,3 +7,5 @@ obj-$(CONFIG_PCI_PWRCTL_PWRSEQ)		+= pci-pwrctrl-pwrseq.o
  
- obj-$(CONFIG_PCI_PWRCTL_SLOT)		+= pci-pwrctl-slot.o
- pci-pwrctl-slot-y			:= slot.o
+ obj-$(CONFIG_PCI_PWRCTRL_SLOT)		+= pci-pwrctrl-slot.o
+ pci-pwrctrl-slot-y			:= slot.o
 +
 +obj-$(CONFIG_PCI_PWRCTRL_TC9563)	+= pci-pwrctrl-tc9563.o
 diff --git a/drivers/pci/pwrctrl/pci-pwrctrl-tc9563.c b/drivers/pci/pwrctrl/pci-pwrctrl-tc9563.c

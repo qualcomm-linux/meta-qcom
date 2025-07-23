@@ -15,7 +15,6 @@ SRC_URI:append:qcom = " \
     file://generic-drivers/0001-dt-bindings-net-bluetooth-qualcomm-document-WCN3950.patch \
     file://generic-drivers/0003-Bluetooth-qca-add-WCN3950-support.patch \
     file://generic-drivers/0001-Bluetooth-qca-fix-NV-variant-for-one-of-WCN3950-SoCs.patch \
-    file://qrb2210-board-dts/0004-arm64-dts-qcom-qcm2290-fix-some-of-QUP-interconnects.patch \
     file://qrb2210-board-dts/0005-arm64-dts-qcom-qcm2290-add-UART3-device.patch \
     file://qrb2210-board-dts/0006-arm64-dts-qcom-qrb2210-rb1-add-Bluetooth-support.patch \
 "

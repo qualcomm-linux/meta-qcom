@@ -13,6 +13,7 @@ PACKAGE_INSTALL += " \
     ncurses-terminfo \
     ncurses-terminfo-base \
     net-tools \
+    openssh-sftp-server \
     rng-tools \
     stress-ng \
     util-linux \

@@ -36,7 +36,7 @@ jobs:
 
       - name: Run kas lock
         run: |
-          ${KAS_CONTAINER} lock --update ci/base.yml:ci/distro.yml
+          ${KAS_CONTAINER} lock --update ci/base.yml:ci/qcom-distro.yml
 
       - uses: actions/upload-artifact@v4
         with:
@@ -100,10 +100,24 @@ jobs:
         distro:
           - name: poky-altcfg
             yamlfile: ""
-          - name: qcom
-            yamlfile: ':ci/distro.yml'
-    runs-on: [self-hosted, qcom-u2404, amd64-dev]
-    name: ${{ matrix.machine }}/${{ matrix.distro.name }}
+          - name: qcom-distro
+            yamlfile: ':ci/qcom-distro.yml'
+        kernel:
+          - type: default
+            dirname: ""
+            yamlfile: ""
+        include:
+          # Additional builds for specific machines
+          - machine: qcom-armv8a
+            distro:
+                name: qcom-distro
+                yamlfile: ':ci/qcom-distro.yml'
+            kernel:
+                type: additional
+                dirname: "+linux-yocto-dev"
+                yamlfile: ":ci/linux-yocto-dev.yml"
+    runs-on: [self-hosted, x86]
+    name: ${{ matrix.machine }}/${{ matrix.distro.name }}${{ matrix.kernel.dirname }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -121,23 +135,23 @@ jobs:
           export KAS_WORK_DIR=$PWD/../kas
           mkdir $KAS_WORK_DIR
           ${KAS_CONTAINER} dump --resolve-env --resolve-local --resolve-refs \
-              ci/mirror.yml:ci/${{ matrix.machine }}.yml${{ matrix.distro.yamlfile }} > kas-build.yml
-          ${KAS_CONTAINER} build ci/mirror.yml:ci/${{ matrix.machine }}.yml${{ matrix.distro.yamlfile }}
+              ci/mirror.yml:ci/${{ matrix.machine }}.yml${{ matrix.distro.yamlfile }}${{ matrix.kernel.yamlfile }} > kas-build.yml
+          ${KAS_CONTAINER} build ci/mirror.yml:ci/${{ matrix.machine }}.yml${{ matrix.distro.yamlfile }}${{ matrix.kernel.yamlfile }}
           ci/kas-container-shell-helper.sh ci/yocto-pybootchartgui.sh
           mv $KAS_WORK_DIR/build/buildchart.svg .
 
           if [ "${{ matrix.machine }}" = "qcom-armv8a" ]; then
-            ${KAS_CONTAINER} build ci/mirror.yml:ci/${{ matrix.machine }}.yml:ci/initramfs-test.yml
+            ${KAS_CONTAINER} build ci/mirror.yml:ci/${{ matrix.machine }}.yml${{ matrix.kernel.yamlfile }}:ci/initramfs-test.yml
           fi
 
       - uses: actions/upload-artifact@v4
         with:
-          name: buildchart-${{ matrix.distro.name }}-${{ matrix.machine }}
+          name: buildchart-${{ matrix.distro.name }}${{ matrix.kernel.dirname }}-${{ matrix.machine }}
           path: buildchart.svg
 
       - uses: actions/upload-artifact@v4
         with:
-          name: kas-build-${{ matrix.distro.name }}-${{ matrix.machine }}
+          name: kas-build-${{ matrix.distro.name }}${{ matrix.kernel.dirname }}-${{ matrix.machine }}
           path: kas-build.yml
 
       - name: Stage build artifacts for publishing
@@ -146,7 +160,7 @@ jobs:
           # expects file to be relative to our PWD. deploy_dir is outside
           # that, so we move things around:
           deploy_dir=../kas/build/tmp/deploy/images/${{matrix.machine}}
-          uploads_dir=./uploads/${{ matrix.distro.name }}
+          uploads_dir=./uploads/${{ matrix.distro.name }}${{ matrix.kernel.dirname }}
           mkdir -p $uploads_dir
           find $deploy_dir/ -maxdepth 1 -name "*.rootfs*.qcomflash" -exec rm -rf {} \;
           cp buildchart.svg kas-build.yml $deploy_dir/
