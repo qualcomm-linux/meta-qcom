@@ -22,3 +22,4 @@ repos:
 
 target:
   - qcom-multimedia-image
+  - packagegroup-qcom-ci

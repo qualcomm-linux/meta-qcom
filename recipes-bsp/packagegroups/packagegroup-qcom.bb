@@ -18,11 +18,3 @@ RDEPENDS:${PN}-boot-essential = " \
 RDEPENDS:${PN}-boot-additional = " \
     fastrpc \
 "
-
-# libssc depends on libqmi and protobuf which are part of meta-oe
-RDEPENDS:${PN}-miscellaneous = " \
-    hexagonrpc \
-    ${@bb.utils.contains("BBLAYERS", "openembedded-layer", "libssc","", d)} \
-    libvmmem-dev \
-    libdmabufheap-dev \
-"

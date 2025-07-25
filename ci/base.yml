@@ -45,3 +45,4 @@ machine: unset
 
 target:
   - core-image-base
+  - packagegroup-qcom-ci
