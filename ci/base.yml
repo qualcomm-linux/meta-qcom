@@ -33,6 +33,8 @@ local_conf_header:
     INHERIT += "buildstats buildstats-summary"
     INHERIT += "buildhistory"
     INHERIT += "rm_work"
+  cmdline: |
+    KERNEL_CMDLINE_EXTRA:append = " page_owner=on qcom_scm.download_mode=1 reboot=panic_warm"
   qcomflash: |
     IMAGE_CLASSES += "image_types_qcom"
     IMAGE_FSTYPES += "qcomflash"
