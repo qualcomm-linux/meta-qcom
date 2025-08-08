@@ -52,7 +52,7 @@ actions:
 context:
   lava_test_results_dir: /home/lava-%s
   test_character_delay: 10
-device_type: {{DEVICE_TYPE}}
+device_type: qcs8300-ride
 job_name: boot test ({{DEVICE_TYPE}}) {{GITHUB_RUN_ID}}
 metadata:
   build-commit: '{{GITHUB_SHA}}'
