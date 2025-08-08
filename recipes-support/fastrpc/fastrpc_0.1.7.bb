@@ -1,20 +1,18 @@
-HOMEPAGE = "https://git.codelinaro.org/linaro/qcomlt/fastrpc.git"
+HOMEPAGE = "https://github.com/qualcomm/fastrpc"
 SUMMARY = "Qualcomm FastRPC applications and library"
 SECTION = "devel"
 
 LICENSE = "BSD-3-Clause"
-LIC_FILES_CHKSUM = "file://src/fastrpc_apps_user.c;beginline=1;endline=29;md5=f94f3a7beba14ae2f59f817e9634f891"
+LIC_FILES_CHKSUM = "file://LICENSE.txt;md5=b67986b6880754696d418dbaa2cf51d1"
 
-SRCREV = "06ef0e7ae56b9f7dde53fb92e8a4bc5a843af8a8"
+SRCREV = "a8a7a5e13ad69b73dcc7e73c1013830f0d787c1a"
 SRC_URI = "\
-    git://git.codelinaro.org/linaro/qcomlt/fastrpc.git;branch=automake;protocol=https \
+    git://github.com/qualcomm/fastrpc.git;branch=main;protocol=https \
     file://adsprpcd.service \
     file://cdsprpcd.service \
     file://sdsprpcd.service \
     file://guess-dsp.sh \
 "
-
-PV = "0.0+"
 
 inherit autotools systemd
 
@@ -55,3 +53,12 @@ FILES:${PN}-dev:remove = "${FILES_SOLIBSDEV}"
 
 # We need to include lib*dsprpc.so into fastrpc for compatibility with Hexagon SDK
 INSANE_SKIP:${PN} = "dev-so"
+
+PACKAGES += "${PN}-tests"
+
+FILES:${PN}-tests += " \
+    ${libdir}/fastrpc_test/*.so \
+    ${datadir}/fastrpc_test \
+"
+
+INSANE_SKIP:${PN}-tests += "arch libdir ldflags"
