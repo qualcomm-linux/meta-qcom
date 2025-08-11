@@ -1,0 +1,3529 @@
+From 363153beb427f7a9d294a931a3abb0c68f421af6 Mon Sep 17 00:00:00 2001
+From: Devanshi Bansal <quic_devanshi@quicinc.com>
+Date: Fri, 27 Jun 2025 14:21:34 +0530
+Subject: [PATCH] add MSM backend with xml schema
+
+Upstream-Status: Inappropriate [Downstream]
+---
+ src/gbm/backends/msm/buffer_alloc.c           |   98 ++
+ src/gbm/backends/msm/buffer_alloc.h           |   13 +
+ src/gbm/backends/msm/buffer_layout.c          |  285 ++++
+ src/gbm/backends/msm/buffer_layout.h          |   21 +
+ .../backends/msm/default_fmt_alignment.xml    | 1261 +++++++++++++++++
+ src/gbm/backends/msm/gbm_msm.c                |  801 +++++++++++
+ src/gbm/backends/msm/gbm_msm.h                |   29 +
+ src/gbm/backends/msm/gbm_msm_int.h            |   60 +
+ src/gbm/backends/msm/schema_parser.c          |  222 +++
+ src/gbm/backends/msm/schema_parser.h          |   51 +
+ src/gbm/meson.build                           |   34 +
+ src/test/gbmtest.c                            |  502 +++++++
+ src/test/meson.build                          |   28 +
+ 13 files changed, 3405 insertions(+)
+ create mode 100644 src/gbm/backends/msm/buffer_alloc.c
+ create mode 100644 src/gbm/backends/msm/buffer_alloc.h
+ create mode 100644 src/gbm/backends/msm/buffer_layout.c
+ create mode 100644 src/gbm/backends/msm/buffer_layout.h
+ create mode 100644 src/gbm/backends/msm/default_fmt_alignment.xml
+ create mode 100644 src/gbm/backends/msm/gbm_msm.c
+ create mode 100644 src/gbm/backends/msm/gbm_msm.h
+ create mode 100644 src/gbm/backends/msm/gbm_msm_int.h
+ create mode 100644 src/gbm/backends/msm/schema_parser.c
+ create mode 100644 src/gbm/backends/msm/schema_parser.h
+ create mode 100644 src/test/gbmtest.c
+ create mode 100644 src/test/meson.build
+
+diff --git a/src/gbm/backends/msm/buffer_alloc.c b/src/gbm/backends/msm/buffer_alloc.c
+new file mode 100644
+index 0000000..5314b7d
+--- /dev/null
++++ b/src/gbm/backends/msm/buffer_alloc.c
+@@ -0,0 +1,98 @@
++/*
++ * Copyright (c) 2024 Qualcomm Innovation Center, Inc. All rights reserved.
++ * SPDX-License-Identifier: BSD-3-Clause-Clear
++ */
++
++#include <stdio.h>
++#include <string.h>
++#include <xf86drm.h>
++#include <errno.h>
++#include "drm-uapi/msm_drm.h"
++#include "drm-uapi/drm_fourcc.h"
++#include "buffer_alloc.h"
++#include <sys/stat.h>
++
++int allocate_buffer(const struct gbm_msm_device *msm_dev, uint32_t size, uint32_t *handle) {
++   if (!msm_dev || !handle)
++      return -1;
++
++   struct drm_msm_gem_new args;
++   memset(&args, 0, sizeof(args));
++   args.size = size;
++   args.flags = MSM_BO_CACHED;
++   if(drmIoctl(msm_dev->base.v0.fd, DRM_IOCTL_MSM_GEM_NEW, &args)) {
++      fprintf(stderr, "MSM_GEM_NEW failed \n");
++      return -1;
++   }
++
++   *handle = args.handle;
++   fprintf(stderr, "MSM_GEM_NEW returned handle[%u] for drm_fd=%d buffer flag=%d buffer size=%d \n",
++           args.handle, msm_dev->base.v0.fd, args.flags, size);
++   return 0;
++}
++
++int get_fd(const struct gbm_msm_device *msm_dev, uint32_t handle, int *fd) {
++   if (!msm_dev || !handle || !fd)
++      return -1;
++
++   struct drm_prime_handle args;
++   memset(&args, 0, sizeof(args));
++   args.handle = handle;
++   if(drmIoctl(msm_dev->base.v0.fd, DRM_IOCTL_PRIME_HANDLE_TO_FD, &args)) {
++      fprintf(stderr, "DRM_IOCTL_PRIME_HANDLE_TO_FD failed for data fd errono: %d (%s) "
++              "drm fd: %d\n", errno, strerror(errno), msm_dev->base.v0.fd);
++      return -1;
++   }
++
++   *fd = args.fd;
++   fprintf(stderr, "Get fd[%d] from GEM HANDLE[%u]\n", args.fd, args.handle);
++   return 0;
++}
++
++int free_buffer(const struct gbm_msm_device *msm_dev, uint32_t handle) {
++   if (!msm_dev || !handle)
++      return -1;
++   struct drm_gem_close gem_close;
++   memset(&gem_close, 0, sizeof(gem_close));
++   gem_close.handle = handle;
++   if (drmIoctl(msm_dev->base.v0.fd, DRM_IOCTL_GEM_CLOSE, &gem_close)) {
++      fprintf(stderr, "Failed to close GEM handle for BO=%u\n error=%s", handle, strerror(errno));
++      return -1;
++   }
++
++   fprintf(stderr, "GEM Handle for BO=%u closed \n", handle);
++   return 0;
++}
++
++int import_gem_buffer(const struct gbm_msm_device *msm_dev, int fd, uint32_t *handle) {
++   if (!msm_dev || (msm_dev->base.v0.fd < 0) || (fd < 0))
++      return -1;
++
++   struct drm_prime_handle gemimport_req;
++   memset(&gemimport_req, 0, sizeof(gemimport_req));
++   gemimport_req.fd = fd;
++   if (drmIoctl(msm_dev->base.v0.fd, DRM_IOCTL_PRIME_FD_TO_HANDLE, &gemimport_req)) {
++      fprintf(stderr, "DRM_IOCTL_PRIME_FD_TO_HANDLE failed for data fd:%d errono: %d (%s) "
++                      "drm fd: %d\n", fd, errno, strerror(errno), msm_dev->base.v0.fd);
++      return -1;
++   }
++
++   *handle = gemimport_req.handle;
++   fprintf(stderr, "Get HANDLE[%u] from fd[%d]\n", gemimport_req.handle, gemimport_req.fd);
++   return 0;
++}
++
++int bo_offset(int fd, uint32_t handle, uint64_t *offset) {
++   struct drm_msm_gem_info req = {
++      .handle = handle,
++      .info = MSM_INFO_GET_OFFSET,
++   };
++
++   if (drmIoctl(fd, DRM_IOCTL_MSM_GEM_INFO, &req)) {
++      perror("DRM_IOCTL_MSM_GEM_INFO");
++      return -1;
++   }
++
++   *offset = req.value;
++   return 0;
++}
+diff --git a/src/gbm/backends/msm/buffer_alloc.h b/src/gbm/backends/msm/buffer_alloc.h
+new file mode 100644
+index 0000000..cbd7ddd
+--- /dev/null
++++ b/src/gbm/backends/msm/buffer_alloc.h
+@@ -0,0 +1,13 @@
++/*
++ * Copyright (c) 2024 Qualcomm Innovation Center, Inc. All rights reserved.
++ * SPDX-License-Identifier: BSD-3-Clause-Clear
++ */
++
++#include <stdio.h>
++#include "gbm_msm_int.h"
++
++int allocate_buffer(const struct gbm_msm_device *msm_dev, uint32_t size, uint32_t *handle);
++int import_gem_buffer(const struct gbm_msm_device *msm_dev, int fd, uint32_t *handle);
++int get_fd(const struct gbm_msm_device *msm_dev, uint32_t handle, int *fd);
++int free_buffer(const struct gbm_msm_device *msm_dev, uint32_t handle);
++int bo_offset(int fd, uint32_t handle, uint64_t *offset);
+diff --git a/src/gbm/backends/msm/buffer_layout.c b/src/gbm/backends/msm/buffer_layout.c
+new file mode 100644
+index 0000000..1c15709
+--- /dev/null
++++ b/src/gbm/backends/msm/buffer_layout.c
+@@ -0,0 +1,285 @@
++/*
++ * Copyright (c) 2024 Qualcomm Innovation Center, Inc. All rights reserved.
++ * SPDX-License-Identifier: BSD-3-Clause-Clear
++ */
++
++#include <stdio.h>
++#include "schema_parser.h"
++#include "buffer_layout.h"
++#include "drm-uapi/drm_fourcc.h"
++
++#define ALIGN(x, align) (((x) + ((align)-1)) & ~((align)-1))
++
++int get_num_planes(struct gbm_bufdesc *descriptor, uint32_t *num_planes) {
++   if (!descriptor)
++      return false;
++
++   const char *format_name = find_format_name(descriptor->format);
++   if (!format_name) {
++      fprintf(stderr,"Unsupported format\n");
++      return -1;
++   }
++   struct format_info *info = get_format_info(format_name);
++   if (!info)
++      return -1;
++
++   *num_planes = info->plane_count;
++   return 0;
++}
++
++bool ubwc_enabled(struct gbm_bufdesc *descriptor) {
++   if (!descriptor)
++      return false;
++
++   if (descriptor->modifiers & DRM_FORMAT_MOD_QCOM_COMPRESSED)
++      return true;
++
++   return false;
++}
++
++void get_plane_width_and_height(uint32_t format, int plane, uint32_t *plane_width, uint32_t *plane_height) {
++   if (plane == 0) {
++     if (format == GBM_FORMAT_GR88)
++       *plane_width *= 2;
++      return;
++   }
++
++   switch(format) {
++   case GBM_FORMAT_NV12:
++   case GBM_FORMAT_NV21:
++   case GBM_FORMAT_NV16:
++   case GBM_FORMAT_NV61:
++      *plane_height /= 2;
++      break;
++   case GBM_FORMAT_YUV410:
++   case GBM_FORMAT_YVU410:
++   case GBM_FORMAT_YUV411:
++   case GBM_FORMAT_YVU411:
++      *plane_width /= 4;
++      *plane_height /= 4;
++      break;
++   case GBM_FORMAT_YUV420:
++   case GBM_FORMAT_YVU420:
++      *plane_width /= 2;
++      *plane_height /= 2;
++      break;
++   case GBM_FORMAT_YUV422:
++   case GBM_FORMAT_YVU422:
++      *plane_width /= 2;
++      break;
++   case GBM_FORMAT_YUV444:
++   case GBM_FORMAT_YVU444:
++      break;
++
++   default:
++      break;
++   }
++}
++
++int get_aligned_width_and_height(struct gbm_bufdesc *descriptor, int plane,
++                                 uint32_t *alignedw, uint32_t *alignedh)
++{
++   if (!descriptor || !alignedw || !alignedh)
++      return -1;
++
++   uint32_t width = descriptor->width;
++   uint32_t height = descriptor->height;
++   get_plane_width_and_height(descriptor->format, plane, &width, &height);
++
++   const char *format_name = find_format_name(descriptor->format);
++   if (!format_name) {
++      fprintf(stderr,"Unsupported format\n");
++      return -1;
++   }
++
++   struct format_info *info = get_format_info(format_name);
++   if (!info)
++      return -1;
++
++   uint32_t pitch_align_factor = info->planes[plane].pitch_align;
++   uint32_t height_align_factor = info->planes[plane].height_align;
++
++   if (ubwc_enabled(descriptor)) {
++      if (!info->planes[plane].meta_info) {
++	fprintf(stderr,"UBWC not supported for this format \n");
++	return -1;
++      }
++
++      pitch_align_factor = info->planes[plane].meta_info->pitch_align;
++      height_align_factor = info->planes[plane].meta_info->height_align;
++   }
++
++   *alignedw = ALIGN(width, pitch_align_factor);
++   *alignedh = ALIGN(height, height_align_factor);
++
++   return 0;
++}
++
++int get_stride(struct gbm_bufdesc *descriptor, int plane, uint32_t *stride)
++{
++   if (!descriptor || !stride)
++      return -1;
++
++   const char *format_name = find_format_name(descriptor->format);
++   if (!format_name) {
++      fprintf(stderr,"Unsupported format\n");
++      return -1;
++   }
++
++   struct format_info *info = get_format_info(format_name);
++   if (!info)
++      return -1;
++
++   uint32_t alignedw = 0, alignedh = 0;
++
++   if (get_aligned_width_and_height(descriptor, plane, &alignedw, &alignedh) != 0)
++      return -1;
++
++   uint32_t alignment = info->planes[plane].pitch_align;
++   if (ubwc_enabled(descriptor)) {
++      if (!info->planes[plane].meta_info) {
++        fprintf(stderr,"UBWC not supported for this format \n");
++        return -1;
++      }
++      alignment = info->planes[plane].meta_info->pitch_align;
++   }
++
++   uint32_t bpp = info->bpp;
++   *stride = ALIGN(alignedw * bpp, alignment);
++
++   return 0;
++}
++
++int get_data_plane_size(struct gbm_bufdesc *descriptor, int plane, uint32_t *plane_size) {
++   *plane_size = 0;
++
++   const char *format_name = find_format_name(descriptor->format);
++   if (!format_name) {
++      fprintf(stderr,"Unsupported format\n");
++      return -1;
++   }
++
++   struct format_info *info = get_format_info(format_name);
++   if (!info)
++      return -1;
++    
++   uint32_t alignedw = 0, alignedh = 0;
++   if (get_aligned_width_and_height(descriptor, plane, &alignedw, &alignedh) != 0)
++      return -1;
++
++   uint32_t stride = alignedw;
++   if (get_stride(descriptor, plane, &stride) != 0)
++      return -1;
++
++   if (ubwc_enabled(descriptor)) {
++      if (!info->planes[plane].meta_info) {
++         fprintf(stderr,"UBWC not supported for this format \n");
++         return -1;
++      }
++   }
++
++   uint32_t alignment = (ubwc_enabled(descriptor)) ? info->planes[plane].meta_info->size_align : info->size_align;
++
++   *plane_size = ALIGN(stride * alignedh, alignment);
++   return 0;
++}
++
++int get_meta_buffer_size(struct gbm_bufdesc *descriptor, int plane, uint32_t *metabuffer_size)
++{
++   if (!descriptor || !metabuffer_size)
++      return -1;
++
++   uint32_t width = descriptor->width;
++   uint32_t height = descriptor->height;
++   get_plane_width_and_height(descriptor->format, plane, &width, &height);
++
++   const char *format_name = find_format_name(descriptor->format);
++   if (!format_name) {
++      fprintf(stderr,"Unsupported format\n");
++      return -1;
++   }
++
++   struct format_info *info = get_format_info(format_name);
++   if (!info)
++      return -1;
++
++   if (!ubwc_enabled(descriptor)) {
++      *metabuffer_size = 0;
++      return 0;
++   }
++   if (!info->planes[plane].meta_info) {
++      fprintf(stderr,"UBWC not supported for this format \n");
++      return -1;
++   }
++
++   uint32_t block_width = info->planes[plane].meta_info->block_width;
++   uint32_t block_height = info->planes[plane].meta_info->block_height;
++
++   int meta_height = ALIGN(((height + block_height - 1) / block_height), 16);
++   int meta_width = ALIGN(((width + block_width - 1) / block_width), 64);
++   *metabuffer_size = (unsigned int)ALIGN((meta_width * meta_height), 4096);
++
++   return 0;
++}
++
++int get_size(struct gbm_bufdesc *descriptor, uint32_t *buffer_size)
++{
++   if (!descriptor || !buffer_size)
++      return -1;
++
++   const char *format_name = find_format_name(descriptor->format);
++   if (!format_name) {
++      fprintf(stderr,"Unsupported format\n");
++      return -1;
++   }
++
++   struct format_info *info = get_format_info(format_name);
++   if (!info)
++      return -1;
++
++   uint32_t plane_count = info->plane_count;
++
++   uint32_t size = 0;
++   for (uint32_t i = 0; i < plane_count; i++) {
++      uint32_t data_size = 0, ubwc_size = 0;
++      if (get_data_plane_size(descriptor, i, &data_size) != 0)
++         return -1;
++      if (get_meta_buffer_size(descriptor, i, &ubwc_size) != 0)
++         return -1;
++
++      size += data_size + ubwc_size;
++   }
++
++   *buffer_size = size;
++   return 0;
++}
++
++int get_plane_offset(struct gbm_bufdesc *descriptor, int plane, uint32_t *plane_offset)
++{
++   if (!descriptor || !plane_offset)
++      return -1;
++
++   const char *format_name = find_format_name(descriptor->format);
++   if (!format_name) {
++      fprintf(stderr,"Unsupported format\n");
++      return -1;
++   }
++
++   struct format_info *info = get_format_info(format_name);
++   if (!info || (plane > info->plane_count - 1))
++      return -1;
++
++   uint32_t offset = 0;
++   for (uint32_t i = 0; i < plane; i++) {
++      uint32_t data_size = 0, ubwc_size = 0;
++      if (get_data_plane_size(descriptor, i, &data_size) != 0)
++         return -1;
++      if (get_meta_buffer_size(descriptor, i, &ubwc_size) != 0)
++         return -1;
++
++      offset += data_size + ubwc_size;
++   }
++
++   *plane_offset = offset;
++   return 0;
++}
+diff --git a/src/gbm/backends/msm/buffer_layout.h b/src/gbm/backends/msm/buffer_layout.h
+new file mode 100644
+index 0000000..787e6b1
+--- /dev/null
++++ b/src/gbm/backends/msm/buffer_layout.h
+@@ -0,0 +1,21 @@
++/*
++ * Copyright (c) 2024 Qualcomm Innovation Center, Inc. All rights reserved.
++ * SPDX-License-Identifier: BSD-3-Clause-Clear
++ */
++
++#include <stdio.h>
++
++int get_num_planes(struct gbm_bufdesc *descriptor, uint32_t *num_planes);
++bool ubwc_enabled(struct gbm_bufdesc *descriptor);
++int get_aligned_width_and_height(struct gbm_bufdesc *descriptor, int plane,
++                                 uint32_t *alignedw, uint32_t *alignedh);
++int get_stride(struct gbm_bufdesc *descriptor, int plane, uint32_t *stride);
++int get_data_plane_size(struct gbm_bufdesc *descriptor, int plane,
++                        uint32_t *plane_size);
++int get_meta_buffer_size(struct gbm_bufdesc *descriptor, int plane, 
++                         uint32_t *metabuffer_size);
++int get_size(struct gbm_bufdesc *descriptor, uint32_t *buffer_size);
++int get_plane_offset(struct gbm_bufdesc *descriptor, int plane, 
++                     uint32_t *plane_offset);
++void get_plane_width_and_height(uint32_t format, int plane,
++                                uint32_t *buffer_width, uint32_t *buffer_height);
+diff --git a/src/gbm/backends/msm/default_fmt_alignment.xml b/src/gbm/backends/msm/default_fmt_alignment.xml
+new file mode 100644
+index 0000000..5cc909a
+--- /dev/null
++++ b/src/gbm/backends/msm/default_fmt_alignment.xml
+@@ -0,0 +1,1261 @@
++<?xml version="1.0" encoding="UTF-8"?>
++<formats>
++   <format>
++     <format_name>ARGB_8888</format_name>
++     <constraints>
++       <size_align>1</size_align>
++       <bpp>4</bpp>
++       <planes>
++         <plane>
++           <plane_name>ARGB</plane_name>
++           <pitch_align>64</pitch_align>
++           <height_align>1</height_align>
++           <meta_info>
++             <block_width>16</block_width>
++             <block_height>4</block_height>
++             <pitch_align>64</pitch_align>
++             <height_align>16</height_align>
++             <size_align>4096</size_align>
++           </meta_info>
++         </plane>
++       </planes>
++     </constraints>
++   </format>
++
++   <format>
++     <format_name>ABGR_8888</format_name>
++     <constraints>
++       <size_align>1</size_align>
++       <bpp>4</bpp>
++       <planes>
++         <plane>
++           <plane_name>ABGR</plane_name>
++           <pitch_align>64</pitch_align>
++           <height_align>1</height_align>
++           <meta_info>
++             <block_width>16</block_width>
++             <block_height>4</block_height>
++             <pitch_align>64</pitch_align>
++             <height_align>16</height_align>
++             <size_align>4096</size_align>
++           </meta_info>
++         </plane>
++       </planes>
++     </constraints>
++   </format>
++
++   <format>
++     <format_name>XRGB_8888</format_name>
++     <constraints>
++       <size_align>1</size_align>
++       <bpp>4</bpp>
++       <planes>
++         <plane>
++           <plane_name>XRGB</plane_name>
++           <pitch_align>64</pitch_align>
++           <height_align>1</height_align>
++           <meta_info>
++             <block_width>16</block_width>
++             <block_height>4</block_height>
++             <pitch_align>64</pitch_align>
++             <height_align>16</height_align>
++             <size_align>4096</size_align>
++           </meta_info>
++         </plane>
++       </planes>
++     </constraints>
++   </format>
++
++   <format>
++     <format_name>XBGR_8888</format_name>
++     <constraints>
++       <size_align>1</size_align>
++       <bpp>4</bpp>
++       <planes>
++         <plane>
++           <plane_name>XBGR</plane_name>
++           <pitch_align>64</pitch_align>
++           <height_align>1</height_align>
++           <meta_info>
++             <block_width>16</block_width>
++             <block_height>4</block_height>
++             <pitch_align>64</pitch_align>
++             <height_align>16</height_align>
++             <size_align>4096</size_align>
++           </meta_info>
++         </plane>
++       </planes>
++     </constraints>
++   </format>
++
++   <format>
++     <format_name>RGBA_8888</format_name>
++     <constraints>
++       <size_align>1</size_align>
++       <bpp>4</bpp>
++       <planes>
++         <plane>
++           <plane_name>RGBA</plane_name>
++           <pitch_align>64</pitch_align>
++           <height_align>1</height_align>
++           <meta_info>
++             <block_width>16</block_width>
++             <block_height>4</block_height>
++             <pitch_align>64</pitch_align>
++             <height_align>16</height_align>
++             <size_align>4096</size_align>
++           </meta_info>
++         </plane>
++       </planes>
++     </constraints>
++   </format>
++
++   <format>
++     <format_name>BGRA_8888</format_name>
++     <constraints>
++       <size_align>1</size_align>
++       <bpp>4</bpp>
++       <planes>
++         <plane>
++           <plane_name>BGRA</plane_name>
++           <pitch_align>64</pitch_align>
++           <height_align>1</height_align>
++         </plane>
++       </planes>
++     </constraints>
++   </format>
++
++   <format>
++     <format_name>RGBX_8888</format_name>
++     <constraints>
++       <size_align>1</size_align>
++       <bpp>4</bpp>
++       <planes>
++         <plane>
++           <plane_name>RGBX</plane_name>
++           <pitch_align>64</pitch_align>
++           <height_align>1</height_align>
++         </plane>
++       </planes>
++     </constraints>
++   </format>
++
++   <format>
++     <format_name>BGRX_8888</format_name>
++     <constraints>
++       <size_align>1</size_align>
++       <bpp>4</bpp>
++       <planes>
++         <plane>
++           <plane_name>BGRX</plane_name>
++           <pitch_align>64</pitch_align>
++           <height_align>16</height_align>
++         </plane>
++       </planes>
++     </constraints>
++   </format>
++
++   <format>
++     <format_name>XRGB_4444</format_name>
++     <constraints>
++       <size_align>1</size_align>
++       <bpp>2</bpp>
++       <planes>
++         <plane>
++           <plane_name>XRGB</plane_name>
++           <pitch_align>64</pitch_align>
++           <height_align>1</height_align>
++         </plane>
++       </planes>
++     </constraints>
++   </format>
++
++   <format>
++     <format_name>XBGR_4444</format_name>
++     <constraints>
++1       <bpp>2</bpp>
++       <planes>
++         <plane>
++           <plane_name>XBGR</plane_name>
++           <pitch_align>64</pitch_align>
++           <height_align>1</height_align>
++         </plane>
++       </planes>
++     </constraints>
++   </format>
++
++   <format>
++     <format_name>RGBX_4444</format_name>
++     <constraints>
++       <size_align>1</size_align>
++       <bpp>2</bpp>
++       <planes>
++         <plane>
++           <plane_name>RGBX</plane_name>
++           <pitch_align>64</pitch_align>
++           <height_align>1</height_align>
++         </plane>
++       </planes>
++     </constraints>
++   </format>
++
++   <format>
++     <format_name>BGRX_4444</format_name>
++     <constraints>
++       <size_align>1</size_align>
++       <bpp>2</bpp>
++       <planes>
++         <plane>
++           <plane_name>BGRX</plane_name>
++           <pitch_align>64</pitch_align>
++           <height_align>1</height_align>
++         </plane>
++       </planes>
++     </constraints>
++   </format>
++
++   <format>
++     <format_name>ARGB_4444</format_name>
++     <constraints>
++       <size_align>1</size_align>
++       <bpp>2</bpp>
++       <planes>
++         <plane>
++           <plane_name>ARGB</plane_name>
++           <pitch_align>64</pitch_align>
++           <height_align>1</height_align>
++         </plane>
++       </planes>
++     </constraints>
++   </format>
++
++   <format>
++     <format_name>ABGR_4444</format_name>
++     <constraints>
++       <size_align>1</size_align>
++       <bpp>2</bpp>
++       <planes>
++         <plane>
++           <plane_name>ABGR</plane_name>
++           <pitch_align>64</pitch_align>
++           <height_align>1</height_align>
++         </plane>
++       </planes>
++     </constraints>
++   </format>
++
++   <format>
++     <format_name>RGBA_4444</format_name>
++     <constraints>
++       <size_align>1</size_align>
++       <bpp>2</bpp>
++       <planes>
++         <plane>
++           <plane_name>RGBA</plane_name>
++           <pitch_align>64</pitch_align>
++           <height_align>1</height_align>
++         </plane>
++       </planes>
++     </constraints>
++   </format>
++
++   <format>
++     <format_name>BGRA_4444</format_name>
++     <constraints>
++       <size_align>1</size_align>
++       <bpp>2</bpp>
++       <planes>
++         <plane>
++           <plane_name>BGRA</plane_name>
++           <pitch_align>64</pitch_align>
++           <height_align>1</height_align>
++         </plane>
++       </planes>
++     </constraints>
++   </format>
++
++   <format>
++     <format_name>XRGB_1555</format_name>
++     <constraints>
++       <size_align>1024</size_align>
++       <bpp>2</bpp>
++       <planes>
++         <plane>
++           <plane_name>XRGB</plane_name>
++           <pitch_align>32</pitch_align>
++           <height_align>32</height_align>
++         </plane>
++       </planes>
++     </constraints>
++   </format>
++
++   <format>
++     <format_name>XBGR_1555</format_name>
++     <constraints>
++       <size_align>1024</size_align>
++       <bpp>2</bpp>
++       <planes>
++         <plane>
++           <plane_name>XBGR</plane_name>
++           <pitch_align>32</pitch_align>
++           <height_align>32</height_align>
++         </plane>
++       </planes>
++     </constraints>
++   </format>
++
++   <format>
++     <format_name>RGBX_5551</format_name>
++     <constraints>
++       <size_align>1024</size_align>
++       <bpp>2</bpp>
++       <planes>
++         <plane>
++           <plane_name>RGBX</plane_name>
++           <pitch_align>32</pitch_align>
++           <height_align>32</height_align>
++         </plane>
++       </planes>
++     </constraints>
++   </format>
++
++   <format>
++     <format_name>BGRX_5551</format_name>
++     <constraints>
++       <size_align>1024</size_align>
++       <bpp>2</bpp>
++       <planes>
++         <plane>
++           <plane_name>BGRX</plane_name>
++           <pitch_align>32</pitch_align>
++           <height_align>32</height_align>
++         </plane>
++       </planes>
++     </constraints>
++   </format>
++
++   <format>
++     <format_name>ARGB_1555</format_name>
++     <constraints>
++       <size_align>1024</size_align>
++       <bpp>2</bpp>
++       <planes>
++         <plane>
++           <plane_name>ARGB</plane_name>
++           <pitch_align>32</pitch_align>
++           <height_align>32</height_align>
++         </plane>
++       </planes>
++     </constraints>
++   </format>
++
++   <format>
++     <format_name>ABGR_1555</format_name>
++     <constraints>
++       <size_align>1024</size_align>
++       <bpp>2</bpp>
++       <planes>
++         <plane>
++           <plane_name>ABGR</plane_name>
++           <pitch_align>32</pitch_align>
++           <height_align>32</height_align>
++         </plane>
++       </planes>
++     </constraints>
++   </format>
++
++   <format>
++     <format_name>RGBA_5551</format_name>
++     <constraints>
++       <size_align>1024</size_align>
++       <bpp>2</bpp>
++       <planes>
++         <plane>
++           <plane_name>RGBA</plane_name>
++           <pitch_align>32</pitch_align>
++           <height_align>32</height_align>
++         </plane>
++       </planes>
++     </constraints>
++   </format>
++
++   <format>
++     <format_name>BGRA_5551</format_name>
++     <constraints>
++       <size_align>1024</size_align>
++       <bpp>2</bpp>
++       <planes>
++         <plane>
++           <plane_name>BGRA</plane_name>
++           <pitch_align>32</pitch_align>
++           <height_align>32</height_align>
++         </plane>
++       </planes>
++     </constraints>
++   </format>
++
++   <format>
++     <format_name>RGB_565</format_name>
++     <constraints>
++       <size_align>1</size_align>
++       <bpp>2</bpp>
++       <planes>
++         <plane>
++           <plane_name>RGB</plane_name>
++           <pitch_align>64</pitch_align>
++           <height_align>1</height_align>
++         </plane>
++       </planes>
++     </constraints>
++   </format>
++
++   <format>
++     <format_name>BGR_565</format_name>
++     <constraints>
++       <size_align>1</size_align>
++       <bpp>2</bpp>
++       <planes>
++         <plane>
++           <plane_name>BGR</plane_name>
++           <pitch_align>64</pitch_align>
++           <height_align>1</height_align>
++         </plane>
++       </planes>
++     </constraints>
++   </format>
++
++   <format>
++     <format_name>RGB_888</format_name>
++     <constraints>
++       <size_align>1</size_align>
++       <bpp>3</bpp>
++       <planes>
++         <plane>
++           <plane_name>RGB</plane_name>
++           <pitch_align>256</pitch_align>
++           <height_align>1</height_align>
++         </plane>
++       </planes>
++     </constraints>
++   </format>
++
++   <format>
++     <format_name>BGR_888</format_name>
++     <constraints>
++       <size_align>1</size_align>
++       <bpp>3</bpp>
++       <planes>
++         <plane>
++           <plane_name>BGR</plane_name>
++           <pitch_align>256</pitch_align>
++           <height_align>1</height_align>
++         </plane>
++       </planes>
++     </constraints>
++   </format>
++
++   <format>
++     <format_name>XRGB_2101010</format_name>
++     <constraints>
++       <size_align>1</size_align>
++       <bpp>4</bpp>
++       <planes>
++         <plane>
++           <plane_name>XRGB</plane_name>
++           <pitch_align>64</pitch_align>
++           <height_align>1</height_align>
++         </plane>
++       </planes>
++     </constraints>
++   </format>
++
++   <format>
++     <format_name>XBGR_2101010</format_name>
++     <constraints>
++       <size_align>1</size_align>
++       <bpp>4</bpp>
++       <planes>
++         <plane>
++           <plane_name>XBGR</plane_name>
++           <pitch_align>64</pitch_align>
++           <height_align>1</height_align>
++         </plane>
++       </planes>
++     </constraints>
++   </format>
++
++   <format>
++     <format_name>RGBX_1010102</format_name>
++     <constraints>
++       <size_align>1</size_align>
++       <bpp>4</bpp>
++       <planes>
++         <plane>
++           <plane_name>RGBX</plane_name>
++           <pitch_align>64</pitch_align>
++           <height_align>1</height_align>
++         </plane>
++       </planes>
++     </constraints>
++   </format>
++
++   <format>
++     <format_name>BGRX_1010102</format_name>
++     <constraints>
++       <size_align>1</size_align>
++       <bpp>4</bpp>
++       <planes>
++         <plane>
++           <plane_name>BGRX</plane_name>
++           <pitch_align>64</pitch_align>
++           <height_align>1</height_align>
++         </plane>
++       </planes>
++     </constraints>
++   </format>
++
++   <format>
++     <format_name>ARGB_2101010</format_name>
++     <constraints>
++       <size_align>1</size_align>
++       <bpp>4</bpp>
++       <planes>
++         <plane>
++           <plane_name>ARGB</plane_name>
++           <pitch_align>64</pitch_align>
++           <height_align>1</height_align>
++         </plane>
++       </planes>
++     </constraints>
++   </format>
++
++   <format>
++     <format_name>ABGR_2101010</format_name>
++     <constraints>
++       <size_align>1</size_align>
++       <bpp>4</bpp>
++       <planes>
++         <plane>
++           <plane_name>ABGR</plane_name>
++           <pitch_align>64</pitch_align>
++           <height_align>1</height_align>
++           <meta_info>
++             <block_width>16</block_width>
++             <block_height>4</block_height>
++             <pitch_align>64</pitch_align>
++             <height_align>16</height_align>
++             <size_align>4096</size_align>
++           </meta_info>
++         </plane>
++       </planes>
++     </constraints>
++   </format>
++
++   <format>
++     <format_name>RGBA_1010102</format_name>
++     <constraints>
++       <size_align>1</size_align>
++       <bpp>4</bpp>
++       <planes>
++         <plane>
++           <plane_name>RGBA</plane_name>
++           <pitch_align>64</pitch_align>
++           <height_align>1</height_align>
++         </plane>
++       </planes>
++     </constraints>
++   </format>
++
++   <format>
++     <format_name>BGRA_1010102</format_name>
++     <constraints>
++       <size_align>1</size_align>
++       <bpp>4</bpp>
++       <planes>
++         <plane>
++           <plane_name>BGRA</plane_name>
++           <pitch_align>64</pitch_align>
++           <height_align>1</height_align>
++         </plane>
++       </planes>
++     </constraints>
++   </format>
++
++   <format>
++     <format_name>XBGR_16161616</format_name>
++     <constraints>
++       <size_align>1</size_align>
++       <bpp>8</bpp>
++       <planes>
++         <plane>
++           <plane_name>XBGR</plane_name>
++           <pitch_align>64</pitch_align>
++           <height_align>1</height_align>
++         </plane>
++       </planes>
++     </constraints>
++   </format>
++
++   <format>
++     <format_name>ABGR_16161616</format_name>
++     <constraints>
++       <size_align>1</size_align>
++       <bpp>8</bpp>
++       <planes>
++         <plane>
++           <plane_name>ABGR</plane_name>
++           <pitch_align>64</pitch_align>
++           <height_align>1</height_align>
++         </plane>
++       </planes>
++     </constraints>
++   </format>
++
++   <format>
++     <format_name>XBGR_16161616F</format_name>
++     <constraints>
++       <size_align>1</size_align>
++       <bpp>8</bpp>
++       <planes>
++         <plane>
++           <plane_name>XBGR</plane_name>
++           <pitch_align>64</pitch_align>
++           <height_align>1</height_align>
++           <meta_info>
++              <block_width>16</block_width>
++              <block_height>4</block_height>
++              <pitch_align>64</pitch_align>
++              <height_align>16</height_align>
++              <size_align>4096</size_align>
++           </meta_info>
++         </plane>
++       </planes>
++     </constraints>
++   </format>
++
++   <format>
++     <format_name>ABGR_16161616F</format_name>
++     <constraints>
++       <size_align>1</size_align>
++       <bpp>8</bpp>
++       <planes>
++         <plane>
++           <plane_name>ABGR</plane_name>
++           <pitch_align>64</pitch_align>
++           <height_align>1</height_align>
++           <meta_info>
++              <block_width>16</block_width>
++              <block_height>4</block_height>
++              <pitch_align>64</pitch_align>
++              <height_align>16</height_align>
++              <size_align>4096</size_align>
++           </meta_info>
++         </plane>
++       </planes>
++     </constraints>
++   </format>
++
++   <format>
++     <format_name>R_8</format_name>
++     <constraints>
++       <size_align>1</size_align>
++       <bpp>1</bpp>
++       <planes>
++         <plane>
++           <plane_name>R</plane_name>
++           <pitch_align>64</pitch_align>
++           <height_align>1</height_align>
++           <meta_info>
++             <block_width>32</block_width>
++             <block_height>8</block_height>
++             <pitch_align>128</pitch_align>
++             <height_align>32</height_align>
++             <size_align>4096</size_align>
++           </meta_info>
++         </plane>
++       </planes>
++     </constraints>
++   </format>
++
++   <format>
++     <format_name>R_16</format_name>
++     <constraints>
++       <size_align>1</size_align>
++       <bpp>2</bpp>
++       <planes>
++         <plane>
++           <plane_name>R</plane_name>
++           <pitch_align>64</pitch_align>
++           <height_align>1</height_align>
++         </plane>
++       </planes>
++     </constraints>
++   </format>
++
++   <format>
++     <format_name>GR_88</format_name>
++     <constraints>
++       <size_align>1</size_align>
++       <bpp>1</bpp>
++       <planes>
++         <plane>
++           <plane_name>GR</plane_name>
++           <pitch_align>64</pitch_align>
++           <height_align>1</height_align>
++           <meta_info>
++             <block_width>32</block_width>
++             <block_height>8</block_height>
++             <pitch_align>128</pitch_align>
++             <height_align>32</height_align>
++             <size_align>4096</size_align>
++           </meta_info>
++         </plane>
++       </planes>
++     </constraints>
++   </format>
++
++   <format>
++     <format_name>RG_1616</format_name>
++     <constraints>
++       <size_align>1</size_align>
++       <bpp>4</bpp>
++       <planes>
++         <plane>
++           <plane_name>RG</plane_name>
++           <pitch_align>64</pitch_align>
++           <height_align>1</height_align>
++         </plane>
++       </planes>
++     </constraints>
++   </format>
++
++   <format>
++     <format_name>GR_1616</format_name>
++     <constraints>
++       <size_align>1024</size_align>
++       <bpp>4</bpp>
++       <planes>
++         <plane>
++           <plane_name>GR</plane_name>
++           <pitch_align>64</pitch_align>
++           <height_align>1</height_align>
++         </plane>
++       </planes>
++     </constraints>
++   </format>
++
++   <format>
++     <format_name>RGB_332</format_name>
++     <constraints>
++       <size_align>1024</size_align>
++       <bpp>1</bpp>
++       <planes>
++         <plane>
++           <plane_name>RGB</plane_name>
++           <pitch_align>32</pitch_align>
++           <height_align>32</height_align>
++         </plane>
++       </planes>
++     </constraints>
++   </format>
++
++   <format>
++     <format_name>BGR_233</format_name>
++     <constraints>
++       <size_align>1024</size_align>
++       <bpp>1</bpp>
++       <planes>
++         <plane>
++           <plane_name>BGR</plane_name>
++           <pitch_align>32</pitch_align>
++           <height_align>32</height_align>
++         </plane>
++       </planes>
++     </constraints>
++   </format>
++
++   <format>
++     <format_name>C_8</format_name>
++     <constraints>
++       <size_align>1</size_align>
++       <bpp>1</bpp>
++       <planes>
++         <plane>
++           <plane_name>C</plane_name>
++           <pitch_align>256</pitch_align>
++           <height_align>256</height_align>
++         </plane>
++       </planes>
++     </constraints>
++   </format>
++
++   <format>
++     <format_name>NV_12</format_name>
++     <constraints>
++       <size_align>1</size_align>
++       <bpp>1</bpp>
++       <planes>
++         <plane>
++           <plane_name>Y</plane_name>
++           <pitch_align>64</pitch_align>
++           <height_align>1</height_align>
++           <meta_info>
++             <block_width>32</block_width>
++             <block_height>8</block_height>
++             <pitch_align>128</pitch_align>
++             <height_align>32</height_align>
++             <size_align>4096</size_align>
++           </meta_info>
++         </plane>
++		 <plane>
++           <plane_name>UV</plane_name>
++           <pitch_align>64</pitch_align>
++           <height_align>1</height_align>
++           <meta_info>
++             <block_width>32</block_width>
++             <block_height>8</block_height>
++             <pitch_align>128</pitch_align>
++             <height_align>32</height_align>
++             <size_align>4096</size_align>
++           </meta_info>
++         </plane>
++       </planes>
++     </constraints>
++   </format>
++
++   <format>
++     <format_name>NV_21</format_name>
++     <constraints>
++       <size_align>1</size_align>
++       <bpp>1</bpp>
++       <planes>
++         <plane>
++           <plane_name>Y</plane_name>
++           <pitch_align>64</pitch_align>
++           <height_align>1</height_align>
++           <meta_info>
++             <block_width>32</block_width>
++             <block_height>8</block_height>
++             <pitch_align>128</pitch_align>
++             <height_align>32</height_align>
++             <size_align>4096</size_align>
++           </meta_info>
++         </plane>
++         <plane>
++           <plane_name>VU</plane_name>
++           <pitch_align>64</pitch_align>
++           <height_align>1</height_align>
++           <meta_info>
++             <block_width>32</block_width>
++             <block_height>8</block_height>
++             <pitch_align>128</pitch_align>
++             <height_align>32</height_align>
++             <size_align>4096</size_align>
++           </meta_info>
++         </plane>
++       </planes>
++     </constraints>
++   </format>
++
++   <format>
++     <format_name>YUYV</format_name>
++     <constraints>
++       <size_align>1</size_align>
++       <bpp>2</bpp>
++       <planes>
++         <plane>
++           <plane_name>YUYV</plane_name>
++           <pitch_align>64</pitch_align>
++           <height_align>1</height_align>
++           <meta_info>
++             <block_width>16</block_width>
++             <block_height>4</block_height>
++             <pitch_align>128</pitch_align>
++             <height_align>16</height_align>
++             <size_align>4096</size_align>
++           </meta_info>
++         </plane>
++       </planes>
++     </constraints>
++   </format>
++
++   <format>
++     <format_name>YVYU</format_name>
++     <constraints>
++       <size_align>1</size_align>
++       <bpp>2</bpp>
++       <planes>
++         <plane>
++           <plane_name>YVYU</plane_name>
++           <pitch_align>256</pitch_align>
++           <height_align>256</height_align>
++         </plane>
++       </planes>
++     </constraints>
++   </format>
++
++   <format>
++     <format_name>UYVY</format_name>
++     <constraints>
++       <size_align>1</size_align>
++       <bpp>2</bpp>
++       <planes>
++         <plane>
++           <plane_name>UYVY</plane_name>
++           <pitch_align>64</pitch_align>
++           <height_align>1</height_align>
++           <meta_info>
++             <block_width>16</block_width>
++             <block_height>4</block_height>
++             <pitch_align>128</pitch_align>
++             <height_align>16</height_align>
++             <size_align>4096</size_align>
++           </meta_info>
++         </plane>
++       </planes>
++     </constraints>
++   </format>
++
++   <format>
++     <format_name>VYUY</format_name>
++     <constraints>
++       <size_align>1</size_align>
++       <bpp>2</bpp>
++       <planes>
++         <plane>
++           <plane_name>VYUY</plane_name>
++           <pitch_align>256</pitch_align>
++           <height_align>256</height_align>
++         </plane>
++       </planes>
++     </constraints>
++   </format>
++
++   <format>
++     <format_name>AYUV</format_name>
++     <constraints>
++       <size_align>1</size_align>
++       <bpp>4</bpp>
++       <planes>
++         <plane>
++           <plane_name>AYUV</plane_name>
++           <pitch_align>256</pitch_align>
++           <height_align>256</height_align>
++         </plane>
++       </planes>
++     </constraints>
++   </format>
++
++   <format>
++     <format_name>NV_16</format_name>
++     <constraints>
++       <size_align>1</size_align>
++       <bpp>2</bpp>
++       <planes>
++         <plane>
++           <plane_name>Y</plane_name>
++           <pitch_align>256</pitch_align>
++           <height_align>256</height_align>
++         </plane>
++         <plane>
++           <plane_name>UV</plane_name>
++           <pitch_align>256</pitch_align>
++           <height_align>256</height_align>
++         </plane>
++       </planes>
++     </constraints>
++   </format>
++
++   <format>
++     <format_name>NV_61</format_name>
++     <constraints>
++       <size_align>1</size_align>
++       <bpp>2</bpp>
++       <planes>
++         <plane>
++           <plane_name>Y</plane_name>
++           <pitch_align>256</pitch_align>
++           <height_align>256</height_align>
++         </plane>
++         <plane>
++           <plane_name>VU</plane_name>
++           <pitch_align>256</pitch_align>
++           <height_align>256</height_align>
++         </plane>
++       </planes>
++     </constraints>
++   </format>
++
++   <format>
++     <format_name>YUV_410</format_name>
++     <constraints>
++       <size_align>1</size_align>
++       <bpp>1.125</bpp>
++       <planes>
++         <plane>
++           <plane_name>Y</plane_name>
++           <pitch_align>256</pitch_align>
++           <height_align>256</height_align>
++         </plane>
++         <plane>
++           <plane_name>U</plane_name>
++           <pitch_align>256</pitch_align>
++           <height_align>256</height_align>
++         </plane>
++         <plane>
++           <plane_name>V</plane_name>
++           <pitch_align>256</pitch_align>
++           <height_align>256</height_align>
++         </plane>
++       </planes>
++     </constraints>
++   </format>
++
++   <format>
++     <format_name>YVU_410</format_name>
++     <constraints>
++       <size_align>1</size_align>
++       <bpp>1.125</bpp>
++       <planes>
++         <plane>
++           <plane_name>Y</plane_name>
++           <pitch_align>256</pitch_align>
++           <height_align>256</height_align>
++         </plane>
++         <plane>
++           <plane_name>V</plane_name>
++           <pitch_align>256</pitch_align>
++           <height_align>256</height_align>
++         </plane>
++         <plane>
++           <plane_name>U</plane_name>
++           <pitch_align>256</pitch_align>
++           <height_align>256</height_align>
++         </plane>
++       </planes>
++     </constraints>
++   </format>
++
++   <format>
++     <format_name>YUV_411</format_name>
++     <constraints>
++       <size_align>1</size_align>
++       <bpp>1</bpp>
++       <planes>
++         <plane>
++           <plane_name>Y</plane_name>
++           <pitch_align>256</pitch_align>
++           <height_align>256</height_align>
++         </plane>
++         <plane>
++           <plane_name>U</plane_name>
++           <pitch_align>256</pitch_align>
++           <height_align>256</height_align>
++         </plane>
++         <plane>
++           <plane_name>V</plane_name>
++           <pitch_align>256</pitch_align>
++           <height_align>256</height_align>
++         </plane>
++       </planes>
++     </constraints>
++   </format>
++
++   <format>
++     <format_name>YVU_411</format_name>
++     <constraints>
++       <size_align>1</size_align>
++       <bpp>1</bpp>
++       <planes>
++         <plane>
++           <plane_name>Y</plane_name>
++           <pitch_align>256</pitch_align>
++           <height_align>256</height_align>
++         </plane>
++         <plane>
++           <plane_name>V</plane_name>
++           <pitch_align>256</pitch_align>
++           <height_align>256</height_align>
++         </plane>
++         <plane>
++           <plane_name>U</plane_name>
++           <pitch_align>256</pitch_align>
++           <height_align>256</height_align>
++         </plane>
++       </planes>
++     </constraints>
++   </format>
++
++   <format>
++     <format_name>YUV_420</format_name>
++     <constraints>
++       <size_align>1</size_align>
++       <bpp>1</bpp>
++       <planes>
++         <plane>
++           <plane_name>Y</plane_name>
++           <pitch_align>256</pitch_align>
++           <height_align>256</height_align>
++         </plane>
++         <plane>
++           <plane_name>U</plane_name>
++           <pitch_align>256</pitch_align>
++           <height_align>256</height_align>
++         </plane>
++         <plane>
++           <plane_name>V</plane_name>
++           <pitch_align>256</pitch_align>
++           <height_align>256</height_align>
++         </plane>
++       </planes>
++     </constraints>
++   </format>
++
++   <format>
++     <format_name>YVU_420</format_name>
++     <constraints>
++       <size_align>1</size_align>
++       <bpp>1</bpp>
++       <planes>
++         <plane>
++           <plane_name>Y</plane_name>
++           <pitch_align>256</pitch_align>
++           <height_align>256</height_align>
++         </plane>
++         <plane>
++           <plane_name>V</plane_name>
++           <pitch_align>256</pitch_align>
++           <height_align>256</height_align>
++         </plane>
++         <plane>
++           <plane_name>U</plane_name>
++           <pitch_align>256</pitch_align>
++           <height_align>256</height_align>
++         </plane>
++       </planes>
++     </constraints>
++   </format>
++
++   <format>
++     <format_name>YUV_422</format_name>
++     <constraints>
++       <size_align>1</size_align>
++       <bpp>2</bpp>
++       <planes>
++         <plane>
++           <plane_name>Y</plane_name>
++           <pitch_align>256</pitch_align>
++           <height_align>256</height_align>
++         </plane>
++         <plane>
++           <plane_name>U</plane_name>
++           <pitch_align>256</pitch_align>
++           <height_align>256</height_align>
++         </plane>
++         <plane>
++           <plane_name>V</plane_name>
++           <pitch_align>256</pitch_align>
++           <height_align>256</height_align>
++         </plane>
++       </planes>
++     </constraints>
++   </format>
++
++   <format>
++     <format_name>YVU_422</format_name>
++     <constraints>
++       <size_align>1</size_align>
++       <bpp>2</bpp>
++       <planes>
++         <plane>
++           <plane_name>Y</plane_name>
++           <pitch_align>256</pitch_align>
++           <height_align>256</height_align>
++         </plane>
++         <plane>
++           <plane_name>V</plane_name>
++           <pitch_align>256</pitch_align>
++           <height_align>256</height_align>
++         </plane>
++         <plane>
++           <plane_name>U</plane_name>
++           <pitch_align>256</pitch_align>
++           <height_align>256</height_align>
++         </plane>
++       </planes>
++     </constraints>
++   </format>
++
++   <format>
++     <format_name>YUV_444</format_name>
++     <constraints>
++       <size_align>1</size_align>
++       <bpp>3</bpp>
++       <planes>
++         <plane>
++           <plane_name>Y</plane_name>
++           <pitch_align>256</pitch_align>
++           <height_align>256</height_align>
++         </plane>
++         <plane>
++           <plane_name>U</plane_name>
++           <pitch_align>256</pitch_align>
++           <height_align>256</height_align>
++         </plane>
++         <plane>
++           <plane_name>V</plane_name>
++           <pitch_align>256</pitch_align>
++           <height_align>256</height_align>
++         </plane>
++       </planes>
++     </constraints>
++   </format>
++
++   <format>
++     <format_name>YVU_444</format_name>
++     <constraints>
++       <size_align>1</size_align>
++       <bpp>3</bpp>
++       <planes>
++         <plane>
++           <plane_name>Y</plane_name>
++           <pitch_align>256</pitch_align>
++           <height_align>256</height_align>
++         </plane>
++         <plane>
++           <plane_name>V</plane_name>
++           <pitch_align>256</pitch_align>
++           <height_align>256</height_align>
++         </plane>
++         <plane>
++           <plane_name>U</plane_name>
++           <pitch_align>256</pitch_align>
++           <height_align>256</height_align>
++         </plane>
++       </planes>
++     </constraints>
++   </format>
++
++   <format>
++     <format_name>RGBA_32323232F</format_name>
++     <constraints>
++       <size_align>1</size_align>
++       <bpp>8</bpp>
++       <planes>
++         <plane>
++           <plane_name>RGBA</plane_name>
++           <pitch_align>64</pitch_align>
++           <height_align>1</height_align>
++           <meta_info>
++              <block_width>16</block_width>
++              <block_height>4</block_height>
++              <pitch_align>64</pitch_align>
++              <height_align>16</height_align>
++              <size_align>4096</size_align>
++           </meta_info>
++         </plane>
++       </planes>
++     </constraints>
++   </format>
++	      
++</formats>
+diff --git a/src/gbm/backends/msm/gbm_msm.c b/src/gbm/backends/msm/gbm_msm.c
+new file mode 100644
+index 0000000..db4a0b4
+--- /dev/null
++++ b/src/gbm/backends/msm/gbm_msm.c
+@@ -0,0 +1,801 @@
++/*
++ * Copyright (c) 2024 Qualcomm Innovation Center, Inc. All rights reserved.
++ * SPDX-License-Identifier: BSD-3-Clause-Clear
++ */
++
++#include <stdio.h>
++#include <stdlib.h>
++#include <stddef.h>
++#include <stdint.h>
++#include <stdbool.h>
++#include <string.h>
++#include <errno.h>
++#include <limits.h>
++#include <assert.h>
++#include <pthread.h>
++
++#include <sys/types.h>
++#include <sys/mman.h>
++#include <sys/syscall.h>
++#include <unistd.h>
++#include <sys/stat.h>
++#include <sys/time.h>
++
++#include "gbm_msm.h"
++#include "gbm_msm_int.h"
++#include "buffer_layout.h"
++#include "schema_parser.h"
++#include "buffer_alloc.h"
++
++#include <gbmint.h>
++#include <gbm_backend_abi.h>
++#include <gbm.h>
++
++#include "util/macros.h"
++
++/* For importing wl_buffer */
++#if HAVE_WAYLAND_PLATFORM
++#include "wayland-drm.h"
++#endif
++
++pthread_mutex_t gem_handle_mutex;
++
++#define LOCK(mutex) pthread_mutex_lock(&mutex)
++#define UNLOCK(mutex) pthread_mutex_unlock(&mutex)
++
++static const struct gbm_core *gbm_core_;
++static struct gem_handle_map map;
++
++static inline struct gbm_msm_device *
++gbm_msm_device(struct gbm_device *gbm)
++{
++   return (struct gbm_msm_device *) gbm;
++}
++
++static inline struct gbm_msm_bo *
++gbm_msm_bo(struct gbm_bo *bo)
++{
++   return (struct gbm_msm_bo *) bo;
++}
++
++static inline struct gbm_msm_bo_ext *
++gbm_msm_bo_ext(struct gbm_msm_bo *msm_bo)
++{
++     return (struct gbm_msm_bo_ext *) msm_bo;
++}
++
++static inline struct gbm_msm_surface *
++gbm_msm_surface(struct gbm_surface *surf)
++{
++   return (struct gbm_msm_surface *) surf;
++}
++
++static inline struct gbm_msm_surface_ext *
++gbm_msm_surface_ext(struct gbm_msm_surface *msm_surf)
++{
++   return (struct gbm_msm_surface_ext *) msm_surf;
++}
++
++static void add_gem_handle(uint32_t handle)
++{
++   LOCK(gem_handle_mutex);
++   for (size_t i = 0; i < map.size; i++) {
++      if (map.handles[i].handle == handle) {
++         map.handles[i].refcount++;
++         UNLOCK(gem_handle_mutex);
++         return;
++      }
++   }
++
++   map.handles = realloc(map.handles, (map.size + 1) * sizeof(struct gem_handle_ref));
++   if (map.handles == NULL) {
++      perror("Failed to allocate memory");
++      UNLOCK(gem_handle_mutex);
++      exit(EXIT_FAILURE);
++   }
++
++   map.handles[map.size].handle = handle;
++   map.handles[map.size].refcount = 1;
++   map.size++;
++   UNLOCK(gem_handle_mutex);
++}
++
++static void remove_gem_handle(struct gbm_msm_device *msm_dev, uint32_t handle)
++{
++   if (!handle) {
++      return;
++   }
++
++   LOCK(gem_handle_mutex);
++   for (size_t i = 0; i < map.size; i++) {
++      if (map.handles[i].handle != handle) {
++         continue;
++      }
++      if (--map.handles[i].refcount > 0) {
++         UNLOCK(gem_handle_mutex);
++         return;
++      }
++
++      int ret = free_buffer(msm_dev, handle);
++      if (ret != 0) {
++	 fprintf(stderr, "Failed to close GEM handle for BO=%u\n error=%s", handle, strerror(errno));
++	 UNLOCK(gem_handle_mutex);
++	 return;
++      }
++
++      for (size_t j = i; j < map.size - 1; j++) {
++         map.handles[j] = map.handles[j + 1];
++      }
++      map.size--;
++      map.handles = realloc(map.handles, map.size * sizeof(struct gem_handle_ref));
++      break;
++   }
++
++   UNLOCK(gem_handle_mutex);
++}
++
++static void free_gem_handle_map(struct gbm_msm_device *msm_dev)
++{
++   LOCK(gem_handle_mutex);
++   for (size_t i = 0; i < map.size; i++) {
++      free_buffer(msm_dev, map.handles[i].handle);
++   }
++
++   free(map.handles);
++   UNLOCK(gem_handle_mutex);
++}
++
++static void *
++gbm_msm_bo_map(struct gbm_bo *_bo, uint32_t x, uint32_t y,
++               uint32_t width, uint32_t height,
++               uint32_t flags, uint32_t *stride, void **map_data)
++{
++   void *cpuaddr = NULL;
++   struct gbm_msm_device *msm_dev = gbm_msm_device(_bo->gbm);
++   struct gbm_msm_bo *msm_bo = gbm_msm_bo(_bo);
++
++   struct gbm_msm_bo_ext *msm_bo_ext = gbm_msm_bo_ext(msm_bo);
++
++   if(msm_bo_ext->map != NULL) {
++     *map_data = msm_bo_ext->map;
++     return msm_bo_ext->map;
++   }
++
++   uint64_t mmap_offset;
++   if (bo_offset(_bo->gbm->v0.fd, _bo->v0.handle.u32, &mmap_offset))
++      return NULL;
++
++   cpuaddr = mmap(0, msm_bo->size, PROT_READ|PROT_WRITE, MAP_SHARED, _bo->gbm->v0.fd, mmap_offset);
++   if(cpuaddr == MAP_FAILED) {
++      perror("mmap");
++      msm_bo_ext->map = NULL;
++      return NULL;
++   }
++
++   *map_data = cpuaddr;
++   msm_bo_ext->map = cpuaddr;
++
++   return cpuaddr;
++}
++
++static void
++gbm_msm_bo_unmap(struct gbm_bo *_bo, void *map_data)
++{
++   struct gbm_msm_bo *msm_bo = gbm_msm_bo(_bo);
++   struct gbm_msm_bo_ext *msm_bo_ext = gbm_msm_bo_ext(msm_bo);
++
++   munmap(map_data, msm_bo->size);
++   msm_bo_ext->map = NULL;
++}
++
++static int
++gbm_msm_bo_dump(struct gbm_bo * gbo, char *func)
++{
++   FILE *fptr = NULL;
++   static int count = 1;
++   const char file_nme[100] = "/var/cache/display/";
++   if (!gbo)
++      return 0;
++
++   struct gbm_msm_bo *msm_bo = (struct gbm_msm_bo*)gbo;
++   if (!msm_bo)
++      return 0;
++
++   struct gbm_msm_bo_ext *msm_bo_ext = gbm_msm_bo_ext(msm_bo);
++
++   uint32_t size = msm_bo->size;
++   int ret = 0;
++   char tmp_str[50];
++   uint32_t width = gbo->v0.width;
++   uint32_t height = gbo->v0.height;
++
++   uint32_t format = msm_bo_ext->gbm_format;
++
++   ret = mkdir(file_nme, 777);
++   if ((ret != 0) && errno != EEXIST) {
++      printf("Failed to create %s directory errno = %d, desc = %s",
++              file_nme, errno, strerror(errno));
++      return -1;
++   }
++
++   snprintf(tmp_str, sizeof(tmp_str), "gbm_dump_c%d_%d_%d_%d_%s.dat",
++                    count++,width,height,getpid(), func);
++
++   strlcat(file_nme, tmp_str, sizeof(file_nme));
++   fptr=fopen(file_nme, "w+");
++   if(fptr == NULL) {
++      printf("Failed to open file %s\n",file_nme);
++      return -1;
++   }
++
++   void *map_data, *buffer;
++   buffer = map_data = NULL;
++   uint32_t stride = 0;
++   buffer = gbm_msm_bo_map(gbo, 0, 0, width, height, GBM_BO_TRANSFER_READ_WRITE, &stride, &map_data);
++   ret = fwrite(buffer, 1, size, fptr);
++   if(ret != size) {
++      printf("File write size mismatch i/p=%d o/p=%d\n %s\n",size,ret,strerror(errno));
++      ret = -1;
++   } else
++      ret = 0;
++
++   if(fptr)
++      fclose(fptr);
++
++   return ret;
++}
++
++static uint32_t
++gbm_msm_bo_metabuffer_size(struct gbm_bo *bo, int plane)
++{
++   struct gbm_msm_bo *msm_bo = gbm_msm_bo(bo);
++   if (!msm_bo)
++      return 0;
++
++   struct gbm_msm_bo_ext *msm_bo_ext = gbm_msm_bo_ext(msm_bo);
++
++   uint32_t size = 0;
++   struct gbm_bufdesc bufdesc = {};
++   bufdesc.width = msm_bo->base.v0.width;
++   bufdesc.height = msm_bo->base.v0.height;
++   uint32_t format = msm_bo_ext->gbm_format;
++   bufdesc.modifiers = msm_bo_ext->modifier;
++   if(get_meta_buffer_size(&bufdesc, plane, &size) != 0) {
++      fprintf(stderr, "Error: failed to get metabuffer size \n");
++      return 0;
++   }
++   return size;
++}
++
++static void
++gbm_msm_bo_get_aligned_width_height(struct gbm_bo *_bo, int plane,
++                                    uint32_t *aligned_width,
++                                    uint32_t *aligned_height)
++{
++   struct gbm_msm_bo *msm_bo = gbm_msm_bo(_bo);
++   if (!msm_bo)
++      return;
++
++   struct gbm_msm_bo_ext *msm_bo_ext = gbm_msm_bo_ext(msm_bo);
++
++   struct gbm_bufdesc bufdesc = {};
++   bufdesc.width = msm_bo->base.v0.width;
++   bufdesc.height = msm_bo->base.v0.height;
++   bufdesc.format = msm_bo_ext->gbm_format;
++   bufdesc.modifiers = msm_bo_ext->modifier;
++
++   if (get_aligned_width_and_height(&bufdesc, plane, aligned_width, aligned_height) != 0) {
++      aligned_width = aligned_height = 0;
++   }
++}
++
++static struct gbm_bo *
++gbm_msm_bo_create(struct gbm_device *gbm,
++              uint32_t width, uint32_t height,
++              uint32_t format, uint32_t usage,
++              const uint64_t *modifiers,
++              const unsigned int count)
++{
++   struct gbm_msm_device *msm_dev = gbm_msm_device(gbm);
++   struct gbm_msm_bo_ext *msm_bo_ext = NULL;
++   uint64_t modifiers_mask = 0;
++   format = gbm_core_->v0.format_canonicalize(format);
++   msm_bo_ext = calloc(1, sizeof *msm_bo_ext);
++   if (msm_bo_ext == NULL)
++      return NULL;
++
++   struct gbm_msm_bo *bo = &msm_bo_ext->msm_bo;
++   bo->base.gbm = gbm;
++   bo->base.v0.width = width;
++   bo->base.v0.height = height;
++   bo->base.v0.format = format;
++   for (int m = 0; m < count; m++) {
++      modifiers_mask |= modifiers[m];
++   }
++
++   struct gbm_bufdesc bufdesc = {width, height, format, usage, modifiers_mask};
++
++   if (get_num_planes(&bufdesc, &(msm_bo_ext->num_planes)) != 0)
++      return NULL;
++
++   if (get_aligned_width_and_height(&bufdesc, 0, &(bo->aligned_width), &(bo->aligned_height)) != 0)
++      return NULL;
++
++   uint32_t size = 0;
++   if (get_size(&bufdesc, &size) != 0)
++      return NULL;
++
++   if (allocate_buffer(msm_dev, size, &(bo->base.v0.handle.u32)) != 0)
++      return NULL;
++
++   add_gem_handle(bo->base.v0.handle.u32);
++
++   if (get_stride(&bufdesc, 0, &(bo->base.v0.stride)) != 0)
++      return NULL;
++
++   bo->size = size;
++   msm_bo_ext->modifier = modifiers_mask;
++   bo->bo_dump_buffers = gbm_msm_bo_dump;
++   bo->bo_get_metabuffer_size = gbm_msm_bo_metabuffer_size;
++   bo->bo_get_plane_aligned_width_height = gbm_msm_bo_get_aligned_width_height;
++
++   msm_bo_ext->gbm_format = format;
++
++   return &bo->base;
++}
++
++static struct gbm_bo *
++gbm_msm_bo_import(struct gbm_device *gbm,
++                  uint32_t type, void *buffer, uint32_t usage)
++{
++   struct gbm_msm_device *msm_dev = gbm_msm_device(gbm);
++   struct gbm_msm_bo_ext *msm_bo_ext = NULL;
++   struct gbm_bufdesc bufdesc = {};
++   uint32_t handle = 0;
++
++   msm_bo_ext = calloc(1, sizeof *msm_bo_ext);
++   if (msm_bo_ext == NULL)
++      return NULL;
++
++   struct gbm_msm_bo *bo = &msm_bo_ext->msm_bo;
++
++   switch (type) {
++   case GBM_BO_IMPORT_FD:
++      struct gbm_import_fd_data *fd_data = buffer;
++      if (import_gem_buffer(msm_dev, fd_data->fd, &handle)) {
++         return NULL;
++      }
++
++      bo->base.v0.handle.u32 = handle;
++      add_gem_handle(handle);
++      bo->base.gbm = gbm;
++      bo->base.v0.width = fd_data->width;
++      bo->base.v0.height = fd_data->height;
++      bo->base.v0.format = fd_data->format;
++      msm_bo_ext->gbm_format = bo->base.v0.format;
++
++      bufdesc.width = bo->base.v0.width;
++      bufdesc.height = bo->base.v0.height;
++      bufdesc.format = msm_bo_ext->gbm_format;
++      bufdesc.modifiers = 0;
++
++      if (get_num_planes(&bufdesc, &(msm_bo_ext->num_planes)) != 0)
++         return NULL;
++
++      if (get_aligned_width_and_height(&bufdesc, 0, &(bo->aligned_width), &(bo->aligned_height)) != 0)
++         return NULL;
++
++      if (get_size(&bufdesc, &(bo->size)) != 0)
++         return NULL;
++
++      if (get_stride(&bufdesc, 0, &(bo->base.v0.stride)) != 0)
++         return NULL;
++
++      msm_bo_ext->modifier = 0;
++      break;
++
++   case GBM_BO_IMPORT_FD_MODIFIER:
++      struct gbm_import_fd_modifier_data *fd_modifer_data = buffer;
++      // ToDo: Add support for multiple fds.
++      if (import_gem_buffer(msm_dev, fd_modifer_data->fds[0], &handle)) {
++         return NULL;
++      }
++
++      bo->base.v0.handle.u32 = handle;
++      add_gem_handle(handle);
++      bo->base.gbm = gbm;
++      bo->base.v0.width = fd_modifer_data->width;
++      bo->base.v0.height = fd_modifer_data->height;
++      bo->base.v0.format = fd_modifer_data->format;
++      if ((bo->base.v0.format == GBM_FORMAT_XBGR16161616F) &&
++          (fd_modifer_data->modifier & DRM_FORMAT_MOD_QCOM_32F)) {
++         msm_bo_ext->gbm_format = GBM_FORMAT_RGBA32323232F;
++      } else {
++         msm_bo_ext->gbm_format = bo->base.v0.format;
++      }
++      bufdesc.width = bo->base.v0.width;
++      bufdesc.height = bo->base.v0.height;
++      bufdesc.format = msm_bo_ext->gbm_format;
++      bufdesc.modifiers = fd_modifer_data->modifier;
++
++      if (get_num_planes(&bufdesc, &(msm_bo_ext->num_planes)) != 0)
++         return NULL;
++
++      if (get_aligned_width_and_height(&bufdesc, 0, &(bo->aligned_width), &(bo->aligned_height)) != 0)
++         return NULL;
++
++      if (get_size(&bufdesc, &(bo->size)) != 0)
++         return NULL;
++
++      if (get_stride(&bufdesc, 0, &(bo->base.v0.stride)) != 0)
++         return NULL;
++
++      msm_bo_ext->modifier = fd_modifer_data->modifier;
++      break;
++
++   default:
++      errno = ENOSYS;
++      return NULL;
++   }
++
++   bo->bo_dump_buffers = gbm_msm_bo_dump;
++   bo->bo_get_metabuffer_size = gbm_msm_bo_metabuffer_size;
++   bo->bo_get_plane_aligned_width_height = gbm_msm_bo_get_aligned_width_height;
++   return &bo->base;
++}
++
++static void
++gbm_msm_bo_destroy(struct gbm_bo *_bo)
++{
++   struct gbm_msm_device *msm_dev = gbm_msm_device(_bo->gbm);
++   struct gbm_msm_bo *bo = gbm_msm_bo(_bo);
++   if (bo == NULL)
++      return;
++
++   struct gbm_msm_bo_ext *msm_bo_ext = gbm_msm_bo_ext(bo);
++
++   remove_gem_handle(msm_dev, bo->base.v0.handle.u32);
++
++   if (msm_bo_ext->map) {
++     void *map_data = msm_bo_ext->map;
++     gbm_msm_bo_unmap(_bo, map_data);
++   }
++
++   free(msm_bo_ext);
++   msm_bo_ext = NULL;
++}
++
++static int
++gbm_msm_bo_get_fd(struct gbm_bo *_bo)
++{
++   struct gbm_msm_bo *msm_bo = (struct gbm_msm_bo*)_bo;
++
++   int fd;
++   struct gbm_msm_device *msm_dev = gbm_msm_device(_bo->gbm);
++   if (get_fd(msm_dev, _bo->v0.handle.u32, &fd) != 0) {
++      return -1;
++   }
++
++   return fd;
++}
++
++static uint64_t
++gbm_msm_bo_get_modifier(struct gbm_bo *_bo)
++{
++   struct gbm_msm_bo *msm_bo = (struct gbm_msm_bo*)_bo;
++   struct gbm_msm_bo_ext *msm_bo_ext = gbm_msm_bo_ext(msm_bo);
++
++   return msm_bo_ext->modifier;
++}
++
++static uint32_t
++gbm_msm_bo_get_stride(struct gbm_bo *bo, int plane)
++{
++   struct gbm_msm_bo *msm_bo = gbm_msm_bo(bo);
++   struct gbm_bufdesc bufdesc = {};
++   bufdesc.width = msm_bo->base.v0.width;
++   bufdesc.height = msm_bo->base.v0.height;
++   struct gbm_msm_bo_ext *msm_bo_ext = gbm_msm_bo_ext(msm_bo);
++   bufdesc.format = msm_bo_ext->gbm_format;
++   bufdesc.modifiers = msm_bo_ext->modifier;
++
++   uint32_t stride = 0;
++   if (get_stride(&bufdesc, plane, &stride) != 0)
++      return 0;
++
++   return stride;
++}
++
++static int
++gbm_msm_bo_get_planes(struct gbm_bo *_bo)
++{
++   struct gbm_msm_bo *msm_bo = (struct gbm_msm_bo*)_bo;
++   struct gbm_msm_bo_ext *msm_bo_ext = gbm_msm_bo_ext(msm_bo);
++
++   return msm_bo_ext->num_planes;
++}
++
++static uint32_t
++gbm_msm_bo_get_offset(struct gbm_bo *_bo, int plane)
++{
++   struct gbm_msm_bo *msm_bo = gbm_msm_bo(_bo);
++   struct gbm_bufdesc bufdesc = {};
++   bufdesc.width = msm_bo->base.v0.width;
++   bufdesc.height = msm_bo->base.v0.height;
++   struct gbm_msm_bo_ext *msm_bo_ext = gbm_msm_bo_ext(msm_bo);
++   bufdesc.format = msm_bo_ext->gbm_format;
++   bufdesc.modifiers = msm_bo_ext->modifier;
++
++   uint32_t offset = 0;
++   if (get_plane_offset(&bufdesc, plane, &offset) != 0)
++      return 0;
++
++   return offset;
++}
++
++static union gbm_bo_handle
++gbm_msm_bo_get_handle(struct gbm_bo *_bo, int plane)
++{
++   return _bo->v0.handle;
++}
++
++static int
++gbm_msm_bo_write(struct gbm_bo *_bo, const void *buf, size_t count)
++{
++   struct gbm_msm_bo *msm_bo = (struct gbm_msm_bo*)_bo;
++   struct gbm_msm_bo_ext *msm_bo_ext = gbm_msm_bo_ext(msm_bo);
++
++   void *cpuaddr, *mapdata = NULL;
++
++   if (msm_bo_ext->map == NULL) {
++      uint32_t stride = 0;
++      cpuaddr = gbm_msm_bo_map(_bo, 0, 0, _bo->v0.width, _bo->v0.height,
++                               GBM_BO_TRANSFER_READ_WRITE, &stride, &mapdata);
++      msm_bo_ext->map = cpuaddr;
++   }
++
++   memcpy(msm_bo_ext->map, buf, count);
++   return 0;
++}
++
++static void
++gbm_msm_destroy(struct gbm_device *gbm)
++{
++   struct gbm_msm_device *msm_dev = gbm_msm_device(gbm);
++   if(msm_dev == NULL)
++      return;
++   free_gem_handle_map(msm_dev);
++   free(msm_dev);
++   msm_dev = NULL;
++}
++
++static int
++has_free_buffers(struct gbm_surface *surf)
++{
++   struct gbm_msm_surface *msm_surf = gbm_msm_surface(surf);
++   struct gbm_msm_surface_ext *msm_surf_ext = gbm_msm_surface_ext(msm_surf);
++
++   for (unsigned i = 0; i < ARRAY_SIZE(msm_surf_ext->color_buffers); i++)
++      if (!msm_surf_ext->color_buffers[i].locked)
++         return 1;
++
++   return 0;
++}
++
++static struct gbm_bo *
++get_back_bo(struct gbm_surface *surf)
++{
++   struct gbm_msm_surface *msm_surf = gbm_msm_surface(surf);
++   struct gbm_msm_surface_ext *msm_surf_ext = gbm_msm_surface_ext(msm_surf);
++   int age = 0;
++   struct gbm_bo *bo = NULL;
++
++   if (msm_surf_ext->back == NULL) {
++      for (unsigned i = 0; i < ARRAY_SIZE(msm_surf_ext->color_buffers); i++) {
++         if (!msm_surf_ext->color_buffers[i].locked &&
++              msm_surf_ext->color_buffers[i].age >= age) {
++            msm_surf_ext->back = &msm_surf_ext->color_buffers[i];
++            age = msm_surf_ext->color_buffers[i].age;
++         }
++      }
++   }
++
++   if (msm_surf_ext->back == NULL) {
++      fprintf(stderr, "Error: msm surface is null");
++      return bo;
++   }
++
++   if (msm_surf_ext->back->bo == NULL) {
++      unsigned flags = msm_surf->base.v0.flags;
++      bo = gbm_msm_bo_create(msm_surf->base.gbm, msm_surf->base.v0.width,
++                             msm_surf->base.v0.height, msm_surf->base.v0.format, flags,
++                             msm_surf->base.v0.modifiers, msm_surf->base.v0.count);
++      msm_surf_ext->back->bo = bo;
++   }
++   if (msm_surf_ext->back->bo == NULL) {
++      fprintf(stderr, "Error: msm surface back bo is null");
++      return bo;
++   }
++
++   return msm_surf_ext->back->bo;
++}
++
++static int
++swap_buffers(struct gbm_surface *surf)
++{
++   struct gbm_msm_surface *msm_surf = gbm_msm_surface(surf);
++   struct gbm_msm_surface_ext *msm_surf_ext = gbm_msm_surface_ext(msm_surf);
++   for (unsigned i = 0; i < ARRAY_SIZE(msm_surf_ext->color_buffers); i++) {
++      if (msm_surf_ext->color_buffers[i].age > 0)
++         msm_surf_ext->color_buffers[i].age++;
++   }
++
++   if (get_back_bo(surf) < 0) {
++      fprintf(stderr, "error in get_back_bo");
++      return -1;
++   }
++   msm_surf_ext->current =  msm_surf_ext->back;
++   msm_surf_ext->current->age = 1;
++   msm_surf_ext->back = NULL;
++
++   return 0;
++}
++
++static struct gbm_bo *
++lock_front_buffer(struct gbm_surface *surf)
++{
++   struct gbm_msm_surface *msm_surf = gbm_msm_surface(surf);
++   struct gbm_msm_surface_ext *msm_surf_ext = gbm_msm_surface_ext(msm_surf);
++   struct gbm_bo *bo;
++
++   if (msm_surf_ext->current == NULL)
++      return NULL;
++
++   bo = msm_surf_ext->current->bo;
++   msm_surf_ext->current->locked = true;
++   msm_surf_ext->current = NULL;
++
++   return bo;
++}
++
++static void
++release_buffer(struct gbm_surface *surf, struct gbm_bo *bo)
++{
++   struct gbm_msm_surface *msm_surf = gbm_msm_surface(surf);
++   struct gbm_msm_surface_ext *msm_surf_ext = gbm_msm_surface_ext(msm_surf);
++
++   for (unsigned i = 0; i < ARRAY_SIZE(msm_surf_ext->color_buffers); i++) {
++      if (msm_surf_ext->color_buffers[i].bo == bo) {
++         msm_surf_ext->color_buffers[i].locked = false;
++         break;
++      }
++   }
++}
++
++static void
++gbm_msm_surface_destroy(struct gbm_surface* surf)
++{
++   struct gbm_msm_surface *msm_surf = gbm_msm_surface(surf);
++   struct gbm_msm_surface_ext *msm_surf_ext = gbm_msm_surface_ext(msm_surf);
++   free(msm_surf_ext);
++   msm_surf_ext = NULL;
++}
++
++static struct gbm_surface *
++gbm_msm_surface_create(struct gbm_device *gbm,
++                       uint32_t width, uint32_t height,
++                       uint32_t format, uint32_t flags,
++                       const uint64_t *modifiers, const unsigned count)
++{
++   struct gbm_msm_device *msm_dev = gbm_msm_device(gbm);
++   struct gbm_msm_surface_ext *msm_surf_ext = NULL;
++   struct gbm_bo *bo = NULL;
++   if (msm_dev == NULL) {
++      errno = ENOSYS;
++      return NULL;
++   }
++
++   if (width <= 0 || height <= 0) {
++      errno = ENOSYS;
++      return NULL;
++   }
++
++   if (count)
++      assert(modifiers);
++
++   msm_surf_ext = calloc(1, sizeof *msm_surf_ext);
++   if (msm_surf_ext == NULL)
++      return NULL;
++
++   struct gbm_msm_surface *surf = &msm_surf_ext->msm_surf;
++
++   surf->base.gbm = gbm;
++   surf->base.v0.width = width;
++   surf->base.v0.height = height;
++   surf->base.v0.format = gbm_core_->v0.format_canonicalize(format);
++   surf->base.v0.flags = flags;
++   surf->base.v0.modifiers = calloc(count, sizeof(*modifiers));
++   if (count && !surf->base.v0.modifiers) {
++      errno = ENOMEM;
++      free(surf);
++      return NULL;
++   }
++   surf->base.v0.count = count;
++   if (count)
++      memcpy(surf->base.v0.modifiers, modifiers, count * sizeof(*modifiers));
++
++   for (uint32_t i = 0; i < NUM_BACK_BUFFERS; i++) {
++      bo = gbm_msm_bo_create(gbm, width, height, format, flags, modifiers, count);
++      if (bo == NULL) {
++	 errno = ENOMEM;
++         free(surf);
++         return NULL;
++      }
++      msm_surf_ext->color_buffers[i].bo = bo;
++   }
++
++   surf->surface_get_back_bo = get_back_bo;
++   surf->surface_swap_buffers = swap_buffers;
++
++   return &surf->base;
++}
++
++static struct gbm_device *
++msm_device_create(int fd, uint32_t gbm_backend_version)
++{
++   const char *gpu_path = "/sys/class/kgsl/kgsl-3d0/";
++   if (access(gpu_path, F_OK) != 0) {
++      return NULL;
++   }
++
++   struct gbm_msm_device *msm;
++
++   assert(gbm_core_->v0.core_version == GBM_BACKEND_ABI_VERSION);
++   assert(gbm_core_->v0.core_version == gbm_backend_version);
++
++   msm = calloc(1, sizeof *msm);
++   if (!msm)
++      return NULL;
++
++   init_xml_schema();
++
++   msm->base.v0.fd = fd;
++   msm->base.v0.backend_version = gbm_backend_version;
++   msm->base.v0.bo_create = gbm_msm_bo_create;
++   msm->base.v0.surface_create = gbm_msm_surface_create;
++   msm->base.v0.surface_destroy = gbm_msm_surface_destroy;
++   msm->base.v0.bo_import = gbm_msm_bo_import;
++   msm->base.v0.bo_get_fd = gbm_msm_bo_get_fd;
++   msm->base.v0.bo_destroy = gbm_msm_bo_destroy;
++   msm->base.v0.destroy = gbm_msm_destroy;
++   msm->base.v0.surface_has_free_buffers = has_free_buffers;
++   msm->base.v0.surface_lock_front_buffer = lock_front_buffer;
++   msm->base.v0.surface_release_buffer = release_buffer;
++   msm->base.v0.bo_map = gbm_msm_bo_map;
++   msm->base.v0.bo_unmap = gbm_msm_bo_unmap;
++   msm->base.v0.bo_get_modifier = gbm_msm_bo_get_modifier;
++   msm->base.v0.bo_get_stride = gbm_msm_bo_get_stride;
++   msm->base.v0.bo_get_planes = gbm_msm_bo_get_planes;
++   msm->base.v0.bo_get_offset = gbm_msm_bo_get_offset;
++   msm->base.v0.bo_get_handle = gbm_msm_bo_get_handle;
++   msm->base.v0.bo_write = gbm_msm_bo_write;
++
++   msm->base.v0.name = "msm";
++
++   pthread_mutex_init(&gem_handle_mutex, NULL);
++
++   return &msm->base;
++}
++
++struct gbm_backend gbm_msm_backend = {
++   .v0.backend_version = GBM_BACKEND_ABI_VERSION,
++   .v0.backend_name = "msm",
++   .v0.create_device = msm_device_create,
++};
++
++__attribute__((visibility("default")))
++const struct gbm_backend *gbmint_get_backend(const struct gbm_core *gbm_core) {
++   gbm_core_ = gbm_core;
++   return &gbm_msm_backend;
++}
++
+diff --git a/src/gbm/backends/msm/gbm_msm.h b/src/gbm/backends/msm/gbm_msm.h
+new file mode 100644
+index 0000000..7802001
+--- /dev/null
++++ b/src/gbm/backends/msm/gbm_msm.h
+@@ -0,0 +1,29 @@
++/*
++ * Copyright (c) 2024 Qualcomm Innovation Center, Inc. All rights reserved.
++ * SPDX-License-Identifier: BSD-3-Clause-Clear
++ */
++
++#ifndef _GBM_MSM_H_
++#define _GBM_MSM_H_
++
++#include <stdbool.h>
++#include <gbm.h>
++#include <gbm_backend_abi.h>
++
++struct gbm_msm_bo {
++   struct gbm_bo base;
++   uint32_t size;
++   uint32_t aligned_width;
++   uint32_t aligned_height;
++   int (*bo_dump_buffers)(struct gbm_bo *gbo, char *func);
++   uint32_t (*bo_get_metabuffer_size)(struct gbm_bo *gbo, int plane);
++   void (*bo_get_plane_aligned_width_height)(struct gbm_bo *gbm, int plane, uint32_t *aligned_width, uint32_t *aligned_height);
++};
++
++
++struct gbm_msm_surface {
++   struct gbm_surface base;
++   struct gbm_bo *(*surface_get_back_bo)(struct gbm_surface *surface);
++   int (*surface_swap_buffers)(struct gbm_surface *surface);
++};
++#endif
+diff --git a/src/gbm/backends/msm/gbm_msm_int.h b/src/gbm/backends/msm/gbm_msm_int.h
+new file mode 100644
+index 0000000..34bc5ab
+--- /dev/null
++++ b/src/gbm/backends/msm/gbm_msm_int.h
+@@ -0,0 +1,60 @@
++/*
++ * Copyright (c) 2024 Qualcomm Innovation Center, Inc. All rights reserved.
++ * SPDX-License-Identifier: BSD-3-Clause-Clear
++ */
++
++#ifndef _GBM_MSM_INT_H_
++#define _GBM_MSM_INT_H_
++
++#include <gbm.h>
++#include <gbmint.h>
++#include <gbm_backend_abi.h>
++#include "gbm_msm.h"
++#include "drm_fourcc.h"
++
++#define DRM_FORMAT_MOD_QCOM_32F fourcc_mod_code(QCOM, 32)
++#define GBM_FORMAT_RGBA32323232F fourcc_mod_code(QCOM, 56)
++#define NUM_BACK_BUFFERS 3
++
++struct gbm_msm_device {
++   struct gbm_device base;
++};
++
++struct gem_handle_ref {
++    uint32_t handle;        // The GEM handle
++    int refcount;      // Reference count
++};
++
++struct gem_handle_map {
++    struct gem_handle_ref *handles; // Dynamic array of handles
++    size_t size;                     // Current number of handles
++};
++
++struct gbm_bufdesc {
++    uint32_t width;
++    uint32_t height;
++    uint32_t format;
++    uint32_t usage;
++    uint64_t modifiers;
++};
++
++struct gbm_msm_bo_ext {
++    struct gbm_msm_bo msm_bo;
++    uint64_t gbm_format;
++    uint64_t modifier;
++    uint32_t num_planes;
++    void *map;
++};
++
++struct gbm_msm_surface_ext {
++    struct gbm_msm_surface msm_surf;
++    struct {
++       int age;
++       bool locked;
++       struct gbm_bo *bo;
++    } color_buffers[NUM_BACK_BUFFERS], *back, *current;
++};
++
++const struct gbm_backend *gbmint_get_backend(const struct gbm_core *gbm_core);
++
++#endif
+diff --git a/src/gbm/backends/msm/schema_parser.c b/src/gbm/backends/msm/schema_parser.c
+new file mode 100644
+index 0000000..dc61af7
+--- /dev/null
++++ b/src/gbm/backends/msm/schema_parser.c
+@@ -0,0 +1,222 @@
++/*
++ * Copyright (c) 2024, 2024 Qualcomm Innovation Center, Inc. All rights reserved.
++ * SPDX-License-Identifier: BSD-3-Clause-Clear
++ */
++
++#include <stdlib.h>
++#include <stdio.h>
++#include <string.h>
++#include <libxml/parser.h>
++#include <libxml/tree.h>
++#include "schema_parser.h"
++#include "gbm_msm_int.h"
++
++int format_count = 0;
++struct format_info *formats = NULL;
++
++struct format_string_enum format_map[] = {
++   {"ARGB_8888", GBM_FORMAT_ARGB8888},
++   {"ABGR_8888", GBM_FORMAT_ABGR8888},
++   {"RGBA_8888", GBM_FORMAT_RGBA8888},
++   {"BGRA_8888", GBM_FORMAT_BGRA8888},
++   {"XRGB_8888", GBM_FORMAT_XRGB8888},
++   {"XBGR_8888", GBM_FORMAT_XBGR8888},
++   {"RGBX_8888", GBM_FORMAT_RGBX8888},
++   {"BGRX_8888", GBM_FORMAT_BGRX8888},
++   {"RGB_888", GBM_FORMAT_RGB888},
++   {"BGR_888", GBM_FORMAT_BGR888},
++   {"RGB_565", GBM_FORMAT_RGB565},
++   {"BGR_565", GBM_FORMAT_BGR565},
++   {"ARGB_2101010", GBM_FORMAT_ARGB2101010},
++   {"ABGR_2101010", GBM_FORMAT_ABGR2101010},
++   {"RGBA_1010102", GBM_FORMAT_RGBA1010102},
++   {"BGRA_1010102", GBM_FORMAT_BGRA1010102},
++   {"XRGB_2101010", GBM_FORMAT_XRGB2101010},
++   {"XBGR_2101010", GBM_FORMAT_XBGR2101010},
++   {"RGBX_1010102", GBM_FORMAT_RGBX1010102},
++   {"BGRX_1010102", GBM_FORMAT_BGRX1010102},
++   {"NV_12", GBM_FORMAT_NV12},
++   {"NV_21", GBM_FORMAT_NV21},
++   {"XRGB_4444", GBM_FORMAT_XRGB4444},
++   {"XBGR_4444", GBM_FORMAT_XBGR4444},
++   {"RGBX_4444", GBM_FORMAT_RGBX4444},
++   {"BGRX_4444", GBM_FORMAT_BGRX4444},
++   {"ARGB_4444", GBM_FORMAT_ARGB4444},
++   {"ABGR_4444", GBM_FORMAT_ABGR4444},
++   {"RGBA_4444", GBM_FORMAT_RGBA4444},
++   {"BGRA_4444", GBM_FORMAT_BGRA4444},
++   {"XRGB_1555", GBM_FORMAT_XRGB1555},
++   {"XBGR_1555", GBM_FORMAT_XBGR1555},
++   {"RGBX_5551", GBM_FORMAT_RGBX5551},
++   {"BGRX_5551", GBM_FORMAT_BGRX5551},
++   {"ARGB_1555", GBM_FORMAT_ARGB1555},
++   {"ABGR_1555", GBM_FORMAT_ABGR1555},
++   {"RGBA_5551", GBM_FORMAT_RGBA5551},
++   {"BGRA_5551", GBM_FORMAT_BGRA5551},
++   {"XBGR_16161616", GBM_FORMAT_XBGR16161616},
++   {"ABGR_16161616", GBM_FORMAT_ABGR16161616},
++   {"XBGR_16161616F", GBM_FORMAT_XBGR16161616F},
++   {"ABGR_16161616F", GBM_FORMAT_ABGR16161616F},
++   {"R_8", GBM_FORMAT_R8},
++   {"R_16", GBM_FORMAT_R16},
++   {"GR_88", GBM_FORMAT_GR88},
++   {"RG_1616", GBM_FORMAT_RG1616},
++   {"GR_1616", GBM_FORMAT_GR1616},
++   {"RGB_332", GBM_FORMAT_RGB332},
++   {"BGR_233", GBM_FORMAT_BGR233},
++   {"C_8", GBM_FORMAT_C8},
++   {"YUYV", GBM_FORMAT_YUYV},
++   {"YVYU", GBM_FORMAT_YVYU},
++   {"UYVY", GBM_FORMAT_UYVY},
++   {"VYUY", GBM_FORMAT_VYUY},
++   {"AYUV", GBM_FORMAT_AYUV},
++   {"NV_16", GBM_FORMAT_NV16},
++   {"NV_61", GBM_FORMAT_NV61},
++   {"YUV_410", GBM_FORMAT_YUV410},
++   {"YVU_410", GBM_FORMAT_YVU410},
++   {"YUV_411", GBM_FORMAT_YUV411},
++   {"YVU_411", GBM_FORMAT_YVU411},
++   {"YUV_420", GBM_FORMAT_YUV420},
++   {"YVU_420", GBM_FORMAT_YVU420},
++   {"YUV_422", GBM_FORMAT_YUV422},
++   {"YVU_422", GBM_FORMAT_YVU422},
++   {"YUV_444", GBM_FORMAT_YUV444},
++   {"YVU_444", GBM_FORMAT_YVU444},
++   {"RGBA_32323232F", GBM_FORMAT_RGBA32323232F}
++};
++
++const char* find_format_name(uint32_t format_enum)
++{
++   size_t map_size = sizeof(format_map) / sizeof(format_map[0]);
++   for (size_t i = 0; i < map_size; ++i) {
++      if (format_map[i].format_enum == format_enum) {
++         return format_map[i].format_name;
++      }
++   }
++   return NULL;
++}
++
++void parse_meta(xmlNode *node, struct meta_info *meta)
++{
++   xmlNode *cur_node = NULL;
++   for (cur_node = node->children; cur_node; cur_node = cur_node->next) {
++      if (cur_node->type == XML_ELEMENT_NODE) {
++         if (strcmp((char *)cur_node->name, "block_width") == 0) {
++            meta->block_width = atoi((char *)xmlNodeGetContent(cur_node));
++         } else if (strcmp((char *)cur_node->name, "block_height") == 0) {
++            meta->block_height = atoi((char *)xmlNodeGetContent(cur_node));
++         } else if (strcmp((char *)cur_node->name, "pitch_align") == 0) {
++            meta->pitch_align = atoi((char *)xmlNodeGetContent(cur_node));
++         } else if (strcmp((char *)cur_node->name, "height_align") == 0) {
++            meta->height_align = atoi((char *)xmlNodeGetContent(cur_node));
++         } else if (strcmp((char *)cur_node->name, "size_align") == 0) {
++            meta->size_align = atoi((char *)xmlNodeGetContent(cur_node));
++         }
++      }
++   }
++}
++
++void parse_plane(xmlNode *node, struct plane_info *plane)
++{
++   xmlNode *cur_node = NULL;
++   plane->meta_info = NULL;
++
++   for (cur_node = node->children; cur_node; cur_node = cur_node->next) {
++      if (cur_node->type == XML_ELEMENT_NODE) {
++         if (strcmp((char *)cur_node->name, "plane_name") == 0) {
++            strlcpy(plane->plane_name, (char *)xmlNodeGetContent(cur_node), sizeof(plane->plane_name));
++         } else if (strcmp((char *)cur_node->name, "pitch_align") == 0) {
++            plane->pitch_align = atoi((char *)xmlNodeGetContent(cur_node));
++         } else if (strcmp((char *)cur_node->name, "height_align") == 0) {
++            plane->height_align = atoi((char *)xmlNodeGetContent(cur_node));
++         } else if (strcmp((char *)cur_node->name, "meta_info") == 0) {
++            plane->meta_info = calloc(1, sizeof(struct meta_info));
++            parse_meta(cur_node, plane->meta_info);
++         }
++      }
++   }
++}
++
++void parse_format(xmlNode *node, struct format_info *format) {
++    xmlNode *cur_node = NULL;
++    format->plane_count = 0;
++    format->planes = NULL;
++
++    for (cur_node = node->children; cur_node; cur_node = cur_node->next) {
++        if (cur_node->type == XML_ELEMENT_NODE) {
++            if (strcmp((char *)cur_node->name, "format_name") == 0) {
++                strlcpy(format->format_name, (char *)xmlNodeGetContent(cur_node), sizeof(format->format_name));
++            } else if (strcmp((char *)cur_node->name, "constraints") == 0) {
++                for (xmlNode *constraint_node = cur_node->children; constraint_node;
++		     constraint_node = constraint_node->next) {
++                    if (constraint_node->type == XML_ELEMENT_NODE) {
++                        if (strcmp((char *)constraint_node->name, "size_align") == 0) {
++                            format->size_align = atoi((char *)xmlNodeGetContent(constraint_node));
++                        } else if (strcmp((char *)constraint_node->name, "bpp") == 0) {
++                            format->bpp = atoi((char *)xmlNodeGetContent(constraint_node));
++                        } else if (strcmp((char *)constraint_node->name, "planes") == 0) {
++                            for (xmlNode *plane_node = constraint_node->children; plane_node;
++			         plane_node = plane_node->next) {
++                                if (plane_node->type == XML_ELEMENT_NODE &&
++				    strcmp((char *)plane_node->name, "plane") == 0) {
++                                    format->planes = realloc(format->planes, 
++				                (format->plane_count + 1) * sizeof(struct plane_info));
++                                    parse_plane(plane_node, &format->planes[format->plane_count]);
++                                    format->plane_count++;
++                                }
++                            }
++                        }
++                    }
++                }
++            }
++        }
++    }
++}
++
++struct format_info* parse_xml(const char *filename)
++{
++   xmlDoc *doc = NULL;
++   xmlNode *root_element = NULL;
++
++   doc = xmlReadFile(filename, NULL, 0);
++   if (doc == NULL) {
++      printf("Could not parse the XML file\n");
++      return NULL;
++   }
++
++   root_element = xmlDocGetRootElement(doc);
++   xmlNode *cur_node = NULL;
++   struct format_info *formats = NULL;
++   format_count = 0;
++
++   for (cur_node = root_element->children; cur_node; cur_node = cur_node->next) {
++      if (cur_node->type == XML_ELEMENT_NODE && strcmp((char *)cur_node->name, "format") == 0) {
++         formats = realloc(formats, (format_count + 1) * sizeof(struct format_info));
++         parse_format(cur_node, &formats[format_count]);
++         format_count++;
++      }
++   }
++
++   xmlFreeDoc(doc);
++   xmlCleanupParser();
++
++   return formats;
++}
++
++void init_xml_schema(void)
++{
++   // @todo: decide the filename to be parsed based on the SoC variant
++   char *filename = "/usr/lib/gbm/default_fmt_alignment.xml";
++   formats = parse_xml(filename);
++}
++
++struct format_info* get_format_info(const char *format_name) {
++   struct format_info *info = NULL;
++   for (int i = 0; i < format_count; i++) {
++      if (strcmp(formats[i].format_name, format_name) == 0) {
++         info = &formats[i];
++      }
++   }
++   return info;
++}
++
+diff --git a/src/gbm/backends/msm/schema_parser.h b/src/gbm/backends/msm/schema_parser.h
+new file mode 100644
+index 0000000..a507b4a
+--- /dev/null
++++ b/src/gbm/backends/msm/schema_parser.h
+@@ -0,0 +1,51 @@
++/*
++ * Copyright (c) 2024 Qualcomm Innovation Center, Inc. All rights reserved.
++ * SPDX-License-Identifier: BSD-3-Clause-Clear
++ */
++
++#ifndef SCHEMA_PARSER_H
++#define SCHEMA_PARSER_H
++
++#include <libxml/parser.h>
++#include <libxml/tree.h>
++#include "gbm_msm_int.h"
++#include <gbm.h>
++
++struct format_string_enum {
++   const char *format_name;
++   uint32_t format_enum;
++};
++
++struct meta_info {
++    uint32_t block_width;
++    uint32_t block_height;
++    uint32_t pitch_align;
++    uint32_t height_align;
++    uint32_t size_align;
++};
++
++struct plane_info {
++    char plane_name[50];
++    uint32_t pitch_align;
++    uint32_t height_align;
++    struct meta_info *meta_info;
++};
++
++struct format_info {
++    char format_name[50];
++    uint32_t size_align;
++    struct plane_info *planes;
++    uint32_t plane_count;
++    uint32_t bpp;
++};
++
++void init_xml_schema(void);
++void parse_meta(xmlNode *node, struct meta_info *meta);
++void parse_plane(xmlNode *node, struct plane_info *plane);
++void parse_format(xmlNode *node, struct format_info *format);
++struct format_info* parse_xml(const char *filename);
++struct format_info* get_format_info(const char *format_name);
++const char* find_format_name(uint32_t format_enum);
++
++#endif // SCHEMA_PARSER_H
++
+diff --git a/src/gbm/meson.build b/src/gbm/meson.build
+index df65361..f47d7e9 100644
+--- a/src/gbm/meson.build
++++ b/src/gbm/meson.build
+@@ -64,6 +64,39 @@ libgbm = shared_library(
+   install : true,
+ )
+ 
++
++if get_option('standalone_gbm')
++  dep_libxml2 = dependency('libxml-2.0')
++  deps_gbm += dep_libxml2
++  msm_sources = files('backends/msm/gbm_msm.c',
++                      'backends/msm/gbm_msm.h',
++                      'backends/msm/gbm_msm_int.h',
++                      'backends/msm/schema_parser.c',
++                      'backends/msm/schema_parser.h',
++                      'backends/msm/buffer_layout.c',
++                      'backends/msm/buffer_layout.h',
++                      'backends/msm/buffer_alloc.c',
++                      'backends/msm/buffer_alloc.h')
++
++  install_headers('main/gbm_backend_abi.h' , 'backends/msm/gbm_msm.h', 'main/gbmint.h')
++
++  msm_gbm = shared_library(
++    'msm_gbm',
++    msm_sources,
++    include_directories : incs_gbm,
++    c_args : [args_gbm],
++    link_args : [ld_args_gc_sections],
++    dependencies : [deps_gbm, dep_dl, dep_thread, dep_libxml2],
++    gnu_symbol_visibility : 'hidden',
++    version : '1.0.0',
++    soversion : '1',
++    install : true,
++    install_dir: '/usr/lib/gbm',
++    name_prefix: ''
++  )
++  install_data('backends/msm/default_fmt_alignment.xml', install_dir: '/usr/lib/gbm')
++endif
++
+ if with_tests
+   abi_check = executable('gbm_abi_check', 'main/gbm_abi_check.c')
+   test('gbm-abi-check', abi_check, suite : ['gbm'])
+@@ -93,3 +126,4 @@ if with_symbols_check
+     suite : ['gbm'],
+   )
+ endif
++
+diff --git a/src/test/gbmtest.c b/src/test/gbmtest.c
+new file mode 100644
+index 0000000..04fe382
+--- /dev/null
++++ b/src/test/gbmtest.c
+@@ -0,0 +1,502 @@
++/*
++ * Copyright (c) 2024 Qualcomm Innovation Center, Inc. All rights reserved.
++ * SPDX-License-Identifier: BSD-3-Clause-Clear
++ */
++
++#include <assert.h>
++#include <errno.h>
++#include <fcntl.h>
++#include <stdbool.h>
++#include <stddef.h>
++#include <stdint.h>
++#include <stdio.h>
++#include <stdlib.h>
++#include <stdbool.h>
++#include <string.h>
++#include <sys/types.h>
++#include <sys/stat.h>
++#include <unistd.h>
++#include <wayland-server.h>
++#include <drm/drm_fourcc.h>
++#include <gbm.h>
++#include "gbm_msm.h"
++#include <gbm_backend_abi.h>
++#include <sys/time.h>
++
++#include <linux/dma-buf.h>
++#include <linux/dma-heap.h>
++
++#define CHECK(cond) do {\
++    if (!(cond)) {\
++        printf("CHECK failed in %s() %s:%d\n", __func__, __FILE__, __LINE__);\
++        return 0;\
++    }\
++} while(0)
++
++#define ARRAY_SIZE(A) (sizeof(A)/sizeof(*(A)))
++
++#define ENODRM     -1
++#define ENODISPLAY -2
++
++#define DRM_DEVICE_NAME "/dev/dri/card0"
++#define TEST_PATTERN 0xDEADBEEF
++
++static int fd;
++static struct gbm_device *gbm;
++
++static int check_bo(struct gbm_bo *bo)
++{
++   uint32_t format;
++   size_t num_planes, plane;
++   int fd;
++   int i;
++
++   CHECK(bo);
++   CHECK(gbm_bo_get_width(bo) >= 0);
++   CHECK(gbm_bo_get_height(bo) >= 0);
++
++   format = gbm_bo_get_format(bo);
++   return 1;
++}
++
++static int open_device()
++{
++   int fd = -1;
++   fd = open(DRM_DEVICE_NAME, O_RDWR | O_CLOEXEC);
++   if (fd < 0) {
++      return ENODISPLAY;
++   }
++   return fd;
++}
++
++/*
++ * Tests initialization.
++ */
++static int test_init()
++{
++   fd = open_device();
++   if (fd < 0)
++      if (fd == ENODISPLAY)
++         return ENODISPLAY;
++   CHECK(fd >= 0);
++
++   gbm = gbm_create_device(fd);
++   CHECK(gbm_device_get_fd(gbm) == fd);
++   const char* backend_name = gbm_device_get_backend_name(gbm);
++   printf("[ test_init(): gbm_create_device(),gbm_device_get_fd] success\n");
++   return 1;
++}
++
++static int test_alloc_free()
++{
++   int i;
++   for(i = 0; i < 1000; i++) {
++      struct gbm_bo *bo;
++      printf("test_alloc_free run(%d)\n",i);
++      bo = gbm_bo_create(gbm, 1024, 1024, GBM_FORMAT_XRGB8888, GBM_BO_USE_RENDERING);
++      CHECK(check_bo(bo));
++      gbm_bo_destroy(bo);
++   }
++
++   return 1;
++}
++
++static void draw(struct gbm_bo *bo)
++{
++   printf("draw called");
++}
++
++static int test_surface_create_destroy()
++{
++   unsigned int set_width=1080;
++   unsigned int set_height=1920;
++   unsigned int set_fmt=GBM_FORMAT_XRGB8888;
++   struct gbm_surface* gbm_surf=NULL;
++
++   int ret=-1;
++   gbm_surf = gbm_surface_create(gbm, set_width, set_height, set_fmt, GBM_BO_USE_RENDERING);
++   if(!gbm_surf){
++      printf("Surface creation failed\n");
++      return 0;
++   }
++
++   void *map_data[NUM_BACK_BUFFERS], *buffer[NUM_BACK_BUFFERS];
++   struct gbm_msm_surface *msm_surf = (struct gbm_msm_surface*)gbm_surf;
++   for (int l = 0; l < NUM_BACK_BUFFERS; l++) {
++      map_data[l] = buffer[l] = NULL;
++      buffer[l] = malloc(4096);
++      uint32_t stride = 0;
++      buffer[l] = gbm_bo_map(msm_surf->color_buffers[l].bo, 0, 0, 32, 32, GBM_BO_TRANSFER_READ_WRITE, &stride,
++                             &map_data[l]);
++      CHECK(buffer[l]);
++      CHECK(map_data[l]);
++
++      for (int j = 0; j < 4096 / sizeof(uint32_t); j++) {
++         ((uint32_t *)buffer[l])[j] = l;
++      }
++
++      gbm_bo_unmap(msm_surf->color_buffers[l].bo, map_data[l]);
++   }
++
++   for(int l = 0; l < 10; l++) {
++      struct gbm_bo *curr_bo, *prev_bo, *prev_prev_bo = NULL;
++      prev_prev_bo = prev_bo;
++      prev_bo = curr_bo;
++      curr_bo = msm_surf->surface_get_back_bo(gbm_surf);
++      if (!curr_bo) {
++         printf("surface_get_back_bo failed");
++         ret = 0;
++         break;
++      }
++
++      draw(curr_bo);
++
++      if (msm_surf->surface_swap_buffers(gbm_surf)) {
++         printf("surface_swap_buffers failed");
++         ret = 0;
++         break;
++      }
++      curr_bo = gbm_surface_lock_front_buffer(gbm_surf);
++      if (prev_prev_bo) {
++         gbm_surface_release_buffer(gbm_surf, prev_prev_bo);
++         prev_prev_bo = NULL;
++      }
++
++      void *buf, *mapdata = NULL;
++      uint32_t stride = 0;
++      buf = gbm_bo_map(curr_bo, 0, 0, 32, 32, GBM_BO_TRANSFER_READ_WRITE, &stride,
++                       &mapdata);
++
++      for (int i = 0; i < 4096 / sizeof(uint32_t); i++) {
++         if (((uint32_t *)buf)[i] != ((uint32_t *)buffer[(NUM_BACK_BUFFERS-1) - (l%NUM_BACK_BUFFERS)])[i]) {
++            printf("Buffer verification failed at index %d\n", i);
++            ret = 0;
++         }
++      }
++	   
++      gbm_bo_unmap(curr_bo, mapdata);
++   }
++
++   gbm_surface_destroy(gbm_surf);
++   printf("test_surface_create_destroy success\n");
++
++   return 1;
++
++fail_end:
++   gbm_surface_destroy(gbm_surf);
++   return 0;
++}
++
++static int test_gbm_import_fd()
++{
++   int ret = 1;
++   struct gbm_bo *bo;
++   bo = gbm_bo_create(gbm, 32, 32, GBM_FORMAT_XRGB8888, GBM_BO_USE_RENDERING);
++   CHECK(check_bo(bo));
++
++   printf("bo_handle = %u \n", gbm_bo_get_handle(bo).u32);
++
++   int data_fd;
++
++   data_fd = gbm_bo_get_fd(bo);
++   printf("data_fd = %d \n", data_fd);
++   struct gbm_bo *bo1;
++   struct gbm_import_fd_data fd_data;
++   fd_data.fd = dup(data_fd);
++   fd_data.width = 32;
++   fd_data.height = 32;
++   fd_data.format = GBM_FORMAT_XRGB8888;
++   bo1 = gbm_bo_import(gbm, GBM_BO_IMPORT_FD, &fd_data, GBM_BO_USE_RENDERING);
++   CHECK(check_bo(bo1));
++   printf("bo_import: data_fd %d for GEM Handle %u \n", data_fd, bo1->v0.handle.u32);
++   if (gbm_bo_get_width(bo) != fd_data.width ||
++       gbm_bo_get_height(bo) != fd_data.height ||
++       gbm_bo_get_format(bo) != fd_data.format) {
++      ret = 0;
++   }
++
++   return ret;
++}
++
++static int test_gbm_bo_map()
++{
++   int ret = 1;
++   struct gbm_bo *bo;
++   void *map_data, *buffer;
++   bo = gbm_bo_create(gbm, 32, 32, GBM_FORMAT_XRGB8888, GBM_BO_USE_RENDERING);
++   CHECK(check_bo(bo));
++
++   buffer = map_data = NULL;
++   uint32_t stride = 0;
++   buffer = gbm_bo_map(bo, 0, 0, 32, 32, GBM_BO_TRANSFER_READ_WRITE, &stride,
++    			  &map_data);
++   CHECK(buffer);
++   CHECK(map_data);
++
++   for (int i = 0; i < 4096 / sizeof(uint32_t); i++) {
++      ((uint32_t *)buffer)[i] = TEST_PATTERN;
++   }
++
++   gbm_bo_unmap(bo, map_data);
++
++   buffer = map_data = NULL;
++   buffer = gbm_bo_map(bo, 0, 0, 32, 32, GBM_BO_TRANSFER_READ_WRITE, &stride, &map_data);
++   CHECK(buffer);
++   CHECK(map_data);
++
++    // Verify the test pattern
++   for (int i = 0; i < 4096 / sizeof(uint32_t); i++) {
++      if (((uint32_t *)buffer)[i] != TEST_PATTERN) {
++         printf("Buffer verification failed at index %d\n", i);
++         ret = 0;
++      }
++   }
++   gbm_bo_unmap(bo, map_data);
++   gbm_bo_destroy(bo);
++
++   printf("test_gbm_bo_map success\n");
++   return ret;
++}
++
++static int test_gbm_bo_get_fd()
++{
++    struct gbm_bo *bo;
++    int temp_fd;
++
++    bo = gbm_bo_create(gbm, 1024, 1024, GBM_FORMAT_XRGB8888, GBM_BO_USE_RENDERING);
++    CHECK(check_bo(bo));
++
++    for(int i = 0; i < 100; i++) {
++       temp_fd = gbm_bo_get_fd(bo);
++       struct gbm_msm_bo *msm_bo = (struct gbm_msm_bo*)bo;
++       printf("msm_bo->fd=%d, gbm_bo_get_fd=%d\n", msm_bo->fd, temp_fd);
++       CHECK(temp_fd>=0 && msm_bo->fd==temp_fd);
++    }
++
++    gbm_bo_destroy(bo);
++
++    printf("test_gbm_bo_get_fd success\n");
++    return 1;
++}
++
++static int test_alloc_free_sizes()
++{
++    int i;
++    int ret;
++    uint32_t bo_size=0;
++
++    for(i = 1; i < 1920; i++) {
++       struct gbm_bo *bo;
++       bo = gbm_bo_create(gbm, i, i, GBM_FORMAT_XRGB8888, GBM_BO_USE_RENDERING);
++       CHECK(check_bo(bo));
++       printf("test_alloc_free BO width(%d)\n",gbm_bo_get_width(bo));
++       printf("test_alloc_free BO height(%d)\n",gbm_bo_get_height(bo));
++       printf("test_alloc_free BO stride(%d)\n",gbm_bo_get_stride(bo));
++       printf("test_alloc_free BO format(%d)\n",gbm_bo_get_format(bo));
++
++       struct gbm_msm_bo *msm_bo = (struct gbm_msm_bo*)bo;
++       bo_size = msm_bo->size;
++       printf("GET BO size=%d success\n",bo_size);
++
++       if(gbm_bo_get_width(bo)!= i){
++          printf("test_alloc_free BO width mismatch (expected =%d)\n",i);
++          return 0;
++       }
++       if(gbm_bo_get_height(bo)!= i){
++          printf("test_alloc_free BO height mismatch (expected=%d)\n",i);
++          return 0;
++       }
++       if(gbm_bo_get_format(bo)!= GBM_FORMAT_XRGB8888){
++          printf("test_alloc_free BO format mismatch (expected=%d)\n",GBM_FORMAT_XRGB8888);
++          return 0;
++       }
++
++       gbm_bo_destroy(bo);
++    }
++
++    for(i = 1; i < 1920; i++) {
++       struct gbm_bo *bo;
++       bo = gbm_bo_create(gbm, i, 1, GBM_FORMAT_XRGB8888, GBM_BO_USE_RENDERING);
++       CHECK(check_bo(bo));
++       printf("test_alloc_free BO width(%d)\n",gbm_bo_get_width(bo));
++       printf("test_alloc_free BO height(%d)\n",gbm_bo_get_height(bo));
++       printf("test_alloc_free BO stride(%d)\n",gbm_bo_get_stride(bo));
++       printf("test_alloc_free BO format(%d)\n",gbm_bo_get_format(bo));
++
++       struct gbm_msm_bo *msm_bo = (struct gbm_msm_bo*)bo;
++       bo_size = msm_bo->size;
++       printf("GET BO size=%d success\n",bo_size);
++
++       if(gbm_bo_get_width(bo)!= i){
++          printf("test_alloc_free BO width mismatch (expected =%d)\n",i);
++          return 0;
++       }
++       if(gbm_bo_get_height(bo)!= 1){
++          printf("test_alloc_free BO height mismatch (expected=%d)\n",i);
++          return 0;
++       }
++       if(gbm_bo_get_format(bo)!= GBM_FORMAT_XRGB8888){
++          printf("test_alloc_free BO format mismatch (expected=%d)\n",GBM_FORMAT_XRGB8888);
++          return 0;
++       }
++       gbm_bo_destroy(bo);
++    }
++
++    for(i = 1; i < 1920; i++) {
++       struct gbm_bo *bo;
++       bo = gbm_bo_create(gbm, 1, i, GBM_FORMAT_XRGB8888, GBM_BO_USE_RENDERING);
++       CHECK(check_bo(bo));
++       printf("test_alloc_free BO width(%d)\n",gbm_bo_get_width(bo));
++       printf("test_alloc_free BO height(%d)\n",gbm_bo_get_height(bo));
++       printf("test_alloc_free BO stride(%d)\n",gbm_bo_get_stride(bo));
++       printf("test_alloc_free BO format(%d)\n",gbm_bo_get_format(bo));
++
++       struct gbm_msm_bo *msm_bo = (struct gbm_msm_bo*)bo;
++       bo_size = msm_bo->size;
++       printf("GET BO size=%d success\n",bo_size);
++
++       if(gbm_bo_get_width(bo)!= 1){
++          printf("test_alloc_free BO width mismatch (expected =%d)\n",i);
++          return 0;
++       }
++       if(gbm_bo_get_height(bo)!= i){
++          printf("test_alloc_free BO height mismatch (expected=%d)\n",i);
++          return 0;
++       }
++       if(gbm_bo_get_format(bo)!= GBM_FORMAT_XRGB8888){
++          printf("test_alloc_free BO format mismatch (expected=%d)\n",GBM_FORMAT_XRGB8888);
++          return 0;
++       }
++       gbm_bo_destroy(bo);
++   }
++
++   return 1;
++}
++
++static int test_alloc_dmabuf()
++{
++  int dma_dev_fd = open("/dev/dma_heap/qcom,system", O_RDONLY | O_CLOEXEC);
++
++  if (dma_dev_fd == -1) {
++     printf("dmabuf open failed \n");
++     return 0;
++  }
++
++  uint32_t size = 1088 * 1088 * 4;
++  struct dma_heap_allocation_data alloc_data;
++  alloc_data.fd = 0;
++  alloc_data.len = (unsigned long)size;
++  alloc_data.fd_flags = O_RDWR | O_CLOEXEC;
++  alloc_data.heap_flags = 0;
++ 
++  int res = ioctl (dma_dev_fd, DMA_HEAP_IOCTL_ALLOC, &alloc_data);
++
++  if (res) {
++    printf("Alloc using dmabuf failed \n");
++    return 0;
++  }
++
++  int data_fd = alloc_data.fd;
++  printf("data_fd = %d \n", data_fd);
++  struct gbm_bo *bo;
++  struct gbm_import_fd_modifier_data fd_data;
++  fd_data.fds[0] = data_fd;
++  fd_data.width = 32;
++  fd_data.height = 32;
++  fd_data.format = GBM_FORMAT_XRGB8888;
++  fd_data.modifier = 0;
++
++  bo = gbm_bo_import(gbm, GBM_BO_IMPORT_FD_MODIFIER, &fd_data, GBM_BO_USE_RENDERING);
++  CHECK(check_bo(bo));
++  printf("bo_import: GEM Handle %u for data_fd %d \n", bo->v0.handle.u32, data_fd);
++
++  return 1;
++}
++
++static int test_destroy()
++{
++   printf("Inside test_destroy\n");
++   gbm_device_destroy(gbm);
++   close(fd);
++
++   return 1;
++}
++
++static int gbm_test_help() {
++   printf("Please Enter Test No:\n");
++   printf("1 for Create/Destroy GBM device\n");
++   printf("2 for stress Alloc/Destroy BO \n");
++   printf("3 for Surface Create/Destroy and buffer flip \n");
++   printf("4 for BO Create/Destroy and import fd\n");
++   printf("5 for BO map \n");
++   printf("6 Test gbm_bo_get_fd \n");
++   printf("7 for stress different size Alloc/Destroy BO \n");
++   return 0;
++}
++
++int main(int argc, char *argv[])
++{
++   int result=1;
++   int param=0;
++
++   if(argc > 1)
++      param=atoi(argv[argc-1]);
++   else {
++      return gbm_test_help();
++   }
++
++   switch(param) {
++      case 1:
++          result &= test_init();
++          result &= test_destroy();
++          break;
++      case 2:
++          result &= test_init();
++          result &= test_alloc_free();
++          result &= test_destroy();
++          break;
++      case 3:
++          result &= test_init();
++          result &= test_surface_create_destroy();
++          result &= test_destroy();
++          break;
++      case 4:
++          result &= test_init();
++          result &= test_gbm_import_fd();
++          result &= test_destroy();
++          break;
++      case 5:
++          result &= test_init();
++          result &= test_gbm_bo_map();
++          result &= test_destroy();
++          break;
++      case 6:
++          result &= test_init();
++          result &= test_gbm_bo_get_fd();
++          result &= test_destroy();
++          break;
++      case 7:
++          result &= test_init();
++          result &= test_alloc_free_sizes();
++          result &= test_destroy();
++          break;
++
++      case 8:
++          result &= test_init();
++	  result &= test_alloc_dmabuf();
++	  result &= test_destroy();
++
++      default:
++          gbm_test_help();
++          return 0;
++   }
++
++   if (!result) {
++      printf("[  FAILED  ] graphics_Gbm test failed\n");
++      return EXIT_FAILURE;
++   } else {
++      printf("[  PASSED  ] graphics_Gbm test success\n");
++      return EXIT_SUCCESS;
++   }
++}
++
+diff --git a/src/test/meson.build b/src/test/meson.build
+new file mode 100644
+index 0000000..bb8864c
+--- /dev/null
++++ b/src/test/meson.build
+@@ -0,0 +1,28 @@
++#Copyright (c) 2024 Qualcomm Innovation Center, Inc. All rights reserved.
++#SPDX-License-Identifier: BSD-3-Clause-Clear
++
++link_for_test = []
++link_for_test += libgbm
++inc_gbm = include_directories('../gbm/.', '../gbm/main', '../gbm/backends/dri', '../gbm/backends/msm')
++
++executable('gbmtest',
++    'gbmtest.c',
++    include_directories: [inc_gbm],
++    link_with: [link_for_test],
++    c_args: [
++        '-DLOG_TAG="qdgralloc"',
++        '-D__QTI_DISPLAY_GRALLOC__',
++        '-Wno-sign-conversion',
++        '-Wno-unused-parameter',
++        '-DENABLE_DRM',
++        '-Wno-error',
++        '-Wno-uninitialized',
++        '-Wno-return-type',
++        '-Wno-implicit-int',
++        '-Wno-int-conversion',
++        '-Wno-implicit-function-declaration',
++        '-DVENUS_COLOR_FORMAT',
++    ],
++    install: true
++)
++
+-- 
+2.34.1
+
