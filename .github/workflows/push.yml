@@ -14,11 +14,9 @@ permissions:
 jobs:
   build:
     uses: ./.github/workflows/build-yocto.yml
-  schema-check:
-    uses: ./.github/workflows/lava-schema-check.yml
   test:
     uses: ./.github/workflows/test.yml
-    needs: [build, schema-check]
+    needs: [build]
     secrets: inherit
     with:
-      url: ${{ needs.build.outputs.artifacts_url }}
+      build_id: ${{ github.run_id }}
