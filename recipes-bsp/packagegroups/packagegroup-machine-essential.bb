@@ -105,6 +105,7 @@ RRECOMMENDS:${PN}-qcom-qcs6490-soc += " \
     kernel-module-camcc-sc7280 \
     kernel-module-dispcc-sc7280 \
     kernel-module-gpucc-sc7280 \
+    kernel-module-iris-vpu \
     kernel-module-lpassaudiocc-sc7280 \
     kernel-module-pinctrl-sc7280-lpass-lpi \
     kernel-module-pmic-glink \
@@ -122,6 +123,7 @@ RRECOMMENDS:${PN}-qcom-qcs8300-soc += " \
     kernel-module-dispcc0-sa8775p \
     kernel-module-dispcc1-sa8775p \
     kernel-module-gpucc-sa8775p \
+    kernel-module-iris-vpu \
     kernel-module-phy-qcom-sgmii-eth \
     kernel-module-pwrseq-qcom-wcn \
     kernel-module-stmmac-platform \
@@ -136,6 +138,7 @@ RRECOMMENDS:${PN}-qcom-qcs9100-soc += " \
     kernel-module-dispcc0-sa8775p \
     kernel-module-dispcc1-sa8775p \
     kernel-module-gpucc-sa8775p \
+    kernel-module-iris-vpu \
     kernel-module-phy-qcom-sgmii-eth \
     kernel-module-pwrseq-qcom-wcn \
     kernel-module-stmmac-platform \
