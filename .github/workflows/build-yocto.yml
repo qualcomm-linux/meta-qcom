@@ -8,14 +8,14 @@ on:
         value: ${{ jobs.create-output.outputs.url }}
 
 env:
-  CACHE_DIR: /srv/gh-runners/quic-yocto
-  KAS_REPO_REF_DIR: /srv/gh-runners/quic-yocto/kas-mirrors
-  KAS_CONTAINER: /srv/gh-runners/quic-yocto/kas-mirrors/kas-container
+  CACHE_DIR: /efs/qli/meta-qcom/
+  KAS_REPO_REF_DIR: /efs/qli/meta-qcom/kas-mirrors
+  KAS_CONTAINER: /efs/qli/meta-qcom/kas-mirrors/kas-container
 
 jobs:
   kas-setup:
     if: github.repository == 'qualcomm-linux/meta-qcom'
-    runs-on: [self-hosted, x86]
+    runs-on: [self-hosted, qcom-u2404, amd64-ssd]
     steps:
       - name: Update kas-container
         run: |
@@ -46,7 +46,7 @@ jobs:
   yocto-check-layer:
     needs: kas-setup
     if: github.repository == 'qualcomm-linux/meta-qcom'
-    runs-on: [self-hosted, x86]
+    runs-on: [self-hosted, qcom-u2404, amd64-ssd]
     steps:
       - uses: actions/checkout@v4
         with:
@@ -64,7 +64,7 @@ jobs:
   yocto-patchreview:
     needs: kas-setup
     if: github.repository == 'qualcomm-linux/meta-qcom'
-    runs-on: [self-hosted, x86]
+    runs-on: [self-hosted, qcom-u2404, amd64-ssd]
     steps:
       - uses: actions/checkout@v4
         with:
@@ -116,7 +116,7 @@ jobs:
                 type: additional
                 dirname: "+linux-yocto-dev"
                 yamlfile: ":ci/linux-yocto-dev.yml"
-    runs-on: [self-hosted, x86]
+    runs-on: [self-hosted, qcom-u2404, amd64-ssd]
     name: ${{ matrix.machine }}/${{ matrix.distro.name }}${{ matrix.kernel.dirname }}
     steps:
       - uses: actions/checkout@v4
@@ -176,7 +176,7 @@ jobs:
     needs: compile
     outputs:
       url: ${{ steps.print-output.outputs.url }}
-    runs-on: [self-hosted, x86]
+    runs-on: [self-hosted, qcom-u2404, amd64-ssd]
     steps:
       - name: "Print output"
         id: print-output
