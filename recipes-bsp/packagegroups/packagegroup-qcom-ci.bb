@@ -1,5 +1,7 @@
 SUMMARY = "Extra userspace packages enabled for CI testing"
 
+PACKAGE_ARCH = "${MACHINE_ARCH}"
+
 inherit packagegroup
 
 # libssc depends on libqmi and protobuf which are part of meta-oe
@@ -12,4 +14,9 @@ RDEPENDS:${PN} = " \
     libdmabufheap-dev \
     ${@bb.utils.contains("BBLAYERS", "openembedded-layer", "opencv","", d)} \
     sigma-dut \
+"
+
+# These packages support only ARMv8 machines, no need to build them elsewhere.
+RDEPENDS:${PN}:append:aarch64 = " \
+    kgsl-dlkm \
 "
