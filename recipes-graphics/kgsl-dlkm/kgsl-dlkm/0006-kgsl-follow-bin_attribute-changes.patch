@@ -1,0 +1,37 @@
+From f2e4591eb91cfabf5a9808ee1800df876d1888bc Mon Sep 17 00:00:00 2001
+From: Dmitry Baryshkov <dmitry.baryshkov@oss.qualcomm.com>
+Date: Tue, 19 Aug 2025 23:13:25 +0300
+Subject: [PATCH 6/8] kgsl: follow bin_attribute changes
+
+Linux 6.16 changed bin_attribute's show function to take const pointer.
+Follow the changes.
+
+Signed-off-by: Dmitry Baryshkov <dmitry.baryshkov@oss.qualcomm.com>
+Upstream-Status: Submitted [https://github.com/qualcomm-linux/kgsl/pull/9]
+---
+ kgsl_snapshot.c | 6 ++++++
+ 1 file changed, 6 insertions(+)
+
+diff --git a/kgsl_snapshot.c b/kgsl_snapshot.c
+index b52b4c7516b7..f27c6d768398 100644
+--- a/kgsl_snapshot.c
++++ b/kgsl_snapshot.c
+@@ -746,9 +746,15 @@ static int snapshot_release(struct kgsl_device *device,
+ }
+ 
+ /* Dump the sysfs binary data to the user */
++#if (KERNEL_VERSION(6, 16, 0) > LINUX_VERSION_CODE)
+ static ssize_t snapshot_show(struct file *filep, struct kobject *kobj,
+ 	struct bin_attribute *attr, char *buf, loff_t off,
+ 	size_t count)
++#else
++static ssize_t snapshot_show(struct file *filep, struct kobject *kobj,
++	const struct bin_attribute *attr, char *buf, loff_t off,
++	size_t count)
++#endif
+ {
+ 	struct kgsl_device *device = kobj_to_device(kobj);
+ 	struct kgsl_snapshot *snapshot;
+-- 
+2.47.2
+

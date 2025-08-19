@@ -1,0 +1,37 @@
+From 6f197b2b6aecb79d6599936a0558de463d55fada Mon Sep 17 00:00:00 2001
+From: Dmitry Baryshkov <dmitry.baryshkov@oss.qualcomm.com>
+Date: Tue, 19 Aug 2025 23:10:58 +0300
+Subject: [PATCH 2/8] kgsl: mark gmu_core_iommu_domain_alloc() as static inline
+
+Mark gmu_core_iommu_domain_alloc() function as static inline in order to
+fix the 'unused' warning.
+
+Fixes: f25fb92b026b ("kgsl: Use iommu_paging_domain_alloc()")
+Signed-off-by: Dmitry Baryshkov <dmitry.baryshkov@oss.qualcomm.com>
+Upstream-Status: Submitted [https://github.com/qualcomm-linux/kgsl/pull/9]
+---
+ kgsl_gmu_core.h | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/kgsl_gmu_core.h b/kgsl_gmu_core.h
+index c18e73c416be..d6f226905b2a 100644
+--- a/kgsl_gmu_core.h
++++ b/kgsl_gmu_core.h
+@@ -526,12 +526,12 @@ void gmu_core_trace_header_init(struct kgsl_gmu_trace *trace);
+ void gmu_core_reset_trace_header(struct kgsl_gmu_trace *trace);
+ 
+ #if (KERNEL_VERSION(6, 13, 0) <= LINUX_VERSION_CODE)
+-static struct iommu_domain *gmu_core_iommu_domain_alloc(struct device *dev)
++static inline struct iommu_domain *gmu_core_iommu_domain_alloc(struct device *dev)
+ {
+ 	return iommu_paging_domain_alloc(dev);
+ }
+ #else
+-static struct iommu_domain *gmu_core_iommu_domain_alloc(struct device *dev)
++static inline struct iommu_domain *gmu_core_iommu_domain_alloc(struct device *dev)
+ {
+ 	return iommu_domain_alloc(&platform_bus_type);
+ }
+-- 
+2.47.2
+

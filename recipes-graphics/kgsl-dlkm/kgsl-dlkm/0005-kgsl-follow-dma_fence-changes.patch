@@ -1,0 +1,155 @@
+From 52dc69206cad123eac76896917be5f13e0cddc2c Mon Sep 17 00:00:00 2001
+From: Dmitry Baryshkov <dmitry.baryshkov@oss.qualcomm.com>
+Date: Tue, 19 Aug 2025 23:07:56 +0300
+Subject: [PATCH 5/8] kgsl: follow dma_fence changes
+
+Linux 6.16 dropped "unused" callbacks from struct dma_fence_ops. Follow
+those changes and do our best to provide fence information.
+
+Signed-off-by: Dmitry Baryshkov <dmitry.baryshkov@oss.qualcomm.com>
+Upstream-Status: Submitted [https://github.com/qualcomm-linux/kgsl/pull/9]
+---
+ adreno_gen7_hwsched_hfi.c |  2 ++
+ adreno_hwsched.c          |  2 ++
+ kgsl_sync.c               | 14 ++++++++++++++
+ kgsl_timeline.c           |  4 ++++
+ 4 files changed, 22 insertions(+)
+
+diff --git a/adreno_gen7_hwsched_hfi.c b/adreno_gen7_hwsched_hfi.c
+index e9767fdc7e73..ec08bd2d0b79 100644
+--- a/adreno_gen7_hwsched_hfi.c
++++ b/adreno_gen7_hwsched_hfi.c
+@@ -806,8 +806,10 @@ static void set_fence_signal_bit(struct adreno_device *adreno_dev,
+ 	u64 flags = ADRENO_HW_FENCE_SW_STATUS_PENDING;
+ 	char value[32] = "unknown";
+ 
++#if (KERNEL_VERSION(6, 16, 0) < LINUX_VERSION_CODE)
+ 	if (fence->ops->timeline_value_str)
+ 		fence->ops->timeline_value_str(fence, value, sizeof(value));
++#endif
+ 
+ 	if (test_bit(DMA_FENCE_FLAG_SIGNALED_BIT, &fence->flags)) {
+ 		dev_err(&gmu->pdev->dev,
+diff --git a/adreno_hwsched.c b/adreno_hwsched.c
+index 5703eb94f7ef..26cbc2c783ca 100644
+--- a/adreno_hwsched.c
++++ b/adreno_hwsched.c
+@@ -1677,8 +1677,10 @@ static void _print_syncobj(struct adreno_device *adreno_dev, struct kgsl_drawobj
+ 			bool signaled = test_bit(DMA_FENCE_FLAG_SIGNALED_BIT, &fences[j]->flags);
+ 			char value[32] = "unknown";
+ 
++#if (KERNEL_VERSION(6, 16, 0) < LINUX_VERSION_CODE)
+ 			if (fences[j]->ops->timeline_value_str)
+ 				fences[j]->ops->timeline_value_str(fences[j], value, sizeof(value));
++#endif
+ 
+ 			dev_err(device->dev,
+ 				"dma fence[%d] signaled:%d kgsl:%d ctx:%llu seqno:%llu value:%s\n",
+diff --git a/kgsl_sync.c b/kgsl_sync.c
+index b1ea70106b0f..3a2eef7a5c7b 100644
+--- a/kgsl_sync.c
++++ b/kgsl_sync.c
+@@ -258,6 +258,7 @@ out:
+ 	return ret;
+ }
+ 
++#if (KERNEL_VERSION(6, 16, 0) < LINUX_VERSION_CODE)
+ static void kgsl_sync_timeline_value_str(struct dma_fence *fence,
+ 					char *str, int size)
+ {
+@@ -308,6 +309,7 @@ static void kgsl_sync_fence_value_str(struct dma_fence *fence,
+ 
+ 	snprintf(str, size, "%u", kfence->timestamp);
+ }
++#endif
+ 
+ static const char *kgsl_sync_fence_driver_name(struct dma_fence *fence)
+ {
+@@ -419,8 +421,10 @@ static const struct dma_fence_ops kgsl_sync_fence_ops = {
+ 	.wait = dma_fence_default_wait,
+ 	.release = kgsl_sync_fence_release,
+ 
++#if (KERNEL_VERSION(6, 16, 0) < LINUX_VERSION_CODE)
+ 	.fence_value_str = kgsl_sync_fence_value_str,
+ 	.timeline_value_str = kgsl_sync_timeline_value_str,
++#endif
+ };
+ 
+ static void kgsl_sync_fence_callback(struct dma_fence *fence,
+@@ -495,12 +499,18 @@ void kgsl_get_fence_info(struct kgsl_drawobj_sync_event *event)
+ 			f->ops->get_driver_name(f),
+ 			f->ops->get_timeline_name(f));
+ 
++#if (KERNEL_VERSION(6, 16, 0) < LINUX_VERSION_CODE)
+ 		if (f->ops->fence_value_str) {
+ 			len += scnprintf(fi->name + len, sizeof(fi->name) - len,
+ 				": ");
+ 			f->ops->fence_value_str(f, fi->name + len,
+ 				sizeof(fi->name) - len);
+ 		}
++#else
++		len += scnprintf(fi->name + len, sizeof(fi->name) - len,
++				 ": %lld / %llu",
++				 f->seqno, f->context);
++#endif
+ 
+ 		kgsl_count_hw_fences(event, f);
+ 	}
+@@ -895,6 +905,7 @@ static const char *kgsl_syncsource_driver_name(struct dma_fence *fence)
+ 	return "kgsl-syncsource-timeline";
+ }
+ 
++#if (KERNEL_VERSION(6, 16, 0) < LINUX_VERSION_CODE)
+ static void kgsl_syncsource_fence_value_str(struct dma_fence *fence,
+ 						char *str, int size)
+ {
+@@ -904,6 +915,7 @@ static void kgsl_syncsource_fence_value_str(struct dma_fence *fence,
+ 	 */
+ 	snprintf(str, size, "%llu", fence->context);
+ }
++#endif
+ 
+ static const struct dma_fence_ops kgsl_syncsource_fence_ops = {
+ 	.get_driver_name = kgsl_syncsource_driver_name,
+@@ -912,6 +924,8 @@ static const struct dma_fence_ops kgsl_syncsource_fence_ops = {
+ 	.wait = dma_fence_default_wait,
+ 	.release = kgsl_syncsource_fence_release,
+ 
++#if (KERNEL_VERSION(6, 16, 0) < LINUX_VERSION_CODE)
+ 	.fence_value_str = kgsl_syncsource_fence_value_str,
++#endif
+ };
+ 
+diff --git a/kgsl_timeline.c b/kgsl_timeline.c
+index ac710af80d7e..a66edc7c83ff 100644
+--- a/kgsl_timeline.c
++++ b/kgsl_timeline.c
+@@ -221,6 +221,7 @@ static const char *timeline_get_timeline_name(struct dma_fence *fence)
+ 	return f->timeline->name;
+ }
+ 
++#if (KERNEL_VERSION(6, 16, 0) < LINUX_VERSION_CODE)
+ static void timeline_get_value_str(struct dma_fence *fence,
+ 		char *str, int size)
+ {
+@@ -228,6 +229,7 @@ static void timeline_get_value_str(struct dma_fence *fence,
+ 
+ 	snprintf(str, size, "%lld", f->timeline->value);
+ }
++#endif
+ 
+ static const struct dma_fence_ops timeline_fence_ops = {
+ 	.get_driver_name = timeline_get_driver_name,
+@@ -235,7 +237,9 @@ static const struct dma_fence_ops timeline_fence_ops = {
+ 	.signaled = timeline_fence_signaled,
+ 	.release = timeline_fence_release,
+ 	.enable_signaling = timeline_fence_enable_signaling,
++#if (KERNEL_VERSION(6, 16, 0) < LINUX_VERSION_CODE)
+ 	.timeline_value_str = timeline_get_value_str,
++#endif
+ 	.use_64bit_seqno = true,
+ };
+ 
+-- 
+2.47.2
+

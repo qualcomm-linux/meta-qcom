@@ -1,0 +1,46 @@
+From 3e2a7fa8072916f567317fcfe9491c91420ff583 Mon Sep 17 00:00:00 2001
+From: Dmitry Baryshkov <dmitry.baryshkov@oss.qualcomm.com>
+Date: Tue, 19 Aug 2025 23:08:58 +0300
+Subject: [PATCH 1/8] kgsl: fix warnings related to missing integer arg
+
+When dev_err() was changed to dev_err_probe(), the error code was moved
+to the proper place, however printing format wasn't updated. Perform
+that task and fix the warning.
+
+Fixes: 76c0c537062b ("kgsl: Add support to use Qualcomm Messaging Protocol")
+Signed-off-by: Dmitry Baryshkov <dmitry.baryshkov@oss.qualcomm.com>
+Upstream-Status: Submitted [https://github.com/qualcomm-linux/kgsl/pull/9]
+---
+ adreno_a6xx_gmu.c | 2 +-
+ adreno_gen7_gmu.c | 2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/adreno_a6xx_gmu.c b/adreno_a6xx_gmu.c
+index 250c058c3404..ac47d649572a 100644
+--- a/adreno_a6xx_gmu.c
++++ b/adreno_a6xx_gmu.c
+@@ -2716,7 +2716,7 @@ static int a6xx_gmu_acd_probe(struct kgsl_device *device,
+ 
+ 	if (ret)
+ 		dev_err_probe(&gmu->pdev->dev, ret,
+-				"AOP messaging init failed: %d\n");
++				"AOP messaging init failed\n");
+ 
+ 	return ret == -EPROBE_DEFER ? ret: 0;
+ }
+diff --git a/adreno_gen7_gmu.c b/adreno_gen7_gmu.c
+index 96cd0db67359..cf96e592d8cb 100644
+--- a/adreno_gen7_gmu.c
++++ b/adreno_gen7_gmu.c
+@@ -2330,7 +2330,7 @@ static int gen7_gmu_acd_probe(struct kgsl_device *device,
+ 
+ 	if (ret)
+ 		dev_err_probe(&gmu->pdev->dev, ret,
+-				"AOP messaging init failed: %d\n");
++				"AOP messaging init failed\n");
+ 
+ 	return ret == -EPROBE_DEFER ? ret: 0;
+ }
+-- 
+2.47.2
+
