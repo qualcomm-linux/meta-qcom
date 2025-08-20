@@ -64,6 +64,7 @@ jobs:
   compile:
     needs: kas-setup
     if: github.repository == 'qualcomm-linux/meta-qcom'
+    runs-on: [self-hosted, qcom-u2404, amd64-ssd]
     outputs:
       url: ${{ steps.upload_artifacts.outputs.url }}
     strategy:
@@ -98,7 +99,6 @@ jobs:
                 type: additional
                 dirname: "+linux-yocto-dev"
                 yamlfile: ":ci/linux-yocto-dev.yml"
-    runs-on: [self-hosted, qcom-u2404, amd64-ssd]
     name: ${{ matrix.machine }}/${{ matrix.distro.name }}${{ matrix.kernel.dirname }}
     steps:
       - uses: actions/checkout@v4
