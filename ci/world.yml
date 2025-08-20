@@ -1,0 +1,13 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/siemens/kas/master/kas/schema-kas.json
+
+header:
+  version: 14
+
+local_conf_header:
+  world_build: |
+    EXCLUDE_FROM_WORLD = "1"
+    EXCLUDE_FROM_WORLD:layer-qcom = "0"
+    #EXCLUDE_FROM_WORLD:layer-qcom-distro = "0"
+
+target:
+  - world
