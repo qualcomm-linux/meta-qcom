@@ -17,4 +17,5 @@ SRC_URI:append:qcom = " \
     file://generic-drivers/0001-Bluetooth-qca-fix-NV-variant-for-one-of-WCN3950-SoCs.patch \
     file://qrb2210-board-dts/0005-arm64-dts-qcom-qcm2290-add-UART3-device.patch \
     file://qrb2210-board-dts/0006-arm64-dts-qcom-qrb2210-rb1-add-Bluetooth-support.patch \
+    file://0001-firmware-qcom-scm-Introduce-CP_SMMU_APERTURE_ID.patch \
 "
