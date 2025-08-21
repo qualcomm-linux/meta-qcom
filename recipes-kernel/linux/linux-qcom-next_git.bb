@@ -43,3 +43,5 @@ do_configure:prepend() {
     # Merge fragment for QCOM value add features
     ${S}/scripts/kconfig/merge_config.sh -m -O ${B} ${B}/.config ${UNPACKDIR}/configs/qcom.cfg
 }
+bbnote("SRC_URI_rishi: %s" % d.getVar('SRC_URI'))
+bbnote("SRCREV_rishi: %s" % d.getVar('SRCREV'))
