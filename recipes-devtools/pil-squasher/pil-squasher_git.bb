@@ -19,6 +19,6 @@ do_install () {
 BBCLASSEXTEND = "native nativesdk"
 python __anonymous() {
     import bb
-    bbnote("SRC_URI_rishi: %s" % d.getVar('SRC_URI'))
-    bbnote("SRCREV_rishi: %s" % d.getVar('SRCREV'))
+    bb.note("SRC_URI_rishi: %s" % d.getVar('SRC_URI'))
+    bb.note("SRCREV_rishi: %s" % d.getVar('SRCREV'))
 }
