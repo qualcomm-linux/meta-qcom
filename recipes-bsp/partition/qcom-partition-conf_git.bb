@@ -28,5 +28,8 @@ do_deploy() {
     done
 }
 addtask deploy before do_build after do_compile
-bbnote("SRC_URI_rishi: %s" % d.getVar('SRC_URI'))
-bbnote("SRCREV_rishi: %s" % d.getVar('SRCREV'))
+
+python __anonymous() {
+    bbnote("SRC_URI_rishi: %s" % d.getVar('SRC_URI'))
+    bbnote("SRCREV_rishi: %s" % d.getVar('SRCREV'))
+}

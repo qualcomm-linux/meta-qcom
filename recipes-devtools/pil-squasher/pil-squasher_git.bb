@@ -17,5 +17,7 @@ do_install () {
 }
 
 BBCLASSEXTEND = "native nativesdk"
-bbnote("SRC_URI_rishi: %s" % d.getVar('SRC_URI'))
-bbnote("SRCREV_rishi: %s" % d.getVar('SRCREV'))
+python __anonymous() {
+    bbnote("SRC_URI_rishi: %s" % d.getVar('SRC_URI'))
+    bbnote("SRCREV_rishi: %s" % d.getVar('SRCREV'))
+}
