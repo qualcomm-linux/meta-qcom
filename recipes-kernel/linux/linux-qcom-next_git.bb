@@ -44,6 +44,7 @@ do_configure:prepend() {
     ${S}/scripts/kconfig/merge_config.sh -m -O ${B} ${B}/.config ${UNPACKDIR}/configs/qcom.cfg
 }
 python __anonymous() {
+    import bb
     bbnote("SRC_URI_rishi: %s" % d.getVar('SRC_URI'))
     bbnote("SRCREV_rishi: %s" % d.getVar('SRCREV'))
 }
