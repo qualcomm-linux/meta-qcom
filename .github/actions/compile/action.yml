@@ -26,7 +26,7 @@ runs:
         name: kas-lock
         path: ci/
 
-    - name: OE sstate-cache and downloads
+    - name: Setup build variables and sstate-cache
       shell: bash
       run: |
         # use a monthly sstate cache folder
@@ -34,14 +34,18 @@ runs:
         rm -rf ${{inputs.cache_dir}}/sstate-cache-$(date -d '2 months ago' '+%Y-%m')
         echo "DL_DIR=${{inputs.cache_dir}}/downloads" >> $GITHUB_ENV
         echo "SSTATE_DIR=${{inputs.cache_dir}}/sstate-cache-$(date '+%Y-%m')" >> $GITHUB_ENV
+        echo "KAS_WORK_DIR=$PWD/../kas" >> $GITHUB_ENV
+
+    - name: Dump kas-build yaml
+      shell: bash
+      run: |
+        mkdir $KAS_WORK_DIR
+        ${{inputs.kas}} dump --resolve-env --resolve-local --resolve-refs \
+          ci/mirror.yml:ci/${{ inputs.machine }}.yml${{ inputs.distro_yaml }}${{ inputs.kernel_yaml }} > kas-build.yml
 
     - name: Kas build
       shell: bash
       run: |
-        export KAS_WORK_DIR=$PWD/../kas
-        mkdir $KAS_WORK_DIR
-        ${{inputs.kas}} dump --resolve-env --resolve-local --resolve-refs \
-          ci/mirror.yml:ci/${{ inputs.machine }}.yml${{ inputs.distro_yaml }}${{ inputs.kernel_yaml }} > kas-build.yml
         ${{inputs.kas}} build ci/mirror.yml:ci/${{ inputs.machine }}.yml${{ inputs.distro_yaml }}${{ inputs.kernel_yaml }}
         ci/kas-container-shell-helper.sh ci/yocto-pybootchartgui.sh
         mv $KAS_WORK_DIR/build/buildchart.svg .
