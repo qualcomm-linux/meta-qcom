@@ -1,0 +1,129 @@
+From c28c591294f19adf3701f583c26687d54ca48cd5 Mon Sep 17 00:00:00 2001
+From: Dmitry Baryshkov <dmitry.baryshkov@oss.qualcomm.com>
+Date: Tue, 19 Aug 2025 23:06:43 +0300
+Subject: [PATCH 4/8] kgsl: follow from_timer -> timer_container_of rename
+
+Linux 6.16 renamed the from_timer macro to timer_container_of. Use new
+macro name and provide compatibility name for older kernels.
+
+Signed-off-by: Dmitry Baryshkov <dmitry.baryshkov@oss.qualcomm.com>
+Upstream-Status: Submitted [https://github.com/qualcomm-linux/kgsl/pull/9]
+---
+ adreno_a3xx.c             | 2 +-
+ adreno_dispatch.c         | 2 +-
+ adreno_gen7_hwsched_hfi.c | 2 +-
+ adreno_ringbuffer.c       | 2 +-
+ kgsl.c                    | 2 +-
+ kgsl.h                    | 5 +++++
+ kgsl_drawobj.c            | 2 +-
+ kgsl_pwrctrl.c            | 2 +-
+ 8 files changed, 12 insertions(+), 7 deletions(-)
+
+diff --git a/adreno_a3xx.c b/adreno_a3xx.c
+index fc9c6ab64428..766f4a91f851 100644
+--- a/adreno_a3xx.c
++++ b/adreno_a3xx.c
+@@ -764,7 +764,7 @@ static int a3xx_soft_fault_detect_read_compare(struct adreno_device *adreno_dev)
+  */
+ static void a3xx_soft_fault_timer(struct timer_list *t)
+ {
+-	struct adreno_dispatcher *dispatcher = from_timer(dispatcher,
++	struct adreno_dispatcher *dispatcher = timer_container_of(dispatcher,
+ 							t, fault_timer);
+ 	struct adreno_device *adreno_dev = container_of(dispatcher,
+ 					struct adreno_device, dispatcher);
+diff --git a/adreno_dispatch.c b/adreno_dispatch.c
+index 48d2961b5279..a5dc1231cd0b 100644
+--- a/adreno_dispatch.c
++++ b/adreno_dispatch.c
+@@ -2458,7 +2458,7 @@ void adreno_dispatcher_fault(struct adreno_device *adreno_dev,
+  */
+ static void adreno_dispatcher_timer(struct timer_list *t)
+ {
+-	struct adreno_dispatcher *dispatcher = from_timer(dispatcher, t, timer);
++	struct adreno_dispatcher *dispatcher = timer_container_of(dispatcher, t, timer);
+ 	struct adreno_device *adreno_dev = container_of(dispatcher,
+ 					struct adreno_device, dispatcher);
+ 
+diff --git a/adreno_gen7_hwsched_hfi.c b/adreno_gen7_hwsched_hfi.c
+index d8329f34e3cf..e9767fdc7e73 100644
+--- a/adreno_gen7_hwsched_hfi.c
++++ b/adreno_gen7_hwsched_hfi.c
+@@ -2709,7 +2709,7 @@ static void gen7_hwsched_hw_fence_timeout(struct work_struct *work)
+ 
+ static void gen7_hwsched_hw_fence_timer(struct timer_list *t)
+ {
+-	struct gen7_hwsched_hfi *hfi = from_timer(hfi, t, hw_fence_timer);
++	struct gen7_hwsched_hfi *hfi = timer_container_of(hfi, t, hw_fence_timer);
+ 
+ 	kgsl_schedule_work(&hfi->hw_fence_ws);
+ }
+diff --git a/adreno_ringbuffer.c b/adreno_ringbuffer.c
+index 3d8af5a0863c..6977bb17668b 100644
+--- a/adreno_ringbuffer.c
++++ b/adreno_ringbuffer.c
+@@ -156,7 +156,7 @@ int adreno_ringbuffer_setup(struct adreno_device *adreno_dev,
+ 
+ void adreno_preemption_timer(struct timer_list *t)
+ {
+-	struct adreno_preemption *preempt = from_timer(preempt, t, timer);
++	struct adreno_preemption *preempt = timer_container_of(preempt, t, timer);
+ 	struct adreno_device *adreno_dev = container_of(preempt,
+ 						struct adreno_device, preempt);
+ 
+diff --git a/kgsl.c b/kgsl.c
+index d83b2fb66074..348712d110dd 100644
+--- a/kgsl.c
++++ b/kgsl.c
+@@ -1105,7 +1105,7 @@ static void _log_gpu_work_events(struct work_struct *work)
+ 
+ static void kgsl_work_period_timer(struct timer_list *t)
+ {
+-	struct kgsl_device *device = from_timer(device, t, work_period_timer);
++	struct kgsl_device *device = timer_container_of(device, t, work_period_timer);
+ 
+ 	queue_work(kgsl_driver.lockless_workqueue, &device->work_period_ws);
+ }
+diff --git a/kgsl.h b/kgsl.h
+index d64b5032c3f9..28087ff64a10 100644
+--- a/kgsl.h
++++ b/kgsl.h
+@@ -700,4 +700,9 @@ static inline bool kgsl_addr_range_overlap(uint64_t gpuaddr1,
+  */
+ void kgsl_work_period_update(struct kgsl_device *device,
+ 			struct gpu_work_period *period, u64 active);
++
++#if (KERNEL_VERSION(6, 16, 0) > LINUX_VERSION_CODE)
++#define timer_container_of(var, timer, field) from_timer(var, timer, field)
++#endif
++
+ #endif /* __KGSL_H */
+diff --git a/kgsl_drawobj.c b/kgsl_drawobj.c
+index 0f73120f9041..78ec4c94e1da 100644
+--- a/kgsl_drawobj.c
++++ b/kgsl_drawobj.c
+@@ -145,7 +145,7 @@ void kgsl_dump_syncpoints(struct kgsl_device *device,
+ static void syncobj_timer(struct timer_list *t)
+ {
+ 	struct kgsl_device *device;
+-	struct kgsl_drawobj_sync *syncobj = from_timer(syncobj, t, timer);
++	struct kgsl_drawobj_sync *syncobj = timer_container_of(syncobj, t, timer);
+ 	struct kgsl_drawobj *drawobj;
+ 	struct kgsl_drawobj_sync_event *event;
+ 	unsigned int i;
+diff --git a/kgsl_pwrctrl.c b/kgsl_pwrctrl.c
+index 24e8b43e8fd6..a476121deb04 100644
+--- a/kgsl_pwrctrl.c
++++ b/kgsl_pwrctrl.c
+@@ -1959,7 +1959,7 @@ done:
+ 
+ void kgsl_timer(struct timer_list *t)
+ {
+-	struct kgsl_device *device = from_timer(device, t, idle_timer);
++	struct kgsl_device *device = timer_container_of(device, t, idle_timer);
+ 
+ 	if (device->requested_state != KGSL_STATE_SUSPEND) {
+ 		kgsl_pwrctrl_request_state(device, KGSL_STATE_SLUMBER);
+-- 
+2.47.2
+
