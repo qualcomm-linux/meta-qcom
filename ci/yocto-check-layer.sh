@@ -27,6 +27,12 @@ BUILDDIR="$(mktemp -p $WORK_DIR -d -t build-yocto-check-layer-XXXX)"
 source $WORK_DIR/oe-core/oe-init-build-env $BUILDDIR
 git -c advice.detachedHead=false clone --quiet --shared $REPO_DIR meta-qcom
 
+# It is not possible to change the default configuration used by the yocto-check-layer-wrapper,
+# which is what is used in the Autobuilder. So we need to use the same DISTRO to be compliant
+# and get the same results
+bitbake-layers --quiet add-layer $WORK_DIR/meta-yocto/meta-poky
+echo 'DISTRO = "poky"' >> conf/local.conf
+
 # Yocto Project layer checking tool
 CMD="yocto-check-layer"
 # Layer to check
