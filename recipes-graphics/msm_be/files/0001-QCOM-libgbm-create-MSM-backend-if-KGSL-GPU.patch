@@ -1,0 +1,59 @@
+From 90a89ff1811744c98d523717176bc772ac7f959a Mon Sep 17 00:00:00 2001
+From: Devanshi Bansal <quic_devanshi@quicinc.com>
+Date: Tue, 12 Aug 2025 01:14:11 +0530
+Subject: [PATCH] QCOM: libgbm: create MSM backend if KGSL GPU
+
+Add support for the MSM backend in libgbm to enable compatibility with
+Qualcomm Adreno GPUs using the KGSL driver. This change allows libgbm
+to detect and utilize the MSM backend when a KGSL GPU is present,
+enabling vendor-specific graphics features on Qualcomm platforms.
+
+This patch is specific to Qualcomm platforms and is not present in
+upstream libgbm.
+
+Upstream-Status: Inappropriate [QCOM specific]
+Signed-off-by: Devanshi Bansal <devanshi@qti.qualcomm.com>
+---
+ meson.build   | 9 +++++++--
+ src/gbm_msm.c | 5 +++++
+ 2 files changed, 12 insertions(+), 2 deletions(-)
+
+diff --git a/meson.build b/meson.build
+index 9c7ec27..4be1a4f 100644
+--- a/meson.build
++++ b/meson.build
+@@ -17,8 +17,13 @@ ext_includes = include_directories('external')
+ gbm = dependency('gbm', version : ['>=21.2'])
+ dep_libxml2 = dependency('libxml-2.0')
+ 
+-arch = run_command('dpkg-architecture', '-qDEB_HOST_MULTIARCH').stdout().strip()
+-libdir = '/usr/lib' + (arch != '' ? '/' + arch : '')
++dpkg_arch = find_program('dpkg-architecture', required: false)
++if dpkg_arch.found()
++  arch = run_command(dpkg_arch, '-qDEB_HOST_MULTIARCH').stdout().strip()
++  libdir = '/usr/lib' + (arch != '' ? '/' + arch : '')
++else
++  libdir = '/usr/lib'
++endif
+ 
+ c_args = ['-DLIBDIR="' + libdir + '"']
+ subdir('src')
+diff --git a/src/gbm_msm.c b/src/gbm_msm.c
+index f7e4bae..cd05fd3 100644
+--- a/src/gbm_msm.c
++++ b/src/gbm_msm.c
+@@ -719,6 +719,11 @@ gbm_msm_surface_create(struct gbm_device *gbm,
+ static struct gbm_device *
+ msm_device_create(int fd, uint32_t gbm_backend_version)
+ {
++   const char *gpu_path = "/sys/class/kgsl/kgsl-3d0/";
++   if (access(gpu_path, F_OK) != 0) {
++      return NULL;
++   }
++
+    struct gbm_msm_device *msm;
+ 
+    assert(gbm_core_->v0.core_version == GBM_BACKEND_ABI_VERSION);
+-- 
+2.34.1
+
