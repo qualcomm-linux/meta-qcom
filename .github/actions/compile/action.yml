@@ -1,0 +1,87 @@
+name: Run kas for a specific build configuration
+inputs:
+  machine:
+    required: true
+  distro_yaml:
+    required: true
+  distro_name:
+    required: true
+  kernel_yaml:
+    required: true
+  kernel_dirname:
+    required: true
+  cache_dir:
+    required: true
+  kas:
+    required: true
+outputs:
+  url:
+    description: Location of the published binaries
+    value: ${{ steps.upload_artifacts.outputs.url }}
+runs:
+  using: "composite"
+  steps:
+    - uses: actions/download-artifact@v4
+      with:
+        name: kas-lock
+        path: ci/
+
+    - name: OE sstate-cache and downloads
+      shell: bash
+      run: |
+        # use a monthly sstate cache folder
+        # keep current and last month to allow smooth end of month transition
+        rm -rf ${{inputs.cache_dir}}/sstate-cache-$(date -d '2 months ago' '+%Y-%m')
+        echo "DL_DIR=${{inputs.cache_dir}}/downloads" >> $GITHUB_ENV
+        echo "SSTATE_DIR=${{inputs.cache_dir}}/sstate-cache-$(date '+%Y-%m')" >> $GITHUB_ENV
+
+    - name: Kas build
+      shell: bash
+      run: |
+        export KAS_WORK_DIR=$PWD/../kas
+        mkdir $KAS_WORK_DIR
+        ${{inputs.kas}} dump --resolve-env --resolve-local --resolve-refs \
+          ci/mirror.yml:ci/${{ inputs.machine }}.yml${{ inputs.distro_yaml }}${{ inputs.kernel_yaml }} > kas-build.yml
+        ${{inputs.kas}} build ci/mirror.yml:ci/${{ inputs.machine }}.yml${{ inputs.distro_yaml }}${{ inputs.kernel_yaml }}
+        ci/kas-container-shell-helper.sh ci/yocto-pybootchartgui.sh
+        mv $KAS_WORK_DIR/build/buildchart.svg .
+
+        if [ "${{ inputs.machine }}" = "qcom-armv8a" ]; then
+          ${{inputs.kas}} build ci/mirror.yml:ci/${{ inputs.machine }}.yml${{ inputs.distro_yaml }}${{ inputs.kernel_yaml }}:ci/initramfs-test.yml
+        fi
+
+    - uses: actions/upload-artifact@v4
+      with:
+        name: buildchart-${{ inputs.distro_name }}${{ inputs.kernel_dirname }}-${{ inputs.machine }}
+        path: buildchart.svg
+
+    - uses: actions/upload-artifact@v4
+      with:
+        name: kas-build-${{ inputs.distro_name }}${{ inputs.kernel_dirname }}-${{ inputs.machine }}
+        path: kas-build.yml
+
+    - name: Stage build artifacts for publishing
+      shell: bash
+      run: |
+        # The upload-private-artifact-action runs from a container that
+        # expects file to be relative to our PWD. deploy_dir is outside
+        # that, so we move things around:
+        deploy_dir=../kas/build/tmp/deploy/images/${{inputs.machine}}
+        uploads_dir=./uploads/${{ inputs.distro_name }}${{ inputs.kernel_dirname }}/${{ inputs.machine }}
+        mkdir -p $uploads_dir
+        find $deploy_dir/ -maxdepth 1 -type f -exec cp {} $uploads_dir/ \;
+        find $deploy_dir/ -maxdepth 1 -type l \( -name boot-*.img -o -name *.rootfs.ext4.gz -o -name *.rootfs.qcomflash.tar.gz \) -exec cp -d {} $uploads_dir/ \;
+        cp buildchart.svg kas-build.yml $uploads_dir/
+
+    - name: Upload private artifacts
+      uses: qualcomm-linux/upload-private-artifact-action@v1
+      id: upload_artifacts
+      with:
+        path: ./uploads
+
+    - name: Upload artifacts to S3 bucket
+      uses: qualcomm-linux/upload-private-artifact-action@aws-v1
+      with:
+        path: ./uploads
+        destination: ${{ github.repository_owner }}/${{ github.event.repository.name }}/${{ github.run_id }}-${{ github.run_attempt }}/
+        s3_bucket: qcom-prd-gh-artifacts
