@@ -35,6 +35,7 @@ RRECOMMENDS:${PN}-board-generic += " \
 # This packagegroup lists 'generic' qcom modules that are shared between
 # the SoCs we support
 RRECOMMENDS:${PN}-qcom-generic += " \
+    graphicsdlkm \
     kernel-module-fastrpc \
     kernel-module-gpi \
     kernel-module-i2c-qcom-geni \
