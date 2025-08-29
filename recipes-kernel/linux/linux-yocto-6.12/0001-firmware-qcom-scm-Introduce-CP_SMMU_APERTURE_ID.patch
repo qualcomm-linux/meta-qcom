@@ -1,0 +1,91 @@
+From 1af75b2ad08bd5977c51c2d0fc11741a4c0a48d9 Mon Sep 17 00:00:00 2001
+From: Bjorn Andersson <bjorn.andersson@oss.qualcomm.com>
+Date: Sun, 10 Nov 2024 09:33:40 -0800
+Subject: [PATCH] firmware: qcom: scm: Introduce CP_SMMU_APERTURE_ID
+
+The QCOM_SCM_SVC_MP service provides QCOM_SCM_MP_CP_SMMU_APERTURE_ID,
+which is used to trigger the mapping of register banks into the SMMU
+context for per-processes page tables to function (in case this isn't
+statically setup by firmware).
+
+This is necessary on e.g. QCS6490 Rb3Gen2, in order to avoid "CP | AHB
+bus error"-errors from the GPU.
+
+Introduce a function to allow the msm driver to invoke this call.
+
+Signed-off-by: Bjorn Andersson <bjorn.andersson@oss.qualcomm.com>
+Reviewed-by: Rob Clark <robdclark@gmail.com>
+Link: https://lore.kernel.org/r/20241110-adreno-smmu-aparture-v2-1-9b1fb2ee41d4@oss.qualcomm.com
+Signed-off-by: Bjorn Andersson <andersson@kernel.org>
+Upstream-Status: Backport [https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/commit/?h=v6.17-rc2&id=1af75b2ad08bd5977c51c2d0fc11741a4c0a48d9]
+---
+ drivers/firmware/qcom/qcom_scm.c       | 26 ++++++++++++++++++++++++++
+ drivers/firmware/qcom/qcom_scm.h       |  1 +
+ include/linux/firmware/qcom/qcom_scm.h |  2 ++
+ 3 files changed, 29 insertions(+)
+
+diff --git a/drivers/firmware/qcom/qcom_scm.c b/drivers/firmware/qcom/qcom_scm.c
+index bdb42eb2e1e8..596a8acf0899 100644
+--- a/drivers/firmware/qcom/qcom_scm.c
++++ b/drivers/firmware/qcom/qcom_scm.c
+@@ -903,6 +903,32 @@ int qcom_scm_restore_sec_cfg(u32 device_id, u32 spare)
+ }
+ EXPORT_SYMBOL_GPL(qcom_scm_restore_sec_cfg);
+ 
++#define QCOM_SCM_CP_APERTURE_CONTEXT_MASK	GENMASK(7, 0)
++
++bool qcom_scm_set_gpu_smmu_aperture_is_available(void)
++{
++	return __qcom_scm_is_call_available(__scm->dev, QCOM_SCM_SVC_MP,
++					    QCOM_SCM_MP_CP_SMMU_APERTURE_ID);
++}
++EXPORT_SYMBOL_GPL(qcom_scm_set_gpu_smmu_aperture_is_available);
++
++int qcom_scm_set_gpu_smmu_aperture(unsigned int context_bank)
++{
++	struct qcom_scm_desc desc = {
++		.svc = QCOM_SCM_SVC_MP,
++		.cmd = QCOM_SCM_MP_CP_SMMU_APERTURE_ID,
++		.arginfo = QCOM_SCM_ARGS(4),
++		.args[0] = 0xffff0000 | FIELD_PREP(QCOM_SCM_CP_APERTURE_CONTEXT_MASK, context_bank),
++		.args[1] = 0xffffffff,
++		.args[2] = 0xffffffff,
++		.args[3] = 0xffffffff,
++		.owner = ARM_SMCCC_OWNER_SIP
++	};
++
++	return qcom_scm_call(__scm->dev, &desc, NULL);
++}
++EXPORT_SYMBOL_GPL(qcom_scm_set_gpu_smmu_aperture);
++
+ int qcom_scm_iommu_secure_ptbl_size(u32 spare, size_t *size)
+ {
+ 	struct qcom_scm_desc desc = {
+diff --git a/drivers/firmware/qcom/qcom_scm.h b/drivers/firmware/qcom/qcom_scm.h
+index 685b8f59e7a6..e36b2f67607f 100644
+--- a/drivers/firmware/qcom/qcom_scm.h
++++ b/drivers/firmware/qcom/qcom_scm.h
+@@ -116,6 +116,7 @@ struct qcom_tzmem_pool *qcom_scm_get_tzmem_pool(void);
+ #define QCOM_SCM_MP_IOMMU_SET_CP_POOL_SIZE	0x05
+ #define QCOM_SCM_MP_VIDEO_VAR			0x08
+ #define QCOM_SCM_MP_ASSIGN			0x16
++#define QCOM_SCM_MP_CP_SMMU_APERTURE_ID		0x1b
+ #define QCOM_SCM_MP_SHM_BRIDGE_ENABLE		0x1c
+ #define QCOM_SCM_MP_SHM_BRIDGE_DELETE		0x1d
+ #define QCOM_SCM_MP_SHM_BRIDGE_CREATE		0x1e
+diff --git a/include/linux/firmware/qcom/qcom_scm.h b/include/linux/firmware/qcom/qcom_scm.h
+index 9f14976399ab..4621aec0328c 100644
+--- a/include/linux/firmware/qcom/qcom_scm.h
++++ b/include/linux/firmware/qcom/qcom_scm.h
+@@ -85,6 +85,8 @@ int qcom_scm_io_writel(phys_addr_t addr, unsigned int val);
+ 
+ bool qcom_scm_restore_sec_cfg_available(void);
+ int qcom_scm_restore_sec_cfg(u32 device_id, u32 spare);
++int qcom_scm_set_gpu_smmu_aperture(unsigned int context_bank);
++bool qcom_scm_set_gpu_smmu_aperture_is_available(void);
+ int qcom_scm_iommu_secure_ptbl_size(u32 spare, size_t *size);
+ int qcom_scm_iommu_secure_ptbl_init(u64 addr, u32 size, u32 spare);
+ int qcom_scm_iommu_set_cp_pool_size(u32 spare, u32 size);
+-- 
+2.47.2
+
