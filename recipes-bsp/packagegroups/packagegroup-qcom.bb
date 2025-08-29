@@ -17,4 +17,5 @@ RDEPENDS:${PN}-boot-essential = " \
 
 RDEPENDS:${PN}-boot-additional = " \
     fastrpc \
+    fastrpc-tests \
 "
