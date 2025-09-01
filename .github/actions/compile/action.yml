@@ -67,10 +67,14 @@ runs:
         # expects file to be relative to our PWD. deploy_dir is outside
         # that, so we move things around:
         deploy_dir=../kas/build/tmp/deploy/images/${{inputs.machine}}
+        ipk_dir=../kas/build/tmp/deploy/ipk
         uploads_dir=./uploads/${{ inputs.distro_name }}${{ inputs.kernel_dirname }}/${{ inputs.machine }}
+        uploads_ipk_dir=$uploads_dir/ipk
         mkdir -p $uploads_dir
+        mkdir -p $uploads_ipk_dir
         find $deploy_dir/ -maxdepth 1 -type f -exec cp {} $uploads_dir/ \;
         find $deploy_dir/ -maxdepth 1 -type l \( -name boot-*.img -o -name *.rootfs.ext4.gz -o -name *.rootfs.qcomflash.tar.gz \) -exec cp -d {} $uploads_dir/ \;
+        find $ipk_dir -maxdepth 2 -type f -iname "*opencv*.ipk" -exec cp -v {} $uploads_ipk_dir/ \;
         cp buildchart.svg kas-build.yml $uploads_dir/
 
     - name: Upload private artifacts
