@@ -2,6 +2,9 @@ require recipes-test/images/initramfs-tiny-image.bb
 
 DESCRIPTION = "Small ramdisk image for running tests (bootrr, etc)"
 
+IMAGE_FEATURES += "enable-adbd"
+inherit image-adbd
+
 PACKAGE_INSTALL += " \
     alsa-utils-alsaucm \
     alsa-utils-amixer \
@@ -37,8 +40,6 @@ PACKAGE_INSTALL += " \
 # on. This can be handled by .bbappends, but then image recipes including this
 # one would not get all these tools. So simulate dynamic bbappend here.
 PACKAGE_INSTALL_openembedded-layer += " \
-    android-tools-adbd \
-    android-tools-adbd-cmdline \
     cpufrequtils \
     cryptsetup \
     devmem2 \
