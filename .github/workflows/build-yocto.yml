@@ -34,7 +34,7 @@ jobs:
 
       - name: Run kas lock
         run: |
-          ${KAS_CONTAINER} lock --update ci/base.yml:ci/qcom-distro.yml
+          ${KAS_CONTAINER} lock --update ci/base.yml:ci/qcom-distro.yml:ci/poky.yml
 
       - uses: actions/upload-artifact@v4
         with:
@@ -53,16 +53,38 @@ jobs:
           name: kas-lock
           path: ci/
 
-      - name: Run yocto-check-layer
-        run: |
-          ci/kas-container-shell-helper.sh ci/yocto-check-layer.sh
-
       - name: Run Yocto patchreview
         run: |
           ci/kas-container-shell-helper.sh ci/yocto-patchreview.sh
 
+  yocto-run-check-layer:
+    needs: kas-setup
+    if: github.repository == 'qualcomm-linux/meta-qcom'
+    runs-on: [self-hosted, qcom-u2404, amd64-ssd]
+    strategy:
+      fail-fast: true
+      matrix:
+        distro:
+          - name: oe-core
+            yamlfile: "ci/base.yml"
+          - name: poky
+            yamlfile: 'ci/base.yml:ci/poky.yml'
+    name: yocto-run-check-layer-${{ matrix.distro.name }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: kas-lock
+          path: ci/
+
+      - name: Run yocto-check-layer ${{ matrix.distro.name }}
+        run: |
+          export KAS_YML="${{ matrix.distro.yamlfile }}"
+          ci/kas-container-shell-helper.sh ci/yocto-check-layer.sh
+
   compile_warm_up:
-    needs: yocto-run-checks
+    needs: [yocto-run-checks, yocto-run-check-layer]
     if: github.repository == 'qualcomm-linux/meta-qcom'
     runs-on: [self-hosted, qcom-u2404, amd64-ssd]
     strategy:
