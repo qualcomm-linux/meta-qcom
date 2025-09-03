@@ -53,13 +53,41 @@ jobs:
           name: kas-lock
           path: ci/
 
-      - name: Run yocto-check-layer
-        run: |
-          ci/kas-container-shell-helper.sh ci/yocto-check-layer.sh
-
       - name: Run Yocto patchreview
         run: |
           ci/kas-container-shell-helper.sh ci/yocto-patchreview.sh
+
+  yocto-run-check-layer-nodistro:
+    needs: kas-setup
+    if: github.repository == 'qualcomm-linux/meta-qcom'
+    runs-on: [self-hosted, qcom-u2404, amd64-ssd]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: kas-lock
+          path: ci/
+
+      - name: Run yocto-check-layer nodistro
+        run: |
+          ci/kas-container-shell-helper.sh ci/yocto-check-layer.sh
+
+  yocto-run-check-layer-poky:
+    needs: kas-setup
+    if: github.repository == 'qualcomm-linux/meta-qcom'
+    runs-on: [self-hosted, qcom-u2404, amd64-ssd]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: kas-lock
+          path: ci/
+
+      - name: Run yocto-check-layer poky
+        run: |
+          KAS_YML="ci/base.yml:ci/poky.yml" ci/kas-container-shell-helper.sh ci/yocto-check-layer.sh
 
   compile_warm_up:
     needs: kas-setup
