@@ -39,6 +39,7 @@ for the implementation details.
   compatibility with the most recent Yocto Project release.
 - **all stable branch up until styhead:** Legacy branches maintained by Linaro,
   prior to the migration to [Qualcomm-linux](https://github.com/qualcomm-linux).
+- **next:** For testing workflow changes before being merged to master.
 
 ## Machine Support
 
