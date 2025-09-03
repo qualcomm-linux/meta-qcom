@@ -45,6 +45,7 @@ for the implementation details.
   Qualcomm Linux 2.x.
 - **all stable branches up until styhead:** Legacy branches maintained by Linaro,
   prior to the migration to [Qualcomm-linux](https://github.com/qualcomm-linux).
+- **next:** For testing workflow changes before being merged to master.
 
 ## Machine Support
 
