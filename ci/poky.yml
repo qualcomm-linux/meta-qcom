@@ -1,0 +1,19 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/siemens/kas/master/kas/schema-kas.json
+
+header:
+  version: 14
+
+repos:
+  oe-core:
+    layers:
+      meta: disabled
+
+  meta-yocto:
+    layers:
+      meta-poky: disabled
+
+  poky:
+    url: https://github.com/yoctoproject/poky
+    layers:
+      meta:
+      meta-poky:
