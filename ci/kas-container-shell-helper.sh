@@ -1,4 +1,4 @@
-#!/bin/sh -e
+#!/bin/bash -e
 # Copyright (c) 2025 Qualcomm Innovation Center, Inc. All rights reserved.
 # SPDX-License-Identifier: MIT
 
