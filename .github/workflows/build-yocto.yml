@@ -14,8 +14,8 @@ env:
 
 jobs:
   kas-setup:
-    if: github.repository == 'qualcomm-linux/meta-qcom'
-    runs-on: [self-hosted, qcom-u2404, amd64-ssd]
+    if: github.repository == 'qualcomm-linux-stg/aws-meta-qcom'
+    runs-on: [self-hosted, qcom-stg-u2404, amd64]
     steps:
       - name: Update kas-container
         run: |
@@ -43,8 +43,8 @@ jobs:
 
   yocto-run-checks:
     needs: kas-setup
-    if: github.repository == 'qualcomm-linux/meta-qcom'
-    runs-on: [self-hosted, qcom-u2404, amd64-ssd]
+    if: github.repository == 'qualcomm-linux-stg/aws-meta-qcom'
+    runs-on: [self-hosted, qcom-stg-u2404, amd64]
     steps:
       - uses: actions/checkout@v4
 
@@ -63,8 +63,8 @@ jobs:
 
   compile_warm_up:
     needs: [kas-setup, yocto-run-checks]
-    if: github.repository == 'qualcomm-linux/meta-qcom'
-    runs-on: [self-hosted, qcom-u2404, amd64-ssd]
+    if: github.repository == 'qualcomm-linux-stg/aws-meta-qcom'
+    runs-on: [self-hosted, qcom-stg-u2404, amd64]
     strategy:
       fail-fast: true
       matrix:
@@ -99,8 +99,8 @@ jobs:
 
   compile:
     needs: compile_warm_up
-    if: github.repository == 'qualcomm-linux/meta-qcom'
-    runs-on: [self-hosted, qcom-u2404, amd64-ssd]
+    if: github.repository == 'qualcomm-linux-stg/aws-meta-qcom'
+    runs-on: [self-hosted, qcom-stg-u2404, amd64]
     outputs:
       url: ${{ steps.compile_kas.outputs.url }}
     strategy:
@@ -167,7 +167,7 @@ jobs:
 
   publish_summary:
     needs: compile
-    runs-on: [self-hosted, qcom-u2404, amd64-ssd]
+    runs-on: [self-hosted, qcom-stg-u2404, amd64]
     steps:
       - name: 'Download build URLs'
         uses: actions/download-artifact@v4
@@ -201,5 +201,3 @@ jobs:
           overwrite: true
           name: build_url
           path: build_url
-
-

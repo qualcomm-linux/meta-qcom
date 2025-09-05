@@ -44,14 +44,14 @@ runs:
     - name: Kas qcom world build
       shell: bash
       run: |
-        ${{inputs.kas}} build ci/${{ inputs.machine }}.yml${{ inputs.distro_yaml }}${{ inputs.kernel_yaml }}:ci/world.yml
+        ${{inputs.kas}} --runtime-args "--memory-swap=-1" build ci/${{ inputs.machine }}.yml${{ inputs.distro_yaml }}${{ inputs.kernel_yaml }}:ci/world.yml
         ci/kas-container-shell-helper.sh ci/yocto-pybootchartgui.sh
         mv $KAS_WORK_DIR/build/buildchart.svg buildchart-world.svg
 
     - name: Kas build images
       shell: bash
       run: |
-        ${{inputs.kas}} build ci/${{ inputs.machine }}.yml${{ inputs.distro_yaml }}${{ inputs.kernel_yaml }}
+        ${{inputs.kas}} --runtime-args "--memory-swap=-1" build ci/${{ inputs.machine }}.yml${{ inputs.distro_yaml }}${{ inputs.kernel_yaml }}
         ci/kas-container-shell-helper.sh ci/yocto-pybootchartgui.sh
         mv $KAS_WORK_DIR/build/buildchart.svg .
 
@@ -84,18 +84,18 @@ runs:
         find $deploy_dir/ -maxdepth 1 -type l \( -name boot-*.img -o -name *.rootfs.ext4.gz -o -name *.rootfs.qcomflash.tar.gz \) -exec cp -d {} $uploads_dir/ \;
         cp buildchart.svg kas-build.yml $uploads_dir/
 
-    - name: Upload private artifacts
-      uses: qualcomm-linux/upload-private-artifact-action@v1
-      id: upload_artifacts
-      with:
-        path: ./uploads
+    # - name: Upload private artifacts
+    #   uses: qualcomm-linux/upload-private-artifact-action@v1
+    #   id: upload_artifacts
+    #   with:
+    #     path: ./uploads
 
-    - name: Upload artifacts to S3 bucket
-      uses: qualcomm-linux/upload-private-artifact-action@aws-v1
-      with:
-        path: ./uploads
-        destination: ${{ github.repository_owner }}/${{ github.event.repository.name }}/${{ github.run_id }}-${{ github.run_attempt }}/
-        s3_bucket: qcom-prd-gh-artifacts
+    # - name: Upload artifacts to S3 bucket
+    #   uses: qualcomm-linux/upload-private-artifact-action@aws-v1
+    #   with:
+    #     path: ./uploads
+    #     destination: ${{ github.repository_owner }}/${{ github.event.repository.name }}/${{ github.run_id }}-${{ github.run_attempt }}/
+    #     s3_bucket: qcom-prd-gh-artifacts
 
     - name: "Print output"
       shell: bash
