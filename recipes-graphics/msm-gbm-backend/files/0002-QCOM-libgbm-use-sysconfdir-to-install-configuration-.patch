@@ -1,0 +1,59 @@
+From 65dd79dc8913d7292d133f5a9bbfbf0a6cb4148f Mon Sep 17 00:00:00 2001
+From: Devanshi Bansal <quic_devanshi@quicinc.com>
+Date: Thu, 28 Aug 2025 18:11:06 +0530
+Subject: [PATCH 2/3] QCOM:libgbm: use sysconfdir to install configuration xml.
+
+This change updates the installation path for configuration XML to use sysconfdir.
+Use Meson's get_option('sysconfdir') instead of constructing the directory path
+manually with dpkg-architecture.
+
+Change-Id: Idc59b85cd86dd8f5e68ce3ccb0ce3b6b314a751a
+Signed-off-by: Devanshi Bansal <quic_devanshi@quicinc.com>
+Upstream-Status: Pending
+---
+ meson.build         | 5 ++---
+ src/schema_parser.c | 6 +-----
+ 2 files changed, 3 insertions(+), 8 deletions(-)
+
+diff --git a/meson.build b/meson.build
+index 9c7ec27..c54da91 100644
+--- a/meson.build
++++ b/meson.build
+@@ -17,8 +17,7 @@ ext_includes = include_directories('external')
+ gbm = dependency('gbm', version : ['>=21.2'])
+ dep_libxml2 = dependency('libxml-2.0')
+ 
+-arch = run_command('dpkg-architecture', '-qDEB_HOST_MULTIARCH').stdout().strip()
+-libdir = '/usr/lib' + (arch != '' ? '/' + arch : '')
++sysconfdir = get_option('sysconfdir')
+ 
+-c_args = ['-DLIBDIR="' + libdir + '"']
++c_args = ['-DSYSCONFDIR="' + sysconfdir + '"']
+ subdir('src')
+diff --git a/src/schema_parser.c b/src/schema_parser.c
+index 9e7747f..bf1a8af 100644
+--- a/src/schema_parser.c
++++ b/src/schema_parser.c
+@@ -11,10 +11,6 @@
+ #include "schema_parser.h"
+ #include "gbm_msm_int.h"
+ 
+-#ifndef LIBDIR
+-#define LIBDIR "/usr/lib"  // Default value if LIBDIR is not defined
+-#endif
+-
+ int format_count = 0;
+ struct format_info *formats = NULL;
+ 
+@@ -211,7 +207,7 @@ void init_xml_schema(void)
+ {
+    char filename[256];
+    // @todo: decide the filename to be parsed based on the SoC variant
+-   snprintf(filename, sizeof(filename), "%s/gbm/default_fmt_alignment.xml", LIBDIR);
++   snprintf(filename, sizeof(filename), "%s/gbm/default_fmt_alignment.xml", SYSCONFDIR);
+    formats = parse_xml(filename);
+ }
+ 
+-- 
+2.34.1
+
