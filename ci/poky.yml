@@ -1,0 +1,36 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/siemens/kas/master/kas/schema-kas.json
+
+header:
+  version: 14
+
+# FIXME: until my patch lands in kas
+bblayers_conf_header:
+  FIXME: |
+    # override the default kas BBLAYERS
+    BBLAYERS = " \
+    /repo \
+    /work/poky/meta \
+    /work/poky/meta-poky"
+
+repos:
+  oe-core:
+    layers:
+      meta: disabled
+
+  meta-yocto:
+    layers:
+      meta-poky: disabled
+
+  poky:
+    url: https://github.com/yoctoproject/poky
+    patches:
+      plain:
+        repo: meta-qcom
+        path: 0001-yocto-check-layer-show-the-distro-variant-used.patch
+    layers:
+      meta:
+      meta-poky:
+
+  # FIXME: until my patch lands in kas
+  # Multiple init scripts found (poky vs. oe-core). Resolve ambiguity by removing one of the repos
+  oe-core: null

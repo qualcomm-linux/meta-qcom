@@ -1,0 +1,27 @@
+From c7ec5cf8a7ddd1d0ad1b2f7e9765eba9a8ff3560 Mon Sep 17 00:00:00 2001
+From: Jose Quaresma <jose.quaresma@oss.qualcomm.com>
+Date: Tue, 2 Sep 2025 19:04:50 +0100
+Subject: [PATCH] yocto-check-layer: show the distro used
+
+Upstream-Status: Pending
+
+Signed-off-by: Jose Quaresma <jose.quaresma@oss.qualcomm.com>
+---
+ scripts/yocto-check-layer | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/scripts/yocto-check-layer b/scripts/yocto-check-layer
+index 67cc71950f..5751e139cc 100755
+--- a/scripts/yocto-check-layer
++++ b/scripts/yocto-check-layer
+@@ -35,6 +35,7 @@ logger = scriptutils.logger_create(PROGNAME, stream=sys.stdout)
+ def test_layer(td, layer, test_software_layer_signatures):
+     from checklayer.context import CheckLayerTestContext
+     logger.info("Starting to analyze: %s" % layer['name'])
++    logger.info('Distro: %s' % td['bbvars']["DISTRO"])
+     logger.info("----------------------------------------------------------------------")
+ 
+     tc = CheckLayerTestContext(td=td, logger=logger, layer=layer, test_software_layer_signatures=test_software_layer_signatures)
+-- 
+2.51.0
+
