@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - wrynose
+      - next
 
 permissions:
   checks: write
