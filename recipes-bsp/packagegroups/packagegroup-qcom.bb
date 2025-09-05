@@ -17,6 +17,7 @@ RDEPENDS:${PN}-boot-essential = " \
 
 RDEPENDS:${PN}-boot-additional = " \
     fastrpc \
+    msm-gbm-backend \
 "
 
 # libssc depends on libqmi and protobuf which are part of meta-oe
