@@ -11,6 +11,7 @@ env:
   CACHE_DIR: /efs/qli/meta-qcom
   KAS_REPO_REF_DIR: /efs/qli/meta-qcom/kas-mirrors
   KAS_CONTAINER: /efs/qli/meta-qcom/kas-mirrors/kas-container
+  KAS_IMAGE_VERSION: latest
 
 jobs:
   kas-setup:
@@ -19,8 +20,7 @@ jobs:
     steps:
       - name: Update kas-container
         run: |
-          LATEST=$(git ls-remote --tags --refs --sort="v:refname" https://github.com/siemens/kas | tail -n1 | sed 's/.*\///')
-          wget -qO ${KAS_CONTAINER} https://raw.githubusercontent.com/siemens/kas/refs/tags/$LATEST/kas-container
+          wget -qO ${KAS_CONTAINER} https://raw.githubusercontent.com/siemens/kas/refs/heads/master/kas-container
           chmod +x ${KAS_CONTAINER}
 
       - name: Update kas mirrors
