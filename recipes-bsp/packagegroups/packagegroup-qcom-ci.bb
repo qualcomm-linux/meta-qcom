@@ -18,6 +18,7 @@ RDEPENDS:${PN} = " \
 
 # These packages support only ARMv8 machines, no other builds required.
 RDEPENDS:${PN}:append:aarch64 = " \
+    audioreach-dlkm \
     iris-video-dlkm \
     kgsl-dlkm \
     qcom-fastcv-binaries \
