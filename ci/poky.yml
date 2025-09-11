@@ -14,10 +14,6 @@ repos:
 
   poky:
     url: https://github.com/yoctoproject/poky
-    patches:
-      plain:
-        repo: meta-qcom
-        path: 0001-yocto-check-layer-show-the-distro-variant-used.patch
     layers:
       meta:
       meta-poky:

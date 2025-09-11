@@ -14,10 +14,6 @@ repos:
 
   oe-core:
     url: https://github.com/openembedded/openembedded-core
-    patches:
-      plain:
-        repo: meta-qcom
-        path: 0001-yocto-check-layer-show-the-distro-variant-used.patch
     layers:
       meta:
 
