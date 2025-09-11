@@ -16,6 +16,10 @@ repos:
     url: https://github.com/openembedded/openembedded-core
     layers:
       meta:
+    patches:
+      mesa:
+        repo: meta-qcom
+        path: ci/libglvnd.patch
 
   bitbake:
     url: https://github.com/openembedded/bitbake
