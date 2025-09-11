@@ -1,0 +1,110 @@
+From 2795c0549215aaace165d6a98356923bddc71305 Mon Sep 17 00:00:00 2001
+From: Nicolas Dechesne <nicolas.dechesne@oss.qualcomm.com>
+Date: Thu, 11 Sep 2025 19:10:27 +0200
+Subject: [PATCH] scripts: use /usr/bin/env python3
+
+Using #!/usr/bin/env python3 instead of #!/usr/bin/python3 in the
+shebang line of a script is generally considered better practice for
+portability and flexibility.
+
+* env uses the user's PATH environment variable to locate python3
+* Using env avoids hardcoding the path, making your script more
+  portable.
+* Works well with virtual environments:
+
+Signed-off-by: Nicolas Dechesne <nicolas.dechesne@oss.qualcomm.com>
+Upstream-Status: Submitted [https://github.com/qca/qca-swiss-army-knife/pull/12]
+---
+ tools/scripts/ath10k/ath10k-bdencoder | 2 +-
+ tools/scripts/ath10k/ath10k-fw-repo   | 2 +-
+ tools/scripts/ath10k/ath10k-fwencoder | 2 +-
+ tools/scripts/ath11k/ath11k-fw-repo   | 2 +-
+ tools/scripts/ath11k/ath11k-fwencoder | 2 +-
+ tools/scripts/ath12k/ath12k-fw-repo   | 2 +-
+ tools/scripts/ath12k/ath12k-fwencoder | 2 +-
+ tools/scripts/ath9k/read-powers       | 2 +-
+ 8 files changed, 8 insertions(+), 8 deletions(-)
+
+diff --git a/tools/scripts/ath10k/ath10k-bdencoder b/tools/scripts/ath10k/ath10k-bdencoder
+index 964b2f7..9a57e1f 100755
+--- a/tools/scripts/ath10k/ath10k-bdencoder
++++ b/tools/scripts/ath10k/ath10k-bdencoder
+@@ -1,4 +1,4 @@
+-#!/usr/bin/python3
++#!/usr/bin/env python3
+ #
+ # Copyright (c) 2015 Qualcomm Atheros, Inc.
+ # Copyright (c) 2018, The Linux Foundation. All rights reserved.
+diff --git a/tools/scripts/ath10k/ath10k-fw-repo b/tools/scripts/ath10k/ath10k-fw-repo
+index 8c5c977..e86f916 100755
+--- a/tools/scripts/ath10k/ath10k-fw-repo
++++ b/tools/scripts/ath10k/ath10k-fw-repo
+@@ -1,4 +1,4 @@
+-#!/usr/bin/python3
++#!/usr/bin/env python3
+ #
+ # Copyright (c) 2016 Qualcomm Atheros, Inc.
+ # Copyright (c) 2018, The Linux Foundation. All rights reserved.
+diff --git a/tools/scripts/ath10k/ath10k-fwencoder b/tools/scripts/ath10k/ath10k-fwencoder
+index ceb26b4..7c2f63c 100755
+--- a/tools/scripts/ath10k/ath10k-fwencoder
++++ b/tools/scripts/ath10k/ath10k-fwencoder
+@@ -1,4 +1,4 @@
+-#!/usr/bin/python3
++#!/usr/bin/env python3
+ #
+ # Copyright (c) 2012-2015 Qualcomm Atheros, Inc.
+ #
+diff --git a/tools/scripts/ath11k/ath11k-fw-repo b/tools/scripts/ath11k/ath11k-fw-repo
+index 15c7b9b..0169642 100755
+--- a/tools/scripts/ath11k/ath11k-fw-repo
++++ b/tools/scripts/ath11k/ath11k-fw-repo
+@@ -1,4 +1,4 @@
+-#!/usr/bin/python3
++#!/usr/bin/env python3
+ #
+ # Copyright (c) 2016 Qualcomm Atheros, Inc.
+ # Copyright (c) 2018,2020 The Linux Foundation. All rights reserved.
+diff --git a/tools/scripts/ath11k/ath11k-fwencoder b/tools/scripts/ath11k/ath11k-fwencoder
+index 9889393..cb8b373 100755
+--- a/tools/scripts/ath11k/ath11k-fwencoder
++++ b/tools/scripts/ath11k/ath11k-fwencoder
+@@ -1,4 +1,4 @@
+-#!/usr/bin/python3
++#!/usr/bin/env python3
+ #
+ # Copyright (c) 2012-2015 Qualcomm Atheros, Inc.
+ # Copyright (c) 2022-2023 Qualcomm Innovation Center, Inc. All rights reserved.
+diff --git a/tools/scripts/ath12k/ath12k-fw-repo b/tools/scripts/ath12k/ath12k-fw-repo
+index ac627d8..d6007d1 100755
+--- a/tools/scripts/ath12k/ath12k-fw-repo
++++ b/tools/scripts/ath12k/ath12k-fw-repo
+@@ -1,4 +1,4 @@
+-#!/usr/bin/python3
++#!/usr/bin/env python3
+ #
+ # Copyright (c) 2016 Qualcomm Atheros, Inc.
+ # Copyright (c) 2018,2020 The Linux Foundation. All rights reserved.
+diff --git a/tools/scripts/ath12k/ath12k-fwencoder b/tools/scripts/ath12k/ath12k-fwencoder
+index f9d2955..b512ce1 100755
+--- a/tools/scripts/ath12k/ath12k-fwencoder
++++ b/tools/scripts/ath12k/ath12k-fwencoder
+@@ -1,4 +1,4 @@
+-#!/usr/bin/python3
++#!/usr/bin/env python3
+ #
+ # Copyright (c) 2023 Qualcomm Innovation Center, Inc. All rights reserved
+ # Copyright (c) 2018-2019, The Linux Foundation. All rights reserved.
+diff --git a/tools/scripts/ath9k/read-powers b/tools/scripts/ath9k/read-powers
+index 535747d..db0ed5b 100755
+--- a/tools/scripts/ath9k/read-powers
++++ b/tools/scripts/ath9k/read-powers
+@@ -1,4 +1,4 @@
+-#!/usr/bin/python3
++#!/usr/bin/env python3
+ #
+ # Copyright (c) 2010 Atheros Communications Inc.
+ #
+-- 
+2.34.1
+
