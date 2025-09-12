@@ -1,0 +1,130 @@
+From mboxrd@z Thu Jan  1 00:00:00 1970
+Return-Path: <dmitry.baryshkov@oss.qualcomm.com>
+X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
+	aws-us-west-2-korg-lkml-1.web.codeaurora.org
+Received: from aws-us-west-2-korg-lkml-1.web.codeaurora.org (localhost.localdomain [127.0.0.1])
+	by smtp.lore.kernel.org (Postfix) with ESMTP id CEA6ECA101F
+	for <webhook@archiver.kernel.org>; Wed, 10 Sep 2025 19:17:43 +0000 (UTC)
+Received: from mx0b-0031df01.pphosted.com (mx0b-0031df01.pphosted.com [205.220.180.131])
+ by mx.groups.io with SMTP id smtpd.web11.27772.1757531858225295152
+ for <openembedded-core@lists.openembedded.org>;
+ Wed, 10 Sep 2025 12:17:38 -0700
+Authentication-Results: mx.groups.io;
+ dkim=pass header.i=@qualcomm.com header.s=qcppdkim1 header.b=h8al4blQ;
+ spf=permerror, err=parse error for token &{10 18 %{ir}.%{v}.%{d}.spf.has.pphosted.com}: invalid domain name (domain: oss.qualcomm.com, ip: 205.220.180.131, mailfrom: dmitry.baryshkov@oss.qualcomm.com)
+Received: from pps.filterd (m0279873.ppops.net [127.0.0.1])
+	by mx0a-0031df01.pphosted.com (8.18.1.2/8.18.1.2) with ESMTP id 58ACgTmp029934
+	for <openembedded-core@lists.openembedded.org>; Wed, 10 Sep 2025 19:17:37 GMT
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=qualcomm.com; h=
+	content-transfer-encoding:date:from:message-id:mime-version
+	:subject:to; s=qcppdkim1; bh=gW0+cod69q44txNiXCkWtCOLqsM3gVqK3uI
+	JgQjHS+o=; b=h8al4blQuyIZ9/BW2fejQzzUrr0M90ZWiRIFMPH2K8ZfOD9uzNS
+	atMjBDozP1TforvGmk6ulrnh1l4Suv50V2Ay1QiVVjRrcUMyJN9ihAQpX7wmEmqO
+	P6wDoknTTW6DZ/FIynj5So0KKM7f7M4DCx9o/Fva91iF2m/xie0XjNEMJ8EsTYqn
+	nTnD+SIUO5WIdI2BK/4u5AG0PrtsgreFAKvN195JZN4ELP7IYvAF444KFlt8n2uo
+	io3lJyC1UyyvKw9XGgwxrlYlWZfC2atC3iYwLuZgkqbE0RElzQJcMgPS5VIemPzz
+	MwWBCPVLGE99D9XAPM7ZHEtOe3T5J0XNyKA==
+Received: from mail-qv1-f69.google.com (mail-qv1-f69.google.com [209.85.219.69])
+	by mx0a-0031df01.pphosted.com (PPS) with ESMTPS id 490aapna22-1
+	(version=TLSv1.2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128 verify=NOT)
+	for <openembedded-core@lists.openembedded.org>; Wed, 10 Sep 2025 19:17:37 +0000 (GMT)
+Received: by mail-qv1-f69.google.com with SMTP id 6a1803df08f44-70edbfb260fso151758686d6.1
+        for <openembedded-core@lists.openembedded.org>; Wed, 10 Sep 2025 12:17:37 -0700 (PDT)
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20230601; t=1757531846; x=1758136646;
+        h=content-transfer-encoding:mime-version:message-id:date:subject:to
+         :from:x-gm-message-state:from:to:cc:subject:date:message-id:reply-to;
+        bh=gW0+cod69q44txNiXCkWtCOLqsM3gVqK3uIJgQjHS+o=;
+        b=EaS5aW49gMO93pMFaU8tiWXiAbumsGo5+pz7tGzQVtXaEiiqI6ZBONv2UPZGzvrZiV
+         U48hONYEAeBYuKSr2pVq3HRRr4IUg424vDUNsj2r5yTui1vNOH+TmZb7wX9dHSrYM9ge
+         psHi2Kdzz5YVgV/w8D1MUyu11ZymNIB1wqC6GTamoDDJSXlpWnSoqsHe5Y85mbcArglH
+         vS44pYq0xfGBs1PucIHIPqytSTa/yYuQRxMhXPwWgXg5Ce9+IdtjcMoyUSesnM9Z9CFZ
+         ZdsXXF6KrvWXASC/dzA+pNErCGdtQgM1xmmOc0/763vyccR+VxzVTXtqUm+zM7iuzzdk
+         pjNw==
+X-Gm-Message-State: AOJu0YxQk+wn69q3cJ+qIA3sJmflGD8v+yuw10eANTfDyy2JlwZ69rsm
+	/TZ5J2Qxmup4Cu2b1QB6D4Uqbf/cQVk4OnXoJpnJhHy7g9UA7cntTxTq4/Q+MujnCvBdBigEp6h
+	8jSdq2ZhE8XQrmwkvrWK7RRPT1tPi0rZgxZ6TNOTfR+v/W2VWr2AJjIAUc76Y1z/0qufz0nIJ7b
+	gwX3SEpWXlEWdD6Fs=
+X-Gm-Gg: ASbGncuMoR19QtlLiaai7Maqkt8T7yy9Sw+ktk7gLcfBY+aqzkmVgAtNwV0qhKmaFt7
+	anTwuKjQSyJ1O1jkqpDBKrT1QxbQ+8TP1ruwm9m9ooumyMkJJnuNG1XMpjbIKf/RnMPn6R+Hx2O
+	RjyWufOngQAfoCaGOOGGuio+elfbbyonMT0FF3ECv6e+G+Qq+CAqACXTjvlrThXjimAPPyyesOd
+	//pmU9rdJtk7neZXemYov3QrH18S044TZn36q80hV1thnClx79vrxTzqER89JO0GP0hcXUUVocF
+	BymbCF5QCPBtKjSV9DGRz09vWT71dWGaShWJfQBGORz2RntEe21eqN7k4glzgDETsy/fGOaPTU7
+	I/eB/dbQGYnDJ1EUnGjFP1ZJRQoL0XYEjcGejnMZh/4L+8svs1v7z
+X-Received: by 2002:a05:6214:29ec:b0:72c:3873:2e52 with SMTP id 6a1803df08f44-738fb0ce2dfmr158967476d6.0.1757531846309;
+        Wed, 10 Sep 2025 12:17:26 -0700 (PDT)
+X-Google-Smtp-Source: AGHT+IGX4UUPf1wtwkVolGrxy64ilm6lcLNfI9xw2fcKI9gNj+8CcT8NOsEXKvQBdVJUHaoF1oBDjw==
+X-Received: by 2002:a05:6214:29ec:b0:72c:3873:2e52 with SMTP id 6a1803df08f44-738fb0ce2dfmr158967046d6.0.1757531845637;
+        Wed, 10 Sep 2025 12:17:25 -0700 (PDT)
+Received: from umbar.lan (2001-14ba-a0c3-3a00-264b-feff-fe8b-be8a.rev.dnainternet.fi. [2001:14ba:a0c3:3a00:264b:feff:fe8b:be8a])
+        by smtp.gmail.com with ESMTPSA id 2adb3069b0e04-56dbf1c5094sm36895e87.86.2025.09.10.12.17.24
+        for <openembedded-core@lists.openembedded.org>
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Wed, 10 Sep 2025 12:17:24 -0700 (PDT)
+From: Dmitry Baryshkov <dmitry.baryshkov@oss.qualcomm.com>
+To: openembedded-core@lists.openembedded.org
+Subject: [PATCH] libglvnd: RPROVIDE "standard" package names
+Date: Wed, 10 Sep 2025 22:17:23 +0300
+Message-ID: <20250910191723.1290003-1-dmitry.baryshkov@oss.qualcomm.com>
+X-Mailer: git-send-email 2.47.3
+MIME-Version: 1.0
+Content-Transfer-Encoding: 8bit
+X-Authority-Analysis: v=2.4 cv=eMETjGp1 c=1 sm=1 tr=0 ts=68c1ced1 cx=c_pps
+ a=wEM5vcRIz55oU/E2lInRtA==:117 a=xqWC_Br6kY4A:10 a=yJojWOMRYYMA:10
+ a=EUspDBNiAAAA:8 a=GBAjVQhj50Zce8Up8PkA:9 a=OIgjcC2v60KrkQgK7BGD:22
+X-Proofpoint-GUID: enzBjS1hG9psy9392RrumiIEY1QoD2jI
+X-Proofpoint-ORIG-GUID: enzBjS1hG9psy9392RrumiIEY1QoD2jI
+X-Proofpoint-Spam-Details-Enc: AW1haW4tMjUwOTA2MDAwMCBTYWx0ZWRfXwwh9FhPJSMbs
+ m+4DJ3GoSXGpkcjH7f4oLih/YSI4fUJK4kI9d3hJq2Zc3PMkrFTNYgEl+Mw2RS4rAWtizHsNErs
+ A0vJn/neao1bHNAFKJ9g5aWmPHkklVaqfmwCXa/uf4qLt91dUpfJVbxaesqt4+KrWcczEYBBuQP
+ KAYPJ5mySBZ8JSud2Vs0JLGHQ8pRHvdhs5CDEVn9+eNbvy1ssfKgmXzhQmAkZ+THer89ErB1MVg
+ MhpCQGHG5WWGf/ncqjw0xfxJFormelASKQy4nD6JUx8uh8gzjHht+172ofyJowNb9qbrytG1LyM
+ oiFr4TI9+SQBFM7oKB+Gg4gXL0NsWAcBb8mx0Ktf/K9XUf8bWd/Z6FHPskfHfcjFLlq+OEqS0io
+ rXrW4Uus
+X-Proofpoint-Virus-Version: vendor=baseguard
+ engine=ICAP:2.0.293,Aquarius:18.0.1117,Hydra:6.1.9,FMLib:17.12.80.40
+ definitions=2025-09-10_04,2025-09-10_01,2025-03-28_01
+X-Proofpoint-Spam-Details: rule=outbound_notspam policy=outbound score=0
+ impostorscore=0 priorityscore=1501 malwarescore=0 clxscore=1015 adultscore=0
+ bulkscore=0 phishscore=0 spamscore=0 suspectscore=0 classifier=typeunknown
+ authscore=0 authtc= authcc= route=outbound adjust=0 reason=mlx scancount=1
+ engine=8.19.0-2507300000 definitions=main-2509060000
+List-Id: <openembedded-core.lists.openembedded.org>
+X-Webhook-Received: from li982-79.members.linode.com [45.33.32.79] by
+ aws-us-west-2-korg-lkml-1.web.codeaurora.org with HTTPS for
+ <openembedded-core@lists.openembedded.org>; Wed, 10 Sep 2025 19:17:43 -0000
+X-Groupsio-URL: https://lists.openembedded.org/g/openembedded-core/message/223231
+
+Some packages like cogl-1.0 RDEEPND on the GL / GL ES / EGL packages
+directly. Reuse the package names RPROVIDEd by the non-glvnd mesa builds
+for the libglvnd in order to let it fulfill the dependencies.
+
+Signed-off-by: Dmitry Baryshkov <dmitry.baryshkov@oss.qualcomm.com>
+Upstream-Status: Pending
+---
+ meta/recipes-graphics/libglvnd/libglvnd_1.7.0.bb | 10 +++++++++-
+ 1 file changed, 9 insertions(+), 1 deletion(-)
+
+diff --git a/meta/recipes-graphics/libglvnd/libglvnd_1.7.0.bb b/meta/recipes-graphics/libglvnd/libglvnd_1.7.0.bb
+index 1e4c5b860c35..18eeaa5523f3 100644
+--- a/meta/recipes-graphics/libglvnd/libglvnd_1.7.0.bb
++++ b/meta/recipes-graphics/libglvnd/libglvnd_1.7.0.bb
+@@ -34,4 +34,12 @@ PROVIDES = " \
+     ${@bb.utils.contains('PACKAGECONFIG', 'egl', 'virtual/egl', '', d)} \
+ "
+ 
+-RPROVIDES:${PN} += "${@bb.utils.contains('PACKAGECONFIG', 'egl', 'libegl', '', d)}"
++RPROVIDES:${PN} += "${@bb.utils.contains('PACKAGECONFIG', 'egl', 'libegl libegl1', '', d)}"
++RPROVIDES:${PN} += "${@bb.utils.contains('PACKAGECONFIG', 'glx', 'libgl libgl1', '', d)}"
++RPROVIDES:${PN} += "${@bb.utils.contains('PACKAGECONFIG', 'gles1', 'libgles1 libglesv1-cm1', '', d)}"
++RPROVIDES:${PN} += "${@bb.utils.contains('PACKAGECONFIG', 'gles2', 'libgles2 libglesv2-2 libgles3', '', d)}"
++
++RPROVIDES:${PN}-dev += "${@bb.utils.contains('PACKAGECONFIG', 'egl', 'libegl-dev', '', d)}"
++RPROVIDES:${PN}-dev += "${@bb.utils.contains('PACKAGECONFIG', 'glx', 'libgl-dev', '', d)}"
++RPROVIDES:${PN}-dev += "${@bb.utils.contains('PACKAGECONFIG', 'gles1', 'libgles1-dev', '', d)}"
++RPROVIDES:${PN}-dev += "${@bb.utils.contains('PACKAGECONFIG', 'gles2', 'libgles2-dev libgles3-dev', '', d)}"
+-- 
+2.47.3
+
+
+

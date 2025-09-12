@@ -12,6 +12,7 @@ SRC_URI = " \
 	file://ath10k-generate-pci-board-2_json.sh \
 	file://ath11k-generate-pci-board-2_json.sh \
 	file://ath11k-generate-ahb-board-2_json.sh \
+        file://0001-scripts-use-usr-bin-env-python3.patch \
 "
 
 PV = "0.0+"
