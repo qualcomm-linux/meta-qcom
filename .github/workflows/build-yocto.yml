@@ -10,15 +10,16 @@ on:
 env:
   CACHE_DIR: /efs/qli/meta-qcom
   KAS_REPO_REF_DIR: /efs/qli/meta-qcom/kas-mirrors
-  KAS_CONTAINER: /efs/qli/meta-qcom/kas-mirrors/kas-container
 
 jobs:
   kas-setup:
     if: github.repository == 'qualcomm-linux/meta-qcom'
     runs-on: [self-hosted, qcom-u2404, amd64-ssd]
     steps:
-      - name: Update kas-container
+      - name: Setting up kas-container
         run: |
+          KAS_CONTAINER=$RUNNER_TEMP/kas-container
+          echo "KAS_CONTAINER=$KAS_CONTAINER" >> $GITHUB_ENV
           LATEST=$(git ls-remote --tags --refs --sort="v:refname" https://github.com/siemens/kas | tail -n1 | sed 's/.*\///')
           wget -qO ${KAS_CONTAINER} https://raw.githubusercontent.com/siemens/kas/refs/tags/$LATEST/kas-container
           chmod +x ${KAS_CONTAINER}
@@ -42,6 +43,12 @@ jobs:
           name: kas-lockfile
           path: ci/*.lock.yml
 
+      - name: Upload kas-container
+        uses: actions/upload-artifact@v4
+        with:
+          name: kas-container
+          path: ${{ env.KAS_CONTAINER }}
+
   yocto-run-checks:
     needs: kas-setup
     if: github.repository == 'qualcomm-linux/meta-qcom'
@@ -54,6 +61,18 @@ jobs:
         with:
           name: kas-lockfile
           path: ci
+
+      - name: Download kas-container
+        uses: actions/download-artifact@v4
+        with:
+          name: kas-container
+          path: ${{ runner.temp }}
+
+      - name: Setting up kas-container
+        run: |
+          KAS_CONTAINER=$RUNNER_TEMP/kas-container
+          echo "KAS_CONTAINER=$KAS_CONTAINER" >> $GITHUB_ENV
+          chmod +x $KAS_CONTAINER
 
       - name: Run yocto-check-layer
         run: |
@@ -97,7 +116,6 @@ jobs:
           kernel_yaml: ${{matrix.kernel.yamlfile}}
           kernel_dirname: ${{matrix.kernel.dirname}}
           cache_dir: ${CACHE_DIR}
-          kas: ${KAS_CONTAINER}
 
   compile:
     needs: compile_warm_up
@@ -166,7 +184,6 @@ jobs:
           kernel_yaml: ${{matrix.kernel.yamlfile}}
           kernel_dirname: ${{matrix.kernel.dirname}}
           cache_dir: ${CACHE_DIR}
-          kas: ${KAS_CONTAINER}
 
   publish_summary:
     needs: compile
