@@ -12,8 +12,6 @@ inputs:
     required: true
   cache_dir:
     required: true
-  kas:
-    required: true
 outputs:
   url:
     description: Location of the published binaries
@@ -27,6 +25,19 @@ runs:
         name: kas-lockfile
         path: ci/
 
+    - name: Download kas-container
+      uses: actions/download-artifact@v6
+      with:
+         name: kas-container
+         path: ${{runner.temp}}
+
+    - name: Setting up kas-container
+      shell: bash
+      run: |
+        KAS_CONTAINER=$RUNNER_TEMP/kas-container
+        echo "KAS_CONTAINER=$KAS_CONTAINER" >> $GITHUB_ENV
+        chmod +x $KAS_CONTAINER
+
     - name: Setup build variables and sstate-cache
       shell: bash
       run: |
@@ -39,25 +50,25 @@ runs:
       shell: bash
       run: |
         mkdir $KAS_WORK_DIR
-        ${{inputs.kas}} dump --resolve-env --resolve-local --resolve-refs \
+        $KAS_CONTAINER dump --resolve-env --resolve-local --resolve-refs \
           ci/mirror.yml:ci/${{ inputs.machine }}.yml${{ inputs.distro_yaml }}${{ inputs.kernel_yaml }} > kas-build.yml
 
     - name: Kas qcom world build
       shell: bash
       run: |
-        ${{inputs.kas}} build ci/mirror.yml:ci/${{ inputs.machine }}.yml${{ inputs.distro_yaml }}${{ inputs.kernel_yaml }}:ci/world.yml
+        $KAS_CONTAINER build ci/mirror.yml:ci/${{ inputs.machine }}.yml${{ inputs.distro_yaml }}${{ inputs.kernel_yaml }}:ci/world.yml
         ci/kas-container-shell-helper.sh ci/yocto-pybootchartgui.sh
         mv $KAS_WORK_DIR/build/buildchart.svg buildchart-world.svg
 
     - name: Kas build images
       shell: bash
       run: |
-        ${{inputs.kas}} build ci/mirror.yml:ci/${{ inputs.machine }}.yml${{ inputs.distro_yaml }}${{ inputs.kernel_yaml }}
+        $KAS_CONTAINER build ci/mirror.yml:ci/${{ inputs.machine }}.yml${{ inputs.distro_yaml }}${{ inputs.kernel_yaml }}
         ci/kas-container-shell-helper.sh ci/yocto-pybootchartgui.sh
         mv $KAS_WORK_DIR/build/buildchart.svg .
 
         if [ "${{ inputs.machine }}" = "qcom-armv8a" ]; then
-          ${{inputs.kas}} build ci/mirror.yml:ci/${{ inputs.machine }}.yml${{ inputs.distro_yaml }}${{ inputs.kernel_yaml }}:ci/initramfs-test.yml
+          $KAS_CONTAINER build ci/mirror.yml:ci/${{ inputs.machine }}.yml${{ inputs.distro_yaml }}${{ inputs.kernel_yaml }}:ci/initramfs-test.yml
         fi
 
     - uses: actions/upload-artifact@v4
