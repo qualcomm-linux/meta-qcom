@@ -62,7 +62,7 @@ jobs:
           ci/kas-container-shell-helper.sh ci/yocto-patchreview.sh
 
   compile_warm_up:
-    needs: [kas-setup, yocto-run-checks]
+    needs: yocto-run-checks
     if: github.repository == 'qualcomm-linux/meta-qcom'
     runs-on: [self-hosted, qcom-u2404, amd64-ssd]
     strategy:
