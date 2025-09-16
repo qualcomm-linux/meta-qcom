@@ -21,9 +21,10 @@ outputs:
 runs:
   using: "composite"
   steps:
-    - uses: actions/download-artifact@v6
+    - name: Download kas lockfile
+      uses: actions/download-artifact@v6
       with:
-        name: kas-lock
+        name: kas-lockfile
         path: ci/
 
     - name: Setup build variables and sstate-cache
