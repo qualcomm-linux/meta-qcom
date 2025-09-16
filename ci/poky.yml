@@ -3,30 +3,5 @@
 header:
   version: 14
 
-repos:
-  oe-core:
-    layers:
-      meta: disabled
-
-  meta-yocto:
-    layers:
-      meta-poky: disabled
-
-  poky:
-    url: https://github.com/yoctoproject/poky
-    layers:
-      meta:
-      meta-poky:
-
-  # FIXME: until my patch lands in kas
-  # Multiple init scripts found (poky vs. oe-core). Resolve ambiguity by removing one of the repos
-  oe-core: null
-
-# FIXME: until my patch lands in kas
-bblayers_conf_header:
-  FIXME: |
-    # override the default kas BBLAYERS
-    BBLAYERS = " \
-    /repo \
-    /work/poky/meta \
-    /work/poky/meta-poky"
+env:
+    TEMPLATECONF: "/work/meta-yocto/meta-poky/conf/templates/default"

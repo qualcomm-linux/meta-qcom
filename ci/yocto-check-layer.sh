@@ -24,12 +24,11 @@ _is_dir "$WORK_DIR"
 # Creates a temporary build directory to run the yocto-check-layer
 # script to avoid a contaminated environment.
 BUILDDIR="$(mktemp -p $WORK_DIR -d -t build-yocto-check-layer-XXXX)"
-if bitbake-layers show-layers | grep ^core | grep -q poky; then
-    OE_INIT=$WORK_DIR/poky/oe-init-build-env
-else
-    OE_INIT=$WORK_DIR/oe-core/oe-init-build-env
-fi
-source $OE_INIT $BUILDDIR
+source $WORK_DIR/oe-core/oe-init-build-env $BUILDDIR
+# delete invalid layers
+sed -i -e '\:work/oe-core/meta-poky:d' -e '\:work/oe-core/meta-yocto-bsp:d' conf/bblayers.conf
+# add poky
+bitbake-layers add-layer $WORK_DIR/meta-yocto/meta-poky
 git -c advice.detachedHead=false clone --quiet --shared $REPO_DIR meta-qcom
 
 # Yocto Project layer checking tool
