@@ -36,9 +36,10 @@ jobs:
         run: |
           ${KAS_CONTAINER} lock --update ci/base.yml:ci/qcom-distro.yml
 
-      - uses: actions/upload-artifact@v4
+      - name: Upload kas lockfile
+        uses: actions/upload-artifact@v4
         with:
-          name: kas-lock
+          name: kas-lockfile
           path: ci/*.lock.yml
 
   yocto-run-checks:
@@ -48,10 +49,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: actions/download-artifact@v6
+      - name: Download kas lockfile
+        uses: actions/download-artifact@v6
         with:
-          name: kas-lock
-          path: ci/
+          name: kas-lockfile
+          path: ci
 
       - name: Run yocto-check-layer
         run: |
