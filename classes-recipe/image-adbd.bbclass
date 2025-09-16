@@ -20,11 +20,11 @@ enable_adbd_at_boot () {
 
 ROOTFS_POSTPROCESS_COMMAND += "${@bb.utils.contains('IMAGE_FEATURES', [ 'enable-adbd' ], 'enable_adbd_at_boot; ', '',d)}"
 
-python oelayer_check() {
-    if 'openembedded-layer' not in e.data.getVar('BBFILE_COLLECTIONS').split():
+addtask oelayer_check before do_build
+do_oelayer_check[nostamp] = "1"
+python do_oelayer_check() {
+    if 'openembedded-layer' not in d.getVar('BBFILE_COLLECTIONS').split():
         bb.warn("'image-adbd' is inherited but the meta-openembedded layer"
                 " is not included in bblayers. ADBD may not work as expected.")
 }
 
-addhandler oelayer_check
-oelayer_check[eventmask] = "bb.event.RecipePreFinalise"
