@@ -5,10 +5,9 @@ SECTION = "devel"
 LICENSE = "BSD-3-Clause"
 LIC_FILES_CHKSUM = "file://LICENSE.txt;md5=b67986b6880754696d418dbaa2cf51d1"
 
-SRCREV = "a8a7a5e13ad69b73dcc7e73c1013830f0d787c1a"
+SRCREV = "2d1768e9d602641660aa2232c96577042c1b6294"
 SRC_URI = "\
     git://github.com/qualcomm/fastrpc.git;branch=main;protocol=https \
-    file://0001-Update-README.md-with-Clear-Instructions-for-fastrpc.patch \
     file://adsprpcd.service \
     file://cdsprpcd.service \
     file://sdsprpcd.service \
