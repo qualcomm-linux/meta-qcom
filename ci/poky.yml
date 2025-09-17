@@ -1,7 +1,0 @@
-# yaml-language-server: $schema=https://raw.githubusercontent.com/siemens/kas/master/kas/schema-kas.json
-
-header:
-  version: 14
-
-env:
-    TEMPLATECONF: "/work/meta-yocto/meta-poky/conf/templates/default"
