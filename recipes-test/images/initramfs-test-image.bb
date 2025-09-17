@@ -34,6 +34,7 @@ PACKAGE_INSTALL += " \
     util-linux-taskset \
     wpa-supplicant \
     ${@bb.utils.contains('DISTRO_FEATURES', 'opengl', 'kmscube', '', d)} \
+    packagegroup-qcom-secure \
 "
 
 # We'd like to include extra packages provided by layers which we do not depend
