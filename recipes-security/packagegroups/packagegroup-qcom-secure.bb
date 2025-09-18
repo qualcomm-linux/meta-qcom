@@ -8,6 +8,7 @@ PACKAGES = " \
 "
 
 RDEPENDS:${PN}-test += " \
+    qcomtee-bin \
     qcbor-bin \
 "
 
