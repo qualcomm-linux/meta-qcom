@@ -107,6 +107,7 @@ jobs:
       fail-fast: true
       matrix:
         machine:
+          - iq-8275-evk
           - qcm6490-idp
           - qcs615-adp-air
           - qcs8300-ride-sx
