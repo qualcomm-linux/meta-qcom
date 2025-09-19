@@ -8,7 +8,7 @@ PACKAGES = " \
 "
 
 RRECOMMENDS:${PN}-firmware = " \
-    ${@bb.utils.contains('DISTRO_FEATURES', 'opengl', 'linux-firmware-qcom-adreno-a630 linux-firmware-qcom-qrb4210-adreno', '', d)} \
+    ${@bb.utils.contains_any('DISTRO_FEATURES', 'opencl opengl vulkan', 'linux-firmware-qcom-adreno-a630 linux-firmware-qcom-qrb4210-adreno', '', d)} \
     ${@bb.utils.contains('DISTRO_FEATURES', 'wifi', 'linux-firmware-ath10k-wcn3990 linux-firmware-qcom-qrb4210-wifi', '', d)} \
     ${@bb.utils.contains('DISTRO_FEATURES', 'bluetooth', 'linux-firmware-qca-wcn3988', '', d)} \
     linux-firmware-lt9611uxc \
