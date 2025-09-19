@@ -22,7 +22,7 @@ SRC_URI = " \
     git://github.com/linux-msm/dsp-binaries;protocol=https;branch=trunk \
 "
 
-SRCREV = "e0ac04b265e8d332bb156e3a26fbeae5c82d02e2"
+SRCREV = "1d73849501371b6f4a0b9c6e897e848ccfe3c1d3"
 
 inherit allarch
 
