@@ -10,6 +10,13 @@ PV = "0.0+git"
 SRCREV = "5ead341efb667cbd2cf519bfaf2837ee8e97b747"
 SRC_URI = " \
 git://git.codelinaro.org//clo/le/platform/system/memory/libdmabufheap.git;branch=memory-le-apps.lnx.3.0;protocol=https \
+file://dmaheap.rules \
 "
+
+do_install:append() {
+	install -m 0644 ${UNPACKDIR}/dmaheap.rules -D ${D}${sysconfdir}/udev/rules.d/dmaheap.rules
+}
+
+FILES:${PN} += "${sysconfdir}/udev/rules.d/dmaheap.rules"
 
 inherit autotools pkgconfig

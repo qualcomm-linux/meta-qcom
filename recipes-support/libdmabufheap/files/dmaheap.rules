@@ -1,0 +1,2 @@
+ACTION=="add" SUBSYSTEM=="dma_heap", KERNEL=="system" GROUP="kmem", MODE="0640"
+ACTION=="add" SUBSYSTEM=="dma_heap", KERNEL=="reserved" GROUP="kmem", MODE="0640"
