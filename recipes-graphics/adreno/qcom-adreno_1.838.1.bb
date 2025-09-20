@@ -35,6 +35,14 @@ RDEPENDS:${PN}-egl += " ${PN}-common ${PN}-gles1 ${PN}-gles2"
 RDEPENDS:${PN}-vulkan += " ${PN}-common"
 RDEPENDS:${PN}-cl += " ${PN}-common"
 
+RDEPENDS:${PN} = " \
+    ${@bb.utils.contains('DISTRO_FEATURES', 'glvnd', 'qcom-adreno-egl', '', d)} \
+    ${@bb.utils.contains('DISTRO_FEATURES', 'vulkan', 'qcom-adreno-vulkan', '', d)} \
+    ${@bb.utils.contains('DISTRO_FEATURES', 'opencl', 'qcom-adreno-cl', '', d)} \
+"
+
+ALLOW_EMPTY:${PN} = "1"
+
 do_install () {
     install -d ${D}/${libdir}
     cp -r ${S}/usr/lib/* ${D}/${libdir}/
