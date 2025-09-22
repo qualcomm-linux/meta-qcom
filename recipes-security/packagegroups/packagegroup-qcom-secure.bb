@@ -9,6 +9,7 @@ PACKAGES = "${PN}"
 PROVIDES = "${PACKAGES}"
 
 RDEPENDS:${PN} += " \
+  minkipc-git \
   qcomtee-git \
   qcbor-git \
 "
