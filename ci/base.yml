@@ -27,6 +27,12 @@ repos:
     layers:
       meta-poky:
 
+  meta-openembedded:
+    url: https://github.com/openembedded/meta-openembedded.git
+    layers:
+      meta-oe:
+      meta-python:
+
 local_conf_header:
   base: |
     CONF_VERSION = "2"
