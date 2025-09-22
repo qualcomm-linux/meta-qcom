@@ -1,0 +1,10 @@
+
+[Unit]
+Description=QTEE Supplicant Service
+
+[Service]
+Type=exec
+ExecStart=/usr/bin/qtee_supplicant
+
+[Install]
+WantedBy=multi-user.target

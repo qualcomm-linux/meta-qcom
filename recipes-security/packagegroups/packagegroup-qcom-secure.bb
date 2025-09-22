@@ -5,6 +5,7 @@ inherit packagegroup
 PACKAGES = "${PN}"
 
 RDEPENDS:${PN} += " \
+    minkipc \
     qcomtee \
     qcbor \
 "
