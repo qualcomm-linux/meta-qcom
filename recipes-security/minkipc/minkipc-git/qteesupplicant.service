@@ -1,0 +1,21 @@
+# Copyright (c) 2017, 2024 Qualcomm Technologies, Inc.
+# All Rights Reserved.
+# Confidential and Proprietary - Qualcomm Technologies, Inc.
+#
+
+[Unit]
+Description=QTEE Supplicant Service
+SourcePath=/usr/bin/qtee_supplicant
+Wants=property-vault.service
+
+[Service]
+Restart=always
+RemainAfterExit=yes
+ExecStart=/usr/bin/qtee_supplicant
+ExecStartPre= +/usr/bin/find -L /dev/dma_heap/qcom,qseecom-ta -maxdepth 1 -exec chown root:system {} +
+ExecStartPre= +/usr/bin/find -L /dev/dma_heap/qcom,qseecom-ta -maxdepth 1 -exec chmod 0660 {} +
+ExecStartPre= +/usr/bin/find -L /dev/dma_heap/qcom,qseecom -maxdepth 1 -exec chown root:system {} +
+ExecStartPre= +/usr/bin/find -L /dev/dma_heap/qcom,qseecom -maxdepth 1 -exec chmod 0660 {} +
+
+[Install]
+WantedBy=multi-user.target

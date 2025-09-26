@@ -1,0 +1,47 @@
+From 8d0b8e73b005ef05a092f4fb1c51fee98baa5ac1 Mon Sep 17 00:00:00 2001
+From: Jiaxing Li <jiaxing.li@oss.qualcomm.com>
+Date: Thu, 18 Sep 2025 11:39:53 +0800
+Subject: [PATCH] minkipc:compilation: Fix compilation issue
+
+- To fix compilation error: #warning "<cstdbool> is deprecated in C++17, remove the #include" [-Werror=cpp].
+- Disable downloading minkidlc in CMakeLists.txt.
+
+Signed-off-by: Jiaxing Li <jiaxing.li@oss.qualcomm.com>
+Upstream-Status: Inappropriate [meta-qcom specific]
+---
+ CMakeLists.txt | 11 ++++++-----
+ 1 file changed, 6 insertions(+), 5 deletions(-)
+
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 346e1bc..5e8f6c9 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -17,12 +17,12 @@ option(BUILD_GPFS_LISTENER "Build GP File system Listener" TRUE)
+
+ include(GNUInstallDirs)
+
+-set(MINKIDLC_BIN_DIR ${CMAKE_CURRENT_SOURCE_DIR}/minkidlc)
++#set(MINKIDLC_BIN_DIR ${CMAKE_CURRENT_SOURCE_DIR}/minkidlc)
+
+-file(DOWNLOAD
+-  https://github.com/quic/mink-idl-compiler/releases/download/v0.2.0/idlc
+-  ${MINKIDLC_BIN_DIR}/minkidlc
+-)
++#file(DOWNLOAD
++#  https://github.com/quic/mink-idl-compiler/releases/download/v0.2.0/idlc
++#  ${MINKIDLC_BIN_DIR}/minkidlc
++#)
+
+ file(CHMOD ${MINKIDLC_BIN_DIR}/minkidlc PERMISSIONS OWNER_EXECUTE OWNER_WRITE OWNER_READ)
+
+@@ -30,6 +30,7 @@ add_compile_options(
+ 	-Wall -Wextra -Werror -Wshadow -Wcast-align
+ 	-Wmissing-declarations -Wformat-security -Wmissing-noreturn
+ 	-Wdeprecated -fPIC
++	-Wno-error=cpp
+ )
+
+ add_subdirectory(libminkadaptor)
+-- 
+2.34.1
+
