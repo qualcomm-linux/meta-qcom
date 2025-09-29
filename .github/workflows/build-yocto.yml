@@ -76,8 +76,6 @@ jobs:
             yamlfile: ""
           - name: qcom-distro
             yamlfile: ':ci/qcom-distro.yml'
-          - name: qcom-distro-prop-image
-            yamlfile: ':ci/qcom-distro-prop-image.yml'
         kernel:
           - type: default
             dirname: ""
@@ -120,8 +118,6 @@ jobs:
             yamlfile: ""
           - name: qcom-distro
             yamlfile: ':ci/qcom-distro.yml'
-          - name: qcom-distro-prop-image
-            yamlfile: ':ci/qcom-distro-prop-image.yml'
         kernel:
           - type: default
             dirname: ""
@@ -144,11 +140,20 @@ jobs:
                 type: additional
                 dirname: "+linux-yocto-lts"
                 yamlfile: ":ci/linux-yocto-lts.yml"
+          - machine: qcom-armv7a
+            distro:
+                name: qcom-distro
+                yamlfile: ':ci/qcom-distro.yml'
+                target: qcom-multimedia-image
+            kernel:
+                type: default
+                dirname: ""
+                yamlfile: ""
         exclude:
           # Incompatible builds
           - machine: qcom-armv7a
             distro:
-                name: qcom-distro-prop-image
+                name: qcom-distro
     name: ${{ matrix.machine }}/${{ matrix.distro.name }}${{ matrix.kernel.dirname }}
     steps:
       - uses: actions/checkout@v4
@@ -164,6 +169,7 @@ jobs:
           kernel_dirname: ${{matrix.kernel.dirname}}
           cache_dir: ${CACHE_DIR}
           kas: ${KAS_CONTAINER}
+          target: ${{matrix.distro.target}}
 
   create-output:
     needs: compile
