@@ -75,8 +75,6 @@ jobs:
           - name: poky-altcfg
             yamlfile: ""
           - name: qcom-distro
-            yamlfile: ':ci/qcom-distro.yml'
-          - name: qcom-distro-prop-image
             yamlfile: ':ci/qcom-distro-prop-image.yml'
         kernel:
           - type: default
@@ -120,8 +118,6 @@ jobs:
           - name: poky-altcfg
             yamlfile: ""
           - name: qcom-distro
-            yamlfile: ':ci/qcom-distro.yml'
-          - name: qcom-distro-prop-image
             yamlfile: ':ci/qcom-distro-prop-image.yml'
         kernel:
           - type: default
@@ -132,7 +128,7 @@ jobs:
           - machine: qcom-armv8a
             distro:
                 name: qcom-distro
-                yamlfile: ':ci/qcom-distro.yml'
+                yamlfile: ':ci/qcom-distro-prop-image.yml'
             kernel:
                 type: additional
                 dirname: "+linux-yocto-dev"
@@ -140,16 +136,27 @@ jobs:
           - machine: qcom-armv8a
             distro:
                 name: qcom-distro
-                yamlfile: ':ci/qcom-distro.yml'
+                yamlfile: ':ci/qcom-distro-prop-image.yml'
             kernel:
                 type: additional
                 dirname: "+linux-yocto-lts"
                 yamlfile: ":ci/linux-yocto-lts.yml"
-        exclude:
-          # Incompatible builds
           - machine: qcom-armv7a
             distro:
-                name: qcom-distro-prop-image
+                name: poky-altcfg
+                yamlfile: ''
+            kernel:
+                type: default
+                dirname: ""
+                yamlfile: ""
+          - machine: qcom-armv7a
+            distro:
+                name: qcom-distro
+                yamlfile: ':ci/qcom-distro.yml'
+            kernel:
+                type: default
+                dirname: ""
+                yamlfile: ""
     name: ${{ matrix.machine }}/${{ matrix.distro.name }}${{ matrix.kernel.dirname }}
     steps:
       - uses: actions/checkout@v4
