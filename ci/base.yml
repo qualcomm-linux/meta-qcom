@@ -44,6 +44,3 @@ local_conf_header:
     IMAGE_ROOTFS_EXTRA_SPACE = "307200"
 
 machine: unset
-
-target:
-  - core-image-base
