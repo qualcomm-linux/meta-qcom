@@ -45,6 +45,3 @@ local_conf_header:
     WATCHDOG_RUNTIME_SEC:pn-systemd = "30"
 
 machine: unset
-
-target:
-  - core-image-base
