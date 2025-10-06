@@ -4,6 +4,7 @@ inherit packagegroup
 
 PACKAGES = " \
     ${PN}-firmware \
+    ${PN}-hexagon-dsp-binaries \
 "
 
 RRECOMMENDS:${PN}-firmware = " \
@@ -14,4 +15,10 @@ RRECOMMENDS:${PN}-firmware = " \
     linux-firmware-qcom-qcs8300-compute \
     linux-firmware-qcom-qcs8300-generalpurpose \
     linux-firmware-qcom-vpu \
+"
+
+RRECOMMENDS:${PN}-hexagon-dsp-binaries = " \
+    hexagon-dsp-binaries-qcom-iq8275-evk-adsp \
+    hexagon-dsp-binaries-qcom-iq8275-evk-cdsp \
+    hexagon-dsp-binaries-qcom-iq8275-evk-gdsp \
 "
