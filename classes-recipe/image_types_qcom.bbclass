@@ -3,6 +3,9 @@
 
 inherit image_types
 
+# selinux-image is inherited to utilize the selinux_set_labels API, to perform build-time context labeling.
+inherit  ${@bb.utils.contains('DISTRO_FEATURES', 'selinux', 'selinux-image', '', d)}
+
 IMAGE_TYPES += "qcomflash"
 
 QCOM_BOOT_FIRMWARE ?= ""

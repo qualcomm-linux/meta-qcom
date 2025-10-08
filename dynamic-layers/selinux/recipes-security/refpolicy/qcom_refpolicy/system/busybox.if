@@ -1,0 +1,21 @@
+#Copyright (c) 2023 Qualcomm Innovation Center, Inc. All rights reserved.
+#SPDX-License-Identifier: BSD-3-Clause-Clear
+## <summary>Busybox service</summary>
+
+######################################
+## <summary>
+##      Allow domain to execute busybox.nosuid
+## </summary>
+## <param name="domain">
+##      <summary>
+##      Domain allowed access.
+##      </summary>
+## </param>
+#
+interface(`busybox_nosuid_execute',`
+	gen_require(`
+		type busybox_nosuid_exec_t;
+	')
+
+	allow $1 busybox_nosuid_exec_t:file mmap_exec_file_perms;
+')

@@ -1,0 +1,24 @@
+header:
+  version: 14
+
+repos:
+  meta-python:
+    url: https://git.openembedded.org/meta-openembedded/
+    layers:
+      meta-python:
+      meta-oe:
+  meta-selinux:
+    url: https://git.yoctoproject.org/meta-selinux
+    layers:
+      .:
+
+local_conf_header:
+  enable-selinux: |
+    DISTRO_FEATURES:append = " selinux"
+    DISTRO_EXTRA_RDEPENDS:append = " packagegroup-selinux-minimal"
+  selinux-provider: |
+    PREFERRED_PROVIDER_virtual/refpolicy = "refpolicy-targeted"
+  selinux-status: |
+    DEFAULT_ENFORCING ?= "permissive"
+  selinux-extras: |
+    IMAGE_CMD_TAR:append = " --selinux"

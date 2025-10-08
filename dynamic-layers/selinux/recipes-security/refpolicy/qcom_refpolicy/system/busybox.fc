@@ -1,0 +1,4 @@
+#Copyright (c) 2023 Qualcomm Innovation Center, Inc. All rights reserved.
+#SPDX-License-Identifier: BSD-3-Clause-Clear
+
+/usr/bin/busybox.nosuid         --      system_u:object_r:busybox_nosuid_exec_t:s0
