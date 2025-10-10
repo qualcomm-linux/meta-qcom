@@ -36,6 +36,8 @@ do_install () {
 
 PACKAGES =+ "\
     ${PN}-qcom-db820c-adsp \
+    ${PN}-qcom-qcs615-ride-adsp \
+    ${PN}-qcom-qcs615-ride-cdsp \
     ${PN}-qcom-qcs8300-ride-adsp \
     ${PN}-qcom-qcs8300-ride-cdsp \
     ${PN}-qcom-qcs8300-ride-gdsp \
@@ -57,6 +59,8 @@ PACKAGES =+ "\
 
 LICENSE:${PN} = "dspso-WHENCE"
 LICENSE:${PN}-qcom-db820c-adsp = "dspso-qcom"
+LICENSE:${PN}-qcom-qcs615-ride-adsp = "dspso-qcom-2"
+LICENSE:${PN}-qcom-qcs615-ride-cdsp = "dspso-qcom-2"
 LICENSE:${PN}-qcom-qcs8300-ride-adsp = "dspso-qcom-2"
 LICENSE:${PN}-qcom-qcs8300-ride-cdsp = "dspso-qcom-2"
 LICENSE:${PN}-qcom-qcs8300-ride-gdsp = "dspso-qcom-2"
@@ -76,6 +80,8 @@ LICENSE:${PN}-thundercomm-rb5-cdsp = "dspso-qcom"
 LICENSE:${PN}-thundercomm-rb5-sdsp = "dspso-qcom"
 
 RDEPENDS:${PN}-qcom-db820c-adsp = "linux-firmware-qcom-apq8096-audio (= 1:${PV})"
+RDEPENDS:${PN}-qcom-qcs615-ride-adsp = "linux-firmware-qcom-qcs615-audio (= 1:${PV})"
+RDEPENDS:${PN}-qcom-qcs615-ride-cdsp = "linux-firmware-qcom-qcs615-compute (= 1:${PV})"
 RDEPENDS:${PN}-qcom-qcs8300-ride-adsp = "linux-firmware-qcom-qcs8300-audio (= 1:${PV})"
 RDEPENDS:${PN}-qcom-qcs8300-ride-cdsp = "linux-firmware-qcom-qcs8300-compute (= 1:${PV})"
 RDEPENDS:${PN}-qcom-qcs8300-ride-gdsp = "linux-firmware-qcom-qcs8300-generalpurpose (= 1:${PV})"
@@ -95,6 +101,8 @@ RDEPENDS:${PN}-thundercomm-rb5-cdsp = "linux-firmware-qcom-sm8250-compute (= 1:$
 RDEPENDS:${PN}-thundercomm-rb5-sdsp = "linux-firmware-qcom-sm8250-thundercomm-rb5-sensors (= 1:${PV})"
 
 FILES:${PN}-qcom-db820c-adsp = "${datadir}/qcom/apq8096/Qualcomm/db820c/dsp/adsp"
+FILES:${PN}-qcom-qcs615-ride-adsp = "${datadir}/qcom/qcs615/Qualcomm/QCS615-RIDE/dsp/adsp"
+FILES:${PN}-qcom-qcs615-ride-cdsp = "${datadir}/qcom/qcs615/Qualcomm/QCS615-RIDE/dsp/cdsp*"
 FILES:${PN}-qcom-qcs8300-ride-adsp = "${datadir}/qcom/qcs8300/Qualcomm/QCS8300-RIDE/dsp/adsp"
 FILES:${PN}-qcom-qcs8300-ride-cdsp = "${datadir}/qcom/qcs8300/Qualcomm/QCS8300-RIDE/dsp/cdsp*"
 FILES:${PN}-qcom-qcs8300-ride-gdsp = "${datadir}/qcom/qcs8300/Qualcomm/QCS8300-RIDE/dsp/gdsp*"
@@ -114,6 +122,8 @@ FILES:${PN}-thundercomm-rb5-cdsp = "${datadir}/qcom/sm8250/Thundercomm/RB5/dsp/c
 FILES:${PN}-thundercomm-rb5-sdsp = "${datadir}/qcom/sm8250/Thundercomm/RB5/dsp/sdsp"
 
 INSANE_SKIP:${PN}-qcom-db820c-adsp = "arch libdir file-rdeps textrel"
+INSANE_SKIP:${PN}-qcom-qcs615-ride-adsp = "arch libdir file-rdeps textrel"
+INSANE_SKIP:${PN}-qcom-qcs615-ride-cdsp = "arch libdir file-rdeps textrel"
 INSANE_SKIP:${PN}-qcom-qcs8300-ride-adsp = "arch libdir file-rdeps textrel"
 INSANE_SKIP:${PN}-qcom-qcs8300-ride-cdsp = "arch libdir file-rdeps textrel"
 INSANE_SKIP:${PN}-qcom-qcs8300-ride-gdsp = "arch libdir file-rdeps textrel"
