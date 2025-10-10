@@ -32,6 +32,7 @@ local_conf_header:
     CONF_VERSION = "2"
     INHERIT += "buildstats buildstats-summary"
     INHERIT += "buildhistory"
+    INHERIT += "ccache"
     INHERIT += "rm_work"
   cmdline: |
     KERNEL_CMDLINE_EXTRA:append = " qcom_scm.download_mode=1"
