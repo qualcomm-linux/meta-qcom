@@ -1,0 +1,2 @@
+busybox_nosuid_execute(klogd_t)
+busybox_nosuid_execute(syslogd_t)

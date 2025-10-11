@@ -1,0 +1,2 @@
+fs_mount_tmpfs(systemd_generator_t)
+allow systemd_rfkill_t self:capability sys_admin;

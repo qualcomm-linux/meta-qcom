@@ -1,0 +1,19 @@
+########################################
+## <summary>
+##      read, write syslog PID sockets.
+## </summary>
+## <param name="domain">
+##      <summary>
+##      Domain allowed access.
+##      </summary>
+## </param>
+#
+interface(`logging_rw_runtime_sockets',`
+        gen_require(`
+                type syslogd_runtime_t;
+        ')
+
+        rw_sock_files_pattern($1, syslogd_runtime_t, syslogd_runtime_t)
+        files_search_runtime($1)
+')
+

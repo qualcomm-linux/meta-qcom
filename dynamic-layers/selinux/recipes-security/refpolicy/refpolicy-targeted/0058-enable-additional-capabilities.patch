@@ -1,0 +1,31 @@
+From 7afe75bb9e15e3c062a2108a4cec4a4e66addead Mon Sep 17 00:00:00 2001
+From: sasikuma <quic_sasikuma@quicinc.com>
+Date: Tue, 7 Oct 2025 11:32:11 +0530
+Subject: [PATCH] enable-additional-capabilities
+
+enabling genfs_seclabel_symlinks, ioctl_skip_cloexec,
+userspace_initial_context policy capabilities
+
+Upstream-Status: Pending
+
+Signed-off-by: Sasi Kumar Maddinen <quic_sasikuma@quicinc.com>
+---
+ policy/policy_capabilities | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/policy/policy_capabilities b/policy/policy_capabilities
+index 73b5299..020139b 100644
+--- a/policy/policy_capabilities
++++ b/policy/policy_capabilities
+@@ -105,7 +105,7 @@ policycap nnp_nosuid_transition;
+ # Added checks:
+ # (none)
+ #
+-#policycap genfs_seclabel_symlinks;
++policycap genfs_seclabel_symlinks;
+ 
+ # Always allow FIOCLEX and FIONCLEX ioctl.
+ # Requires libsepol 3.4 and kernel 5.18.
+-- 
+2.34.1
+
