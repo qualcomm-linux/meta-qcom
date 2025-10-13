@@ -25,6 +25,8 @@ _is_dir "$WORK_DIR"
 # script to avoid a contaminated environment.
 BUILDDIR="$(mktemp -p $WORK_DIR -d -t build-yocto-check-layer-XXXX)"
 source $WORK_DIR/oe-core/oe-init-build-env $BUILDDIR
+bitbake-layers add-layer $WORK_DIR/meta-yocto/meta-poky
+echo 'DISTRO = "poky"' >> conf/local.conf
 git -c advice.detachedHead=false clone --quiet --shared $REPO_DIR meta-qcom
 
 # Yocto Project layer checking tool
