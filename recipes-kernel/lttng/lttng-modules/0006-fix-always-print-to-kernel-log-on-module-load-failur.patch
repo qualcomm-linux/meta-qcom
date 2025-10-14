@@ -1,0 +1,54 @@
+From 1bdcdf525d453a985b61cf8fdc300d7831728793 Mon Sep 17 00:00:00 2001
+From: Michael Jeanson <mjeanson@efficios.com>
+Date: Wed, 8 Oct 2025 15:25:47 -0400
+Subject: [PATCH 6/6] fix: always print to kernel log on module load failure
+
+Upstream-Status: Inappropriate [for 2.14.1 only]
+Change-Id: I1c52c926e340eef7de0836c5169c2d58a6ac7fee
+Signed-off-by: Michael Jeanson <mjeanson@efficios.com>
+Signed-off-by: Mathieu Desnoyers <mathieu.desnoyers@efficios.com>
+---
+ src/lttng-events.c | 12 ++++++++----
+ 1 file changed, 8 insertions(+), 4 deletions(-)
+
+diff --git a/src/lttng-events.c b/src/lttng-events.c
+index 58240e41..bc9eca85 100644
+--- a/src/lttng-events.c
++++ b/src/lttng-events.c
+@@ -3578,18 +3578,20 @@ static int __init lttng_events_init(void)
+ 
+ 	ret = wrapper_get_pfnblock_flags_mask_init();
+ 	if (ret)
+-		return ret;
++		goto error;
+ 
+ 	ret = wrapper_get_pfnblock_migratetype_init();
+ 	if (ret)
+-		return ret;
++		goto error;
+ 
+ 	ret = lttng_probes_init();
+ 	if (ret)
+-		return ret;
++		goto error;
++
+ 	ret = lttng_context_init();
+ 	if (ret)
+-		return ret;
++		goto error;
++
+ 	ret = lttng_tracepoint_init();
+ 	if (ret)
+ 		goto error_tp;
+@@ -3673,6 +3675,8 @@ error_kmem_event_recorder:
+ 	lttng_tracepoint_exit();
+ error_tp:
+ 	lttng_context_exit();
++
++error:
+ 	printk(KERN_NOTICE "LTTng: Failed to load modules v%s.%s.%s%s (%s)%s%s\n",
+ 		__stringify(LTTNG_MODULES_MAJOR_VERSION),
+ 		__stringify(LTTNG_MODULES_MINOR_VERSION),
+-- 
+2.34.1
+

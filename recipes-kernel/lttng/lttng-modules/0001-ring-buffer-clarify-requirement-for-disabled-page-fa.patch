@@ -1,0 +1,80 @@
+From 330651c1c896fe9991434fbe6849fb77daed4259 Mon Sep 17 00:00:00 2001
+From: Mathieu Desnoyers <mathieu.desnoyers@efficios.com>
+Date: Wed, 10 Sep 2025 15:43:00 -0400
+Subject: [PATCH 1/6] ring buffer: clarify requirement for disabled page fault
+ handler
+
+The implementation is OK, but let's improve clarity about the need to
+call those functions with the page fault handler disabled.
+
+Upstream-Status: Inappropriate [for 2.14.1 only]
+Signed-off-by: Mathieu Desnoyers <mathieu.desnoyers@efficios.com>
+Change-Id: If30514085777d9b2225fd1513d77356510a6af6d
+---
+ include/ringbuffer/backend.h             |  6 +++---
+ src/lib/ringbuffer/ring_buffer_backend.c | 18 +++++++++---------
+ 2 files changed, 12 insertions(+), 12 deletions(-)
+
+diff --git a/include/ringbuffer/backend.h b/include/ringbuffer/backend.h
+index ddcf8749..4f8ff598 100644
+--- a/include/ringbuffer/backend.h
++++ b/include/ringbuffer/backend.h
+@@ -170,9 +170,9 @@ size_t lib_ring_buffer_do_strcpy(const struct lttng_kernel_ring_buffer_config *c
+  * Returns the number of bytes copied. Does *not* terminate @dest with
+  * NULL terminating character.
+  *
+- * This function deals with userspace pointers, it should never be called
+- * directly without having the src pointer checked with access_ok()
+- * previously.
++ * This function deals with userspace pointers. It should be called
++ * after having the src pointer checked with access_ok() and with page
++ * fault handler disabled.
+  */
+ static inline __attribute__((always_inline))
+ size_t lib_ring_buffer_do_strcpy_from_user_inatomic(const struct lttng_kernel_ring_buffer_config *config,
+diff --git a/src/lib/ringbuffer/ring_buffer_backend.c b/src/lib/ringbuffer/ring_buffer_backend.c
+index b5ecde4d..f31a3c85 100644
+--- a/src/lib/ringbuffer/ring_buffer_backend.c
++++ b/src/lib/ringbuffer/ring_buffer_backend.c
+@@ -809,9 +809,9 @@ EXPORT_SYMBOL_GPL(_lib_ring_buffer_pstrcpy);
+  * @src : source address
+  * @len : length to write
+  *
+- * This function deals with userspace pointers, it should never be called
+- * directly without having the src pointer checked with access_ok()
+- * previously.
++ * This function deals with userspace pointers. It should be called
++ * after having the src pointer checked with access_ok() and with page
++ * fault handler disabled.
+  */
+ void _lib_ring_buffer_copy_from_user_inatomic(struct lttng_kernel_ring_buffer_backend *bufb,
+ 				      size_t offset, const void __user *src, size_t len)
+@@ -862,9 +862,9 @@ EXPORT_SYMBOL_GPL(_lib_ring_buffer_copy_from_user_inatomic);
+  * @len : length to write
+  * @pad : character to use for padding
+  *
+- * This function deals with userspace pointers, it should never be called
+- * directly without having the src pointer checked with access_ok()
+- * previously.
++ * This function deals with userspace pointers. It should be called
++ * after having the src pointer checked with access_ok() and with page
++ * fault handler disabled.
+  */
+ void _lib_ring_buffer_strcpy_from_user_inatomic(struct lttng_kernel_ring_buffer_backend *bufb,
+ 		size_t offset, const char __user *src, size_t len, int pad)
+@@ -952,9 +952,9 @@ EXPORT_SYMBOL_GPL(_lib_ring_buffer_strcpy_from_user_inatomic);
+  * The length of the pascal strings in the ring buffer is explicit: it
+  * is either the array or sequence length.
+  *
+- * This function deals with userspace pointers, it should never be called
+- * directly without having the src pointer checked with access_ok()
+- * previously.
++ * This function deals with userspace pointers. It should be called
++ * after having the src pointer checked with access_ok() and with page
++ * fault handler disabled.
+  */
+ void _lib_ring_buffer_pstrcpy_from_user_inatomic(struct lttng_kernel_ring_buffer_backend *bufb,
+ 			size_t offset, const char __user *src, size_t len, int pad)
+-- 
+2.34.1
+

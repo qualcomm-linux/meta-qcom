@@ -1,0 +1,179 @@
+From 3fbc0fa29f4dd6df45e5816b49a12602b08235bb Mon Sep 17 00:00:00 2001
+From: Kienan Stewart <kstewart@efficios.com>
+Date: Tue, 30 Sep 2025 18:45:41 +0000
+Subject: [PATCH 3/6] Fix: Add wrapper for `get_pfnblock_migatetype`
+
+As of Linux v6.17, lttng-modules builds fail with the following error:
+
+```
+MODPOST Module.symvers
+ERROR: modpost: "get_pfnblock_migratetype" [probes/lttng-probe-kmem.ko] undefined!
+make[4]: *** [linux/v6.17/sources/scripts/Makefile.modpost:147: Module.symvers] Error 1
+```
+
+The `get_pageblock_migratetype` macro has changed to use
+`get_pfnblock_migratetype` rather than `get_pfnblock_flags_mask`.
+
+See upstream commit  42f46ed99ac6c07adf7f3bcbe9040b0c52d62d0f
+
+    commit 42f46ed99ac6c07adf7f3bcbe9040b0c52d62d0f
+    Author: Zi Yan <ziy@nvidia.com>
+    Date:   Mon Jun 16 22:11:09 2025 -0400
+
+        mm/page_alloc: pageblock flags functions clean up
+
+        Patch series "Make MIGRATE_ISOLATE a standalone bit", v10.
+
+        This patchset moves MIGRATE_ISOLATE to a standalone bit to avoid being
+        overwritten during pageblock isolation process.  Currently,
+        MIGRATE_ISOLATE is part of enum migratetype (in include/linux/mmzone.h),
+        thus, setting a pageblock to MIGRATE_ISOLATE overwrites its original
+        migratetype.  This causes pageblock migratetype loss during
+        alloc_contig_range() and memory offline, especially when the process fails
+        due to a failed pageblock isolation and the code tries to undo the
+        finished pageblock isolations.
+
+        In terms of performance for changing pageblock types, no performance
+        change is observed:
+
+        1. I used perf to collect stats of offlining and onlining all memory
+           of a 40GB VM 10 times and see that get_pfnblock_flags_mask() and
+           set_pfnblock_flags_mask() take about 0.12% and 0.02% of the whole
+           process respectively with and without this patchset across 3 runs.
+
+        2. I used perf to collect stats of dd from /dev/random to a 40GB tmpfs
+           file and find get_pfnblock_flags_mask() takes about 0.05% of the
+           process with and without this patchset across 3 runs.
+
+        This patch (of 6):
+
+        No functional change is intended.
+
+        1. Add __NR_PAGEBLOCK_BITS for the number of pageblock flag bits and use
+           roundup_pow_of_two(__NR_PAGEBLOCK_BITS) as NR_PAGEBLOCK_BITS to take
+           right amount of bits for pageblock flags.
+        2. Rename PB_migrate_skip to PB_compact_skip.
+        3. Add {get,set,clear}_pfnblock_bit() to operate one a standalone bit,
+           like PB_compact_skip.
+        3. Make {get,set}_pfnblock_flags_mask() internal functions and use
+           {get,set}_pfnblock_migratetype() for pageblock migratetype operations.
+        4. Move pageblock flags common code to get_pfnblock_bitmap_bitidx().
+        3. Use MIGRATETYPE_MASK to get the migratetype of a pageblock from its
+           flags.
+        4. Use PB_migrate_end in the definition of MIGRATETYPE_MASK instead of
+           PB_migrate_bits.
+        5. Add a comment on is_migrate_cma_folio() to prevent one from changing it
+           to use get_pageblock_migratetype() and causing issues.
+
+Upstream-Status: Inappropriate [for 2.14.1 only]
+Change-Id: I81bc8e4384e57e805621fa4d2c12d0d0f17758b3
+Signed-off-by: Kienan Stewart <kstewart@efficios.com>
+Signed-off-by: Mathieu Desnoyers <mathieu.desnoyers@efficios.com>
+---
+ include/instrumentation/events/kmem.h |  1 -
+ include/wrapper/page_alloc.h          | 24 +++++++++++++++++-
+ src/wrapper/page_alloc.c              | 36 ++++++++++++++++++++++++++-
+ 3 files changed, 58 insertions(+), 3 deletions(-)
+
+diff --git a/include/instrumentation/events/kmem.h b/include/instrumentation/events/kmem.h
+index b761a67b..3390f35f 100644
+--- a/include/instrumentation/events/kmem.h
++++ b/include/instrumentation/events/kmem.h
+@@ -470,7 +470,6 @@ LTTNG_TRACEPOINT_EVENT_MAP(mm_page_alloc_extfrag,
+ 			(alloc_migratetype == get_pageblock_migratetype(page)))
+ 	)
+ )
+-
+ #endif /* LTTNG_TRACE_KMEM_H */
+ 
+ /* This part must be outside protection */
+diff --git a/include/wrapper/page_alloc.h b/include/wrapper/page_alloc.h
+index 8efe406f..d76aac9c 100644
+--- a/include/wrapper/page_alloc.h
++++ b/include/wrapper/page_alloc.h
+@@ -20,7 +20,6 @@
+  * the get_pageblock_migratetype() macro uses it.
+  */
+ #ifdef CONFIG_KALLSYMS
+-
+ #define get_pfnblock_flags_mask		wrapper_get_pfnblock_flags_mask
+ 
+ #if (LTTNG_LINUX_VERSION_CODE >= LTTNG_KERNEL_VERSION(5,14,0))
+@@ -50,4 +49,27 @@ int wrapper_get_pfnblock_flags_mask_init(void)
+ 
+ #endif
+ 
++/*
++ * We need to redefine get_pfnblock_migratetype to our wrapper because
++ * the get_pageblock_migratetype() macro uses it.
++ */
++#ifdef CONFIG_KALLSYMS
++#define get_pfnblock_migratetype	wrapper_get_pfnblock_migratetype
++
++#if (LTTNG_LINUX_VERSION_CODE >= LTTNG_KERNEL_VERSION(6,17,0))
++enum migratetype wrapper_get_pfnblock_migratetype(const struct page *page,
++		unsigned long pfn);
++int wrapper_get_pfnblock_migratetype_init(void);
++
++#else
++
++static inline
++int wrapper_get_pfnblock_migratetype_init(void)
++{
++	return 0;
++}
++#endif /* else LTTNG_LINUX_VERSION_CODE >= LTTNG_KERNEL_VERSION(6,17,0) */
++
++#endif /* else CONFIG_KALLSYMS */
++
+ #endif /* _LTTNG_WRAPPER_PAGE_ALLOC_H */
+diff --git a/src/wrapper/page_alloc.c b/src/wrapper/page_alloc.c
+index 69988e66..011eef81 100644
+--- a/src/wrapper/page_alloc.c
++++ b/src/wrapper/page_alloc.c
+@@ -106,7 +106,41 @@ int wrapper_get_pfnblock_flags_mask_init(void)
+ }
+ EXPORT_SYMBOL_GPL(wrapper_get_pfnblock_flags_mask_init);
+ 
+-#else
++#if (LTTNG_LINUX_VERSION_CODE >= LTTNG_KERNEL_VERSION(6,17,0))
++static
++enum migratetype (*get_pfnblock_migratetype_sym)(const struct page *page,
++		unsigned long pfn);
++
++enum migratetype wrapper_get_pfnblock_migratetype(const struct page *page,
++		unsigned long pfn)
++{
++	WARN_ON_ONCE(!get_pfnblock_migratetype_sym);
++	if (get_pfnblock_migratetype_sym) {
++		struct irq_ibt_state irq_ibt_state;
++		enum migratetype ret;
++
++		irq_ibt_state = wrapper_irq_ibt_save();
++		ret = get_pfnblock_migratetype_sym(page, pfn);
++		wrapper_irq_ibt_restore(irq_ibt_state);
++		return ret;
++	}
++	return -ENOSYS;
++}
++
++int wrapper_get_pfnblock_migratetype_init(void)
++{
++	get_pfnblock_migratetype_sym =
++		(void *) kallsyms_lookup_funcptr("get_pfnblock_migratetype");
++	if (!get_pfnblock_migratetype_sym)
++		return -1;
++	return 0;
++}
++
++EXPORT_SYMBOL_GPL(wrapper_get_pfnblock_migratetype);
++EXPORT_SYMBOL_GPL(wrapper_get_pfnblock_migratetype_init);
++#endif /* LTTNG_LINUX_VERSION_CODE >= LTTNG_KERNEL_VERSION(6,17,0) */
++
++#else /* CONFIG_KALLSYMS */
+ 
+ #include <linux/pageblock-flags.h>
+ 
+-- 
+2.34.1
+

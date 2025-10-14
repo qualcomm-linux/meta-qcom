@@ -1,0 +1,109 @@
+From 79d7eda5a701a6cf388b1dabcd79e62c72fe1844 Mon Sep 17 00:00:00 2001
+From: Mathieu Desnoyers <mathieu.desnoyers@efficios.com>
+Date: Wed, 1 Oct 2025 16:04:55 -0400
+Subject: [PATCH 2/6] Fix: Protect syscall probes with preemption disable
+
+Since kernel v6.13, the syscall tracepoints call the probes from
+faultable context (with preemption enabled).
+
+Adapt to this change to ensure that the LTTng-modules per-cpu data
+structures that expect preemption to be disabled don't get corrupted.
+
+This has been noticed through a linked list corruption of the
+lttng-tp-mempool per-cpu allocator.
+
+This only affects preemptible kernel configurations (PREEMPT,
+PREEMPT_LAZY).
+
+Non-preemptible kernel configurations are not affected (PREEMPT_NONE,
+PREEMPT_VOLOUNTARY).
+
+Upstream-Status: Inappropriate [for 2.14.1 only]
+Signed-off-by: Mathieu Desnoyers <mathieu.desnoyers@efficios.com>
+Change-Id: I67211e9f8ae96dce0e05a377827d606d1e54b0f8
+---
+ src/lttng-syscalls.c | 40 ++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 40 insertions(+)
+
+diff --git a/src/lttng-syscalls.c b/src/lttng-syscalls.c
+index 3548052f..c85b722c 100644
+--- a/src/lttng-syscalls.c
++++ b/src/lttng-syscalls.c
+@@ -33,6 +33,10 @@
+ #include <lttng/utils.h>
+ #include <lttng/kernel-version.h>
+ 
++#if (LTTNG_LINUX_VERSION_CODE >= LTTNG_KERNEL_VERSION(6,13,0))
++#include <linux/cleanup.h>
++#endif
++
+ #include "lttng-syscalls.h"
+ 
+ #ifndef CONFIG_COMPAT
+@@ -131,6 +135,15 @@ static void syscall_entry_event_unknown(struct hlist_head *unknown_action_list_h
+ 	unsigned long args[LTTNG_SYSCALL_NR_ARGS];
+ 	struct lttng_kernel_event_common_private *event_priv;
+ 
++#if (LTTNG_LINUX_VERSION_CODE >= LTTNG_KERNEL_VERSION(6,13,0))
++	/*
++	 * Starting with kernel v6.13, the syscall probes are called
++	 * with preemption enabled, but the ring buffer and per-cpu data
++	 * require preemption to be disabled.
++	 */
++	guard(preempt_notrace)();
++#endif
++
+ 	lttng_syscall_get_arguments(current, regs, args);
+ 	lttng_hlist_for_each_entry_rcu(event_priv, unknown_action_list_head, u.syscall.node) {
+ 		if (unlikely(in_compat_syscall()))
+@@ -249,6 +262,15 @@ void syscall_entry_event_probe(void *__data, struct pt_regs *regs, long id)
+ 	const struct trace_syscall_entry *table, *entry;
+ 	size_t table_len;
+ 
++#if (LTTNG_LINUX_VERSION_CODE >= LTTNG_KERNEL_VERSION(6,13,0))
++	/*
++	 * Starting with kernel v6.13, the syscall probes are called
++	 * with preemption enabled, but the ring buffer and per-cpu data
++	 * require preemption to be disabled.
++	 */
++	guard(preempt_notrace)();
++#endif
++
+ #ifdef CONFIG_X86_X32_ABI
+ 	if (in_x32_syscall()) {
+ 		/* x32 system calls are not supported. */
+@@ -306,6 +328,15 @@ static void syscall_exit_event_unknown(struct hlist_head *unknown_action_list_he
+ 	unsigned long args[LTTNG_SYSCALL_NR_ARGS];
+ 	struct lttng_kernel_event_common_private *event_priv;
+ 
++#if (LTTNG_LINUX_VERSION_CODE >= LTTNG_KERNEL_VERSION(6,13,0))
++	/*
++	 * Starting with kernel v6.13, the syscall probes are called
++	 * with preemption enabled, but the ring buffer and per-cpu data
++	 * require preemption to be disabled.
++	 */
++	guard(preempt_notrace)();
++#endif
++
+ 	lttng_syscall_get_arguments(current, regs, args);
+ 	lttng_hlist_for_each_entry_rcu(event_priv, unknown_action_list_head, u.syscall.node) {
+ 		if (unlikely(in_compat_syscall()))
+@@ -433,6 +464,15 @@ void syscall_exit_event_probe(void *__data, struct pt_regs *regs, long ret)
+ 	size_t table_len;
+ 	long id;
+ 
++#if (LTTNG_LINUX_VERSION_CODE >= LTTNG_KERNEL_VERSION(6,13,0))
++	/*
++	 * Starting with kernel v6.13, the syscall probes are called
++	 * with preemption enabled, but the ring buffer and per-cpu data
++	 * require preemption to be disabled.
++	 */
++	guard(preempt_notrace)();
++#endif
++
+ #ifdef CONFIG_X86_X32_ABI
+ 	if (in_x32_syscall()) {
+ 		/* x32 system calls are not supported. */
+-- 
+2.34.1
+

@@ -1,0 +1,66 @@
+From 622d33aa5262dc8296155ff4dc67ca7371bc0278 Mon Sep 17 00:00:00 2001
+From: Michael Jeanson <mjeanson@efficios.com>
+Date: Wed, 8 Oct 2025 11:29:40 -0400
+Subject: [PATCH 4/6] fix: remove duplicated MODULE macros
+
+The lttng-tracer.ko module has multiple source files defining the
+'MODULE_' macros resulting in duplicated metadata in the modinfo. Keep
+only one set of macros in 'src/lttng-events.c'.
+
+Upstream-Status: Inappropriate [for 2.14.1 only]
+Change-Id: I55c2b9ee48956b7759db23073fac1babd8894c3d
+Signed-off-by: Michael Jeanson <mjeanson@efficios.com>
+Signed-off-by: Mathieu Desnoyers <mathieu.desnoyers@efficios.com>
+---
+ src/lttng-kprobes.c    | 8 --------
+ src/lttng-kretprobes.c | 8 --------
+ src/lttng-uprobes.c    | 4 ----
+ 3 files changed, 20 deletions(-)
+
+diff --git a/src/lttng-kprobes.c b/src/lttng-kprobes.c
+index 75eb4141..c3b3d8c9 100644
+--- a/src/lttng-kprobes.c
++++ b/src/lttng-kprobes.c
+@@ -240,11 +240,3 @@ void lttng_kprobes_destroy_event_private(struct lttng_kernel_event_common *event
+ 	kfree(event->priv->desc->event_name);
+ 	kfree(event->priv->desc);
+ }
+-
+-MODULE_LICENSE("GPL and additional rights");
+-MODULE_AUTHOR("Mathieu Desnoyers <mathieu.desnoyers@efficios.com>");
+-MODULE_DESCRIPTION("LTTng kprobes probes");
+-MODULE_VERSION(__stringify(LTTNG_MODULES_MAJOR_VERSION) "."
+-	__stringify(LTTNG_MODULES_MINOR_VERSION) "."
+-	__stringify(LTTNG_MODULES_PATCHLEVEL_VERSION)
+-	LTTNG_MODULES_EXTRAVERSION);
+diff --git a/src/lttng-kretprobes.c b/src/lttng-kretprobes.c
+index 7bc38499..15d6fed4 100644
+--- a/src/lttng-kretprobes.c
++++ b/src/lttng-kretprobes.c
+@@ -330,11 +330,3 @@ void lttng_kretprobes_destroy_event_private(struct lttng_kernel_event_common *ev
+ 	kfree(event->priv->desc);
+ 	lttng_kretprobes_put_krp(event->priv->u.kretprobe.lttng_krp);
+ }
+-
+-MODULE_LICENSE("GPL and additional rights");
+-MODULE_AUTHOR("Mathieu Desnoyers <mathieu.desnoyers@efficios.com>");
+-MODULE_DESCRIPTION("LTTng kretprobes probes");
+-MODULE_VERSION(__stringify(LTTNG_MODULES_MAJOR_VERSION) "."
+-	__stringify(LTTNG_MODULES_MINOR_VERSION) "."
+-	__stringify(LTTNG_MODULES_PATCHLEVEL_VERSION)
+-	LTTNG_MODULES_EXTRAVERSION);
+diff --git a/src/lttng-uprobes.c b/src/lttng-uprobes.c
+index cb9b1663..39c09b8f 100644
+--- a/src/lttng-uprobes.c
++++ b/src/lttng-uprobes.c
+@@ -371,7 +371,3 @@ void lttng_uprobes_destroy_event_private(struct lttng_kernel_event_common *event
+ 	kfree(event->priv->desc->event_name);
+ 	kfree(event->priv->desc);
+ }
+-
+-MODULE_LICENSE("GPL and additional rights");
+-MODULE_AUTHOR("Yannick Brosseau");
+-MODULE_DESCRIPTION("Linux Trace Toolkit Uprobes Support");
+-- 
+2.34.1
+
