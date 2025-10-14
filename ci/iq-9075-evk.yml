@@ -5,4 +5,4 @@ header:
   includes:
   - ci/base.yml
 
-machine: qcs9075-iq-9075-evk
+machine: iq-9075-evk
