@@ -1,0 +1,65 @@
+From 6b5bbb11c9eec63a8b27cc9cf7786859f3b09659 Mon Sep 17 00:00:00 2001
+From: Mohammad Rafi Shaik <mohammad.rafi.shaik@oss.qualcomm.com>
+Date: Fri, 26 Sep 2025 22:26:30 +0530
+Subject: [PATCH] ucm2: Qualcomm: sa8775p: Move lemans-evk hifi to sa8775p
+ subdir
+
+Move lemans-evk HiFi configuration files to the sa8775p subdirectory,
+aligning with the kernel's use of the sa8775p folder for all Linux
+firmware. So Update the UCM HiFi configuration file accordingly.
+
+Signed-off-by: Mohammad Rafi Shaik <mohammad.rafi.shaik@oss.qualcomm.com>
+Upstream-Status: Submitted [https://github.com/alsa-project/alsa-ucm-conf/pull/618]
+---
+ ucm2/Qualcomm/{qcs9100 => sa8775p}/lemans-evk/HiFi.conf     | 0
+ .../{qcs9100 => sa8775p}/lemans-evk/LEMANS-EVK.conf         | 2 +-
+ ucm2/conf.d/qcs9100/LEMANS-EVK.conf                         | 6 ------
+ ucm2/conf.d/sa8775p/LEMANS-EVK.conf                         | 1 +
+ 4 files changed, 2 insertions(+), 7 deletions(-)
+ rename ucm2/Qualcomm/{qcs9100 => sa8775p}/lemans-evk/HiFi.conf (100%)
+ rename ucm2/Qualcomm/{qcs9100 => sa8775p}/lemans-evk/LEMANS-EVK.conf (58%)
+ delete mode 100644 ucm2/conf.d/qcs9100/LEMANS-EVK.conf
+ create mode 120000 ucm2/conf.d/sa8775p/LEMANS-EVK.conf
+
+diff --git a/ucm2/Qualcomm/qcs9100/lemans-evk/HiFi.conf b/ucm2/Qualcomm/sa8775p/lemans-evk/HiFi.conf
+similarity index 100%
+rename from ucm2/Qualcomm/qcs9100/lemans-evk/HiFi.conf
+rename to ucm2/Qualcomm/sa8775p/lemans-evk/HiFi.conf
+diff --git a/ucm2/Qualcomm/qcs9100/lemans-evk/LEMANS-EVK.conf b/ucm2/Qualcomm/sa8775p/lemans-evk/LEMANS-EVK.conf
+similarity index 58%
+rename from ucm2/Qualcomm/qcs9100/lemans-evk/LEMANS-EVK.conf
+rename to ucm2/Qualcomm/sa8775p/lemans-evk/LEMANS-EVK.conf
+index 71e8c91..8989dd8 100644
+--- a/ucm2/Qualcomm/qcs9100/lemans-evk/LEMANS-EVK.conf
++++ b/ucm2/Qualcomm/sa8775p/lemans-evk/LEMANS-EVK.conf
+@@ -1,6 +1,6 @@
+ Syntax 4
+ 
+ SectionUseCase."HiFi" {
+-	File "/Qualcomm/qcs9100/lemans-evk/HiFi.conf"
++	File "/Qualcomm/sa8775p/lemans-evk/HiFi.conf"
+ 	Comment "HiFi quality Music"
+ }
+diff --git a/ucm2/conf.d/qcs9100/LEMANS-EVK.conf b/ucm2/conf.d/qcs9100/LEMANS-EVK.conf
+deleted file mode 100644
+index e458c25..0000000
+--- a/ucm2/conf.d/qcs9100/LEMANS-EVK.conf
++++ /dev/null
+@@ -1,6 +0,0 @@
+-Syntax 4
+-
+-SectionUseCase."HiFi" {
+-	File "/Qualcomm/qcs9100/lemans-evk/HiFi.conf"
+-	Comment "HiFi quality Music."
+-}
+diff --git a/ucm2/conf.d/sa8775p/LEMANS-EVK.conf b/ucm2/conf.d/sa8775p/LEMANS-EVK.conf
+new file mode 120000
+index 0000000..f554cce
+--- /dev/null
++++ b/ucm2/conf.d/sa8775p/LEMANS-EVK.conf
+@@ -0,0 +1 @@
++../../Qualcomm/sa8775p/lemans-evk/LEMANS-EVK.conf
+\ No newline at end of file
+-- 
+2.34.1
+
