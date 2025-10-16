@@ -1,0 +1,10 @@
+[Unit]
+Description=Resource Tuner Service
+
+[Service]
+Restart=on-failure
+ExecStart=/usr/bin/resource_tuner
+TimeoutStopSec=2
+
+[Install]
+WantedBy=multi-user.target
