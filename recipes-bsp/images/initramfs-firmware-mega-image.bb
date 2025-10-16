@@ -11,6 +11,7 @@ PACKAGE_INSTALL += " \
     packagegroup-dragonboard410c-firmware \
     packagegroup-dragonboard820c-firmware \
     packagegroup-dragonboard845c-firmware \
+    packagegroup-qcs615-adp-air-firmware \
     packagegroup-qcs8300-ride-firmware \
     packagegroup-rb1-firmware \
     packagegroup-rb2-firmware \
@@ -19,6 +20,7 @@ PACKAGE_INSTALL += " \
     packagegroup-sa8775p-ride-firmware \
     packagegroup-dragonboard820c-hexagon-dsp-binaries \
     packagegroup-dragonboard845c-hexagon-dsp-binaries \
+    packagegroup-qcs615-adp-air-hexagon-dsp-binaries \
     packagegroup-qcs8300-ride-hexagon-dsp-binaries \
     packagegroup-rb1-hexagon-dsp-binaries \
     packagegroup-rb2-hexagon-dsp-binaries \
