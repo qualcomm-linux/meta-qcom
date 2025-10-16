@@ -8,7 +8,7 @@ COMPILE_EXTRA_DEPENDS:qcom = "virtual/kernel:do_deploy"
 do_compile[depends] += "${COMPILE_EXTRA_DEPENDS}"
 
 uboot_compile_config:append:qcom() {
-    cd ${B}/${config}
+    cd ${B}/${builddir}
     touch empty-file
     rm -f u-boot-nodtb.bin.gz
     gzip -k u-boot-nodtb.bin
@@ -18,5 +18,5 @@ uboot_compile_config:append:qcom() {
 
 # Symlink the 'main' u-boot.bin to boot.img so the qcom image bbclass pick it up
 uboot_deploy_config:append:qcom() {
-    cd ${DEPLOYDIR} && ln -sf u-boot-${type}-${PV}-${PR}.bin boot-${MACHINE}.img	
+    cd ${DEPLOYDIR} && ln -sf u-boot-${type}-${PV}-${PR}.bin boot-${MACHINE}.img
 }
