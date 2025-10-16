@@ -15,6 +15,7 @@ RDEPENDS:${PN}-boot-essential = " \
     qrtr \
     rmtfs \
     tqftpserv \
+    resource-tuner \
 "
 
 RDEPENDS:${PN}-boot-additional:append:aarch64 = " \
