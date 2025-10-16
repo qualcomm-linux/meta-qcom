@@ -35,3 +35,4 @@ local_conf_header:
 
 target:
   - qcom-multimedia-image
+  - qcom-multimedia-proprietary-image
