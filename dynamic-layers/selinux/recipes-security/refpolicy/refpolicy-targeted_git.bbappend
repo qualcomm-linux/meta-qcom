@@ -47,3 +47,32 @@ prepare_policy_store() {
         done
     fi
 }
+
+# Overridden version of rebuild_policy from upstream meta-selinux
+# Policy version depends upon the following command:
+# "recipe-sysroot-native/usr/bin/checkpolicy -V | cut -d' ' -f1"
+# The above command return policy version and is assigned to the
+# variable OUTPUT_POLICY and then the policy.<policy_version> file
+# will be generated. In our case refpolicy generates policy.35
+# So, corrected the policy version in the below overridden function.
+rebuild_policy() {
+    cat <<-EOF > ${D}${sysconfdir}/selinux/semanage.conf
+module-store = direct
+[setfiles]
+path = ${STAGING_DIR_NATIVE}${base_sbindir_native}/setfiles
+args = -q -c \$@ \$<
+[end]
+[sefcontext_compile]
+path = ${STAGING_DIR_NATIVE}${sbindir_native}/sefcontext_compile
+args = \$@
+[end]
+
+policy-version = 35
+EOF
+
+    # Create policy store and build the policy
+    semodule -p ${D} -s ${POLICY_NAME} -n -B
+    rm -f ${D}${sysconfdir}/selinux/semanage.conf
+    # No need to leave final dir created by semanage laying around
+    rm -rf ${D}${localstatedir}/lib/selinux/final
+}
