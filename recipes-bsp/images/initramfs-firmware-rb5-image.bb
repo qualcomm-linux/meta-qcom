@@ -1,9 +1,6 @@
 DESCRIPTION = "Tiny ramdisk image with Qualcomm Robotics RB5 firmware files"
 
-# Do not install anything by default
-PACKAGE_INSTALL = ""
-
-PACKAGE_INSTALL:qcom-armv8a = " \
+PACKAGE_INSTALL += " \
     packagegroup-rb5-firmware \
 "
 
