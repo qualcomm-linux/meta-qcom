@@ -1,0 +1,156 @@
+From e3c5819c4a45e088fd24f193a7f08716414539fe Mon Sep 17 00:00:00 2001
+From: Michael Jeanson <mjeanson@efficios.com>
+Date: Wed, 8 Oct 2025 15:12:25 -0400
+Subject: [PATCH 5/6] fix: get_pfnblock_flags_mask / get_pfnblock_migratetype
+ wrappers for v6.17
+
+* Add a version gate for the get_pfnblock_flags_mask wrapper as the
+  symbol was removed in v6.17 and thus initialization would always fail
+  preventing the modules load.
+* Add missing initialization of the get_pfnblock_migratetype wrapper
+
+Upstream-Status: Inappropriate [for 2.14.1 only]
+Change-Id: I5ab3babade87ca501018d91ea2fd04239b9e5d27
+Signed-off-by: Michael Jeanson <mjeanson@efficios.com>
+Signed-off-by: Mathieu Desnoyers <mathieu.desnoyers@efficios.com>
+---
+ include/wrapper/page_alloc.h | 11 +++++++----
+ src/lttng-events.c           |  5 +++++
+ src/wrapper/page_alloc.c     | 16 ++++++++++------
+ 3 files changed, 22 insertions(+), 10 deletions(-)
+
+diff --git a/include/wrapper/page_alloc.h b/include/wrapper/page_alloc.h
+index d76aac9c..af8a8f68 100644
+--- a/include/wrapper/page_alloc.h
++++ b/include/wrapper/page_alloc.h
+@@ -15,11 +15,13 @@
+ #include <linux/mm_types.h>
+ #include <lttng/kernel-version.h>
+ 
++#if defined(CONFIG_KALLSYMS) && \
++	(LTTNG_LINUX_VERSION_CODE < LTTNG_KERNEL_VERSION(6,17,0))
++
+ /*
+  * We need to redefine get_pfnblock_flags_mask to our wrapper, because
+  * the get_pageblock_migratetype() macro uses it.
+  */
+-#ifdef CONFIG_KALLSYMS
+ #define get_pfnblock_flags_mask		wrapper_get_pfnblock_flags_mask
+ 
+ #if (LTTNG_LINUX_VERSION_CODE >= LTTNG_KERNEL_VERSION(5,14,0))
+@@ -49,14 +51,16 @@ int wrapper_get_pfnblock_flags_mask_init(void)
+ 
+ #endif
+ 
++
++#if defined(CONFIG_KALLSYMS) && \
++	(LTTNG_LINUX_VERSION_CODE >= LTTNG_KERNEL_VERSION(6,17,0))
++
+ /*
+  * We need to redefine get_pfnblock_migratetype to our wrapper because
+  * the get_pageblock_migratetype() macro uses it.
+  */
+-#ifdef CONFIG_KALLSYMS
+ #define get_pfnblock_migratetype	wrapper_get_pfnblock_migratetype
+ 
+-#if (LTTNG_LINUX_VERSION_CODE >= LTTNG_KERNEL_VERSION(6,17,0))
+ enum migratetype wrapper_get_pfnblock_migratetype(const struct page *page,
+ 		unsigned long pfn);
+ int wrapper_get_pfnblock_migratetype_init(void);
+@@ -68,7 +72,6 @@ int wrapper_get_pfnblock_migratetype_init(void)
+ {
+ 	return 0;
+ }
+-#endif /* else LTTNG_LINUX_VERSION_CODE >= LTTNG_KERNEL_VERSION(6,17,0) */
+ 
+ #endif /* else CONFIG_KALLSYMS */
+ 
+diff --git a/src/lttng-events.c b/src/lttng-events.c
+index 93057d3c..58240e41 100644
+--- a/src/lttng-events.c
++++ b/src/lttng-events.c
+@@ -3579,6 +3579,11 @@ static int __init lttng_events_init(void)
+ 	ret = wrapper_get_pfnblock_flags_mask_init();
+ 	if (ret)
+ 		return ret;
++
++	ret = wrapper_get_pfnblock_migratetype_init();
++	if (ret)
++		return ret;
++
+ 	ret = lttng_probes_init();
+ 	if (ret)
+ 		return ret;
+diff --git a/src/wrapper/page_alloc.c b/src/wrapper/page_alloc.c
+index 011eef81..32f26c81 100644
+--- a/src/wrapper/page_alloc.c
++++ b/src/wrapper/page_alloc.c
+@@ -21,7 +21,9 @@
+ #include <wrapper/kallsyms.h>
+ #include <lttng/kernel-version.h>
+ 
+-#if (LTTNG_LINUX_VERSION_CODE >= LTTNG_KERNEL_VERSION(5,14,0))
++/* get_pfnblock_flags_mask() was removed in 6.17 */
++#if (LTTNG_LINUX_VERSION_CODE < LTTNG_KERNEL_VERSION(6,17,0))
++# if (LTTNG_LINUX_VERSION_CODE >= LTTNG_KERNEL_VERSION(5,14,0))
+ static
+ unsigned long (*get_pfnblock_flags_mask_sym)(const struct page *page,
+ 		unsigned long pfn,
+@@ -44,7 +46,7 @@ unsigned long wrapper_get_pfnblock_flags_mask(const struct page *page,
+ 		return -ENOSYS;
+ 	}
+ }
+-#elif (LTTNG_LINUX_VERSION_CODE >= LTTNG_KERNEL_VERSION(5,9,0))
++# elif (LTTNG_LINUX_VERSION_CODE >= LTTNG_KERNEL_VERSION(5,9,0))
+ static
+ unsigned long (*get_pfnblock_flags_mask_sym)(struct page *page,
+ 		unsigned long pfn,
+@@ -67,7 +69,7 @@ unsigned long wrapper_get_pfnblock_flags_mask(struct page *page,
+ 		return -ENOSYS;
+ 	}
+ }
+-#else	/* #if (LTTNG_LINUX_VERSION_CODE >= LTTNG_KERNEL_VERSION(5,9,0)) */
++# else	/* #if (LTTNG_LINUX_VERSION_CODE >= LTTNG_KERNEL_VERSION(5,9,0)) */
+ static
+ unsigned long (*get_pfnblock_flags_mask_sym)(struct page *page,
+ 		unsigned long pfn,
+@@ -92,7 +94,7 @@ unsigned long wrapper_get_pfnblock_flags_mask(struct page *page,
+ 		return -ENOSYS;
+ 	}
+ }
+-#endif /* #else #if (LTTNG_LINUX_VERSION_CODE >= LTTNG_KERNEL_VERSION(5,9,0)) */
++# endif /* #else #if (LTTNG_LINUX_VERSION_CODE >= LTTNG_KERNEL_VERSION(5,9,0)) */
+ 
+ EXPORT_SYMBOL_GPL(wrapper_get_pfnblock_flags_mask);
+ 
+@@ -105,7 +107,10 @@ int wrapper_get_pfnblock_flags_mask_init(void)
+ 	return 0;
+ }
+ EXPORT_SYMBOL_GPL(wrapper_get_pfnblock_flags_mask_init);
++#endif
++
+ 
++/* get_pfnblock_migratetype() was introduced in 6.17 */
+ #if (LTTNG_LINUX_VERSION_CODE >= LTTNG_KERNEL_VERSION(6,17,0))
+ static
+ enum migratetype (*get_pfnblock_migratetype_sym)(const struct page *page,
+@@ -126,6 +131,7 @@ enum migratetype wrapper_get_pfnblock_migratetype(const struct page *page,
+ 	}
+ 	return -ENOSYS;
+ }
++EXPORT_SYMBOL_GPL(wrapper_get_pfnblock_migratetype);
+ 
+ int wrapper_get_pfnblock_migratetype_init(void)
+ {
+@@ -135,8 +141,6 @@ int wrapper_get_pfnblock_migratetype_init(void)
+ 		return -1;
+ 	return 0;
+ }
+-
+-EXPORT_SYMBOL_GPL(wrapper_get_pfnblock_migratetype);
+ EXPORT_SYMBOL_GPL(wrapper_get_pfnblock_migratetype_init);
+ #endif /* LTTNG_LINUX_VERSION_CODE >= LTTNG_KERNEL_VERSION(6,17,0) */
+ 
+-- 
+2.34.1
+
