@@ -1,0 +1,13 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/siemens/kas/master/kas/schema-kas.json
+
+header:
+  version: 14
+
+repos:
+  meta-updater:
+    url: https://github.com/uptane/meta-updater
+    branch: master
+
+local_conf_header:
+  extra: |
+    DISTRO_FEATURES:append = " sota"
