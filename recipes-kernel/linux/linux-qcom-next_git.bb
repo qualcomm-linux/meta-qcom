@@ -36,10 +36,22 @@ S = "${UNPACKDIR}/${BP}"
 KBUILD_DEFCONFIG ?= "defconfig"
 KBUILD_DEFCONFIG:qcom-armv7a = "qcom_defconfig"
 
+KERNEL_CONFIG_FRAGMENTS ?= "${UNPACKDIR}/configs/qcom.cfg"
+
 do_configure:prepend() {
     # Use a copy of the 'defconfig' from the actual repo to merge fragments
     cp ${S}/arch/${ARCH}/configs/${KBUILD_DEFCONFIG} ${B}/.config
 
+    for f in ${KERNEL_CONFIG_FRAGMENTS}
+    do
+        # Check if the config fragment was copied into the UNPACKDIR
+        if [ ! -e "$f" ]
+        then
+            echo "Could not find kernel config fragment $f"
+            exit 1
+        fi
+    done
+
     # Merge fragment for QCOM value add features
-    ${S}/scripts/kconfig/merge_config.sh -m -O ${B} ${B}/.config ${UNPACKDIR}/configs/qcom.cfg
+    ${S}/scripts/kconfig/merge_config.sh -m -O ${B} ${B}/.config ${KERNEL_CONFIG_FRAGMENTS}
 }
