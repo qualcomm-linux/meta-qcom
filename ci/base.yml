@@ -43,6 +43,9 @@ local_conf_header:
     EXTRA_IMAGE_FEATURES = "allow-empty-password empty-root-password allow-root-login"
     IMAGE_ROOTFS_EXTRA_SPACE = "307200"
     WATCHDOG_RUNTIME_SEC:pn-systemd = "30"
+  fixme: |
+    # the libsolv crashes the opkg in some scenarios not yet fully known
+    PACKAGECONFIG:remove:pn-opkg-native = "libsolv"
 
 machine: unset
 
