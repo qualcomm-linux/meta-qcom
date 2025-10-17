@@ -38,6 +38,8 @@ SERIAL_CONSOLES ?= "115200;ttyMSM0"
 # image.  All our boards (except db410c) have 2GiB and db410c has 1GiB of RAM,
 # so this image would fit.
 INITRAMFS_MAXSIZE = "655360"
+# This initramfs is bigger than the others
+INITRAMFS_MAXSIZE:pn-initramfs-kerneltest-full-image = "983040"
 
 # Use systemd-boot as the EFI bootloader
 EFI_PROVIDER = "systemd-boot"
