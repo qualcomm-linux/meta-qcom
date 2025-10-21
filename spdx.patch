@@ -1,0 +1,146 @@
+From c3227cb5ce51db5fab25c5afc58e870bc5e3ac06 Mon Sep 17 00:00:00 2001
+From: Jose Quaresma <jose.quaresma@oss.qualcomm.com>
+Date: Tue, 21 Oct 2025 19:34:56 +0100
+Subject: [PATCH 1/2] spdx-3.0: replace SPDX3_LIB_DEP_FILES with
+ SPDX3_DEP_FILES
+
+We can have more files types in the chain of dependencies and not just libs.
+
+Upstream-Status: Submitted [https://lore.kernel.org/all/20251022090647.419543-2-jose.quaresma@foundries.io]
+
+Signed-off-by: Jose Quaresma <jose.quaresma@oss.qualcomm.com>
+---
+ meta/classes-recipe/create-spdx-image-3.0.bbclass | 6 +++---
+ meta/classes-recipe/create-spdx-sdk-3.0.bbclass   | 4 ++--
+ meta/classes/create-spdx-3.0.bbclass              | 6 +++---
+ 3 files changed, 8 insertions(+), 8 deletions(-)
+
+diff --git a/meta/classes-recipe/create-spdx-image-3.0.bbclass b/meta/classes-recipe/create-spdx-image-3.0.bbclass
+index e0f1766bb7..636ab14eb0 100644
+--- a/meta/classes-recipe/create-spdx-image-3.0.bbclass
++++ b/meta/classes-recipe/create-spdx-image-3.0.bbclass
+@@ -36,7 +36,7 @@ do_create_rootfs_spdx[sstate-inputdirs] = "${SPDXROOTFSDEPLOY}"
+ do_create_rootfs_spdx[sstate-outputdirs] = "${DEPLOY_DIR_SPDX}"
+ do_create_rootfs_spdx[recrdeptask] += "do_create_spdx do_create_package_spdx"
+ do_create_rootfs_spdx[cleandirs] += "${SPDXROOTFSDEPLOY}"
+-do_create_rootfs_spdx[file-checksums] += "${SPDX3_LIB_DEP_FILES}"
++do_create_rootfs_spdx[file-checksums] += "${SPDX3_DEP_FILES}"
+ 
+ python do_create_rootfs_spdx_setscene() {
+     sstate_setscene(d)
+@@ -54,7 +54,7 @@ do_create_image_spdx[sstate-inputdirs] = "${SPDXIMAGEWORK}"
+ do_create_image_spdx[sstate-outputdirs] = "${DEPLOY_DIR_SPDX}"
+ do_create_image_spdx[cleandirs] = "${SPDXIMAGEWORK}"
+ do_create_image_spdx[dirs] = "${SPDXIMAGEWORK}"
+-do_create_image_spdx[file-checksums] += "${SPDX3_LIB_DEP_FILES}"
++do_create_image_spdx[file-checksums] += "${SPDX3_DEP_FILES}"
+ do_create_image_spdx[vardeps] += "\
+     SPDX_IMAGE_PURPOSE \
+     "
+@@ -77,7 +77,7 @@ do_create_image_sbom_spdx[sstate-outputdirs] = "${DEPLOY_DIR_IMAGE}"
+ do_create_image_sbom_spdx[stamp-extra-info] = "${MACHINE_ARCH}"
+ do_create_image_sbom_spdx[cleandirs] = "${SPDXIMAGEDEPLOYDIR}"
+ do_create_image_sbom_spdx[recrdeptask] += "do_create_spdx do_create_package_spdx"
+-do_create_image_sbom_spdx[file-checksums] += "${SPDX3_LIB_DEP_FILES}"
++do_create_image_sbom_spdx[file-checksums] += "${SPDX3_DEP_FILES}"
+ 
+ python do_create_image_sbom_spdx_setscene() {
+     sstate_setscene(d)
+diff --git a/meta/classes-recipe/create-spdx-sdk-3.0.bbclass b/meta/classes-recipe/create-spdx-sdk-3.0.bbclass
+index 855fb3d09f..e5f220cdfa 100644
+--- a/meta/classes-recipe/create-spdx-sdk-3.0.bbclass
++++ b/meta/classes-recipe/create-spdx-sdk-3.0.bbclass
+@@ -8,14 +8,14 @@
+ do_populate_sdk[recrdeptask] += "do_create_spdx do_create_package_spdx"
+ do_populate_sdk[cleandirs] += "${SPDXSDKWORK}"
+ do_populate_sdk[postfuncs] += "sdk_create_sbom"
+-do_populate_sdk[file-checksums] += "${SPDX3_LIB_DEP_FILES}"
++do_populate_sdk[file-checksums] += "${SPDX3_DEP_FILES}"
+ POPULATE_SDK_POST_HOST_COMMAND:append:task-populate-sdk = " sdk_host_create_spdx"
+ POPULATE_SDK_POST_TARGET_COMMAND:append:task-populate-sdk = " sdk_target_create_spdx"
+ 
+ do_populate_sdk_ext[recrdeptask] += "do_create_spdx do_create_package_spdx"
+ do_populate_sdk_ext[cleandirs] += "${SPDXSDKEXTWORK}"
+ do_populate_sdk_ext[postfuncs] += "sdk_ext_create_sbom"
+-do_populate_sdk_ext[file-checksums] += "${SPDX3_LIB_DEP_FILES}"
++do_populate_sdk_ext[file-checksums] += "${SPDX3_DEP_FILES}"
+ POPULATE_SDK_POST_HOST_COMMAND:append:task-populate-sdk-ext = " sdk_ext_host_create_spdx"
+ POPULATE_SDK_POST_TARGET_COMMAND:append:task-populate-sdk-ext = " sdk_ext_target_create_spdx"
+ 
+diff --git a/meta/classes/create-spdx-3.0.bbclass b/meta/classes/create-spdx-3.0.bbclass
+index c0a5436ad6..3a8a97eca4 100644
+--- a/meta/classes/create-spdx-3.0.bbclass
++++ b/meta/classes/create-spdx-3.0.bbclass
+@@ -133,7 +133,7 @@ oe.spdx30_tasks.collect_dep_objsets[vardepsexclude] = "SPDX_MULTILIB_SSTATE_ARCH
+ # SPDX library code makes heavy use of classes, which bitbake cannot easily
+ # parse out dependencies. As such, the library code files that make use of
+ # classes are explicitly added as file checksum dependencies.
+-SPDX3_LIB_DEP_FILES = "\
++SPDX3_DEP_FILES = "\
+     ${COREBASE}/meta/lib/oe/sbom30.py:True \
+     ${COREBASE}/meta/lib/oe/spdx30.py:True \
+     "
+@@ -159,7 +159,7 @@ addtask do_create_spdx after \
+ SSTATETASKS += "do_create_spdx"
+ do_create_spdx[sstate-inputdirs] = "${SPDXDEPLOY}"
+ do_create_spdx[sstate-outputdirs] = "${DEPLOY_DIR_SPDX}"
+-do_create_spdx[file-checksums] += "${SPDX3_LIB_DEP_FILES}"
++do_create_spdx[file-checksums] += "${SPDX3_DEP_FILES}"
+ 
+ python do_create_spdx_setscene () {
+     sstate_setscene(d)
+@@ -183,7 +183,7 @@ addtask do_create_package_spdx after do_create_spdx before do_build do_rm_work
+ SSTATETASKS += "do_create_package_spdx"
+ do_create_package_spdx[sstate-inputdirs] = "${SPDXRUNTIMEDEPLOY}"
+ do_create_package_spdx[sstate-outputdirs] = "${DEPLOY_DIR_SPDX}"
+-do_create_package_spdx[file-checksums] += "${SPDX3_LIB_DEP_FILES}"
++do_create_package_spdx[file-checksums] += "${SPDX3_DEP_FILES}"
+ 
+ python do_create_package_spdx_setscene () {
+     sstate_setscene(d)
+-- 
+2.51.1.dirty
+
+From a7ce7e844148b038bcff0c285692858d5b1f9c61 Mon Sep 17 00:00:00 2001
+From: Jose Quaresma <jose.quaresma@oss.qualcomm.com>
+Date: Tue, 21 Oct 2025 11:18:53 +0100
+Subject: [PATCH 2/2] create-spdx-3.0: add SPDX_LICENSES to SPDX3_DEP_FILES
+
+If we have changes on SPDX_LICENSES content we ended up building invalid sstate-cache archives.
+The default value for the SPDX_LICENSES is the file meta/files/spdx-licenses.json but this file
+don't use the bitbake fetcher and because of this their checksum is not validated.
+So we need to add this file to the build dependency chain of the SPDX.
+
+For example, currently we have bump from 3.24.0 to 3.27.0 on master-next for the file
+meta/files/spdx-licenses.json. Since the file content is not taken into account, we end
+up creating invalid sstate-cache artifacts on the autobuilder on master-next builds.
+This created sstate-cache artifacts will also be available to master branch users
+that are using the upstream sstate-cache mirror.
+
+If someone is using the public mirror but still following the master branch
+they will encounter something like the following error which this change aims to resolve.
+
+| ERROR: initramfs-rootfs-image-1.0-r0 do_create_image_sbom_spdx: http://spdxdocs.org/openembedded-alias/by-doc-hash/57301e8063a8bf25308226271627db2b78675cda9f648c5c6c14a2b9c18f48dc/zlib/UNIHASH/license/3_27_0/Zlib not found in /work/build/tmp/deploy/spdx/3.0.1/armv8a/by-spdxid-hash/57/57301e8063a8bf25308226271627db2b78675cda9f648c5c6c14a2b9c18f48dc.spdx.json
+
+Upstream-Status: Submitted [https://lore.kernel.org/all/20251022090647.419543-4-jose.quaresma@foundries.io]
+
+Signed-off-by: Jose Quaresma <jose.quaresma@oss.qualcomm.com>
+---
+ meta/classes/create-spdx-3.0.bbclass | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/meta/classes/create-spdx-3.0.bbclass b/meta/classes/create-spdx-3.0.bbclass
+index 3a8a97eca4..a6d2d44e34 100644
+--- a/meta/classes/create-spdx-3.0.bbclass
++++ b/meta/classes/create-spdx-3.0.bbclass
+@@ -136,6 +136,7 @@ oe.spdx30_tasks.collect_dep_objsets[vardepsexclude] = "SPDX_MULTILIB_SSTATE_ARCH
+ SPDX3_DEP_FILES = "\
+     ${COREBASE}/meta/lib/oe/sbom30.py:True \
+     ${COREBASE}/meta/lib/oe/spdx30.py:True \
++    ${SPDX_LICENSES}:True \
+     "
+ 
+ python do_create_spdx() {
+-- 
+2.51.1.dirty
+
