@@ -12,17 +12,17 @@ LICENSE = " \
 LIC_FILES_CHKSUM = "\
     file://LICENSE.qcom;md5=56e86b6c508490dadc343f39468b5f5e \
     file://LICENSE.qcom-2;md5=165287851294f2fb8ac8cbc5e24b02b0 \
-    file://WHENCE;md5=cc95028da846699ee01c5383872edc92 \
+    file://WHENCE;md5=39c0da598a0718260c2c58ad274750c7 \
 "
 NO_GENERIC_LICENSE[dspso-qcom] = "LICENSE.qcom"
 NO_GENERIC_LICENSE[dspso-qcom-2] = "LICENSE.qcom-2"
 NO_GENERIC_LICENSE[dspso-WHENCE] = "WHENCE"
 
 SRC_URI = " \
-    git://github.com/linux-msm/dsp-binaries;protocol=https;branch=trunk \
+    git://github.com/linux-msm/dsp-binaries;protocol=https;branch=trunk;tag=${PV} \
 "
 
-SRCREV = "89cd58272e40bd4e98239f6bc4daa9832e52e386"
+SRCREV = "2e7ff51f371a42995513cc92cc7a4f518163aaaf"
 
 inherit allarch
 
@@ -42,6 +42,7 @@ PACKAGE_BEFORE_PN =+ "\
     ${PN}-qcom-iq9075-evk-adsp \
     ${PN}-qcom-iq9075-evk-cdsp \
     ${PN}-qcom-iq9075-evk-gdsp \
+    ${PN}-qcom-hamoa-iot-evk-cdsp \
     ${PN}-qcom-qcs615-ride-adsp \
     ${PN}-qcom-qcs615-ride-cdsp \
     ${PN}-qcom-qcs8300-ride-adsp \
@@ -71,6 +72,7 @@ LICENSE:${PN}-qcom-iq8275-evk-gdsp = "dspso-qcom-2"
 LICENSE:${PN}-qcom-iq9075-evk-adsp = "dspso-qcom-2"
 LICENSE:${PN}-qcom-iq9075-evk-cdsp = "dspso-qcom-2"
 LICENSE:${PN}-qcom-iq9075-evk-gdsp = "dspso-qcom-2"
+LICENSE:${PN}-qcom-hamoa-iot-evk-cdsp = "dspso-qcom-2"
 LICENSE:${PN}-qcom-qcs615-ride-adsp = "dspso-qcom-2"
 LICENSE:${PN}-qcom-qcs615-ride-cdsp = "dspso-qcom-2"
 LICENSE:${PN}-qcom-qcs8300-ride-adsp = "dspso-qcom-2"
@@ -98,6 +100,7 @@ RDEPENDS:${PN}-qcom-iq8275-evk-gdsp = "linux-firmware-qcom-qcs8300-generalpurpos
 RDEPENDS:${PN}-qcom-iq9075-evk-adsp = "linux-firmware-qcom-sa8775p-audio (= 1:${PV})"
 RDEPENDS:${PN}-qcom-iq9075-evk-cdsp = "linux-firmware-qcom-sa8775p-compute (= 1:${PV})"
 RDEPENDS:${PN}-qcom-iq9075-evk-gdsp = "linux-firmware-qcom-sa8775p-generalpurpose (= 1:${PV})"
+RDEPENDS:${PN}-qcom-hamoa-iot-evk-gdsp = "linux-firmware-qcom-x1e80100-compute (= 1:${PV})"
 RDEPENDS:${PN}-qcom-qcs615-ride-adsp = "linux-firmware-qcom-qcs615-audio (= 1:${PV})"
 RDEPENDS:${PN}-qcom-qcs615-ride-cdsp = "linux-firmware-qcom-qcs615-compute (= 1:${PV})"
 RDEPENDS:${PN}-qcom-qcs8300-ride-adsp = "linux-firmware-qcom-qcs8300-audio (= 1:${PV})"
@@ -130,6 +133,7 @@ FILES:${PN}-qcom-iq8275-evk-gdsp = "${datadir}/qcom/qcs8300/Qualcomm/IQ8275-EVK/
 FILES:${PN}-qcom-iq9075-evk-adsp = "${datadir}/qcom/sa8775p/Qualcomm/IQ9075-EVK/dsp/adsp"
 FILES:${PN}-qcom-iq9075-evk-cdsp = "${datadir}/qcom/sa8775p/Qualcomm/IQ9075-EVK/dsp/cdsp*"
 FILES:${PN}-qcom-iq9075-evk-gdsp = "${datadir}/qcom/sa8775p/Qualcomm/IQ9075-EVK/dsp/gdsp*"
+FILES:${PN}-qcom-hamoa-iot-evk-cdsp = "${datadir}/qcom/x1e80100/Qualcomm/Hamoa-IoT-EVK/dsp/cdsp*"
 FILES:${PN}-qcom-qcs615-ride-adsp = "${datadir}/qcom/qcs615/Qualcomm/QCS615-RIDE/dsp/adsp"
 FILES:${PN}-qcom-qcs615-ride-cdsp = "${datadir}/qcom/qcs615/Qualcomm/QCS615-RIDE/dsp/cdsp*"
 FILES:${PN}-qcom-qcs8300-ride-adsp = "${datadir}/qcom/qcs8300/Qualcomm/QCS8300-RIDE/dsp/adsp"
@@ -151,6 +155,7 @@ FILES:${PN}-thundercomm-rb5-cdsp = "${datadir}/qcom/sm8250/Thundercomm/RB5/dsp/c
 FILES:${PN}-thundercomm-rb5-sdsp = "${datadir}/qcom/sm8250/Thundercomm/RB5/dsp/sdsp"
 
 INSANE_SKIP:${PN}-qcom-db820c-adsp = "arch libdir file-rdeps textrel"
+INSANE_SKIP:${PN}-qcom-hamoa-iot-evk-cdsp = "arch libdir file-rdeps textrel"
 INSANE_SKIP:${PN}-qcom-qcs615-ride-adsp = "arch libdir file-rdeps textrel"
 INSANE_SKIP:${PN}-qcom-qcs615-ride-cdsp = "arch libdir file-rdeps textrel"
 INSANE_SKIP:${PN}-qcom-qcs8300-ride-adsp = "arch libdir file-rdeps textrel"
