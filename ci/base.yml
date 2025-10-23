@@ -14,6 +14,11 @@ repos:
 
   oe-core:
     url: https://github.com/openembedded/openembedded-core
+    patches:
+      plain:
+        repo: meta-qcom
+        path: spdx.patch
+
     layers:
       meta:
 
