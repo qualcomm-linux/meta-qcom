@@ -5,7 +5,7 @@ LICENSE = "GPL-2.0-only"
 LIC_FILES_CHKSUM = "file://adreno.c;beginline=1;endline=1;md5=fcab174c20ea2e2bc0be64b493708266"
 
 PV = "0.0+git"
-SRCREV = "4e344efc57f9b2dee8b7b439799d61772903d194"
+SRCREV = "7e903430c17a2594b1b2907d459f04b2c3d2295b"
 SRC_URI = " \
     git://github.com/qualcomm-linux/kgsl.git;branch=gfx-kernel.le.0.0;protocol=https \
     file://kgsl.rules \

@@ -30,7 +30,7 @@ repos:
 local_conf_header:
   base: |
     CONF_VERSION = "2"
-    INHERIT += "buildstats buildstats-summary"
+    INHERIT += "buildstats-summary"
     INHERIT += "buildhistory"
     INHERIT += "rm_work"
   cmdline: |

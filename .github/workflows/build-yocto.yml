@@ -165,24 +165,41 @@ jobs:
           cache_dir: ${CACHE_DIR}
           kas: ${KAS_CONTAINER}
 
-  create-output:
+  publish_summary:
     needs: compile
-    outputs:
-      url: ${{ steps.print-output.outputs.url }}
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, qcom-u2404, amd64-ssd]
     steps:
+      - name: 'Download build URLs'
+        uses: actions/download-artifact@v4
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          pattern: build-url*
+
       - name: "Print output"
+        shell: bash
         id: print-output
-        env:
-          build_url: ${{ needs.compile.outputs.url }}
         run: |
-          echo "Downloads URL: ${build_url}"
-          echo "url=\"${build_url}\"" >> $GITHUB_OUTPUT
-          echo "${build_url}" > build_url
-          echo "## Download URL" >> $GITHUB_STEP_SUMMARY
-          echo "[${build_url}](${build_url})" >> $GITHUB_STEP_SUMMARY
+          echo "## Download URLs" >> $GITHUB_STEP_SUMMARY
+          export BUILD_URL=""
+          for FILE in build-url*
+          do
+              # Extract build OS and machine name
+              remainder="$FILE"
+              BUILD_URL_STR="${remainder%%_*}"; remainder="${remainder#*_}"
+              MACHINE="${remainder%%_*}"; remainder="${remainder#*_}"
+              OS="${remainder%%_*}"
+              BUILD_URL=$(cat "$FILE/$FILE")
+              echo "### ${MACHINE} ${OS}" >> $GITHUB_STEP_SUMMARY
+              echo "[${BUILD_URL}](${BUILD_URL})" >> $GITHUB_STEP_SUMMARY
+          done
+          # for backward compatibility only
+          # This section should be removed once the patch is merged
+          echo "${BUILD_URL}" > build_url
       - name: Upload build URL
         uses: actions/upload-artifact@v4
         with:
+          overwrite: true
           name: build_url
           path: build_url
+
+

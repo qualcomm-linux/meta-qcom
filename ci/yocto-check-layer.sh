@@ -25,7 +25,7 @@ _is_dir "$WORK_DIR"
 # script to avoid a contaminated environment.
 BUILDDIR="$(mktemp -p $WORK_DIR -d -t build-yocto-check-layer-XXXX)"
 source $WORK_DIR/oe-core/oe-init-build-env $BUILDDIR
-git -c advice.detachedHead=false clone --quiet --shared $REPO_DIR meta-qcom
+git -c advice.detachedHead=false -c init.defaultBranch=master clone --quiet --shared $REPO_DIR meta-qcom
 
 # Yocto Project layer checking tool
 CMD="yocto-check-layer"

@@ -1,4 +1,4 @@
-SUMMARY = "Packages for the IQ-8275-EVK platform"
+SUMMARY = "Packages for the IQ-9075-EVK platform"
 
 inherit packagegroup
 
@@ -18,7 +18,7 @@ RRECOMMENDS:${PN}-firmware = " \
 "
 
 RRECOMMENDS:${PN}-hexagon-dsp-binaries = " \
-    hexagon-dsp-binaries-qcom-iq8275-evk-adsp \
-    hexagon-dsp-binaries-qcom-iq8275-evk-cdsp \
-    hexagon-dsp-binaries-qcom-iq8275-evk-gdsp \
+    hexagon-dsp-binaries-qcom-iq9075-evk-adsp \
+    hexagon-dsp-binaries-qcom-iq9075-evk-cdsp \
+    hexagon-dsp-binaries-qcom-iq9075-evk-gdsp \
 "

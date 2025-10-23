@@ -1,0 +1,189 @@
+From 8946d5d577d36faf45317057889036a236d9265f Mon Sep 17 00:00:00 2001
+From: Dmitry Baryshkov <dmitry.baryshkov@oss.qualcomm.com>
+Date: Mon, 20 Oct 2025 13:17:52 +0300
+Subject: [PATCH] video: driver: follow v4l2_fh_add() / _del() API changes
+
+Since Linux 6.18 functions v4l2_fh_add() and v4l2_fh_del() take care of
+filp->private_data on their own. Follow those API changes.
+
+Currently v4l2_fh teardown happens from the kref release callback, when
+when we don't have struct file pointer. Split msm_vidc_v4l2_fh_del() to
+be called from the .close() callback directly.
+
+Signed-off-by: Dmitry Baryshkov <dmitry.baryshkov@oss.qualcomm.com>
+Upstream-Status: Submitted [https://github.com/qualcomm-linux/video-driver/pull/19]
+---
+ vidc/inc/msm_vidc.h        |  4 ++--
+ vidc/inc/msm_vidc_driver.h |  3 ++-
+ vidc/src/msm_vidc.c        |  8 +++++---
+ vidc/src/msm_vidc_driver.c | 17 +++++++++++++++--
+ vidc/src/msm_vidc_v4l2.c   |  8 ++++++--
+ 5 files changed, 30 insertions(+), 10 deletions(-)
+
+diff --git a/vidc/inc/msm_vidc.h b/vidc/inc/msm_vidc.h
+index 41168e04ec88..ba2fdbaf48bb 100644
+--- a/vidc/inc/msm_vidc.h
++++ b/vidc/inc/msm_vidc.h
+@@ -15,8 +15,8 @@ union msm_v4l2_cmd {
+ 	struct v4l2_encoder_cmd enc;
+ };
+ 
+-void *msm_vidc_open(struct msm_vidc_core *core, u32 session_type);
+-int msm_vidc_close(struct msm_vidc_inst *inst);
++void *msm_vidc_open(struct msm_vidc_core *core, u32 session_type, struct file *filp);
++int msm_vidc_close(struct msm_vidc_inst *inst, struct file *filp);
+ int msm_vidc_querycap(struct msm_vidc_inst *inst, struct v4l2_capability *cap);
+ int msm_vidc_enum_fmt(struct msm_vidc_inst *inst, struct v4l2_fmtdesc *f);
+ int msm_vidc_try_fmt(struct msm_vidc_inst *inst, struct v4l2_format *f);
+diff --git a/vidc/inc/msm_vidc_driver.h b/vidc/inc/msm_vidc_driver.h
+index cd08061a8732..6a36775608a6 100644
+--- a/vidc/inc/msm_vidc_driver.h
++++ b/vidc/inc/msm_vidc_driver.h
+@@ -498,7 +498,8 @@ int cancel_stability_work_sync(struct msm_vidc_inst *inst);
+ void msm_vidc_fw_unload_handler(struct work_struct *work);
+ int msm_vidc_suspend(struct msm_vidc_core *core);
+ void msm_vidc_batch_handler(struct work_struct *work);
+-int msm_vidc_v4l2_fh_init(struct msm_vidc_inst *inst);
++int msm_vidc_v4l2_fh_init(struct msm_vidc_inst *inst, struct file *filp);
++void msm_vidc_v4l2_fh_del(struct msm_vidc_inst *inst, struct file *filp);
+ int msm_vidc_v4l2_fh_deinit(struct msm_vidc_inst *inst);
+ int msm_vidc_vb2_queue_init(struct msm_vidc_inst *inst);
+ int msm_vidc_vb2_queue_deinit(struct msm_vidc_inst *inst);
+diff --git a/vidc/src/msm_vidc.c b/vidc/src/msm_vidc.c
+index e06452aafd22..ea3dfeaf303e 100644
+--- a/vidc/src/msm_vidc.c
++++ b/vidc/src/msm_vidc.c
+@@ -697,7 +697,7 @@ int msm_vidc_dqevent(struct msm_vidc_inst *inst, struct v4l2_event *event)
+ 	return rc;
+ }
+ 
+-void *msm_vidc_open(struct msm_vidc_core *core, u32 session_type)
++void *msm_vidc_open(struct msm_vidc_core *core, u32 session_type, struct file *filp)
+ {
+ 	int rc = 0;
+ 	struct msm_vidc_inst *inst = NULL;
+@@ -805,7 +805,7 @@ void *msm_vidc_open(struct msm_vidc_core *core, u32 session_type)
+ 	INIT_DELAYED_WORK(&inst->stats_work, msm_vidc_stats_handler);
+ 	INIT_WORK(&inst->stability_work, msm_vidc_stability_handler);
+ 
+-	rc = msm_vidc_v4l2_fh_init(inst);
++	rc = msm_vidc_v4l2_fh_init(inst, filp);
+ 	if (rc)
+ 		goto fail_eventq_init;
+ 
+@@ -852,6 +852,7 @@ fail_fence_init:
+ fail_inst_init:
+ 	msm_vidc_vb2_queue_deinit(inst);
+ fail_vb2q_init:
++	msm_vidc_v4l2_fh_del(inst, filp);
+ 	msm_vidc_v4l2_fh_deinit(inst);
+ fail_eventq_init:
+ 	destroy_workqueue(inst->workq);
+@@ -868,7 +869,7 @@ fail_add_session:
+ 	return NULL;
+ }
+ 
+-int msm_vidc_close(struct msm_vidc_inst *inst)
++int msm_vidc_close(struct msm_vidc_inst *inst, struct file *filp)
+ {
+ 	int rc = 0;
+ 	struct msm_vidc_core *core;
+@@ -892,6 +893,7 @@ int msm_vidc_close(struct msm_vidc_inst *inst)
+ 	cancel_stability_work_sync(inst);
+ 	cancel_stats_work_sync(inst);
+ 	msm_vidc_show_stats(inst);
++	msm_vidc_v4l2_fh_del(inst, filp);
+ 	put_inst(inst);
+ 	msm_vidc_schedule_core_deinit(core);
+ 
+diff --git a/vidc/src/msm_vidc_driver.c b/vidc/src/msm_vidc_driver.c
+index d4de1ad09dfd..31ada434aff7 100644
+--- a/vidc/src/msm_vidc_driver.c
++++ b/vidc/src/msm_vidc_driver.c
+@@ -3083,7 +3083,7 @@ int msm_vidc_vb2_buffer_done(struct msm_vidc_inst *inst,
+ 	return 0;
+ }
+ 
+-int msm_vidc_v4l2_fh_init(struct msm_vidc_inst *inst)
++int msm_vidc_v4l2_fh_init(struct msm_vidc_inst *inst, struct file *filp)
+ {
+ 	int rc = 0;
+ 	int index;
+@@ -3106,11 +3106,24 @@ int msm_vidc_v4l2_fh_init(struct msm_vidc_inst *inst)
+ 
+ 	v4l2_fh_init(&inst->fh, &core->vdev[index].vdev);
+ 	inst->fh.ctrl_handler = &inst->ctrl_handler;
++#if (LINUX_VERSION_CODE >= KERNEL_VERSION(6, 18, 0))
++	v4l2_fh_add(&inst->fh, filp);
++#else
+ 	v4l2_fh_add(&inst->fh);
++#endif
+ 
+ 	return rc;
+ }
+ 
++void msm_vidc_v4l2_fh_del(struct msm_vidc_inst *inst, struct file *filp)
++{
++#if (LINUX_VERSION_CODE >= KERNEL_VERSION(6, 18, 0))
++	v4l2_fh_del(&inst->fh, filp);
++#else
++	v4l2_fh_del(&inst->fh);
++#endif
++}
++
+ int msm_vidc_v4l2_fh_deinit(struct msm_vidc_inst *inst)
+ {
+ 	int rc = 0;
+@@ -3121,7 +3134,6 @@ int msm_vidc_v4l2_fh_deinit(struct msm_vidc_inst *inst)
+ 		return 0;
+ 	}
+ 
+-	v4l2_fh_del(&inst->fh);
+ 	inst->fh.ctrl_handler = NULL;
+ 	v4l2_fh_exit(&inst->fh);
+ 
+@@ -4645,6 +4657,7 @@ static void msm_vidc_close_helper(struct kref *kref)
+ 	 */
+ 	inst_lock(inst, __func__);
+ 	msm_vidc_vb2_queue_deinit(inst);
++	/* v4l2_fh_del() happened in .close */
+ 	msm_vidc_v4l2_fh_deinit(inst);
+ 	inst_unlock(inst, __func__);
+ 	destroy_workqueue(inst->workq);
+diff --git a/vidc/src/msm_vidc_v4l2.c b/vidc/src/msm_vidc_v4l2.c
+index d85ba9fdf4a9..237921c2f84b 100644
+--- a/vidc/src/msm_vidc_v4l2.c
++++ b/vidc/src/msm_vidc_v4l2.c
+@@ -80,14 +80,16 @@ int msm_v4l2_open(struct file *filp)
+ 	struct msm_vidc_inst *inst;
+ 
+ 	trace_msm_v4l2_vidc_open("START", NULL);
+-	inst = msm_vidc_open(core, vid_dev->type);
++	inst = msm_vidc_open(core, vid_dev->type, filp);
+ 	if (!inst) {
+ 		d_vpr_e("Failed to create instance, type = %d\n",
+ 			vid_dev->type);
+ 		trace_msm_v4l2_vidc_open("END", NULL);
+ 		return -ENOMEM;
+ 	}
++#if (LINUX_VERSION_CODE < KERNEL_VERSION(6, 18, 0))
+ 	filp->private_data = &(inst->fh);
++#endif
+ 	trace_msm_v4l2_vidc_open("END", inst);
+ 	return 0;
+ }
+@@ -105,8 +107,10 @@ int msm_v4l2_close(struct file *filp)
+ 
+ 	trace_msm_v4l2_vidc_close("START", inst);
+ 
+-	rc = msm_vidc_close(inst);
++	rc = msm_vidc_close(inst, filp);
++#if (LINUX_VERSION_CODE < KERNEL_VERSION(6, 18, 0))
+ 	filp->private_data = NULL;
++#endif
+ 	trace_msm_v4l2_vidc_close("END", NULL);
+ 	return rc;
+ }
+-- 
+2.47.3
+
