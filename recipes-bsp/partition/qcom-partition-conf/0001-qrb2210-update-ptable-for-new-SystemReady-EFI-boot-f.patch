@@ -1,0 +1,99 @@
+From 0531a217465fae89a195d79cde5a728dff6778f8 Mon Sep 17 00:00:00 2001
+From: Nicolas Dechesne <nicolas.dechesne@oss.qualcomm.com>
+Date: Fri, 24 Oct 2025 10:17:59 +0200
+Subject: [PATCH] qrb2210: update ptable for new SystemReady/EFI boot firmware
+
+As we are moving QRB2210 boot firmware to the same boot firmware as
+other platforms (EFI/systemd-boot/SR compliance), we need a few
+changes in the ptable:
+
+* add dtb_a/b
+the dtb_a and dtb_b partitions which will contain the DTB file which
+will be used by the bootloader and provided to the kernel.
+
+* add SYSFW_VERSION
+
+* add a/b for apdp, multiimgoem, multiimgqti
+
+* Fixup several GUIDs which were incorrect
+
+Signed-off-by: Nicolas Dechesne <nicolas.dechesne@oss.qualcomm.com>
+Upstream-Status: Pending
+---
+ platforms/qrb2210-rb1/emmc/partitions.conf | 21 +++++++++++++--------
+ 1 file changed, 13 insertions(+), 8 deletions(-)
+
+diff --git a/platforms/qrb2210-rb1/emmc/partitions.conf b/platforms/qrb2210-rb1/emmc/partitions.conf
+index 077001d..fa68fb1 100644
+--- a/platforms/qrb2210-rb1/emmc/partitions.conf
++++ b/platforms/qrb2210-rb1/emmc/partitions.conf
+@@ -29,13 +29,15 @@
+ --partition --name=rpm_a --size=512KB --type-guid=098DF793-D712-413D-9D4E-89D711772228 --filename=rpm.mbn
+ --partition --name=rpm_b --size=512KB --type-guid=EDE665C0-9F65-47D9-A8C1-73D61EF3C7D6 --filename=rpm.mbn
+ --partition --name=hyp_a --size=8192KB --type-guid=E1A6A689-0C8D-4CC6-B4E8-55A4320FBD8A --filename=hyp.mbn
+---partition --name=hyp_b --size=8192KB --type-guid=3D3E3AD2-8FF3-4975-A7E7-0E8A10B69F0D --filename=hyp.mbn
++--partition --name=hyp_b --size=8192KB --type-guid=CB45ECA0-504E-42BB-91BA-C9B3236F6A6E --filename=hyp.mbn
+ --partition --name=boot_a --size=4096KB --type-guid=20117F86-E985-4357-B9EE-374BC1D8487D --filename=boot.img
+ --partition --name=boot_b --size=4096KB --type-guid=77036CD4-03D5-42BB-8ED1-37E5A88BAA34 --filename=boot.img
+ --partition --name=uefi_a --size=8192KB --type-guid=400FFDCD-22E0-47E7-9A23-F16ED9382388
+ --partition --name=uefi_b --size=8192KB --type-guid=9F234B5B-0EFB-4313-8E4C-0AF1F605536B
+ --partition --name=uefi_dtb_a --size=1024KB --type-guid=C84D3B5E-EF34-4FA4-8118-30EAE18D3FA6
+ --partition --name=uefi_dtb_b --size=1024KB --type-guid=5F7D760A-3EF5-4AA5-B915-69A4ECAAE662
++--partition --name=dtb_a --size=65536KB --type-guid=2A1A52FC-AA0B-401C-A808-5EA0F91068F8 --filename=dtb.bin
++--partition --name=dtb_b --size=65536KB --type-guid=A166F11A-2B39-4FAA-B7E7-F8AA080D0587 --filename=dtb.bin
+ --partition --name=recoveryinfo --size=4KB --type-guid=7374B391-291C-49FA-ABC2-0463AB5F713F
+ --partition --name=keymaster_a --size=512KB --type-guid=A11D2A7C-D82A-4C2F-8A01-1805240E6626 --filename=km4.mbn
+ --partition --name=keymaster_b --size=512KB --type-guid=77036CD4-03D5-42BB-8ED1-37E5A88BAA34 --filename=km4.mbn
+@@ -49,24 +51,25 @@
+ --partition --name=ddr_b --size=1024KB --type-guid=325DEF02-1305-44A3-AA8D-AC82FEBE220E
+ --partition --name=ssd --size=8KB --type-guid=2C86E742-745E-4FDD-BFD8-B6A7AC638772
+ --partition --name=imagefv_a --size=2048KB --type-guid=17911177-C9E6-4372-933C-804B678E666F --filename=imagefv.elf
+---partition --name=imagefv_b --size=2048KB --type-guid=77036CD4-03D5-42BB-8ED1-37E5A88BAA34 --filename=imagefv.elf
++--partition --name=imagefv_b --size=2048KB --type-guid=920CFC3D-7285-4A47-9C1C-4A87590E0687 --filename=imagefv.elf
+ --partition --name=uefisecapp_a --size=2048KB --type-guid=BE8A7E08-1B7A-4CAE-993A-D5B7FB55B3C2 --filename=uefi_sec.mbn
+---partition --name=uefisecapp_b --size=2048KB --type-guid=77036CD4-03D5-42BB-8ED1-37E5A88BAA34 --filename=uefi_sec.mbn
++--partition --name=uefisecapp_b --size=2048KB --type-guid=538CBDBA-D4A4-4438-A466-D7B356FAC165 --filename=uefi_sec.mbn
+ --partition --name=persist --size=32768KB --type-guid=6C95E238-E343-4BA8-B489-8681ED22AD0B
+ --partition --name=misc --size=1024KB --type-guid=82ACC91F-357C-4A68-9C8F-689E1B1A23A1
+ --partition --name=misc_boot --size=1024KB --type-guid=F4EEE7D9-AB97-4297-954B-1B8AF9C14B19 --filename=zeros_33sectors.bin
+ --partition --name=keystore --size=512KB --type-guid=DE7D4029-0F5B-41C8-AE7E-F6C023A02B33
+ --partition --name=devcfg_a --size=128KB --type-guid=F65D4B16-343D-4E25-AAFC-BE99B6556A6D --filename=devcfg.mbn
+---partition --name=devcfg_b --size=128KB --type-guid=4E820A31-17E3-447D-B32D-FB339F7EA1A2 --filename=devcfg.mbn
++--partition --name=devcfg_b --size=128KB --type-guid=169534E7-7809-4240-9763-0BA5DC37B5FF --filename=devcfg.mbn
+ --partition --name=featenabler_a --size=128KB --type-guid=741813D2-8C87-4465-8C69-032C771CCCE7 --filename=featenabler.mbn
+ --partition --name=featenabler_b --size=128KB --type-guid=77036CD4-03D5-42BB-8ED1-37E5A88BAA34 --filename=featenabler.mbn
+ --partition --name=qupfw_a --size=64KB --type-guid=21d1219f-2ed1-4ab4-930a-41a16ae75f7f --filename=qupv3fw.elf
+---partition --name=qupfw_b --size=64KB --type-guid=77036CD4-03D5-42BB-8ED1-37E5A88BAA34 --filename=qupv3fw.elf
++--partition --name=qupfw_b --size=64KB --type-guid=169534E7-7809-4240-9763-0BA5DC37B5FF --filename=qupv3fw.elf
+ --partition --name=frp --size=512KB --type-guid=91B72D4D-71E0-4CBF-9B8E-236381CFF17A
+ --partition --name=rawdump --size=131072KB --type-guid=66C9B323-F7FC-48B6-BF96-6F32E335A428
+ --partition --name=devinfo --size=4KB --type-guid=65ADDCF4-0C5C-4D9A-AC2D-D90B5CBFCD03
+ --partition --name=dip --size=1024KB --type-guid=4114B077-005D-4E12-AC8C-B493BDA684FB
+---partition --name=apdp --size=256KB --type-guid=E6E98DA2-E22A-4D12-AB33-169E7DEAA507 --filename=zeros_33sectors.bin
++--partition --name=apdp_a --size=256KB --type-guid=E6E98DA2-E22A-4D12-AB33-169E7DEAA507 --filename=zeros_33sectors.bin
++--partition --name=apdp_b --size=256KB --type-guid=110F198D-8174-4193-9AF1-5DA94CDC59C9 --filename=zeros_33sectors.bin
+ --partition --name=spunvm --size=8192KB --type-guid=e42e2b4c-33b0-429b-b1ef-d341c547022c
+ --partition --name=splash --size=33424KB --type-guid=AD99F201-DC71-4E30-9630-E19EEF553D1B
+ --partition --name=limits --size=4KB --type-guid=10A0C19C-516A-5444-5CE3-664C3226A794
+@@ -76,8 +79,9 @@
+ --partition --name=logdump --size=65536KB --type-guid=5AF80809-AABB-4943-9168-CDFC38742598
+ --partition --name=storsec --size=128KB --type-guid=02DB45FE-AD1B-4CB6-AECC-0042C637DEFA --filename=storsec.mbn
+ --partition --name=multiimgoem_a --size=32KB --type-guid=E126A436-757E-42D0-8D19-0F362F7A62B8 --filename=multi_image.mbn
+---partition --name=multiimgoem_b --size=32KB --type-guid=77036CD4-03D5-42BB-8ED1-37E5A88BAA34 --filename=multi_image.mbn
+---partition --name=multiimgqti --size=32KB --type-guid=846C6F05-EB46-4C0A-A1A3-3648EF3F9D0E
++--partition --name=multiimgoem_b --size=32KB --type-guid=3E3E3ECD-C512-4F95-9144-6063826A8970 --filename=multi_image.mbn
++--partition --name=multiimgqti_a --size=32KB --type-guid=846C6F05-EB46-4C0A-A1A3-3648EF3F9D0E
++--partition --name=multiimgqti_b --size=32KB --type-guid=D30C8B21-DDD9-45B6-8DE0-3165D34395C9
+ --partition --name=secdata --size=25KB --type-guid=76cfc7ef-039d-4e2c-b81e-4dd8c2cb2a93
+ --partition --name=catefv --size=512KB --type-guid=80c23c26-c3f9-4a19-bb38-1e457daceb09
+ --partition --name=catecontentfv --size=1024KB --type-guid=e12d830b-7f62-4f0b-b48a-8178c5bf3ac1
+@@ -86,5 +90,6 @@
+ --partition --name=modemst2 --size=2048KB --type-guid=0A288B1F-22C9-E33B-8F5D-0E81686A68CB
+ --partition --name=fsg --size=2048KB --type-guid=638FF8E2-22C9-E33B-8F5D-0E81686A68CB
+ --partition --name=fsc --size=128KB --type-guid=57B90A16-22C9-E33B-8F5D-0E81686A68CB
++--partition --name=SYSFW_VERSION --size=4KB --type-guid=3C44F88B-1878-4C29-B122-EE78766442A7
+ --partition --name=efi --size=524288KB --type-guid=C12A7328-F81F-11D2-BA4B-00A0C93EC93B --filename=efi.bin
+ --partition --name=rootfs --size=10460284KB --type-guid=B921B045-1DF0-41C3-AF44-4C6F280D3FAE --filename=rootfs.img
+-- 
+2.47.3
+
