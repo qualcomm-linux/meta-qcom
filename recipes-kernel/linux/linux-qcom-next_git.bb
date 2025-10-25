@@ -22,6 +22,7 @@ SRC_URI = "git://github.com/qualcomm-linux/kernel.git;${SRCBRANCH};protocol=http
 
 # Additional kernel configs.
 SRC_URI += " \
+    file://0001-ASoC-qcom-sc8280xp-use-sa8775p-subdir-for-QCS9100-QCS9075.patch \
     file://configs/qcom.cfg \
 "
 
