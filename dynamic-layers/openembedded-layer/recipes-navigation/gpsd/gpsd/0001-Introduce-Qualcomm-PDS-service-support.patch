@@ -1,4 +1,4 @@
-From 0f0a1495b3b2ae9da09ea1a05510492bae05a928 Mon Sep 17 00:00:00 2001
+From c8d7548a0c306bc07cdde94f6a81ba0851b0008c Mon Sep 17 00:00:00 2001
 From: Bjorn Andersson <bjorn.andersson@linaro.org>
 Date: Wed, 4 Apr 2018 04:29:09 +0000
 Subject: [PATCH] Introduce Qualcomm PDS service support
@@ -35,30 +35,30 @@ Signed-off-by: Aníbal Limón <anibal.limon@linaro.org>
 Upstream-Status: Submitted [https://gitlab.com/gpsd/gpsd/-/merge_requests/139]
 ---
  SConscript           |  11 ++
- drivers/driver_pds.c | 406 +++++++++++++++++++++++++++++++++++++++++++
+ drivers/driver_pds.c | 407 +++++++++++++++++++++++++++++++++++++++++++
  drivers/drivers.c    |   5 +
  gpsd/libgpsd_core.c  |  16 +-
  include/driver_pds.h |  20 +++
  include/gpsd.h       |   9 +
  man/gpsd.adoc        |   8 +
- 7 files changed, 474 insertions(+), 1 deletion(-)
+ 7 files changed, 475 insertions(+), 1 deletion(-)
  create mode 100644 drivers/driver_pds.c
  create mode 100644 include/driver_pds.h
 
 diff --git a/SConscript b/SConscript
-index e3fed4c27..cae23de9c 100644
+index 28105fa7b..f5689da1c 100644
 --- a/SConscript
 +++ b/SConscript
-@@ -315,6 +315,8 @@ boolopts = (
+@@ -336,6 +336,8 @@ boolopts = (
+     ("tnt",           True,  "True North Technologies support"),
      ("tripmate",      True,  "DeLorme TripMate support"),
      ("tsip",          True,  "Trimble TSIP support"),
-     ("ublox",         True,  "u-blox Protocol support"),
 +    ("pds",           sys.platform.startswith('linux'),
 +     "Qualcomm PDS support"),
      # Non-GPS protocols
      ("aivdm",         True,  "AIVDM support"),
      ("gpsclock",      True,  "Furuno GPSClock support"),
-@@ -1156,6 +1158,14 @@ if not cleaning and not helping:
+@@ -1256,6 +1258,14 @@ if not cleaning and not helping:
          announce("You do not have kernel CANbus available.")
          config.env["nmea2000"] = False
  
@@ -73,7 +73,7 @@ index e3fed4c27..cae23de9c 100644
      # check for C11 or better, and __STDC__NO_ATOMICS__ is not defined
      # before looking for stdatomic.h
      if ((config.CheckC11() and
-@@ -1684,6 +1694,7 @@ libgpsd_sources = [
+@@ -1829,6 +1839,7 @@ libgpsd_sources = [
      "drivers/driver_nmea0183.c",
      "drivers/driver_nmea2000.c",
      "drivers/driver_oncore.c",
@@ -83,7 +83,7 @@ index e3fed4c27..cae23de9c 100644
      "drivers/drivers.c",
 diff --git a/drivers/driver_pds.c b/drivers/driver_pds.c
 new file mode 100644
-index 000000000..2ac77ec17
+index 000000000..ddddd1c82
 --- /dev/null
 +++ b/drivers/driver_pds.c
 @@ -0,0 +1,407 @@
@@ -218,7 +218,7 @@ index 000000000..2ac77ec17
 +	}
 +
 +	session->driver.pds.ready = 1;
-+	session->device_type->event_hook(session, event_reactivate);
++	session->device_type->event_hook(session, EVENT_REACTIVATE);
 +	return 1;
 +}
 +
@@ -293,7 +293,7 @@ index 000000000..2ac77ec17
 +	int ret;
 +
 +	switch (event) {
-+	case event_deactivate:
++	case EVENT_DEACTIVATE:
 +		if (!session->driver.pds.ready)
 +			return;
 +
@@ -318,7 +318,7 @@ index 000000000..2ac77ec17
 +			return;
 +		}
 +		break;
-+	case event_reactivate:
++	case EVENT_REACTIVATE:
 +		if (!session->driver.pds.ready)
 +			return;
 +
@@ -495,18 +495,18 @@ index 000000000..2ac77ec17
 +
 +#endif /* of defined(PDS_ENABLE) */
 diff --git a/drivers/drivers.c b/drivers/drivers.c
-index 5c7c67b30..47a292423 100644
+index ecf5140e7..a1e85d307 100644
 --- a/drivers/drivers.c
 +++ b/drivers/drivers.c
-@@ -1694,6 +1694,7 @@ extern const struct gps_type_t driver_greis;
- extern const struct gps_type_t driver_italk;
+@@ -1698,6 +1698,7 @@ extern const struct gps_type_t driver_italk;
  extern const struct gps_type_t driver_navcom;
  extern const struct gps_type_t driver_nmea2000;
-+extern const struct gps_type_t driver_pds;
  extern const struct gps_type_t driver_oncore;
++extern const struct gps_type_t driver_pds;
  extern const struct gps_type_t driver_sirf;
  extern const struct gps_type_t driver_skytraq;
-@@ -1787,6 +1788,10 @@ static const struct gps_type_t *gpsd_driver_array[] = {
+ extern const struct gps_type_t driver_superstar2;
+@@ -1786,6 +1787,10 @@ static const struct gps_type_t *gpsd_driver_array[] = {
      &driver_nmea2000,
  #endif  // NMEA2000_ENABLE
  
@@ -514,11 +514,11 @@ index 5c7c67b30..47a292423 100644
 +    &driver_pds,
 +#endif /* PDS_ENABLE */
 +
- #ifdef RTCM104V2_ENABLE
      &driver_rtcm104v2,
- #endif  // RTCM104V2_ENABLE
+     &driver_rtcm104v3,
+ #ifdef GARMINTXT_ENABLE
 diff --git a/gpsd/libgpsd_core.c b/gpsd/libgpsd_core.c
-index 60a7c2e2f..ceebb1a2a 100644
+index f328648f7..abc385867 100644
 --- a/gpsd/libgpsd_core.c
 +++ b/gpsd/libgpsd_core.c
 @@ -39,6 +39,9 @@
@@ -531,7 +531,7 @@ index 60a7c2e2f..ceebb1a2a 100644
  
  // pass low-level data to devices straight through
  ssize_t gpsd_write(struct gps_device_t *session,
-@@ -358,6 +361,11 @@ void gpsd_deactivate(struct gps_device_t *session)
+@@ -380,6 +383,11 @@ void gpsd_deactivate(struct gps_device_t *session)
          (void)nmea2000_close(session);
      } else
  #endif  // NMEA2000_ENABLE
@@ -543,7 +543,7 @@ index 60a7c2e2f..ceebb1a2a 100644
      {
          // could be serial, udp://, tcp://, etc.
          gpsd_close(session);
-@@ -629,6 +637,11 @@ int gpsd_open(struct gps_device_t *session)
+@@ -682,6 +690,11 @@ int gpsd_open(struct gps_device_t *session)
  #endif  // defined(NMEA2000_ENABLE)
      /* fall through to plain serial open.
       * could be a naked /dev/ppsX */
@@ -555,8 +555,8 @@ index 60a7c2e2f..ceebb1a2a 100644
      return gpsd_serial_open(session);
  }
  
-@@ -656,7 +669,8 @@ int gpsd_activate(struct gps_device_t *session, const int mode)
- #ifdef NON_NMEA0183_ENABLE
+@@ -729,7 +742,8 @@ int gpsd_activate(struct gps_device_t *session, const int mode)
+ 
      // if it's a sensor, it must be probed
      if ((SERVICE_SENSOR == session->servicetype) &&
 -        (SOURCE_CAN != session->sourcetype)) {
@@ -592,10 +592,10 @@ index 000000000..3b373743d
 +#endif /* of defined(PDS_ENABLE) */
 +#endif /* of ifndef _DRIVER_PDS_H_ */
 diff --git a/include/gpsd.h b/include/gpsd.h
-index 110c5601f..b55f1913c 100644
+index fb8e63586..e85e0c37d 100644
 --- a/include/gpsd.h
 +++ b/include/gpsd.h
-@@ -464,6 +464,7 @@ typedef enum {SOURCE_UNKNOWN,
+@@ -489,6 +489,7 @@ typedef enum {SOURCE_UNKNOWN,
                SOURCE_USB,       // potential GPS source, discoverable
                SOURCE_BLUETOOTH, // potential GPS source, discoverable
                SOURCE_CAN,       // potential GPS source, fixed CAN format
@@ -603,7 +603,7 @@ index 110c5601f..b55f1913c 100644
                SOURCE_PTY,       // PTY: we don't require exclusive access
                SOURCE_TCP,       // TCP/IP stream: case detected but not used
                SOURCE_UDP,       // UDP stream: case detected but not used
-@@ -800,6 +801,14 @@ struct gps_device_t {
+@@ -857,6 +858,14 @@ struct gps_device_t {
              char ais_channel;
          } aivdm;
  #endif  // AIVDM_ENABLE
@@ -619,7 +619,7 @@ index 110c5601f..b55f1913c 100644
  
      /*
 diff --git a/man/gpsd.adoc b/man/gpsd.adoc
-index 348c6b2b0..61013a8c3 100644
+index a5fbb4e8c..12376a5d1 100644
 --- a/man/gpsd.adoc
 +++ b/man/gpsd.adoc
 @@ -242,6 +242,14 @@ NMEA2000 CAN data::
@@ -638,5 +638,5 @@ index 348c6b2b0..61013a8c3 100644
  (The "ais:://" source type supported in some older versions of the
  daemon has been retired in favor of the more general "tcp://".)
 -- 
-2.33.0
+2.47.3
 
