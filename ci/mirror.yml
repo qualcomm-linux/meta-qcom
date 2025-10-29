@@ -1,0 +1,9 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/siemens/kas/master/kas/schema-kas.json
+
+header:
+  version: 14
+
+local_conf_header:
+  mirror: |
+    BB_HASHSERVE_UPSTREAM = "wss://hashserv.yoctoproject.org/ws"
+    SSTATE_MIRRORS = "file://.* http://sstate.yoctoproject.org/all/PATH;downloadfilename=PATH"

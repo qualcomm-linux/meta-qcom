@@ -39,24 +39,24 @@ runs:
       run: |
         mkdir $KAS_WORK_DIR
         ${{inputs.kas}} dump --resolve-env --resolve-local --resolve-refs \
-          ci/${{ inputs.machine }}.yml${{ inputs.distro_yaml }}${{ inputs.kernel_yaml }} > kas-build.yml
+          ci/mirror.yml:ci/${{ inputs.machine }}.yml${{ inputs.distro_yaml }}${{ inputs.kernel_yaml }} > kas-build.yml
 
     - name: Kas qcom world build
       shell: bash
       run: |
-        ${{inputs.kas}} build ci/${{ inputs.machine }}.yml${{ inputs.distro_yaml }}${{ inputs.kernel_yaml }}:ci/world.yml
+        ${{inputs.kas}} build ci/mirror.yml:ci/${{ inputs.machine }}.yml${{ inputs.distro_yaml }}${{ inputs.kernel_yaml }}:ci/world.yml
         ci/kas-container-shell-helper.sh ci/yocto-pybootchartgui.sh
         mv $KAS_WORK_DIR/build/buildchart.svg buildchart-world.svg
 
     - name: Kas build images
       shell: bash
       run: |
-        ${{inputs.kas}} build ci/${{ inputs.machine }}.yml${{ inputs.distro_yaml }}${{ inputs.kernel_yaml }}
+        ${{inputs.kas}} build ci/mirror.yml:ci/${{ inputs.machine }}.yml${{ inputs.distro_yaml }}${{ inputs.kernel_yaml }}
         ci/kas-container-shell-helper.sh ci/yocto-pybootchartgui.sh
         mv $KAS_WORK_DIR/build/buildchart.svg .
 
         if [ "${{ inputs.machine }}" = "qcom-armv8a" ]; then
-          ${{inputs.kas}} build ci/${{ inputs.machine }}.yml${{ inputs.distro_yaml }}${{ inputs.kernel_yaml }}:ci/initramfs-test.yml
+          ${{inputs.kas}} build ci/mirror.yml:ci/${{ inputs.machine }}.yml${{ inputs.distro_yaml }}${{ inputs.kernel_yaml }}:ci/initramfs-test.yml
         fi
 
     - uses: actions/upload-artifact@v4
