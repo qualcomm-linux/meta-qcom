@@ -97,76 +97,76 @@ jobs:
           cache_dir: ${CACHE_DIR}
           kas: ${KAS_CONTAINER}
 
-  compile:
-    needs: compile_warm_up
-    if: github.repository == 'qualcomm-linux/meta-qcom'
-    runs-on: [self-hosted, qcom-u2404, amd64-ssd]
-    outputs:
-      url: ${{ steps.compile_kas.outputs.url }}
-    strategy:
-      fail-fast: true
-      matrix:
-        machine:
-          - iq-8275-evk
-          - iq-9075-evk
-          - qcm6490-idp
-          - qcs615-adp-air
-          - qcs8300-ride-sx
-          - qcs9100-ride-sx
-          - qrb2210-rb1-core-kit
-          - qcom-armv7a
-        distro:
-          - name: poky-altcfg
-            yamlfile: ""
-          - name: qcom-distro
-            yamlfile: ':ci/qcom-distro.yml'
-          - name: qcom-distro-prop-image
-            yamlfile: ':ci/qcom-distro-prop-image.yml'
-        kernel:
-          - type: default
-            dirname: ""
-            yamlfile: ""
-        include:
-          # Additional builds for specific machines
-          - machine: qcom-armv8a
-            distro:
-                name: qcom-distro
-                yamlfile: ':ci/qcom-distro.yml'
-            kernel:
-                type: additional
-                dirname: "+linux-yocto-dev"
-                yamlfile: ":ci/linux-yocto-dev.yml"
-          - machine: qcom-armv8a
-            distro:
-                name: qcom-distro
-                yamlfile: ':ci/qcom-distro.yml'
-            kernel:
-                type: additional
-                dirname: "+linux-yocto-lts"
-                yamlfile: ":ci/linux-yocto-lts.yml"
-        exclude:
-          # Incompatible builds
-          - machine: qcom-armv7a
-            distro:
-                name: qcom-distro-prop-image
-    name: ${{ matrix.machine }}/${{ matrix.distro.name }}${{ matrix.kernel.dirname }}
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Run kas build
-        uses: ./.github/actions/compile
-        id: compile_kas
-        with:
-          machine: ${{matrix.machine}}
-          distro_yaml: ${{matrix.distro.yamlfile}}
-          distro_name: ${{matrix.distro.name}}
-          kernel_yaml: ${{matrix.kernel.yamlfile}}
-          kernel_dirname: ${{matrix.kernel.dirname}}
-          cache_dir: ${CACHE_DIR}
-          kas: ${KAS_CONTAINER}
-
+#  compile:
+#    needs: compile_warm_up
+#    if: github.repository == 'qualcomm-linux/meta-qcom'
+#    runs-on: [self-hosted, qcom-u2404, amd64-ssd]
+#    outputs:
+#      url: ${{ steps.compile_kas.outputs.url }}
+#    strategy:
+#      fail-fast: true
+#      matrix:
+#        machine:
+#          - iq-8275-evk
+#          - iq-9075-evk
+#          - qcm6490-idp
+#          - qcs615-adp-air
+#          - qcs8300-ride-sx
+#          - qcs9100-ride-sx
+#          - qrb2210-rb1-core-kit
+#          - qcom-armv7a
+#        distro:
+#          - name: poky-altcfg
+#            yamlfile: ""
+#          - name: qcom-distro
+#            yamlfile: ':ci/qcom-distro.yml'
+#          - name: qcom-distro-prop-image
+#            yamlfile: ':ci/qcom-distro-prop-image.yml'
+#        kernel:
+#          - type: default
+#            dirname: ""
+#            yamlfile: ""
+#        include:
+#          # Additional builds for specific machines
+#          - machine: qcom-armv8a
+#            distro:
+#                name: qcom-distro
+#                yamlfile: ':ci/qcom-distro.yml'
+#            kernel:
+#                type: additional
+#                dirname: "+linux-yocto-dev"
+#                yamlfile: ":ci/linux-yocto-dev.yml"
+#          - machine: qcom-armv8a
+#            distro:
+#                name: qcom-distro
+#                yamlfile: ':ci/qcom-distro.yml'
+#            kernel:
+#                type: additional
+#                dirname: "+linux-yocto-lts"
+#                yamlfile: ":ci/linux-yocto-lts.yml"
+#        exclude:
+#          # Incompatible builds
+#          - machine: qcom-armv7a
+#            distro:
+#                name: qcom-distro-prop-image
+#    name: ${{ matrix.machine }}/${{ matrix.distro.name }}${{ matrix.kernel.dirname }}
+#    steps:
+#      - uses: actions/checkout@v4
+#
+#      - name: Run kas build
+#        uses: ./.github/actions/compile
+#        id: compile_kas
+#        with:
+#          machine: ${{matrix.machine}}
+#          distro_yaml: ${{matrix.distro.yamlfile}}
+#          distro_name: ${{matrix.distro.name}}
+#          kernel_yaml: ${{matrix.kernel.yamlfile}}
+#          kernel_dirname: ${{matrix.kernel.dirname}}
+#          cache_dir: ${CACHE_DIR}
+#          kas: ${KAS_CONTAINER}
+#
   publish_summary:
-    needs: compile
+    needs: compile_warm_up
     runs-on: [self-hosted, qcom-u2404, amd64-ssd]
     steps:
       - name: 'Download build URLs'
