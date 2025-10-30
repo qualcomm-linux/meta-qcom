@@ -1,0 +1,50 @@
+name: Publish test results
+
+on:
+  workflow_call:
+    inputs:
+      workflow_id:
+        required: true
+        type: string
+      event_name:
+        required: true
+        type: string
+      event_file:
+        required: true
+        type: string
+      commit:
+        required: true
+        type: string
+
+permissions:
+  checks: write
+  pull-requests: write
+  contents: read
+  packages: read
+
+jobs:
+  publish-test-results:
+    name: "Publish Tests Results"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download result files
+        uses: actions/download-artifact@v4
+        with:
+            run-id: ${{ inputs.workflow_id }}
+            path: artifacts
+            github-token: ${{ github.token }}
+
+      - name: "List files"
+        run: |
+          echo $GITHUB_WORKSPACE
+          ls -R $GITHUB_WORKSPACE
+
+      - name: Publish Test Results
+        uses: EnricoMi/publish-unit-test-result-action@v2
+        with:
+          commit: ${{ inputs.commit }}
+          event_file: ${{ inputs.event_file}}
+          event_name: ${{ inputs.event_name }}
+          files: "${{ github.workspace }}/artifacts/**/*.xml"
+          action_fail: true
+          action_fail_on_inconclusive: true

@@ -112,8 +112,8 @@ jobs:
           save_job_details: true
           result_file_name: "${{ env.RESULT_NAME }}"
 
-  publish-test-results:
-    name: "Publish Tests Results"
+  publish-test-summary:
+    name: "Publish Tests Summary"
     needs: submit-job
     runs-on: ubuntu-latest
     permissions:
@@ -141,10 +141,3 @@ jobs:
               echo " * [Job $JOB_ID on $DEVICE_TYPE]($URL)"
               echo " * [Job $JOB_ID on $DEVICE_TYPE]($URL)" >> $GITHUB_STEP_SUMMARY
           done
-
-      - name: Publish Test Results
-        uses: EnricoMi/publish-unit-test-result-action@v2
-        with:
-          files: "${{ github.workspace }}/artifacts/**/*.xml"
-          action_fail: true
-          action_fail_on_inconclusive: true
