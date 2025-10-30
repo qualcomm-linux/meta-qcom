@@ -94,6 +94,7 @@ jobs:
           distro_name: ${{matrix.distro.name}}
           kernel_yaml: ${{matrix.kernel.yamlfile}}
           kernel_dirname: ${{matrix.kernel.dirname}}
+          firmware_dirname: ${{matrix.firmware.dirname}}
           cache_dir: ${CACHE_DIR}
           kas: ${KAS_CONTAINER}
 
@@ -144,6 +145,14 @@ jobs:
                 type: additional
                 dirname: "+linux-yocto-lts"
                 yamlfile: ":ci/linux-yocto-lts.yml"
+          - machine: qcs6490-rb3gen2-core-kit
+            distro:
+                name: qcom-distro
+                yamlfile: ':ci/qcom-distro.yml'
+            firmware:
+                type: additional
+                dirname: "+open-boot-firmware"
+                yamlfile: ":ci/open-boot-firmware.yml"
         exclude:
           # Incompatible builds
           - machine: qcom-armv7a
@@ -162,6 +171,7 @@ jobs:
           distro_name: ${{matrix.distro.name}}
           kernel_yaml: ${{matrix.kernel.yamlfile}}
           kernel_dirname: ${{matrix.kernel.dirname}}
+          firmware_dirname: ${{matrix.firmware.dirname}}
           cache_dir: ${CACHE_DIR}
           kas: ${KAS_CONTAINER}
 
