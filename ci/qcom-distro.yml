@@ -29,6 +29,10 @@ repos:
     url: https://github.com/Audioreach/meta-ar
     branch: main
 
+  meta-selinux:
+    branch: master
+    url: https://git.yoctoproject.org/meta-selinux
+
 local_conf_header:
   virtualization:
     SKIP_META_VIRT_SANITY_CHECK = "1"
