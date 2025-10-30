@@ -205,4 +205,4 @@ Please make sure to visit go/GitHubBasicsDoc and go/OSSBestPractices before prop
 ## License
 
 This layer is licensed under the MIT license. Check out [COPYING.MIT](COPYING.MIT)
-for more detais.
+for more detais
