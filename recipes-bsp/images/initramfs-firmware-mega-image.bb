@@ -14,7 +14,7 @@ PACKAGE_INSTALL += " \
     packagegroup-hamoa-iot-evk-firmware \
     packagegroup-iq-8275-evk-firmware \
     packagegroup-iq-9075-evk-firmware \
-    packagegroup-qcs615-adp-air-firmware \
+    packagegroup-qcs615-ride-firmware \
     packagegroup-qcs8300-ride-firmware \
     packagegroup-rb1-firmware \
     packagegroup-rb2-firmware \
@@ -26,7 +26,7 @@ PACKAGE_INSTALL += " \
     packagegroup-hamoa-iot-evk-hexagon-dsp-binaries \
     packagegroup-iq-8275-evk-hexagon-dsp-binaries \
     packagegroup-iq-9075-evk-hexagon-dsp-binaries \
-    packagegroup-qcs615-adp-air-hexagon-dsp-binaries \
+    packagegroup-qcs615-ride-hexagon-dsp-binaries \
     packagegroup-qcs8300-ride-hexagon-dsp-binaries \
     packagegroup-rb1-hexagon-dsp-binaries \
     packagegroup-rb2-hexagon-dsp-binaries \
