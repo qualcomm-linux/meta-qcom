@@ -116,7 +116,7 @@ jobs:
           - iq-9075-evk
           - iq-x7181-evk
           - qcm6490-idp
-          - qcs615-adp-air
+          - qcs615-ride
           - qcs8300-ride-sx
           - qcs9100-ride-sx
           - qcom-armv7a

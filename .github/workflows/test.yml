@@ -16,7 +16,7 @@ jobs:
           - iq-8275-evk
           - iq-9075-evk
           - qcm6490-idp
-          - qcs615-adp-air
+          - qcs615-ride
           - rb3gen2-core-kit
           - qcs8300-ride-sx
           - qcs9100-ride-sx

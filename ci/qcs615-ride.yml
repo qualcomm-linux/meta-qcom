@@ -5,4 +5,4 @@ header:
   includes:
   - ci/base.yml
 
-machine: qcs615-adp-air
+machine: qcs615-ride
