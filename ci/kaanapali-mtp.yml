@@ -5,4 +5,8 @@ header:
   includes:
   - ci/base.yml
 
+<<<<<<<< HEAD:ci/kaanapali-mtp.yml
 machine: kaanapali-mtp
+========
+machine: qcs615-ride
+>>>>>>>> e79fdeb (conf/machine: rename qcs615-adp-air to qcs615-ride):ci/qcs615-ride.yml
