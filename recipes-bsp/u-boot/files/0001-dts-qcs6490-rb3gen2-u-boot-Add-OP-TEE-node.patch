@@ -1,0 +1,36 @@
+From d71a6fdb741455cf669f31fd4596f2ec4c757ebe Mon Sep 17 00:00:00 2001
+From: Sumit Garg <sumit.garg@oss.qualcomm.com>
+Date: Fri, 31 Oct 2025 11:10:19 +0530
+Subject: [PATCH] dts: qcs6490-rb3gen2-u-boot: Add OP-TEE node
+
+Since we currently only support DT based OP-TEE driver probe, lets add the
+OP-TEE node here for the time being. In future we want to migrate OP-TEE
+probing over to FF-A bus and then we can drop this DT node.
+
+Signed-off-by: Sumit Garg <sumit.garg@oss.qualcomm.com>
+Upstream-Status: Inappropriate [temporary workaround]
+---
+ arch/arm/dts/qcs6490-rb3gen2-u-boot.dtsi | 7 +++++++
+ 1 file changed, 7 insertions(+)
+
+diff --git a/arch/arm/dts/qcs6490-rb3gen2-u-boot.dtsi b/arch/arm/dts/qcs6490-rb3gen2-u-boot.dtsi
+index fbe72595f5a..e60905cb6a2 100644
+--- a/arch/arm/dts/qcs6490-rb3gen2-u-boot.dtsi
++++ b/arch/arm/dts/qcs6490-rb3gen2-u-boot.dtsi
+@@ -15,6 +15,13 @@
+ 		      <0 0xC3400000 0 0x3CC00000>,
+ 		      <1 0x00000000 1 0x00000000>;
+ 	};
++
++	firmware {
++		optee {
++			compatible = "linaro,optee-tz";
++			method = "smc";
++		};
++	};
+ };
+ 
+ &usb_1_dwc3 {
+-- 
+2.48.1
+

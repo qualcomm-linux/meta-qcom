@@ -1,13 +1,19 @@
 # This is a bbappend to add support for generating Android style boot images for chainloading u-boot from ABL
 
-DEPENDS:append:qcom = " skales-native xxd-native"
+FILESEXTRAPATHS:prepend:qcm6490 := "${THISDIR}/files:"
+SRC_URI:append:qcm6490 = " \
+        file://0001-dts-qcs6490-rb3gen2-u-boot-Add-OP-TEE-node.patch \
+"
+
+DEPENDS:append:qcom = " xxd-native"
+DEPENDS:append:qcm2290 = " skales-native"
 
 # Don't add extra dependencies for non-qcom machines and layers
 COMPILE_EXTRA_DEPENDS = ""
-COMPILE_EXTRA_DEPENDS:qcom = "virtual/kernel:do_deploy"
+COMPILE_EXTRA_DEPENDS:qcm2290 = "virtual/kernel:do_deploy"
 do_compile[depends] += "${COMPILE_EXTRA_DEPENDS}"
 
-uboot_compile_config:append:qcom() {
+uboot_compile_config:append:qcm2290() {
     cd ${B}/${builddir}
     touch empty-file
     rm -f u-boot-nodtb.bin.gz
@@ -17,6 +23,6 @@ uboot_compile_config:append:qcom() {
 }
 
 # Symlink the 'main' u-boot.bin to boot.img so the qcom image bbclass pick it up
-uboot_deploy_config:append:qcom() {
+uboot_deploy_config:append:qcm2290() {
     cd ${DEPLOYDIR} && ln -sf u-boot-${type}-${PV}-${PR}.bin boot-${MACHINE}.img
 }
