@@ -37,9 +37,11 @@ RRECOMMENDS:${PN}-board-generic += " \
 RRECOMMENDS:${PN}-qcom-generic += " \
     kernel-module-fastrpc \
     kernel-module-gpi \
+    kernel-module-i2c-qcom-cci \
     kernel-module-i2c-qcom-geni \
     kernel-module-icc-bwmon \
     kernel-module-icc-osm-l3 \
+    kernel-module-imx412 \
     kernel-module-leds-qcom-lpg \
     kernel-module-lmh \
     kernel-module-msm \
@@ -53,6 +55,7 @@ RRECOMMENDS:${PN}-qcom-generic += " \
     kernel-module-q6apm-lpass-dais \
     kernel-module-q6prm-clocks \
     kernel-module-qcom-battmgr \
+    kernel-module-qcom-camss \
     kernel-module-qcom-iris \
     kernel-module-qcom-pd-mapper \
     kernel-module-qcom-pmic-tcpm \

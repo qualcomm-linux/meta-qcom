@@ -13,6 +13,7 @@ RRECOMMENDS:${PN}-firmware = " \
     ${@bb.utils.contains('DISTRO_FEATURES', 'bluetooth', 'linux-firmware-qca-wcn6750', '', d)} \
     linux-firmware-qcom-qcm6490-audio \
     linux-firmware-qcom-qcm6490-compute \
+    linux-firmware-qcom-qcm6490-qupv3fw \
     linux-firmware-qcom-vpu \
 "
 
