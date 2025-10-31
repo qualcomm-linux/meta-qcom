@@ -33,6 +33,7 @@ PACKAGE_INSTALL += " \
     util-linux-lscpu \
     util-linux-taskset \
     wpa-supplicant \
+    packagegroup-qcom-secure \
     ${@bb.utils.contains('DISTRO_FEATURES', 'opencl', 'clinfo', '', d)} \
     ${@bb.utils.contains('DISTRO_FEATURES', 'opengl', 'kmscube', '', d)} \
     ${@bb.utils.contains('DISTRO_FEATURES', 'vulkan', 'vulkan-tools', '', d)} \
