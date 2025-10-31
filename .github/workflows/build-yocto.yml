@@ -76,8 +76,8 @@ jobs:
             yamlfile: ""
           - name: qcom-distro
             yamlfile: ':ci/qcom-distro.yml'
-          - name: qcom-distro-prop-image
-            yamlfile: ':ci/qcom-distro-prop-image.yml'
+#          - name: qcom-distro-prop-image
+#            yamlfile: ':ci/qcom-distro-prop-image.yml'
         kernel:
           - type: default
             dirname: ""
