@@ -1,4 +1,0 @@
-# SPDX-License-Identifier: MIT
-
-#kconf hardware qcom-rpm.cfg
-kconf hardware qcom-apq8064.cfg
