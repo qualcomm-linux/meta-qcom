@@ -1,0 +1,11 @@
+[Unit]
+Description=Resize rootfs to use available disk space
+After=systemd-remount-fs.service
+
+[Service]
+Type=oneshot
+ExecStart=-/usr/sbin/resize-rootfs.sh
+ExecStartPost=/bin/systemctl disable resize-rootfs.service
+
+[Install]
+WantedBy=basic.target
