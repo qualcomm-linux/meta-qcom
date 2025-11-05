@@ -4,7 +4,8 @@ LICENSE = "BSD-3-Clause"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=b0a8acd90d872086b279ead88af03369"
 
 SRC_URI = "git://github.com/qualcomm-linux/qcom-ptool.git;branch=main;protocol=https"
-SRCREV = "f410a567c4913c6a6b719eb6ea8103f2cd5c6be0"
+SRC_URI += "file://0001-qrb2210-update-ptable-for-new-SystemReady-EFI-boot-f.patch"
+SRCREV = "abd0ffd33c8232e2b0d007776e561574d62617dd"
 
 INHIBIT_DEFAULT_DEPS = "1"
 
