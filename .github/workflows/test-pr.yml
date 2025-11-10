@@ -72,10 +72,12 @@ jobs:
           file-path: pr-comment.txt
           pr-number: ${{ steps.pr_comment_prep.outputs.pr_number }}
 
-      - name: Publish Test Results
-        uses: ./.github/workflows/publish-results.yml
-        with:
-          commit: ${{ github.event.workflow_run.sha }}
-          event_file: artifacts/Event File/event.json
-          event_name: ${{ github.event.workflow_run.event }}
-          workflow_id: ${{ github.event.workflow_run.id }}
+  publish-test-results:
+    uses: ./.github/workflows/publish-results.yml
+    secrets: inherit
+    needs: [test]
+    with:
+      commit: ${{ github.event.workflow_run.sha }}
+      event_file: artifacts/Event File/event.json
+      event_name: ${{ github.event.workflow_run.event }}
+      workflow_id: ${{ github.event.workflow_run.id }}
