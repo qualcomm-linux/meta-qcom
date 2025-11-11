@@ -1,4 +1,0 @@
-# SPDX-License-Identifier: MIT
-
-kconf hardware qcom-rpmh.cfg
-kconf hardware qcom-sm8450.cfg
