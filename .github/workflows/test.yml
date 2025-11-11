@@ -38,28 +38,13 @@ jobs:
           run-id: ${{ inputs.build_id }}
           pattern: build-url*
 
-      - name: "Generate testjobs"
-        run: |
-          export BUILD_URL_FILE="$GITHUB_WORKSPACE/build-url_${{ matrix.machine }}_${{ matrix.distro.name }}/build-url_${{ matrix.machine }}_${{ matrix.distro.name }}"
-          echo "${BUILD_URL_FILE}"
-          if [ -f "$BUILD_URL_FILE" ]; then
-              # install dependencies
-              export BUILD_URL=$(cat "${BUILD_URL_FILE}")
-              pip install jinja2
-              if [ "${{ matrix.machine }}" = "qcom-armv8a" ]; then
-                  python3 ci/generatetests.py --templates ci/lava --os ${{ matrix.distro.name }} --device dragonboard-410c --build-url "${BUILD_URL}"
-                  python3 ci/generatetests.py --templates ci/lava --os ${{ matrix.distro.name }} --device dragonboard-820c --build-url "${BUILD_URL}"
-                  echo "MACHINE=dragonboard" >> $GITHUB_ENV
-              else
-                  python3 ci/generatetests.py --templates ci/lava --os ${{ matrix.distro.name }} --device ${{ matrix.machine }} --build-url "${BUILD_URL}"
-                  echo "MACHINE=${{ matrix.machine }}" >> $GITHUB_ENV
-              fi
-          fi
-      - name: 'Upload test jobs'
-        uses: actions/upload-artifact@v4
+      - name: Run lava-test-plans
+        uses: ./.github/actions/lava-test-plans
         with:
-          name: testjobs-${{ matrix.machine }}-${{ matrix.distro.name }}
-          path: ${{ env.MACHINE}}*-${{ matrix.distro.name }}-*.yaml
+          machine: ${{ matrix.machine }}
+          distro_name: ${{ matrix.distro.name }}
+          build_id: ${{ github.run_id }}
+          gh_token: ${{ secrets.GITHUB_TOKEN }}
 
   prepare-job-list:
     needs: prepare-jobs
