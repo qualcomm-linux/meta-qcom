@@ -102,9 +102,6 @@ runs:
       id: print-output
       run: |
         KERNEL_DIRNAME="${{ inputs.kernel_dirname }}"
-        if [ -n "${KERNEL_DIRNAME}" ]; then
-            KERNEL_DIRNAME="_${KERNEL_DIRNAME}"
-        fi
         BUILDNAME="${{ inputs.machine }}_${{ inputs.distro_name }}${KERNEL_DIRNAME}"
         FILENAME="build-url_${BUILDNAME}"
         echo "${{ steps.upload_artifacts.outputs.url }}" > "${FILENAME}"

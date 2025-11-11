@@ -175,32 +175,54 @@ jobs:
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           pattern: build-url*
+          path: urlfiles
+          merge-multiple: true
 
       - name: "Print output"
-        shell: bash
+        shell: python
         id: print-output
         run: |
-          echo "## Download URLs" >> $GITHUB_STEP_SUMMARY
-          export BUILD_URL=""
-          for FILE in build-url*
-          do
-              # Extract build OS and machine name
-              remainder="$FILE"
-              BUILD_URL_STR="${remainder%%_*}"; remainder="${remainder#*_}"
-              MACHINE="${remainder%%_*}"; remainder="${remainder#*_}"
-              OS="${remainder%%_*}"
-              BUILD_URL=$(cat "$FILE/$FILE")
-              echo "### ${MACHINE} ${OS}" >> $GITHUB_STEP_SUMMARY
-              echo "[${BUILD_URL}](${BUILD_URL})" >> $GITHUB_STEP_SUMMARY
-          done
-          # for backward compatibility only
-          # This section should be removed once the patch is merged
-          echo "${BUILD_URL}" > build_url
-      - name: Upload build URL
-        uses: actions/upload-artifact@v4
-        with:
-          overwrite: true
-          name: build_url
-          path: build_url
+          import os
+          ftable = {}
+          oslist = set()
+          machinelist = set()
+          for fname in os.listdir("./urlfiles"):
+              if fname.startswith("build-url"):
+                  b, m, o = fname.split("_", 2)
+                  oslist.add(o)
+                  machinelist.add(m)
+                  url = ""
+                  with open(f"./urlfiles/{fname}", "r") as urlfile:
+                      url = urlfile.read()
+                  if not o in ftable:
+                      ftable.update({o:{m: url}})
+                  else:
+                      ftable[o].update({m: url})
 
+          table_str = "| |"
 
+          for m in sorted(machinelist):
+              table_str += f" {m} |"
+
+          table_str += "\n|"
+          for i in range(len(machinelist) + 1):
+              table_str += " ---- |"
+
+          table_str += "\n"
+
+          for o in sorted(ftable.keys()):
+              table_str += f"| {o} |"
+              for m in sorted(machinelist):
+                  url = ftable[o].get(m)
+                  if url:
+                      url = url.strip()
+                      table_str += f" [Files]({url}/{o}/{m}/) |"
+                  else:
+                      table_str += " |"
+              table_str += "\n"
+          summary_file_name = os.environ.get("GITHUB_STEP_SUMMARY")
+          if summary_file_name:
+              with open(summary_file_name, "a") as summaryfile:
+                  summaryfile.write("## Download URLs\n")
+                  summaryfile.write(table_str)
+          print(table_str)
