@@ -116,6 +116,13 @@ create_qcomflash_pkg() {
         find "${DEPLOY_DIR_IMAGE}/${QCOM_BOOT_FILES_SUBDIR}/sail_nor" -maxdepth 1 -type f -exec install -m 0644 {} sail_nor \;
     fi
 
+    # spinor firmware
+    if [ -d "${DEPLOY_DIR_IMAGE}/${QCOM_BOOT_FILES_SUBDIR}/spinor" ]; then
+        install -d spinor
+        find "${DEPLOY_DIR_IMAGE}/${QCOM_BOOT_FILES_SUBDIR}/spinor" -maxdepth 1 -type f -exec install -m 0644 {} spinor \;
+        find "${DEPLOY_DIR_IMAGE}/${QCOM_BOOT_FILES_SUBDIR}/spinor" -maxdepth 1 -type f -name 'xbl_s_devprg_ns.melf' -exec install -m 0644 {} . \;
+    fi
+
     # Create symlink to ${QCOMFLASH_DIR} dir
     ln -rsf ${QCOMFLASH_DIR} ${IMGDEPLOYDIR}/${IMAGE_LINK_NAME}.qcomflash
 
