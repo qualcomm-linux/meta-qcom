@@ -10,6 +10,8 @@ inputs:
     required: true
   kernel_dirname:
     required: true
+  firmware_dirname:
+    required: true
   cache_dir:
     required: true
   kas:
@@ -61,14 +63,14 @@ runs:
 
     - uses: actions/upload-artifact@v4
       with:
-        name: buildchart-${{ inputs.distro_name }}${{ inputs.kernel_dirname }}-${{ inputs.machine }}
+        name: buildchart-${{ inputs.distro_name }}${{ inputs.kernel_dirname }}${{ inputs.firmware_dirname }}-${{ inputs.machine }}
         path: |
           buildchart.svg
           buildchart-world.svg
 
     - uses: actions/upload-artifact@v4
       with:
-        name: kas-build-${{ inputs.distro_name }}${{ inputs.kernel_dirname }}-${{ inputs.machine }}
+        name: kas-build-${{ inputs.distro_name }}${{ inputs.kernel_dirname }}${{ inputs.firmware_dirname }}-${{ inputs.machine }}
         path: kas-build.yml
 
     - name: Stage build artifacts for publishing
@@ -78,7 +80,7 @@ runs:
         # expects file to be relative to our PWD. deploy_dir is outside
         # that, so we move things around:
         deploy_dir=../kas/build/tmp/deploy/images/${{inputs.machine}}
-        uploads_dir=./uploads/${{ inputs.distro_name }}${{ inputs.kernel_dirname }}/${{ inputs.machine }}
+        uploads_dir=./uploads/${{ inputs.distro_name }}${{ inputs.kernel_dirname }}${{ inputs.firmware_dirname }}/${{ inputs.machine }}
         mkdir -p $uploads_dir
         find $deploy_dir/ -maxdepth 1 -type f -exec cp {} $uploads_dir/ \;
         find $deploy_dir/ -maxdepth 1 -type l \( -name boot-*.img -o -name *.rootfs.ext4.gz -o -name *.rootfs.qcomflash.tar.gz \) -exec cp -d {} $uploads_dir/ \;
@@ -105,7 +107,11 @@ runs:
         if [ -n "${KERNEL_DIRNAME}" ]; then
             KERNEL_DIRNAME="_${KERNEL_DIRNAME}"
         fi
-        BUILDNAME="${{ inputs.machine }}_${{ inputs.distro_name }}${KERNEL_DIRNAME}"
+        FIRMWARE_DIRNAME="${{ inputs.firmware_dirname }}"
+        if [ -n "${FIRMWARE_DIRNAME}" ]; then
+            FIRMWARE_DIRNAME="_${FIRMWARE_DIRNAME}"
+        fi
+        BUILDNAME="${{ inputs.machine }}_${{ inputs.distro_name }}${KERNEL_DIRNAME}${FIRMWARE_DIRNAME}"
         FILENAME="build-url_${BUILDNAME}"
         echo "${{ steps.upload_artifacts.outputs.url }}" > "${FILENAME}"
         echo "filename=${FILENAME}" >> $GITHUB_OUTPUT
