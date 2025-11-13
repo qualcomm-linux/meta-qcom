@@ -1,0 +1,12 @@
+[Unit]
+Description=start set BDA script for bluetooth
+ConditionPathExists=/sys/devices/soc0/serial_number
+Requires=bluetooth.service
+After=bluetooth.service
+
+[Service]
+Type=simple
+ExecStart=+/etc/initscripts/qca_set_bdaddr.sh
+
+[Install]
+WantedBy=bluetooth.target
