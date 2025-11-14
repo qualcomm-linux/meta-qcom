@@ -12,7 +12,7 @@ LICENSE = " \
 LIC_FILES_CHKSUM = "\
     file://LICENSE.qcom;md5=56e86b6c508490dadc343f39468b5f5e \
     file://LICENSE.qcom-2;md5=165287851294f2fb8ac8cbc5e24b02b0 \
-    file://WHENCE;md5=39c0da598a0718260c2c58ad274750c7 \
+    file://WHENCE;md5=470c1e711fbb362104b59bdcde7cc0f3 \
 "
 NO_GENERIC_LICENSE[dspso-qcom] = "LICENSE.qcom"
 NO_GENERIC_LICENSE[dspso-qcom-2] = "LICENSE.qcom-2"
@@ -22,7 +22,7 @@ SRC_URI = " \
     git://github.com/linux-msm/dsp-binaries;protocol=https;branch=trunk;tag=${PV} \
 "
 
-SRCREV = "2e7ff51f371a42995513cc92cc7a4f518163aaaf"
+SRCREV = "e763538efc6ae1fb062ddb86ef0d21be332d3910"
 
 inherit allarch
 
