@@ -36,10 +36,13 @@ S = "${UNPACKDIR}/${BP}"
 KBUILD_DEFCONFIG ?= "defconfig"
 KBUILD_DEFCONFIG:qcom-armv7a = "qcom_defconfig"
 
+CONFIG_LIST =  "${@" ".join(find_cfgs(d))}"
+CONFIG_LIST += "${@bb.utils.contains('DISTRO_FEATURES', 'hardened', '${S}/kernel/configs/hardening.config', '', d)}"
+
 do_configure:prepend() {
     # Use a copy of the 'defconfig' from the actual repo to merge fragments
     cp ${S}/arch/${ARCH}/configs/${KBUILD_DEFCONFIG} ${B}/.config
 
     # Merge fragment for QCOM value add features
-    ${S}/scripts/kconfig/merge_config.sh -m -O ${B} ${B}/.config ${@" ".join(find_cfgs(d))}
+    ${S}/scripts/kconfig/merge_config.sh -m -O ${B} ${B}/.config ${CONFIG_LIST}
 }
