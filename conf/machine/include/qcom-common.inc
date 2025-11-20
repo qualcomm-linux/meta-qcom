@@ -53,9 +53,5 @@ EFI_DTB_DIR ?= "${EFI_PREFIX}dtb"
 # Unified Kernel Image (UKI) name
 EFI_LINUX_IMG ?= "linux-${MACHINE}.efi"
 
-# dtb file to pack into UKI.
-# empty value would skip packing dtb.
-EFI_LINUX_IMG_DTB ?= ""
-
 # Place dtb at EFIDTDIR to seamlessly package
 KERNEL_DTBDEST = "${EFI_DTB_DIR}"
