@@ -32,10 +32,14 @@ IMAGE_ROOTFS_EXTRA_SPACE = "0"
 IMAGE_LINGUAS = ""
 IMAGE_FEATURES = ""
 
-remove_unused_files() {
+setup_efi_folder() {
+    # Move EFI content from packages expecting /boot to be the ESP location
+    if [ -d ${IMAGE_ROOTFS}/boot/EFI ]; then
+        mv ${IMAGE_ROOTFS}/boot/EFI/* ${IMAGE_ROOTFS}/EFI
+    fi
     find ${IMAGE_ROOTFS} -mindepth 1 ! -path "${IMAGE_ROOTFS}/EFI*" -exec rm -rf {} +
 }
-IMAGE_PREPROCESS_COMMAND:append = " remove_unused_files"
+IMAGE_PREPROCESS_COMMAND:append = " setup_efi_folder"
 
 do_uki[vardeps] += "KERNEL_CMDLINE_EXTRA"
 
