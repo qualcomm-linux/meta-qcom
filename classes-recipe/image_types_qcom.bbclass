@@ -8,7 +8,7 @@ IMAGE_TYPES += "qcomflash"
 QCOM_BOOT_FIRMWARE ?= ""
 
 QCOM_ESP_IMAGE ?= "${@bb.utils.contains("MACHINE_FEATURES", "efi", "esp-qcom-image", "", d)}"
-QCOM_ESP_FILE ?= "${@'efi.bin' if d.getVar('QCOM_ESP_IMAGE') else ''}"
+QCOM_ESP_FILE ?= "${@'${DEPLOY_DIR_IMAGE}/${QCOM_ESP_IMAGE}-${MACHINE}${IMAGE_NAME_SUFFIX}.vfat' if d.getVar('QCOM_ESP_IMAGE') else ''}"
 
 # There is currently no upstream-compatible way for the firmware to
 # identify and load the correct DTB from a combined-dtb that contains all
@@ -22,7 +22,6 @@ QCOM_PARTITION_FILES_SUBDIR ??= "${QCOM_BOOT_FILES_SUBDIR}"
 
 QCOM_PARTITION_CONF ?= "qcom-partition-conf"
 
-QCOM_ROOTFS_FILE ?= "rootfs.img"
 IMAGE_QCOMFLASH_FS_TYPE ??= "ext4"
 
 QCOMFLASH_DIR = "${IMGDEPLOYDIR}/${IMAGE_NAME}.qcomflash"
@@ -39,9 +38,7 @@ IMAGE_TYPEDEP:qcomflash += "${IMAGE_QCOMFLASH_FS_TYPE}"
 
 create_qcomflash_pkg() {
     # esp image
-    if [ -n "${QCOM_ESP_FILE}" ]; then
-        install -m 0644 ${DEPLOY_DIR_IMAGE}/${QCOM_ESP_IMAGE}-${MACHINE}${IMAGE_NAME_SUFFIX}.vfat ${QCOM_ESP_FILE}
-    fi
+    [ -n "${QCOM_ESP_FILE}" ] && install -m 0644 ${QCOM_ESP_FILE} efi.bin
 
     # dtb image
     if [ -n "${QCOM_DTB_DEFAULT}" ] && \
@@ -73,7 +70,7 @@ create_qcomflash_pkg() {
         install -m 0644 "${DEPLOY_DIR_IMAGE}/boot-${MACHINE}.img" boot.img
 
     # rootfs image
-    install -m 0644 ${IMGDEPLOYDIR}/${IMAGE_LINK_NAME}.${IMAGE_QCOMFLASH_FS_TYPE} ${QCOM_ROOTFS_FILE}
+    install -m 0644 ${IMGDEPLOYDIR}/${IMAGE_LINK_NAME}.${IMAGE_QCOMFLASH_FS_TYPE} rootfs.img
 
     # partition bins
     for pbin in `find ${DEPLOY_DIR_IMAGE}/${QCOM_PARTITION_FILES_SUBDIR} -maxdepth 1 -type f -name 'gpt_main*.bin' \
