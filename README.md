@@ -74,7 +74,7 @@ an easy way to setup bitbake based projects. For more details, visit the
 3. Build using the KAS configuration for one of the supported boards
 
     ```
-    kas build meta-qcom/ci/qcs6490-rb3gen2-core-kit.yml
+    kas build meta-qcom/ci/rb3gen2-core-kit.yml
     ```
 
 For a manual build without KAS, refer to the [Yocto Project Quick Build](https://docs.yoctoproject.org/brief-yoctoprojectqs/index.html).
@@ -147,7 +147,7 @@ Make sure that ModemManager is not running, disable it if necessary.
 4. Use the QDL tool (built in the previous section) to flash the images:
 
    ```
-   cd build/tmp/deploy/images/qcs6490-rb3gen2-core-kit/core-image-base-qcs6490-rb3gen2-core-kit.rootfs.qcomflash
+   cd build/tmp/deploy/images/rb3gen2-core-kit/core-image-base-rb3gen2-core-kit.rootfs.qcomflash
    qdl --debug prog_firehose_ddr.elf rawprogram*.xml patch*.xml
    ```
 
