@@ -69,7 +69,7 @@ jobs:
       fail-fast: true
       matrix:
         machine:
-          - qcs6490-rb3gen2-core-kit
+          - rb3gen2-core-kit
           - qcom-armv8a
         distro:
           - name: poky-altcfg
@@ -113,8 +113,8 @@ jobs:
           - qcs615-adp-air
           - qcs8300-ride-sx
           - qcs9100-ride-sx
-          - qrb2210-rb1-core-kit
           - qcom-armv7a
+          - rb1-core-kit
           - sm8750-mtp
         distro:
           - name: poky-altcfg
