@@ -71,7 +71,7 @@ plan:
             - AP_NAME
             - AP_PASSWORD
 
-  qrb2210-rb1-core-kit:
+  rb1-core-kit:
     poky-altcfg:
       jobs:
         - name: smoke
@@ -81,7 +81,7 @@ plan:
                 SKIP_INSTALL: "True"
                 TESTS: "pwd, uname -a, ip a, dmesg"
           visibility: public
-          download: poky-altcfg/qrb2210-rb1-core-kit/core-image-base-qrb2210-rb1-core-kit.rootfs.qcomflash.tar.gz
+          download: poky-altcfg/rb1-core-kit/core-image-base-rb1-core-kit.rootfs.qcomflash.tar.gz
           headers:
             - Authentication: Q_GITHUB_TOKEN
     qcom-distro:
@@ -93,7 +93,7 @@ plan:
                 SKIP_INSTALL: "True"
                 TESTS: "pwd, uname -a, ip a, dmesg"
           visibility: public
-          download: qcom/qrb2210-rb1-core-kit/qcom-multimedia-image-qrb2210-rb1-core-kit.rootfs.qcomflash.tar.gz
+          download: qcom/rb1-core-kit/qcom-multimedia-image-rb1-core-kit.rootfs.qcomflash.tar.gz
           headers:
             - Authentication: Q_GITHUB_TOKEN
         - name: wifi
@@ -108,7 +108,7 @@ plan:
                 SSID_PASSWORD: "{secrets.AP_PASSWORD}"
                 TIME_DELAY: 120s
           visibility: personal
-          download: qcom/qrb2210-rb1-core-kit/qcom-multimedia-image-qrb2210-rb1-core-kit.rootfs.qcomflash.tar.gz
+          download: qcom/rb1-core-kit/qcom-multimedia-image-rb1-core-kit.rootfs.qcomflash.tar.gz
           headers:
             - Authentication: Q_GITHUB_TOKEN
           secrets:
