@@ -27,7 +27,7 @@ plan:
           headers:
             - Authentication: Q_GITHUB_TOKEN
 
-  qcs6490-rb3gen2-core-kit:
+  rb3gen2-core-kit:
     poky-altcfg:
       jobs:
         - name: smoke
@@ -37,7 +37,7 @@ plan:
                 SKIP_INSTALL: "True"
                 TESTS: "pwd, uname -a, ip a, dmesg"
           visibility: public
-          download: poky-altcfg/qcs6490-rb3gen2-core-kit/core-image-base-qcs6490-rb3gen2-core-kit.rootfs.qcomflash.tar.gz
+          download: poky-altcfg/rb3gen2-core-kit/core-image-base-rb3gen2-core-kit.rootfs.qcomflash.tar.gz
           headers:
             - Authentication: Q_GITHUB_TOKEN
     qcom-distro:
@@ -49,7 +49,7 @@ plan:
                 SKIP_INSTALL: "True"
                 TESTS: "pwd, uname -a, ip a, dmesg"
           visibility: public
-          download: qcom/qcs6490-rb3gen2-core-kit/qcom-multimedia-image-qcs6490-rb3gen2-core-kit.rootfs.qcomflash.tar.gz
+          download: qcom/rb3gen2-core-kit/qcom-multimedia-image-rb3gen2-core-kit.rootfs.qcomflash.tar.gz
           headers:
             - Authentication: Q_GITHUB_TOKEN
         - name: wifi
@@ -64,7 +64,7 @@ plan:
                 SSID_PASSWORD: "{secrets.AP_PASSWORD}"
                 TIME_DELAY: 120s
           visibility: personal
-          download: qcom/qcs6490-rb3gen2-core-kit/qcom-multimedia-image-qcs6490-rb3gen2-core-kit.rootfs.qcomflash.tar.gz
+          download: qcom/rb3gen2-core-kit/qcom-multimedia-image-rb3gen2-core-kit.rootfs.qcomflash.tar.gz
           headers:
             - Authentication: Q_GITHUB_TOKEN
           secrets:
