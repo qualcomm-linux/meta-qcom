@@ -1,4 +1,0 @@
-# SPDX-License-Identifier: MIT
-
-kconf hardware qcom-rpmh.cfg
-kconf hardware qcom-sa8775p.cfg
