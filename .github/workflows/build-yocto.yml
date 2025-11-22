@@ -109,6 +109,7 @@ jobs:
         machine:
           - iq-8275-evk
           - iq-9075-evk
+          - iq-x7181-evk
           - qcm6490-idp
           - qcs615-adp-air
           - qcs8300-ride-sx
