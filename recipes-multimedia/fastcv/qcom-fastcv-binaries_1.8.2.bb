@@ -1,6 +1,6 @@
 SUMMARY = "Optimized Qualcomm FastCV library for Image Processing and Computer Vision"
 DESCRIPTION = "Qualcomm FastCV userspace library supporting Image Processing and Computer Vision applications"
-LICENSE = "CLOSED"
+LICENSE = "LICENSE.qcom-2"
 LIC_FILES_CHKSUM = "file://${UNPACKDIR}/usr/share/doc/${PN}/NOLOGINBINARYLICENSEQTI.pdf;md5=4ceffe94cb40cdce6d2f4fb93cc063d1 \
                     file://${UNPACKDIR}/usr/share/doc/${PN}/NOTICE;md5=4b722aa0574e24873e07b94e40b92e4d "
 
