@@ -2,7 +2,9 @@ SUMMARY = "Qualcomm Adreno Graphics User Mode libraries"
 
 DESCRIPTION = "Collection of prebuilt User Mode libraries to support OpenGL ES, Vulkan, and OpenCL APIs for Qualcomm Adreno GPUs."
 
-LICENSE = "CLOSED"
+LICENSE = "LICENSE.qcom-2"
+LIC_FILES_CHKSUM = "file://NO.LOGIN.BINARY.LICENSE.QTI.pdf;md5=4ceffe94cb40cdce6d2f4fb93cc063d1 \
+                    file://NOTICE;md5=18837ae43f290ad72cdcccead4d7700a "
 
 # no top-level dir in the archive, unpack to subdir to prevent UNPACKDIR pollution
 SRC_URI = "https://qartifactory-edge.qualcomm.com/artifactory/qsc_releases/software/chip/component/gfx-adreno.le.0.0/250908/prebuilt_yocto/${BPN}_${PV}_armv8-2a.tar.gz;subdir=${BPN}-${PV}"
