@@ -37,6 +37,7 @@ KBUILD_DEFCONFIG ?= "defconfig"
 KBUILD_DEFCONFIG:qcom-armv7a = "qcom_defconfig"
 
 KBUILD_CONFIG_EXTRA = "${@bb.utils.contains('DISTRO_FEATURES', 'hardened', '${S}/kernel/configs/hardening.config', '', d)}"
+KBUILD_CONFIG_EXTRA:append:aarch64 = "${S}/arch/arm64/configs/prune.config"
 
 do_configure:prepend() {
     # Use a copy of the 'defconfig' from the actual repo to merge fragments
