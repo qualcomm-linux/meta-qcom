@@ -78,6 +78,9 @@ jobs:
             yamlfile: ':ci/qcom-distro.yml'
           - name: qcom-distro-prop-image
             yamlfile: ':ci/qcom-distro-prop-image.yml'
+          # kvm is compatible with all the compile warm up machines
+          - name: qcom-distro-kvm
+            yamlfile: ':ci/qcom-distro-kvm.yml'
         kernel:
           - type: default
             dirname: ""
@@ -146,6 +149,15 @@ jobs:
                 type: additional
                 dirname: "+linux-yocto-lts"
                 yamlfile: ":ci/linux-yocto-lts.yml"
+          # include kvm compatible machines for the builds
+          - machine: qcs9100-ride-sx
+            distro:
+                name: qcom-distro-kvm
+                yamlfile: ':ci/qcom-distro-kvm.yml'
+            kernel:
+                type: default
+                dirname: ""
+                yamlfile: ""
         exclude:
           # Incompatible builds
           - machine: qcom-armv7a
