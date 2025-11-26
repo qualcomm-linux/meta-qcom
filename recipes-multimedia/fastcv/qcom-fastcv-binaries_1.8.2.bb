@@ -50,13 +50,13 @@ do_install() {
 PACKAGES += "\
     ${PN}-qcs8300-ride-dsp \
     ${PN}-sa8775p-ride-dsp \
-    ${PN}-thundercomm-rb3gen2-cdsp \
+    ${PN}-thundercomm-rb3gen2-dsp \
 "
 
 INSANE_SKIP:${PN}-qcs8300-ride-dsp = "arch libdir"
 INSANE_SKIP:${PN}-sa8775p-ride-dsp = "arch libdir"
-INSANE_SKIP:${PN}-thundercomm-rb3gen2-cdsp = "arch libdir"
+INSANE_SKIP:${PN}-thundercomm-rb3gen2-dsp = "arch libdir"
 
 FILES:${PN}-qcs8300-ride-dsp += "${datadir}/qcom/qcs8300/Qualcomm/QCS8300-RIDE/dsp"
 FILES:${PN}-sa8775p-ride-dsp += "${datadir}/qcom/sa8775p/Qualcomm/SA8775P-RIDE/dsp"
-FILES:${PN}-thundercomm-rb3gen2-cdsp += "${datadir}/qcom/qcm6490/Thundercomm/RB3gen2/dsp"
+FILES:${PN}-thundercomm-rb3gen2-dsp += "${datadir}/qcom/qcm6490/Thundercomm/RB3gen2/dsp"
