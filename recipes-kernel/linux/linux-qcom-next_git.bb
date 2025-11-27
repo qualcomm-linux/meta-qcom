@@ -12,8 +12,8 @@ LINUX_VERSION ?= "6.17+6.18-rc6"
 
 PV = "${LINUX_VERSION}+git"
 
-# tag: qcom-next-6.18-rc6-20251120
-SRCREV ?= "3d5db6797b5fd81a3c4fe35de25518c2550d293d"
+# tag: qcom-next-6.18-rc6-20251127
+SRCREV ?= "9f7e4fdfdc013d27452c2c43a78d2a7ba3b587b6"
 
 SRCBRANCH ?= "nobranch=1"
 SRCBRANCH:class-devupstream ?= "branch=qcom-next"
