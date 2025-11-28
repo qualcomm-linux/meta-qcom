@@ -81,6 +81,8 @@ jobs:
           # kvm is compatible with all the compile warm up machines
           - name: qcom-distro-kvm
             yamlfile: ':ci/qcom-distro-kvm.yml'
+          - name: qcom-distro-sota
+            yamlfile: ':ci/qcom-distro-sota.yml'
         kernel:
           - type: default
             dirname: ""
@@ -126,6 +128,8 @@ jobs:
             yamlfile: ':ci/qcom-distro.yml'
           - name: qcom-distro-prop-image
             yamlfile: ':ci/qcom-distro-prop-image.yml'
+          - name: qcom-distro-sota
+            yamlfile: ':ci/qcom-distro-sota.yml'
         kernel:
           - type: default
             dirname: ""
