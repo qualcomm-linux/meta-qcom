@@ -46,3 +46,6 @@ EFI_PROVIDER = "systemd-boot"
 
 # Unified Kernel Image (UKI) name
 EFI_LINUX_IMG ?= "linux-${MACHINE}.efi"
+
+# Pass additional options to mkimage command
+MKIMAGE_EXTRA_OPTS = "-E -B 8"
