@@ -1,4 +1,5 @@
 require conf/machine/include/soc-family.inc
+require conf/machine/include/fit-dtb-compatible.inc
 MACHINEOVERRIDES =. "qcom:"
 
 # Set a default set of MACHINE_FEATURES, indivudual MACHINEs can append it
@@ -46,3 +47,9 @@ EFI_PROVIDER = "systemd-boot"
 
 # Unified Kernel Image (UKI) name
 EFI_LINUX_IMG ?= "linux-${MACHINE}.efi"
+
+# Pass additional options to mkimage command
+# The -E option enables external data in FIT images, which is essential for
+# modular boot setups, secure boot workflows, and reducing image size.
+# The -B 8 option enforces 8-byte alignment, as per QCOM UEFI requirements.
+FIT_DTB_MKIMAGE_EXTRA_OPTS ?= "-E -B 8"
