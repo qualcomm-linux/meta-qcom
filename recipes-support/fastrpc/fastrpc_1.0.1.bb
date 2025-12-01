@@ -9,6 +9,7 @@ SRCREV = "27235935b19fad234cb561b1e9d4984a51ee9e9f"
 SRC_URI = "\
     git://github.com/qualcomm/fastrpc.git;branch=main;protocol=https \
     file://adsprpcd.service \
+    file://adsprpcd_audiopd.service \
     file://cdsprpcd.service \
     file://sdsprpcd.service \
     file://guess-dsp.sh \
@@ -22,7 +23,7 @@ RRECOMMENDS:${PN} += "${PN}-systemd"
 
 SYSTEMD_PACKAGES = "${PN} ${PN}-systemd"
 
-SYSTEMD_SERVICE:${PN}-systemd = "adsprpcd.service cdsprpcd.service sdsprpcd.service"
+SYSTEMD_SERVICE:${PN}-systemd = "adsprpcd.service adsprpcd_audiopd.service cdsprpcd.service sdsprpcd.service"
 SYSTEMD_AUTO_ENABLE:${PN}-systemd = "disable"
 
 do_install:append() {
@@ -30,6 +31,7 @@ do_install:append() {
 
     install -d ${D}${systemd_unitdir}/system
     install -m 0644 ${UNPACKDIR}/adsprpcd.service ${D}${systemd_unitdir}/system
+    install -m 0644 ${UNPACKDIR}/adsprpcd_audiopd.service ${D}${systemd_unitdir}/system
     install -m 0644 ${UNPACKDIR}/cdsprpcd.service ${D}${systemd_unitdir}/system
     install -m 0644 ${UNPACKDIR}/sdsprpcd.service ${D}${systemd_unitdir}/system
 

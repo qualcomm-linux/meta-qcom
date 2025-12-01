@@ -1,0 +1,9 @@
+[Unit]
+Description=aDSP audiopd RPC daemon
+
+[Service]
+Type=exec
+ExecStart=/bin/sh -c 'source /usr/sbin/guess-dsp.sh && /usr/bin/adsprpcd audiopd'
+
+[Install]
+WantedBy=multi-user.target
