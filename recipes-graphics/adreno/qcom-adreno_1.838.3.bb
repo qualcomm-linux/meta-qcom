@@ -1,6 +1,8 @@
 SUMMARY = "Qualcomm Adreno Graphics User Mode libraries"
 
-DESCRIPTION = "Collection of prebuilt User Mode libraries to support OpenGL ES, Vulkan, and OpenCL APIs for Qualcomm Adreno GPUs."
+DESCRIPTION = "Collection of prebuilt User Mode libraries to support OpenGL ES, Vulkan, and OpenCL APIs for Qualcomm Adreno GPUs.\
+               For Qualcomm-specific OpenCL extensions declared in cl_ext_qcom.h, documentation is available in the Adreno OpenCL SDK: \
+               https://softwarecenter.qualcomm.com/catalog/item/Adreno_OpenCL_SDK"
 
 LICENSE = "LICENSE.qcom-2"
 LIC_FILES_CHKSUM = "file://NO.LOGIN.BINARY.LICENSE.QTI.pdf;md5=4ceffe94cb40cdce6d2f4fb93cc063d1 \
@@ -36,6 +38,7 @@ RDEPENDS:${PN}-common += " kgsl-dlkm"
 RDEPENDS:${PN}-egl += " ${PN}-common ${PN}-gles1 ${PN}-gles2 msm-gbm-backend"
 RDEPENDS:${PN}-vulkan += " ${PN}-common msm-gbm-backend"
 RDEPENDS:${PN}-cl += " ${PN}-common"
+RDEPENDS:${PN}-dev += "${@bb.utils.contains('DISTRO_FEATURES', 'opencl', 'opencl-headers-dev', '', d)}"
 
 RDEPENDS:${PN} = " \
     ${@bb.utils.contains('DISTRO_FEATURES', 'glvnd', 'qcom-adreno-egl', '', d)} \
@@ -46,6 +49,11 @@ RDEPENDS:${PN} = " \
 ALLOW_EMPTY:${PN} = "1"
 
 do_install () {
+    if ${@bb.utils.contains('DISTRO_FEATURES', 'opencl', 'true', 'false', d)}; then
+        install -d ${D}${includedir}/CL
+        cp ${S}/usr/include/CL/cl_ext_qcom.h ${D}${includedir}/CL/
+    fi
+
     install -d ${D}/${libdir}
     cp -r ${S}/usr/lib/* ${D}/${libdir}/
 
