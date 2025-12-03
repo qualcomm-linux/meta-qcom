@@ -48,12 +48,21 @@ do_install() {
 
 }
 
+PACKAGE_BEFORE_PN = "${PN}-dsp"
+
 PACKAGES += "\
     ${PN}-qcs615-ride-dsp \
     ${PN}-qcs8300-ride-dsp \
     ${PN}-sa8775p-ride-dsp \
     ${PN}-thundercomm-rb3gen2-dsp \
 "
+
+FILES:${PN}-dsp = "${libdir}/libfastcvdsp_stub.so.*"
+
+RDEPENDS:${PN}-qcs615-ride-dsp = "${PN}-dsp"
+RDEPENDS:${PN}-qcs8300-ride-dsp = "${PN}-dsp"
+RDEPENDS:${PN}-sa8775p-ride-dsp = "${PN}-dsp"
+RDEPENDS:${PN}-thundercomm-rb3gen2-dsp = "${PN}-dsp"
 
 INSANE_SKIP:${PN}-qcs615-ride-dsp = "arch libdir"
 INSANE_SKIP:${PN}-qcs8300-ride-dsp = "arch libdir"
