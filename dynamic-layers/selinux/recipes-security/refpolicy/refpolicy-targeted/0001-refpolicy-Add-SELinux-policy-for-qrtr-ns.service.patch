@@ -1,0 +1,66 @@
+From 50e527d2ec05becc5b0dc08db5aaab0d88358e00 Mon Sep 17 00:00:00 2001
+From: Sasi Kumar Maddineni <quic_sasikuma@quicinc.com>
+Date: Thu, 4 Dec 2025 11:05:58 +0530
+Subject: [PATCH] refpolicy: Add SELinux policy for qrtr-ns.service
+
+qrtr-ns.service fails to start under SELinux enforcing mode because
+it lacks permissions to create and bind sockets. This results in 
+service startup errors.
+
+Introduce SELinux policy rules granting qrtr-ns.service the necessary
+permissions for socket creation, binding, and communication.
+
+Upstream-Status: Inappropriate [Qualcomm specific change]
+
+Signed-off-by: Sasi Kumar Maddineni <sasikuma@qti.qualcomm.com>
+---
+ policy/modules/services/qcom_qrtr_ns.fc |  4 ++++
+ policy/modules/services/qcom_qrtr_ns.if |  4 ++++
+ policy/modules/services/qcom_qrtr_ns.te | 13 +++++++++++++
+ 3 files changed, 21 insertions(+)
+ create mode 100644 policy/modules/services/qcom_qrtr_ns.fc
+ create mode 100644 policy/modules/services/qcom_qrtr_ns.if
+ create mode 100644 policy/modules/services/qcom_qrtr_ns.te
+
+diff --git a/policy/modules/services/qcom_qrtr_ns.fc b/policy/modules/services/qcom_qrtr_ns.fc
+new file mode 100644
+index 000000000..b9799df2d
+--- /dev/null
++++ b/policy/modules/services/qcom_qrtr_ns.fc
+@@ -0,0 +1,4 @@
++#Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
++#SPDX-License-Identifier: BSD-3-Clause-Clear
++
++/usr/bin/qrtr-ns    --   gen_context(system_u:object_r:qcom_qrtr_ns_exec_t,s0)
+diff --git a/policy/modules/services/qcom_qrtr_ns.if b/policy/modules/services/qcom_qrtr_ns.if
+new file mode 100644
+index 000000000..a0bef63a0
+--- /dev/null
++++ b/policy/modules/services/qcom_qrtr_ns.if
+@@ -0,0 +1,4 @@
++#Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
++#SPDX-License-Identifier: BSD-3-Clause-Clear
++
++## <summary>qrtr_ns</summary>
+diff --git a/policy/modules/services/qcom_qrtr_ns.te b/policy/modules/services/qcom_qrtr_ns.te
+new file mode 100644
+index 000000000..05e815318
+--- /dev/null
++++ b/policy/modules/services/qcom_qrtr_ns.te
+@@ -0,0 +1,13 @@
++#Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
++#SPDX-License-Identifier: BSD-3-Clause-Clear
++
++policy_module(qcom_qrtr_ns, 1.0)
++
++type qcom_qrtr_ns_t;
++type qcom_qrtr_ns_exec_t;
++
++init_daemon_domain(qcom_qrtr_ns_t, qcom_qrtr_ns_exec_t)
++
++allow qcom_qrtr_ns_t self:socket create_socket_perms;
++allow qcom_qrtr_ns_t self:capability net_admin;
++allow qcom_qrtr_ns_t self:qipcrtr_socket create_socket_perms;
+-- 
+2.43.0
+
