@@ -4,7 +4,6 @@ FILESEXTRAPATHS:prepend := "${THISDIR}/${BPN}:"
 PACKAGECONFIG_FREEDRENO = "\
     freedreno \
     tools \
-    ${@bb.utils.contains('BBFILE_COLLECTIONS', 'openembedded-layer', 'freedreno-fdperf', '', d)} \
 "
 
 PACKAGECONFIG:append:qcom = "${PACKAGECONFIG_FREEDRENO}"
