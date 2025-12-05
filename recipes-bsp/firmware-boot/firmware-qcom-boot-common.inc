@@ -1,6 +1,6 @@
 # Install NHLOS boot binaries in DEPLOY_DIR
 
-S = "${UNPACKDIR}/${BOOTBINARIES}"
+S ?= "${UNPACKDIR}/${BOOTBINARIES}"
 
 QCOM_BOOT_IMG_SUBDIR ?= ""
 
