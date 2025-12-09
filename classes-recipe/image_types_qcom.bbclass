@@ -74,16 +74,16 @@ create_qcomflash_pkg() {
     install -m 0644 ${IMGDEPLOYDIR}/${IMAGE_LINK_NAME}.${IMAGE_QCOMFLASH_FS_TYPE} rootfs.img
 
     # partition bins
-    for pbin in `find ${DEPLOY_DIR_IMAGE}/${QCOM_PARTITION_FILES_SUBDIR} -maxdepth 1 -type f -name 'gpt_main*.bin' \
-                -o -name 'gpt_backup*.bin' -o -name 'patch*.xml'`; do
-        install -m 0644 ${pbin} .
-    done
-
     # skip BLANK_GPT and WIPE_PARTITIONS for rawprogram xml files
-    for rawpg in `find ${DEPLOY_DIR_IMAGE}/${QCOM_PARTITION_FILES_SUBDIR} -maxdepth 1 -type f -name 'rawprogram*.xml' \
-                ! -name 'rawprogram*_BLANK_GPT.xml' ! -name 'rawprogram*_WIPE_PARTITIONS.xml'`; do
-        install -m 0644 ${rawpg} .
-    done
+    if [ -n "${QCOM_PARTITION_FILES_SUBDIR}" ]; then
+        for pbin in ${DEPLOY_DIR_IMAGE}/${QCOM_PARTITION_FILES_SUBDIR}/gpt_main*.bin \
+                    ${DEPLOY_DIR_IMAGE}/${QCOM_PARTITION_FILES_SUBDIR}/gpt_backup*.bin \
+                    ${DEPLOY_DIR_IMAGE}/${QCOM_PARTITION_FILES_SUBDIR}/zeros_*.bin \
+                    ${DEPLOY_DIR_IMAGE}/${QCOM_PARTITION_FILES_SUBDIR}/rawprogram[0-9].xml \
+                    ${DEPLOY_DIR_IMAGE}/${QCOM_PARTITION_FILES_SUBDIR}/patch*.xml ; do
+            install -m 0644 ${pbin} .
+        done
+    fi
 
     # check CDT file existence and install as per need, for targets with spinor, CDT file will be in spinor subfolder instead of root folder.
     if [ -n "${QCOM_CDT_FILE}" ] && [ -e "${DEPLOY_DIR_IMAGE}/${QCOM_BOOT_FILES_SUBDIR}/${QCOM_CDT_FILE}.bin" ]; then
@@ -93,10 +93,6 @@ create_qcomflash_pkg() {
     for logfs in `find ${DEPLOY_DIR_IMAGE}/${QCOM_BOOT_FILES_SUBDIR} -maxdepth 1 -type f -name 'logfs_*.bin'`; do
         install -m 0644 ${logfs} .
     done
-    for zeros in `find ${DEPLOY_DIR_IMAGE}/${QCOM_PARTITION_FILES_SUBDIR} -maxdepth 1 -type f -name 'zeros_*.bin'`; do
-        install -m 0644 ${zeros} .
-    done
-
     if [ -e "${DEPLOY_DIR_IMAGE}/${QCOM_PARTITION_FILES_SUBDIR}/contents.xml" ]; then
         install -m 0644 "${DEPLOY_DIR_IMAGE}/${QCOM_PARTITION_FILES_SUBDIR}/contents.xml" contents.xml
     fi
