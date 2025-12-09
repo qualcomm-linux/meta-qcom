@@ -18,6 +18,7 @@ UKI_CMDLINE += "${@d.getVar('KERNEL_CMDLINE_EXTRA') or ''}"
 # Remove 'upstream' dtb, rely on EFI provided one
 KERNEL_DEVICETREE = ""
 KERNEL_DEVICETREE:sm8750-mtp = "${QCOM_DTB_DEFAULT}.dtb"
+KERNEL_DEVICETREE:kaanapali-mtp = "${QCOM_DTB_DEFAULT}.dtb"
 
 IMAGE_FSTYPES = "vfat"
 IMAGE_FSTYPES_DEBUGFS = ""
