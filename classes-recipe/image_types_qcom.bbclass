@@ -83,6 +83,7 @@ create_qcomflash_pkg() {
                     ${DEPLOY_DIR_IMAGE}/${QCOM_PARTITION_FILES_SUBDIR}/patch*.xml ; do
             install -m 0644 ${pbin} .
         done
+    fi
 
     # check CDT file existence and install as per need, for targets with spinor, CDT file will be in spinor subfolder instead of root folder.
     if [ -n "${QCOM_CDT_FILE}" ] && [ -e "${DEPLOY_DIR_IMAGE}/${QCOM_BOOT_FILES_SUBDIR}/${QCOM_CDT_FILE}.bin" ]; then
@@ -119,6 +120,12 @@ create_qcomflash_pkg() {
             install -d sail_nor
             find "${DEPLOY_DIR_IMAGE}/${QCOM_BOOT_FILES_SUBDIR}/sail_nor" -maxdepth 1 -type f -exec install -m 0644 {} sail_nor \;
         fi
+    fi
+    for logfs in `find ${DEPLOY_DIR_IMAGE}/${QCOM_BOOT_FILES_SUBDIR} -maxdepth 1 -type f -name 'logfs_*.bin'`; do
+        install -m 0644 ${logfs} .
+    done
+    if [ -e "${DEPLOY_DIR_IMAGE}/${QCOM_PARTITION_FILES_SUBDIR}/contents.xml" ]; then
+        install -m 0644 "${DEPLOY_DIR_IMAGE}/${QCOM_PARTITION_FILES_SUBDIR}/contents.xml" contents.xml
     fi
 
     # abl2esp
