@@ -83,13 +83,18 @@ create_qcomflash_pkg() {
                     ${DEPLOY_DIR_IMAGE}/${QCOM_PARTITION_FILES_SUBDIR}/patch*.xml ; do
             install -m 0644 ${pbin} .
         done
+
+        if [ -e "${DEPLOY_DIR_IMAGE}/${QCOM_PARTITION_FILES_SUBDIR}/contents.xml" ]; then
+            install -m 0644 "${DEPLOY_DIR_IMAGE}/${QCOM_PARTITION_FILES_SUBDIR}/contents.xml" contents.xml
+        fi
     fi
 
-    # check CDT file existence and install as per need, for targets with spinor, CDT file will be in spinor subfolder instead of root folder.
-    if [ -n "${QCOM_CDT_FILE}" ] && [ -e "${DEPLOY_DIR_IMAGE}/${QCOM_BOOT_FILES_SUBDIR}/${QCOM_CDT_FILE}.bin" ]; then
-        install -m 0644 ${DEPLOY_DIR_IMAGE}/${QCOM_BOOT_FILES_SUBDIR}/${QCOM_CDT_FILE}.bin cdt.bin
-    fi
+    if [ -n "${QCOM_BOOT_FILES_SUBDIR}" ]; then
+        if [ -n "${QCOM_CDT_FILE}" ]; then
+            install -m 0644 ${DEPLOY_DIR_IMAGE}/${QCOM_BOOT_FILES_SUBDIR}/${QCOM_CDT_FILE}.bin cdt.bin
+        fi
 
+    fi
     if [ -n "${QCOM_BOOT_FILES_SUBDIR}" ]; then
         if [ -n "${QCOM_CDT_FILE}" ]; then
             install -m 0644 ${DEPLOY_DIR_IMAGE}/${QCOM_BOOT_FILES_SUBDIR}/${QCOM_CDT_FILE}.bin cdt.bin
@@ -104,7 +109,6 @@ create_qcomflash_pkg() {
                 -name 'sec.dat'` ; do
             install -m 0644 ${bfw} .
         done
-
         # xbl_config
         xbl_config="xbl_config.elf"
         if ${@bb.utils.contains('DISTRO_FEATURES', 'kvm', 'true', 'false', d)}; then
@@ -121,62 +125,10 @@ create_qcomflash_pkg() {
             find "${DEPLOY_DIR_IMAGE}/${QCOM_BOOT_FILES_SUBDIR}/sail_nor" -maxdepth 1 -type f -exec install -m 0644 {} sail_nor \;
         fi
     fi
-    for logfs in `find ${DEPLOY_DIR_IMAGE}/${QCOM_BOOT_FILES_SUBDIR} -maxdepth 1 -type f -name 'logfs_*.bin'`; do
-        install -m 0644 ${logfs} .
-    done
-    if [ -e "${DEPLOY_DIR_IMAGE}/${QCOM_PARTITION_FILES_SUBDIR}/contents.xml" ]; then
-        install -m 0644 "${DEPLOY_DIR_IMAGE}/${QCOM_PARTITION_FILES_SUBDIR}/contents.xml" contents.xml
-    fi
 
     # abl2esp
     if [ -e "${DEPLOY_DIR_IMAGE}/abl2esp-${ABL_SIGNATURE_VERSION}.elf" ]; then
         install -m 0644 "${DEPLOY_DIR_IMAGE}/abl2esp-${ABL_SIGNATURE_VERSION}.elf" .
-    fi
-
-    # xbl_config
-    xbl_config="xbl_config.elf"
-    if ${@bb.utils.contains('DISTRO_FEATURES', 'kvm', 'true', 'false', d)}; then
-        xbl_config="xbl_config_kvm.elf"
-    fi
-
-    if [ -f "${DEPLOY_DIR_IMAGE}/${QCOM_BOOT_FILES_SUBDIR}/${xbl_config}" ]; then
-        install -m 0644 "${DEPLOY_DIR_IMAGE}/${QCOM_BOOT_FILES_SUBDIR}/${xbl_config}" xbl_config.elf
-    fi
-
-    # sail nor firmware
-    if [ -d "${DEPLOY_DIR_IMAGE}/${QCOM_BOOT_FILES_SUBDIR}/sail_nor" ]; then
-        install -d sail_nor
-        find "${DEPLOY_DIR_IMAGE}/${QCOM_BOOT_FILES_SUBDIR}/sail_nor" -maxdepth 1 -type f -exec install -m 0644 {} sail_nor \;
-    fi
-
-    # spinor firmware, partition bins, CDT etc.
-    if [ -d "${DEPLOY_DIR_IMAGE}/${QCOM_BOOT_FILES_SUBDIR}/spinor" ]; then
-        install -d spinor
-        find "${DEPLOY_DIR_IMAGE}/${QCOM_BOOT_FILES_SUBDIR}/spinor" -maxdepth 1 -type f -exec install -m 0644 {} spinor \;
-
-        # partition bins for spinor
-        for pbin in `find ${DEPLOY_DIR_IMAGE}/${QCOM_PARTITION_FILES_SUBDIR_SPINOR} -maxdepth 1 -type f -name 'gpt_main*.bin' \
-                    -o -name 'gpt_backup*.bin' -o -name 'patch*.xml'`; do
-            install -m 0644 ${pbin} spinor
-        done
-
-        # skip BLANK_GPT and WIPE_PARTITIONS for rawprogram xml files
-        for rawpg in `find ${DEPLOY_DIR_IMAGE}/${QCOM_PARTITION_FILES_SUBDIR_SPINOR} -maxdepth 1 -type f -name 'rawprogram*.xml' \
-                    ! -name 'rawprogram*_BLANK_GPT.xml' ! -name 'rawprogram*_WIPE_PARTITIONS.xml'`; do
-            install -m 0644 ${rawpg} spinor
-        done
-
-        for zeros in `find ${DEPLOY_DIR_IMAGE}/${QCOM_PARTITION_FILES_SUBDIR_SPINOR} -maxdepth 1 -type f -name 'zeros_*.bin'`; do
-            install -m 0644 ${zeros} spinor
-        done
-
-        # rename CDT file to match the filename in partition conf
-        if [ -n "${QCOM_CDT_FILE}" ]; then
-            install -m 0644 ${DEPLOY_DIR_IMAGE}/${QCOM_BOOT_FILES_SUBDIR}/spinor/cdt.bin spinor/cdt.bin
-        fi
-
-        # copy programer to support flash of hlos images
-        find "${DEPLOY_DIR_IMAGE}/${QCOM_BOOT_FILES_SUBDIR}/spinor" -maxdepth 1 -type f -name 'xbl_s_devprg_ns.melf' -exec install -m 0644 {} . \;
     fi
 
     # Create symlink to ${QCOMFLASH_DIR} dir
