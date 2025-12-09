@@ -90,9 +90,6 @@ create_qcomflash_pkg() {
         install -m 0644 ${DEPLOY_DIR_IMAGE}/${QCOM_BOOT_FILES_SUBDIR}/${QCOM_CDT_FILE}.bin cdt.bin
     fi
 
-    for logfs in `find ${DEPLOY_DIR_IMAGE}/${QCOM_BOOT_FILES_SUBDIR} -maxdepth 1 -type f -name 'logfs_*.bin'`; do
-        install -m 0644 ${logfs} .
-    done
     if [ -e "${DEPLOY_DIR_IMAGE}/${QCOM_PARTITION_FILES_SUBDIR}/contents.xml" ]; then
         install -m 0644 "${DEPLOY_DIR_IMAGE}/${QCOM_PARTITION_FILES_SUBDIR}/contents.xml" contents.xml
     fi
@@ -102,6 +99,7 @@ create_qcomflash_pkg() {
             \( -name '*.elf' ! -name 'abl2esp*.elf' ! -name 'xbl_config*.elf' \) -o \
             -name '*.mbn*' -o \
             -name '*.fv' -o \
+            -name 'logfs_*.bin' -o \
             -name 'sec.dat'` ; do
         install -m 0644 ${bfw} .
     done
