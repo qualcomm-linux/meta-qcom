@@ -22,7 +22,7 @@ SRC_URI = "git://github.com/qualcomm-linux/kernel.git;${SRCBRANCH};protocol=http
 
 # Additional kernel configs.
 SRC_URI += " \
-    file://configs/qcom.cfg \
+    file://configs/bsp-additions.cfg \
 "
 
 # To build tip of qcom-next branch set preferred
