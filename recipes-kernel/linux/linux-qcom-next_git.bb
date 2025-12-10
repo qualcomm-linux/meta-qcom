@@ -45,5 +45,5 @@ do_configure:prepend() {
     cp ${S}/arch/${ARCH}/configs/${KBUILD_DEFCONFIG} ${B}/.config
 
     # Merge fragment for QCOM value add features
-    ${S}/scripts/kconfig/merge_config.sh -m -O ${B} ${B}/.config ${@" ".join(find_cfgs(d))} ${KBUILD_CONFIG_EXTRA}
+    ${S}/scripts/kconfig/merge_config.sh -m -O ${B} ${B}/.config ${KBUILD_CONFIG_EXTRA} ${@" ".join(find_cfgs(d))}
 }
