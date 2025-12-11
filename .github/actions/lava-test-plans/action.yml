@@ -5,13 +5,18 @@ inputs:
   distro_name:
     required: true
   build_id:
+    description: "ID of the workflow from which build URL will be downloaded"
     required: true
   gh_token:
+    description: "Github token. It's required to download artifacts from the workflow"
     required: true
-outputs:
-  url:
-    description: Location of the published binaries
-    value: ${{ steps.upload_artifacts.outputs.url }}
+  prefix:
+    description: "Prefix for the compressed file that is uploaded as workflow artifact"
+    default: testjobs
+  testplan:
+    description: "Name of the test plan to use in job generation"
+    default: boot
+
 runs:
   using: "composite"
   steps:
@@ -19,7 +24,7 @@ runs:
         with:
           repository: qualcomm-linux/lava-test-plans
           path: lava-test-plans
-          ref: 35c697c2779bcb98c77b2f7b4a9b1962e18c83e3
+          ref: cdb8221de2a8f78533ef6b812fc4f5a2461c5525
 
       - name: 'Download build URLs'
         uses: actions/download-artifact@v6
@@ -33,16 +38,18 @@ runs:
         run: |
           cd lava-test-plans && pip install .
           lava-test-plans --help
-          #echo "PROJECT_NAME=${GITHUB_REPOSITORY#*/}" >> variables.ini
-          #echo "PROJECT=projects/${GITHUB_REPOSITORY#*/}/" >> variables.ini
-          echo "PROJECT_NAME=meta-qcom" >> gh-variables.ini
-          echo "PROJECT=projects/meta-qcom/" >> gh-variables.ini
+          echo "PROJECT_NAME=${GITHUB_REPOSITORY#*/}" >> gh-variables.ini
+          echo "PROJECT=projects/${GITHUB_REPOSITORY#*/}/" >> gh-variables.ini
+          #echo "PROJECT_NAME=meta-qcom" >> gh-variables.ini
+          #echo "PROJECT=projects/meta-qcom/" >> gh-variables.ini
           echo "LAVA_JOB_PRIORITY=50" >> gh-variables.ini
           echo "OS_INFO=qcom-distro" >> gh-variables.ini
           echo "BUILD_NUMBER=${{ github.run_id }}-${{ github.run_attempt }}" >> gh-variables.ini
           echo "DOCKER_IMAGE_POSTPROCESS=ghcr.io/foundriesio/lava-lmp-sign:main" >> gh-variables.ini
           echo "AUTH_HEADER_NAME=Authentication" >> gh-variables.ini
           echo "AUTH_HEADER_TOKEN=Q_GITHUB_TOKEN" >> gh-variables.ini
+          echo "TEST_DEFINITIONS_REPOSITORY=https://github.com/qualcomm-linux/qcom-linux-testkit/" >> gh-variables.ini
+          echo "FLASHER_DEVICE_TYPE=qcs" >> gh-variables.ini
           IMAGE_TYPE="core-image-base"
           if [ "${{ inputs.distro_name }}" = "qcom-distro" ]; then
               IMAGE_TYPE="qcom-multimedia-image"
@@ -63,7 +70,6 @@ runs:
           fi
           echo "BUILD_DOWNLOAD_URL=${BUILD_URL}/" >> gh-variables.ini
 
-          #echo "ROOTFS_URL=https://quic-yocto-fileserver-1029608027416.us-central1.run.app/${GITHUB_REPOSITORY}/${{ github.run_id }}-${{ github.run_attempt }}/${{ inputs.distro_name }}/${{ inputs.machine }}/${IMAGE_TYPE}-${{ inputs.machine }}.rootfs.qcomflash.tar.gz" >> gh-variables.ini
           echo "ROOTFS_URL=${BUILD_URL}/${{ inputs.distro_name }}/${{ inputs.machine }}/${IMAGE_TYPE}-${{ inputs.machine }}.rootfs.qcomflash.tar.gz" >> gh-variables.ini
 
           if [ "${{ inputs.machine }}" = "qcom-armv8a" ]; then
@@ -72,19 +78,21 @@ runs:
               echo "DEVICE_TYPE=dragonboard-410c" >> dragonboard-410c.ini
               echo "BOOT_IMG_FILE=boot-apq8016-sbc-qcom-armv8a.img" >> dragonboard-410c.ini
               cat dragonboard-410c.ini
-              lava-test-plans --dry-run --variables dragonboard-410c.ini --test-plan "meta-qcom/${{ inputs.distro_name }}" --device-type "dragonboard-410c" --dry-run-path ../dragonboard-410c-${{ inputs.distro_name }} || true
+              #lava-test-plans --dry-run --variables dragonboard-410c.ini --test-plan "meta-qcom/${{ inputs.distro_name }}/${{ inputs.testplan }}" --device-type "dragonboard-410c" --dry-run-path ../dragonboard-410c-${{ inputs.distro_name }}-${{ inputs.testplan }} || true
+              lava-test-plans --dry-run --variables dragonboard-410c.ini --test-plan "${GITHUB_REPOSITORY#*/}/${{ inputs.distro_name }}/${{ inputs.testplan }}" --device-type "dragonboard-410c" --dry-run-path ../dragonboard-410c-${{ inputs.distro_name }}-${{ inputs.testplan }} || true
               cp gh-variables.ini dragonboard-820c.ini
               echo "BOOT_IMG_FILE=boot-apq8096-db820c-qcom-armv8a.img" >> dragonboard-820c.ini
               echo "DEVICE_TYPE=dragonboard-820c" >> dragonboard-820c.ini
               cat dragonboard-820c.ini
-              lava-test-plans --dry-run --variables dragonboard-820c.ini --test-plan "meta-qcom/${{ inputs.distro_name }}" --device-type "dragonboard-820c" --dry-run-path ../dragonboard-820c-${{ inputs.distro_name }} || true
+              #lava-test-plans --dry-run --variables dragonboard-820c.ini --test-plan "meta-qcom/${{ inputs.distro_name }}/${{ inputs.testplan }}" --device-type "dragonboard-820c" --dry-run-path ../dragonboard-820c-${{ inputs.distro_name }}-${{ inputs.testplan }} || true
+              lava-test-plans --dry-run --variables dragonboard-820c.ini --test-plan "${GITHUB_REPOSITORY#*/}/${{ inputs.distro_name }}/${{ inputs.testplan }}" --device-type "dragonboard-820c" --dry-run-path ../dragonboard-820c-${{ inputs.distro_name }}-${{ inputs.testplan }} || true
               echo "MACHINE=dragonboard" >> $GITHUB_ENV
           else
               echo "DEVICE_TYPE=${{ inputs.machine }}" >> gh-variables.ini
 
               cat gh-variables.ini
-              #lava-test-plans --dry-run --variables gh-variables.ini --test-plan "${GITHUB_REPOSITORY#*/}" --device-type "${{ inputs.machine }}" --verbose 10
-              lava-test-plans --dry-run --variables gh-variables.ini --test-plan "meta-qcom/${{ inputs.distro_name }}" --device-type "${{ inputs.machine }}" --dry-run-path ../${{ inputs.machine }}-${{ inputs.distro_name }} || true
+              #lava-test-plans --dry-run --variables gh-variables.ini --test-plan "meta-qcom/${{ inputs.distro_name }}/${{ inputs.testplan }}" --device-type "${{ inputs.machine }}" --dry-run-path ../${{ inputs.machine }}-${{ inputs.distro_name }}-${{ inputs.testplan }} || true
+              lava-test-plans --dry-run --variables gh-variables.ini --test-plan "${GITHUB_REPOSITORY#*/}/${{ inputs.distro_name }}/${{ inputs.testplan }}" --device-type "${{ inputs.machine }}" --dry-run-path ../${{ inputs.machine }}-${{ inputs.distro_name }}-${{ inputs.testplan }} || true
               echo "MACHINE=${{ inputs.machine }}" >> $GITHUB_ENV
           fi
 
@@ -97,6 +105,6 @@ runs:
       - name: 'Upload test jobs'
         uses: actions/upload-artifact@v4
         with:
-          name: testjobs-${{ inputs.machine }}-${{ inputs.distro_name }}
-          path: ${{ env.MACHINE}}*-${{ inputs.distro_name }}
+          name: ${{ inputs.prefix }}-${{ inputs.machine }}-${{ inputs.distro_name }}
+          path: ${{ env.MACHINE}}*-${{ inputs.distro_name }}*
 
