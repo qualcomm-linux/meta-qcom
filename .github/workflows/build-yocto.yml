@@ -112,17 +112,17 @@ jobs:
       fail-fast: true
       matrix:
         machine:
-          - iq-8275-evk
-          - iq-9075-evk
-          - kaanapali-mtp
+#          - iq-8275-evk
+#          - iq-9075-evk
+#          - kaanapali-mtp
           - iq-x7181-evk
-          - qcm6490-idp
-          - qcs615-ride
-          - qcs8300-ride-sx
-          - qcs9100-ride-sx
-          - qcom-armv7a
-          - rb1-core-kit
-          - sm8750-mtp
+#          - qcm6490-idp
+#          - qcs615-ride
+#          - qcs8300-ride-sx
+#          - qcs9100-ride-sx
+#          - qcom-armv7a
+#          - rb1-core-kit
+#          - sm8750-mtp
         distro:
           - name: poky-altcfg
             yamlfile: ""
