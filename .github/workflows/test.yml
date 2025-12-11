@@ -8,7 +8,7 @@ on:
         type: string
 
 jobs:
-  prepare-jobs:
+  prepare-boot-jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -31,76 +31,195 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: 'Download build URLs'
+      - name: Run lava-test-plans
+        uses: ./.github/actions/lava-test-plans
+        with:
+          machine: ${{ matrix.machine }}
+          distro_name: ${{ matrix.distro.name }}
+          build_id: ${{ inputs.build_id }}
+          gh_token: ${{ secrets.GITHUB_TOKEN }}
+          prefix: boottest
+
+  prepare-boot-job-list:
+    needs: prepare-boot-jobs
+    runs-on: ubuntu-latest
+    outputs:
+      jobmatrix: ${{ steps.listjobs.outputs.jobmatrix }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: 'Download job templates'
         uses: actions/download-artifact@v6
         with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          run-id: ${{ inputs.build_id }}
-          pattern: build-url*
+          pattern: boottest-*
+
+      - name: "List jobs"
+        id: listjobs
+        uses: ./.github/actions/list-jobs
+        with:
+          prefix: "boottest"
+          build_id: ${{ inputs.build_id }}
+          gh_token: ${{ secrets.GITHUB_TOKEN }}
+
+  submit-boot-job:
+    needs: prepare-boot-job-list
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    name: Boot ${{ matrix.target.name }}
+    strategy:
+      matrix: ${{ fromJson(needs.prepare-boot-job-list.outputs.jobmatrix) }}
+    steps:
+      - name: 'Download job templates'
+        uses: actions/download-artifact@v6
+        with:
+          pattern: boottest-*
+
+      - name: Submit ${{ matrix.target.name }}
+        timeout-minutes: 20
+        id: submit
+        uses: foundriesio/lava-action@v9
+        with:
+          lava_token: ${{ secrets.LAVATOKEN }}
+          lava_url: 'lava.infra.foundries.io'
+          job_definition: ${{ matrix.target.path }}
+          wait_for_job: true
+          fail_action_on_failure: true
+          fail_action_on_incomplete: true
+          save_result_as_artifact: true
+          save_job_details: true
+          result_file_name: "${{ matrix.target.result_file }}"
+      - uses: mwasilew/github-action-matrix-outputs-write@v2
+        if: always()
+        id: out
+        with:
+          matrix-step-name: ${{ github.job }}
+          matrix-key: ${{ matrix.target.name }}
+          artifact-name: ${{ matrix.target.name }}
+          outputs: |-
+            result: ${{ steps.submit.outcome }}
+
+
+  boot-job-result:
+    runs-on: ubuntu-latest
+    needs: [submit-boot-job]
+    outputs:
+      boot_result: "${{ steps.print-boot-result.outputs.boot_result }}"
+    steps:
+      - uses: cloudposse/github-action-matrix-outputs-read@v1
+        id: read
+        with:
+          matrix-step-name: "submit-boot-job"
+      - id: print-boot-result
+        name: "Print boot result"
+        run: |
+          # collapse results of matrix of boot test jobs to a single result
+          echo '${{ steps.read.outputs.result }}' | yq
+          BOOT_RESULT=$(echo '${{ steps.read.outputs.result }}' | yq '.[] | first (. != "success")')
+          if [ -z "$BOOT_RESULT" ]; then
+            BOOT_RESULT="success"
+          fi
+          echo "boot_result=$BOOT_RESULT"
+          echo "boot_result=$BOOT_RESULT" >> "$GITHUB_OUTPUT"
+
+  prepare-premerge-jobs:
+    needs: boot-job-result
+    # run only if boot jobs are successful
+    if: ${{ needs.boot-job-result.outputs.boot_result == 'success' }}
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        # only run pre-merge tests on devices available in the LAB
+        # and "contemporary" - exclude dragonboards
+        machine:
+          - iq-9075-evk
+          - qcs615-ride
+          - rb3gen2-core-kit
+          - qcs8300-ride-sx
+          - qcs9100-ride-sx
+          - rb1-core-kit
+        distro:
+          - name: poky-altcfg
+          - name: qcom-distro
+    steps:
+      - id: print-condition
+        name: "Print condition"
+        env:
+          RESULT: ${{ needs.boot-job-result.outputs.boot_result }}
+        run: |
+          echo "${RESULT}"
+
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Run lava-test-plans
         uses: ./.github/actions/lava-test-plans
         with:
           machine: ${{ matrix.machine }}
           distro_name: ${{ matrix.distro.name }}
-          build_id: ${{ github.run_id }}
+          build_id: ${{ inputs.build_id }}
           gh_token: ${{ secrets.GITHUB_TOKEN }}
+          prefix: premerge
+          testplan: pre-merge
 
-  prepare-job-list:
-    needs: prepare-jobs
+  prepare-premerge-job-list:
+    needs: prepare-premerge-jobs
     runs-on: ubuntu-latest
     outputs:
       jobmatrix: ${{ steps.listjobs.outputs.jobmatrix }}
     steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - name: 'Download job templates'
         uses: actions/download-artifact@v6
         with:
-          pattern: testjobs-*
+          pattern: premerge-*
 
       - name: "List jobs"
         id: listjobs
-        run: |
-          JOBFILES=$(find . -name *.yaml)
-          JOBFILES=$(echo "$JOBFILES" | sed -e "s/^/\"/" | sed -e "s/$/\",/" | tr -d "\n" | sed -e "s/.$//")
-          JOBFILES="[${JOBFILES}]"
-          J=$(jq -cn --argjson jobfiles "$JOBFILES" '{target: $jobfiles}')
-          echo "jobmatrix=$J" >> $GITHUB_OUTPUT
-          echo "Preparing testjob files"
+        uses: ./.github/actions/list-jobs
+        with:
+          prefix: "premerge"
+          build_id: ${{ inputs.build_id }}
+          gh_token: ${{ secrets.GITHUB_TOKEN }}
 
-  submit-job:
-    needs: prepare-job-list
+  submit-premerge-job:
+    needs: prepare-premerge-job-list
     runs-on: ubuntu-latest
     continue-on-error: true
+    name: Pre-merge ${{ matrix.target.name }}
     strategy:
-      matrix: ${{ fromJson(needs.prepare-job-list.outputs.jobmatrix) }}
+      matrix: ${{ fromJson(needs.prepare-premerge-job-list.outputs.jobmatrix) }}
     steps:
       - name: 'Download job templates'
         uses: actions/download-artifact@v6
         with:
-          pattern: testjobs-*
+          pattern: premerge-*
 
-      - name: 'Prepare output file name'
-        run: |
-          OUTPUT_NAME=$(echo "${{ matrix.target }}" | sed "s|\/|-|g")
-          echo "RESULT_NAME=${OUTPUT_NAME#??}" >> $GITHUB_ENV
-
-      - name: Submit ${{ matrix.target }}
+      - name: Submit ${{ matrix.target.name }}
         timeout-minutes: 20
         uses: foundriesio/lava-action@v9
         with:
           lava_token: ${{ secrets.LAVATOKEN }}
           lava_url: 'lava.infra.foundries.io'
-          job_definition: ${{ matrix.target }}
+          job_definition: ${{ matrix.target.path }}
           wait_for_job: true
           fail_action_on_failure: true
           fail_action_on_incomplete: true
           save_result_as_artifact: true
           save_job_details: true
-          result_file_name: "${{ env.RESULT_NAME }}"
+          result_file_name: "${{ matrix.target.result_file }}"
 
   publish-test-summary:
     name: "Publish Tests Summary"
-    needs: submit-job
+    needs: [submit-premerge-job, submit-boot-job]
+    if: |
+      always()
+      && contains(needs.*.result, 'success')
+      && !contains(needs.*.result, 'failure')
     runs-on: ubuntu-latest
     permissions:
       checks: write
