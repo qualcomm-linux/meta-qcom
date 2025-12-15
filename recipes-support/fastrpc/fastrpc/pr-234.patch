@@ -1,0 +1,1152 @@
+From 1bf99ed3397ab9ebc3b44b49b11d9235c84abdd9 Mon Sep 17 00:00:00 2001
+From: Abhinav Parihar <parihar@qti.qualcomm.com>
+Date: Thu, 4 Sep 2025 17:23:28 +0530
+Subject: [PATCH 1/3] Support dynamic DSP path resolution via conf directory
+
+Update DSP mount and search path configuration to support dynamic
+runtime resolution. Paths are now resolved based on platform-specific
+entries defined in the conf directory, allowing flexible DSP library
+location management
+
+Co-authored-by: Vinayak Katoch <vkatoch@qti.qualcomm.com>
+Signed-off-by: Abhinav Parihar <parihar@qti.qualcomm.com>
+
+Upstream-Status: Pending [https://github.com/qualcomm/fastrpc/pull/234/changes/1bf99ed3397ab9ebc3b44b49b11d9235c84abdd9]
+---
+ Docs/conf_guideline.md                  |  94 ++++++++++++
+ Docs/schemas/fastrpc-config-schema.yaml |   1 +
+ configure.ac                            |  20 +++
+ inc/Makefile.am                         |   1 +
+ inc/apps_std_internal.h                 |  25 +---
+ inc/fastrpc_config_parser.h             |  14 ++
+ inc/fastrpc_internal.h                  |   2 +-
+ src/Makefile.am                         |  20 ++-
+ src/apps_std_imp.c                      |  97 +++++++------
+ src/fastrpc_apps_user.c                 |  50 +++----
+ src/fastrpc_config_parser.c             | 181 ++++++++++++++++++++++++
+ src/log_config.c                        |   5 +-
+ 12 files changed, 413 insertions(+), 97 deletions(-)
+ create mode 100644 Docs/conf_guideline.md
+ create mode 100644 Docs/schemas/fastrpc-config-schema.yaml
+ create mode 100644 inc/fastrpc_config_parser.h
+ create mode 100644 src/fastrpc_config_parser.c
+
+diff --git a/Docs/conf_guideline.md b/Docs/conf_guideline.md
+new file mode 100644
+index 00000000..ff303a63
+--- /dev/null
++++ b/Docs/conf_guideline.md
+@@ -0,0 +1,94 @@
++📄 **YAML Configuration Usage Guide**
++
++---
++
++### 🔧 **Purpose**
++The YAML configuration file enables **fastrpc** to set machine-specific configurations at runtime. Each machine entry corresponds to a specific hardware platform.
++
++- fastrpc supports reading YAML configuration files from a particular directory. Users should ensure all configuration files are stored in that same directory.
++  - For Linux platforms: `/usr/share/qcom/conf.d/`
++- In case of multiple configuration files defining path for a single machine, the directory is parsed in lexicographical order and the latest one carrying the
++  machine path is picked.
++- **Machine Name**: Obtain the machine name for your platform from:
++  ```
++  /sys/firmware/devicetree/base/model
++  ```
++  (fastrpc uses same path for matching machine names)
++---
++### 📄 **Current Properties**
++- **DSP_LIBRARY_PATH**: Specifies the path to DSP binaries and resources for the Machine.
++---
++
++### 📁 **Format Guidelines**
++The configuration uses YAML format with the following structure:
++```
++machines:
++  "Machine Name":
++    DSP_LIBRARY_PATH: "/relative/path/to/dsp/binaries/"
++```
++
++**Key Points:**
++- The root element is `machines:`
++- Each machine name is a quoted string key under `machines:`
++- Properties are indented under each machine name
++- Use proper YAML indentation
++- Paths should be quoted strings
++
++---
++
++### ✅ **Example Configuration**
++```
++machines:
++  "Qualcomm Technologies, Inc. DB820c":
++    DSP_LIBRARY_PATH: "/apq8096/Qualcomm/db820c/"
++  "Thundercomm Dragonboard 845c":
++    DSP_LIBRARY_PATH: "/sdm845/Thundercomm/db845c/"
++```
++
++---
++
++### ⚠️ **Important Notes**
++- Do **not** modify machine names unless adding a new supported Machine.
++- Ensure `DSP_LIBRARY_PATH` values:
++  - Are enclosed in double quotes (`"..."`).
++  - Are **relative to `/usr/share/qcom/`**.
++- Follow YAML syntax rules:
++  - Use consistent indentation.
++  - Ensure proper spacing after colons (`: `).
++  - Quote strings containing special characters or spaces.
++  - Avoid tabs (use spaces only).
++- Maintain:
++  - Proper YAML structure and hierarchy.
++  - Consistent formatting across entries.
++- When adding new properties:
++  - Document their purpose **here**.
++  - Follow the same indentation pattern.
++- Do **not** create duplicate Machine entries.
++- Validate YAML syntax before deployment to avoid parsing errors.
++
++---
++
++### ➕ **Adding New Platforms**
++To add a new Machine, follow the existing YAML format:
++```
++machines:
++  "New Machine Name":
++    DSP_LIBRARY_PATH: "/new_machine/path/"
++```
++
++Ensure the new entry is properly indented under the `machines:` root element and follows YAML syntax conventions.
++
++---
++
++### 📝 **File Naming**
++Configuration files should use the `.yaml` or `.yml` extension and be placed in the designated configuration directory (`/usr/share/qcom/conf.d/` on Linux platforms).
++
++### ✅ Schema Validation
++To ensure the configuration file adheres to the required structure, validate it against the schema provided.
++
++Schema File Location:
++<ROOT>/Docs/schemas/fastrpc-config-schema.yaml
++
++Validation Command:
++Use Yamale for schema validation:
++yamale -s fastrpc-config-schema.yaml <yaml file>
+\ No newline at end of file
+diff --git a/Docs/schemas/fastrpc-config-schema.yaml b/Docs/schemas/fastrpc-config-schema.yaml
+new file mode 100644
+index 00000000..105efdc9
+--- /dev/null
++++ b/Docs/schemas/fastrpc-config-schema.yaml
+@@ -0,0 +1 @@
++machines: map(key=str(), value=map(DSP_LIBRARY_PATH=regex('^/.+/')))
+\ No newline at end of file
+diff --git a/configure.ac b/configure.ac
+index 4c6d7639..ca83f2de 100644
+--- a/configure.ac
++++ b/configure.ac
+@@ -43,6 +43,26 @@ AM_PROG_CC_C_O
+ 
+ # Checks for library functions.
+ 
++# Enable pkg-config
++PKG_PROG_PKG_CONFIG
++
++# Check for libyaml only if not Android
++AS_IF([test "$compile_for_android" = no], [
++  PKG_CHECK_MODULES([YAML], [yaml-0.1], [],
++    [AC_MSG_ERROR([libyaml (yaml-0.1) is required but not found.])])
++  AC_SUBST(YAML_CFLAGS)
++  AC_SUBST(YAML_LIBS)
++])
++
++# Configure config base path option (--with-config-base-dir)
++AC_ARG_WITH([config-base-dir],
++  [AS_HELP_STRING([--with-config-base-dir=PATH],
++                  [Base directory for config files (default: /usr/share/qcom)])],
++  [config_base_dir="$withval"],
++  [config_base_dir="/usr/share/qcom/"])
++AC_MSG_NOTICE([Config base path: $config_base_dir])
++AC_SUBST([CONFIG_BASE_DIR], ["$config_base_dir"])
++
+ AC_CONFIG_FILES([
+ Makefile
+ inc/Makefile
+diff --git a/inc/Makefile.am b/inc/Makefile.am
+index fa89ed38..dd76127b 100644
+--- a/inc/Makefile.am
++++ b/inc/Makefile.am
+@@ -40,6 +40,7 @@ noinst_HEADERS = \
+ 	fastrpc_cap.h \
+ 	fastrpc_common.h \
+ 	fastrpc_config.h \
++	fastrpc_config_parser.h \
+ 	fastrpc_context.h \
+ 	fastrpc_hash_table.h \
+ 	fastrpc_internal.h \
+diff --git a/inc/apps_std_internal.h b/inc/apps_std_internal.h
+index 74d7ae63..37be0c20 100644
+--- a/inc/apps_std_internal.h
++++ b/inc/apps_std_internal.h
+@@ -22,23 +22,6 @@
+ #define MAX_NON_PRELOAD_LIBS_LEN 2048
+ #define FILE_EXT ".so"
+ 
+-// Locations where shell file can be found
+-#ifndef ENABLE_UPSTREAM_DRIVER_INTERFACE
+-#ifndef DSP_MOUNT_LOCATION
+-#define DSP_MOUNT_LOCATION "/dsp/"
+-#endif
+-#ifndef DSP_DOM_LOCATION
+-#define DSP_DOM_LOCATION "/dsp/xdsp"
+-#endif
+-#else /* ENABLE_UPSTREAM_DRIVER_INTERFACE */
+-#ifndef DSP_MOUNT_LOCATION
+-#define DSP_MOUNT_LOCATION "/usr/lib/dsp/"
+-#endif
+-#ifndef DSP_DOM_LOCATION
+-#define DSP_DOM_LOCATION "/usr/lib/dsp/xdspn"
+-#endif
+-#endif /* ENABLE_UPSTREAM_DRIVER_INTERFACE */
+-
+ #ifndef VENDOR_DSP_LOCATION
+ #define VENDOR_DSP_LOCATION "/vendor/dsp/"
+ #endif
+@@ -46,14 +29,12 @@
+ #define VENDOR_DOM_LOCATION "/vendor/dsp/xdsp/"
+ #endif
+ 
+-// Search path used by fastRPC to search skel library, .debugconfig and .farf files
+-#ifndef DSP_SEARCH_PATH
+-#define DSP_SEARCH_PATH ";/usr/lib/rfsa/adsp;/vendor/lib/rfsa/adsp;/vendor/dsp/;/usr/lib/dsp/;"
+-#endif
+-
+ // Search path used by fastRPC for acdb path
+ #ifndef ADSP_AVS_CFG_PATH
+ #define ADSP_AVS_CFG_PATH ";/etc/acdbdata/;"
+ #endif
+ 
++int fopen_from_dirlist(const char *dirList, const char *delim, 
++    const char *mode, const char *name, apps_std_FILE *psout);
++
+ #endif /*__APPS_STD_INTERNAL_H__*/
+diff --git a/inc/fastrpc_config_parser.h b/inc/fastrpc_config_parser.h
+new file mode 100644
+index 00000000..8c5061ee
+--- /dev/null
++++ b/inc/fastrpc_config_parser.h
+@@ -0,0 +1,14 @@
++// Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
++// SPDX-License-Identifier: BSD-3-Clause-Clear
++
++#ifndef FASTRPC_YAML_PARSER_H
++#define FASTRPC_YAML_PARSER_H
++
++#define DEFAULT_DSP_SEARCH_PATHS ";/usr/lib/rfsa/adsp;/vendor/lib/rfsa/adsp;/vendor/dsp/;/usr/lib/dsp/;"
++#define DSP_LIB_KEY "DSP_LIBRARY_PATH"
++
++extern char DSP_LIBS_LOCATION[PATH_MAX];
++
++void configure_dsp_paths();
++
++#endif /*FASTRPC_YAML_PARSER_H*/
+\ No newline at end of file
+diff --git a/inc/fastrpc_internal.h b/inc/fastrpc_internal.h
+index 859bfe8c..31f1b5d1 100644
+--- a/inc/fastrpc_internal.h
++++ b/inc/fastrpc_internal.h
+@@ -334,7 +334,7 @@ struct handle_list {
+   * @brief API to get the DSP_SEARCH_PATH stored locally as static.
+   * @get_path : get_path will be updated with the path stored in DSP_SEARCH_PATH locally.
+   **/
+-void get_default_dsp_search_path(char* path);
++const char* get_dsp_search_path();
+ 
+ /**
+   * @brief API to map memory to the remote domain
+diff --git a/src/Makefile.am b/src/Makefile.am
+index 7c28c49a..bded2043 100644
+--- a/src/Makefile.am
++++ b/src/Makefile.am
+@@ -1,6 +1,12 @@
+ lib_LTLIBRARIES =
+ 
+-LIBDSPRPC_CFLAGS = -fno-short-enums -U_DEBUG -DARM_ARCH_7A -DLE_ENABLE -DENABLE_UPSTREAM_DRIVER_INTERFACE -DUSE_SYSLOG -I$(top_srcdir)/inc
++LIBDSPRPC_CFLAGS = -fno-short-enums -U_DEBUG -DARM_ARCH_7A -DLE_ENABLE -DENABLE_UPSTREAM_DRIVER_INTERFACE -DUSE_SYSLOG -DCONFIG_BASE_DIR='"$(CONFIG_BASE_DIR)"' -DMACHINE_NAME_PATH='"/sys/firmware/devicetree/base/model"' -I$(top_srcdir)/inc
++
++if ANDROID_CC
++# Do nothing (or Android-specific flags)
++else
++LIBDSPRPC_CFLAGS += -DPARSE_YAML @YAML_CFLAGS@
++endif
+ 
+ LIBDSPRPC_SOURCES = \
+ 		fastrpc_apps_user.c \
+@@ -48,6 +54,12 @@ LIBDSPRPC_SOURCES = \
+ 		mod_table.c \
+ 		fastrpc_context.c
+ 
++if ANDROID_CC
++# Do nothing (or Android-specific sources)
++else
++LIBDSPRPC_SOURCES += fastrpc_config_parser.c
++endif
++
+ LIBDEFAULT_LISTENER_SOURCES = \
+ 				adsp_default_listener.c \
+ 				adsp_default_listener_stub.c \
+@@ -55,6 +67,12 @@ LIBDEFAULT_LISTENER_SOURCES = \
+ 
+ if ANDROID_CC
+ USE_LOG = -llog
++else
++# Add YAML libs to link flags for non-Android builds
++libadsprpc_la_LIBADD = @YAML_LIBS@
++libcdsprpc_la_LIBADD = @YAML_LIBS@
++libsdsprpc_la_LIBADD = @YAML_LIBS@
++libgdsprpc_la_LIBADD = @YAML_LIBS@
+ endif
+ 
+ ADSP_CFLAGS = $(LIBDSPRPC_CFLAGS) -DDEFAULT_DOMAIN_ID=0
+diff --git a/src/apps_std_imp.c b/src/apps_std_imp.c
+index 3458d8c4..0027b35f 100644
+--- a/src/apps_std_imp.c
++++ b/src/apps_std_imp.c
+@@ -932,11 +932,15 @@ static int get_dirlist_from_env(const char *envvarname, char **ppDirList) {
+   char *dirList = NULL;
+   char *dirListBuf = NULL;
+   char *srcStr = NULL;
++  const char *dsp_search_path = NULL;
+   int nErr = AEE_SUCCESS;
+   int envListLen = 0;
+   int envListPrependLen = 0;
+   int listLen = 0;
+-  int envLenGuess = STD_MAX(ENV_LEN_GUESS, 1 + strlen(DSP_SEARCH_PATH));
++  int envLenGuess = 0;
++  
++  dsp_search_path = get_dsp_search_path();
++  envLenGuess = STD_MAX(ENV_LEN_GUESS, 1 + strlen(dsp_search_path));
+ 
+   FARF(RUNTIME_RPC_LOW, "Entering %s", __func__);
+   VERIFYC(NULL != ppDirList, AEE_ERPC);
+@@ -950,8 +954,8 @@ static int get_dirlist_from_env(const char *envvarname, char **ppDirList) {
+                     strlen(ADSP_LIBRARY_PATH)) == 0 ||
+         strncmp(envvarname, DSP_LIBRARY_PATH,
+                     strlen(DSP_LIBRARY_PATH)) == 0) {
+-      // Calculate total length of env and DSP_SEARCH_PATH
+-      envListPrependLen = envListLen + strlen(DSP_SEARCH_PATH);
++      // Calculate total length of env + semicolon + DSP_SEARCH_PATH
++      envListPrependLen = envListLen + 1 + strlen(dsp_search_path);
+       if (envLenGuess < envListPrependLen) {
+         FREEIF(envListBuf);
+         VERIFYC(envListBuf =
+@@ -961,8 +965,10 @@ static int get_dirlist_from_env(const char *envvarname, char **ppDirList) {
+         VERIFY(0 == (nErr = apps_std_getenv(envvarname, envList,
+                                             envListPrependLen, &listLen)));
+       }
++      // Append semicolon before DSP_SEARCH_PATH
++      strlcat(envList, ";", envListPrependLen);
+       // Append default DSP_SEARCH_PATH to user defined env
+-      strlcat(envList, DSP_SEARCH_PATH, envListPrependLen);
++      strlcat(envList, dsp_search_path, envListPrependLen);
+       envListLen = envListPrependLen;
+     } else if (strncmp(envvarname, ADSP_AVS_PATH,
+                            strlen(ADSP_AVS_PATH)) == 0) {
+@@ -986,7 +992,7 @@ static int get_dirlist_from_env(const char *envvarname, char **ppDirList) {
+              strncmp(envvarname, DSP_LIBRARY_PATH,
+                          strlen(DSP_LIBRARY_PATH)) == 0) {
+     envListLen = listLen =
+-        1 + strlcpy(envListBuf, DSP_SEARCH_PATH, envLenGuess);
++        1 + strlcpy(envListBuf, dsp_search_path, envLenGuess);
+   } else if (strncmp(envvarname, ADSP_AVS_PATH,
+                          strlen(ADSP_AVS_PATH)) == 0) {
+     envListLen = listLen =
+@@ -1018,42 +1024,14 @@ static int get_dirlist_from_env(const char *envvarname, char **ppDirList) {
+   return nErr;
+ }
+ 
+-__QAIC_IMPL_EXPORT int __QAIC_IMPL(apps_std_fopen_with_env)(
+-    const char *envvarname, const char *delim, const char *name,
+-    const char *mode, apps_std_FILE *psout) __QAIC_IMPL_ATTRIBUTE {
+-
++int fopen_from_dirlist(const char *dirList, const char *delim, 
++    const char *mode, const char *name, apps_std_FILE *psout) {
+   int nErr = AEE_SUCCESS;
+-  char *dirName = NULL;
+-  char *pos = NULL;
+-  char *dirListBuf = NULL;
+-  char *dirList = NULL;
+-  char *absName = NULL;
+-  const char *envVar = NULL;
++  char *absName = NULL, *dirName = NULL, *pos = NULL;
+   uint16_t absNameLen = 0;
+   int domain = GET_DOMAIN_FROM_EFFEC_DOMAIN_ID(get_current_domain());
+ 
+-  FARF(RUNTIME_RPC_LOW, "Entering %s", __func__);
+-  VERIFYC(NULL != mode, AEE_EBADPARM);
+-  VERIFYC(NULL != delim, AEE_EBADPARM);
+-  VERIFYC(NULL != name, AEE_EBADPARM);
+-  VERIFYC(NULL != envvarname, AEE_EBADPARM);
+-  FASTRPC_ATRACE_BEGIN_L("%s for %s in %s mode from path in environment "
+-                         "variable %s delimited with %s",
+-                         __func__, name, mode, envvarname, delim);
+-  if (strncmp(envvarname, ADSP_LIBRARY_PATH,
+-                  strlen(ADSP_LIBRARY_PATH)) == 0) {
+-    if (getenv(DSP_LIBRARY_PATH)) {
+-      envVar = DSP_LIBRARY_PATH;
+-    } else {
+-      envVar = ADSP_LIBRARY_PATH;
+-    }
+-  } else {
+-    envVar = envvarname;
+-  }
+-
+-  VERIFY(0 == (nErr = get_dirlist_from_env(envVar, &dirListBuf)));
+-  VERIFYC(NULL != (dirList = dirListBuf), AEE_EBADPARM);
+-  FARF(RUNTIME_RPC_HIGH, "%s dirList %s", __func__, dirList);
++  VERIFYC(NULL != dirList, AEE_EBADPARM);
+ 
+   while (dirList) {
+     pos = strstr(dirList, delim);
+@@ -1084,7 +1062,8 @@ __QAIC_IMPL_EXPORT int __QAIC_IMPL(apps_std_fopen_with_env)(
+     if (AEE_SUCCESS == nErr) {
+       // Success
+       FARF(ALWAYS, "Successfully opened file %s", absName);
+-      goto bail;
++      FREEIF(absName);
++      return nErr;
+     }
+     FREEIF(absName);
+ 
+@@ -1109,12 +1088,50 @@ __QAIC_IMPL_EXPORT int __QAIC_IMPL(apps_std_fopen_with_env)(
+           (strncmp(name, TESTSIG_FILE_NAME,
+                        strlen(TESTSIG_FILE_NAME)) != 0))
+         FARF(ALWAYS, "Successfully opened file %s", name);
+-      goto bail;
++      FREEIF(absName);
++      return nErr;
+     }
+-    FREEIF(absName);
+   }
+ bail:
+   FREEIF(absName);
++  return nErr;
++}
++
++__QAIC_IMPL_EXPORT int __QAIC_IMPL(apps_std_fopen_with_env)(
++    const char *envvarname, const char *delim, const char *name,
++    const char *mode, apps_std_FILE *psout) __QAIC_IMPL_ATTRIBUTE {
++
++  int nErr = AEE_SUCCESS;
++  char *dirListBuf = NULL;
++  char *dirList = NULL;
++  const char *envVar = NULL;
++
++  FARF(RUNTIME_RPC_LOW, "Entering %s", __func__);
++  VERIFYC(NULL != mode, AEE_EBADPARM);
++  VERIFYC(NULL != delim, AEE_EBADPARM);
++  VERIFYC(NULL != name, AEE_EBADPARM);
++  VERIFYC(NULL != envvarname, AEE_EBADPARM);
++  FASTRPC_ATRACE_BEGIN_L("%s for %s in %s mode from path in environment "
++                         "variable %s delimited with %s",
++                         __func__, name, mode, envvarname, delim);
++  if (strncmp(envvarname, ADSP_LIBRARY_PATH,
++                  strlen(ADSP_LIBRARY_PATH)) == 0) {
++    if (getenv(DSP_LIBRARY_PATH)) {
++      envVar = DSP_LIBRARY_PATH;
++    } else {
++      envVar = ADSP_LIBRARY_PATH;
++    }
++  } else {
++    envVar = envvarname;
++  }
++
++  VERIFY(0 == (nErr = get_dirlist_from_env(envVar, &dirListBuf)));
++  VERIFYC(NULL != (dirList = dirListBuf), AEE_EBADPARM);
++  FARF(RUNTIME_RPC_HIGH, "%s dirList %s", __func__, dirList);
++
++  nErr = fopen_from_dirlist(dirList, delim, mode, name, psout);
++
++bail:
+   FREEIF(dirListBuf);
+   if (nErr != AEE_SUCCESS) {
+     if (ERRNO != ENOENT ||
+diff --git a/src/fastrpc_apps_user.c b/src/fastrpc_apps_user.c
+index 9668c062..d3bc321b 100644
+--- a/src/fastrpc_apps_user.c
++++ b/src/fastrpc_apps_user.c
+@@ -75,17 +75,13 @@
+ #include "fastrpc_context.h"
+ #include "fastrpc_process_attributes.h"
+ #include "fastrpc_trace.h"
++#include "fastrpc_config_parser.h"
+ 
+-#ifndef ENABLE_UPSTREAM_DRIVER_INTERFACE
+-#define DSP_MOUNT_LOCATION "/dsp/"
+-#define DSP_DOM_LOCATION "/dsp/xdsp"
+-#else
+-#define DSP_MOUNT_LOCATION "/usr/lib/dsp/"
+-#define DSP_DOM_LOCATION "/usr/lib/dsp/xdspn"
+-#endif
+ #define VENDOR_DSP_LOCATION "/vendor/dsp/"
+ #define VENDOR_DOM_LOCATION "/vendor/dsp/xdsp/"
+ 
++char DSP_LIBS_LOCATION[PATH_MAX] = DEFAULT_DSP_SEARCH_PATHS;
++
+ #ifdef LE_ENABLE
+ #define PROPERTY_VALUE_MAX                                                     \
+   92 // as this macro is defined in cutils for Android platforms, defined
+@@ -3437,8 +3433,8 @@ static int open_shell(int domain_id, apps_std_FILE *fh, int unsigned_shell) {
+   char *absName = NULL;
+   char *shell_absName = NULL;
+   char *domain_str = NULL;
++  char dir_list[PATH_MAX] = {0};
+   uint16_t shell_absNameLen = 0, absNameLen = 0;
+-  ;
+   int nErr = AEE_SUCCESS;
+   int domain = GET_DOMAIN_FROM_EFFEC_DOMAIN_ID(domain_id);
+   const char *shell_name = SIGNED_SHELL;
+@@ -3459,27 +3455,13 @@ static int open_shell(int domain_id, apps_std_FILE *fh, int unsigned_shell) {
+               (shell_absName = (char *)malloc(sizeof(char) * shell_absNameLen)),
+           AEE_ENOMEMORY);
+   strlcpy(shell_absName, shell_name, shell_absNameLen);
+-
+   strlcat(shell_absName, domain_str, shell_absNameLen);
+ 
+-  absNameLen = strlen(DSP_MOUNT_LOCATION) + shell_absNameLen + 1;
+-  VERIFYC(NULL != (absName = (char *)malloc(sizeof(char) * absNameLen)),
+-          AEE_ENOMEMORY);
+-  strlcpy(absName, DSP_MOUNT_LOCATION, absNameLen);
+-  strlcat(absName, shell_absName, absNameLen);
++  FARF(ALWAYS, "trying to open shell %s from DSP_LIBS_LOCATION %s", shell_absName, DSP_LIBS_LOCATION);
++  strlcpy(dir_list, DSP_LIBS_LOCATION, sizeof(dir_list));
++  FARF(ALWAYS, "trying to open shell %s from dir_list %s", shell_absName, dir_list);
++  nErr = fopen_from_dirlist(dir_list, ";", "r", shell_absName, fh);
+ 
+-  nErr = apps_std_fopen(absName, "r", fh);
+-  if (nErr) {
+-    absNameLen = strlen(DSP_DOM_LOCATION) + shell_absNameLen + 1;
+-    VERIFYC(NULL !=
+-                (absName = (char *)realloc(absName, sizeof(char) * absNameLen)),
+-            AEE_ENOMEMORY);
+-    strlcpy(absName, DSP_MOUNT_LOCATION, absNameLen);
+-    strlcat(absName, SUBSYSTEM_NAME[domain], absNameLen);
+-    strlcat(absName, "/", absNameLen);
+-    strlcat(absName, shell_absName, absNameLen);
+-    nErr = apps_std_fopen(absName, "r", fh);
+-  }
+   if (nErr) {
+     absNameLen = strlen(VENDOR_DSP_LOCATION) + shell_absNameLen + 1;
+     VERIFYC(NULL !=
+@@ -3503,7 +3485,7 @@ static int open_shell(int domain_id, apps_std_FILE *fh, int unsigned_shell) {
+     }
+   }
+   if (!nErr)
+-    FARF(RUNTIME_RPC_HIGH, "Successfully opened %s, domain %d", absName, domain);
++    FARF(RUNTIME_RPC_HIGH, "Successfully opened %s, domain %d", shell_absName, domain);
+ bail:
+   if (domain_str) {
+     free(domain_str);
+@@ -3523,10 +3505,9 @@ static int open_shell(int domain_id, apps_std_FILE *fh, int unsigned_shell) {
+       *fh = -1;
+     } else {
+       FARF(ERROR,
+-           "Error 0x%x: %s failed for domain %d search paths used are %s, %s, "
+-           "%s (errno %s)\n",
+-           nErr, __func__, domain, DSP_MOUNT_LOCATION, VENDOR_DSP_LOCATION,
+-           VENDOR_DOM_LOCATION, strerror(errno));
++           "Error 0x%x: %s failed for domain %d search paths used are %s "
++           "(errno %s)\n",
++           nErr, __func__, domain, DSP_LIBS_LOCATION, strerror(errno));
+     }
+   }
+   return nErr;
+@@ -4155,6 +4136,10 @@ static void exit_thread(void *value) {
+   pthread_setspecific(tlsKey, (void *)NULL);
+ }
+ 
++const char* get_dsp_search_path() {
++  return DSP_LIBS_LOCATION;
++}
++
+ /*
+  * Called only once by fastrpc_init_once
+  * Initializes the data structures
+@@ -4170,6 +4155,9 @@ static int fastrpc_apps_user_init(void) {
+   VERIFY(AEE_SUCCESS == (nErr = PL_INIT(gpls)));
+   VERIFY(AEE_SUCCESS == (nErr = PL_INIT(rpcmem)));
+   VERIFY(AEE_SUCCESS == (nErr = pthread_key_create(&tlsKey, exit_thread)));
++#ifdef PARSE_YAML
++  configure_dsp_paths();
++#endif
+   fastrpc_mem_init();
+   fastrpc_context_table_init();
+   fastrpc_log_init();
+diff --git a/src/fastrpc_config_parser.c b/src/fastrpc_config_parser.c
+new file mode 100644
+index 00000000..cdecc94a
+--- /dev/null
++++ b/src/fastrpc_config_parser.c
+@@ -0,0 +1,181 @@
++// Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
++// SPDX-License-Identifier: BSD-3-Clause-Clear
++
++#define _GNU_SOURCE
++#ifndef VERIFY_PRINT_WARN
++#define VERIFY_PRINT_WARN
++#endif // VERIFY_PRINT_WARN
++#ifndef VERIFY_PRINT_ERROR_ALWAYS
++#define VERIFY_PRINT_ERROR_ALWAYS
++#endif // VERIFY_PRINT_ERROR_ALWAYS
++#include <dirent.h>
++#include <errno.h>
++#include <inttypes.h>
++#include <limits.h>
++#include <pthread.h>
++#include <semaphore.h>
++#include <signal.h>
++#include <stdatomic.h>
++#include <stdio.h>
++#include <stdlib.h>
++#include <string.h>
++#include <sys/ioctl.h>
++#include <sys/stat.h>
++#include <sys/time.h>
++#include <sys/types.h>
++#include <time.h>
++#include <unistd.h>
++#include <yaml.h>
++
++#define FARF_ERROR 1
++#define FARF_HIGH 1
++#define FARF_MED 1
++#define FARF_LOW 1
++#define FARF_CRITICAL 1 // Push log's to all hooks and persistent buffer.
++
++#define CONFIG_DIR CONFIG_BASE_DIR "/conf.d/"
++
++#include "AEEQList.h"
++#include "AEEStdErr.h"
++#include "AEEstd.h"
++#include "HAP_farf.h"
++#include "apps_std_internal.h"
++#include "fastrpc_config_parser.h"
++
++static int compare_strings(const void *a, const void *b) {
++  return strcmp(*(const char **)a, *(const char **)b);
++}
++
++static void get_dsp_lib_path(const char *machine_name, const char *filepath, char *dsp_lib_paths) {
++  yaml_parser_t parser;
++  yaml_event_t event;
++  int done = 0;
++  int in_machines = 0;
++  int in_target_machine = 0;
++  int found_dsp_path = 0;
++  char current_machine[PATH_MAX] = {0};
++
++  FILE *file = fopen(filepath, "r");
++  if (!file)
++    return;
++
++  if (!yaml_parser_initialize(&parser)) {
++    FARF(ALWAYS, "Warning: Failed to initialize YAML parser for file %s\n", filepath);
++    fclose(file);
++    return;
++  }
++
++  yaml_parser_set_input_file(&parser, file);
++
++  while (!done) {
++    if (!yaml_parser_parse(&parser, &event)) {
++      FARF(ALWAYS, "Warning: YAML parser error in file %s\n", filepath);
++      break;
++    }
++
++    switch (event.type) {
++      case YAML_SCALAR_EVENT: {
++        const char *value = (const char *)event.data.scalar.value;
++
++        if (!in_machines && strcmp(value, "machines") == 0) {
++          in_machines = 1;
++        } else if (in_machines && !in_target_machine) {
++          // This is a machine name key
++          strlcpy(current_machine, value, sizeof(current_machine));
++          if (strcmp(current_machine, machine_name) == 0) {
++            in_target_machine = 1;
++          }
++        } else if (in_target_machine && strcmp(value, DSP_LIB_KEY) == 0) {
++          // Next scalar will be the DSP_LIBRARY_PATH value
++          yaml_event_delete(&event);
++          if (yaml_parser_parse(&parser, &event) && event.type == YAML_SCALAR_EVENT) {
++            strlcpy(dsp_lib_paths, (const char *)event.data.scalar.value, PATH_MAX);
++			FARF(ALWAYS, "dsp_lib_paths is %s", dsp_lib_paths);
++            found_dsp_path = 1;
++            done = 1;
++          }
++        }
++        break;
++      }
++      case YAML_MAPPING_END_EVENT:
++        if (in_target_machine) {
++          // Exiting the target machine mapping
++          in_target_machine = 0;
++          if (found_dsp_path) {
++            done = 1;
++          }
++        }
++        break;
++      case YAML_STREAM_END_EVENT:
++        done = 1;
++        break;
++      default:
++        break;
++    }
++
++    yaml_event_delete(&event);
++  }
++
++  yaml_parser_delete(&parser);
++  fclose(file);
++
++  if (!found_dsp_path) {
++    FARF(ALWAYS, "Warning: DSP_LIBRARY_PATH not found for machine [%s] in configuration file %s\n", 
++         machine_name, filepath);
++  }
++}
++
++static void parse_config_dir(char *machine_name) {
++  DIR *dir = opendir(CONFIG_DIR);
++  struct dirent *entry;
++  char *file_list[1024];
++  int file_count = 0;
++  char dsp_lib_paths[PATH_MAX] = {0};
++
++  if (!dir)
++    return;
++
++  while ((entry = readdir(dir)) != NULL) {
++    if (entry->d_type == DT_REG && 
++    (strstr(entry->d_name, ".yaml") || strstr(entry->d_name, ".yml"))) {
++       file_list[file_count] = strdup(entry->d_name);
++       file_count++;
++    }
++  }
++  closedir(dir);
++
++  qsort(file_list, file_count, sizeof(char *), compare_strings);
++
++  for (int i = 0; i < file_count; i++) {
++    char filepath[PATH_MAX];
++    snprintf(filepath, sizeof(filepath), "%s%s", CONFIG_DIR, file_list[i]);
++    get_dsp_lib_path(machine_name, filepath, dsp_lib_paths);
++    free(file_list[i]);
++  }
++
++  if (dsp_lib_paths[0] != '\0') {
++    strlcpy(DSP_LIBS_LOCATION, CONFIG_BASE_DIR, sizeof(DSP_LIBS_LOCATION));
++    //append slash in case user passed config base dir doesn't end with slash '/'
++    strlcat(DSP_LIBS_LOCATION, "/", sizeof(DSP_LIBS_LOCATION));
++    strlcat(DSP_LIBS_LOCATION, dsp_lib_paths, sizeof(DSP_LIBS_LOCATION));
++    strlcat(DSP_LIBS_LOCATION, DEFAULT_DSP_SEARCH_PATHS, sizeof(DSP_LIBS_LOCATION));
++  } else {
++    FARF(ALWAYS, "Warning: No DSP library path found for machine [%s] in any configuration file\n", 
++         machine_name);
++  }
++}
++
++void configure_dsp_paths() {
++  char machine_name[PATH_MAX] = {0};
++  FILE *file = fopen(MACHINE_NAME_PATH, "r");
++
++  if (file == NULL)
++    return;
++
++  if (fgets(machine_name, sizeof(machine_name), file) != NULL)
++    // Remove trailing newline if present
++    machine_name[strcspn(machine_name, "\n")] = '\0';
++
++  fclose(file);
++  parse_config_dir(machine_name);
++}
+\ No newline at end of file
+diff --git a/src/log_config.c b/src/log_config.c
+index 0c3ee428..b3f9e1d3 100644
+--- a/src/log_config.c
++++ b/src/log_config.c
+@@ -392,8 +392,10 @@ static void *file_watcher_thread(void *arg) {
+   remote_handle64 handle;
+   int file_found = 0;
+   char *data_paths = NULL;
++  const char *dsp_search_path = NULL;
+ 
+   FARF(ALWAYS, "%s starting for domain %d\n", __func__, dom);
++  dsp_search_path = get_dsp_search_path();
+   // Check for the presence of the <process_name>.farf file at bootup
+   for (i = 0; i < (int)log_config_watcher[dom].numPaths; ++i) {
+     if (0 == readLogConfigFromPath(dom, log_config_watcher[dom].paths[i].data,
+@@ -414,9 +416,8 @@ static void *file_watcher_thread(void *arg) {
+       ret = apps_std_getenv(DSP_LIBRARY_PATH, data_paths, ENV_PATH_LEN,
+                             &env_list_len);
+       errno = current_errno;
+-      // User has not set the env variable. Get default search paths.
+       if (ret != 0)
+-        memmove(data_paths, DSP_SEARCH_PATH, strlen(DSP_SEARCH_PATH));
++        strlcpy(data_paths, dsp_search_path, ENV_PATH_LEN);
+       VERIFY_WPRINTF("%s: Couldn't find file %s, errno (%s) at %s\n", __func__,
+                      log_config_watcher[dom].fileToWatch, strerror(errno),
+                      data_paths);
+
+From 975dda401a472bb62229267bce4feee200e4285c Mon Sep 17 00:00:00 2001
+From: Abhinav Parihar <parihar@qti.qualcomm.com>
+Date: Fri, 12 Sep 2025 10:01:15 +0530
+Subject: [PATCH 2/3] Fix envlistlen overwrite when fetching from non-DSP
+ library environment paths
+
+Avoid overwriting the `envlistlen` variable when fetching paths from
+environment variables other than ADSP_LIBRARY_PATH or ADSP_AVS_PATH. The
+variable was being reset using an uninitialized list length, leading to
+undefined behavior. This change ensures `envlistlen` retains its correct
+value as populated during path retrieval.
+
+Signed-off-by: Abhinav Parihar <parihar@qti.qualcomm.com>
+
+Upstream-Status: Pending [https://github.com/qualcomm/fastrpc/pull/234/changes/975dda401a472bb62229267bce4feee200e4285c]
+---
+ src/apps_std_imp.c | 2 --
+ 1 file changed, 2 deletions(-)
+
+diff --git a/src/apps_std_imp.c b/src/apps_std_imp.c
+index 0027b35f..d268ed10 100644
+--- a/src/apps_std_imp.c
++++ b/src/apps_std_imp.c
+@@ -984,8 +984,6 @@ static int get_dirlist_from_env(const char *envvarname, char **ppDirList) {
+       }
+       strlcat(envList, ADSP_AVS_CFG_PATH, envListPrependLen);
+       envListLen = envListPrependLen;
+-    } else {
+-      envListLen = listLen;
+     }
+   } else if (strncmp(envvarname, ADSP_LIBRARY_PATH,
+                          strlen(ADSP_LIBRARY_PATH)) == 0 ||
+
+From 75967a5a8a0dac521b292eb7a87b612610b302a7 Mon Sep 17 00:00:00 2001
+From: Abhinav Parihar <parihar@qti.qualcomm.com>
+Date: Wed, 26 Nov 2025 12:34:36 +0530
+Subject: [PATCH 3/3] Update build steps to include libyaml-dev and apt-get
+ update
+
+Updated step name from "Install auto tools" to "Install auto tools and
+dependencies" in both build_linux_gnu.yml and build_linux_arm64.yml.
+Added `apt-get update` and installed `libyaml-dev` along with automake
+to ensure required dependencies are available for compilation.
+
+Signed-off-by: Abhinav Parihar <parihar@qti.qualcomm.com>
+
+Upstream-Status: Pending [https://github.com/qualcomm/fastrpc/pull/234/changes/75967a5a8a0dac521b292eb7a87b612610b302a7]
+---
+ .github/workflows/abi-compat.yml        | 60 +++++++++++++++++++++++--
+ .github/workflows/build_linux_arm64.yml | 60 +++++++++++++++++++++----
+ .github/workflows/build_linux_gnu.yml   |  9 +++-
+ .github/workflows/codeql.yml            | 50 ++++++++++++++++++---
+ Docs/schemas/fastrpc-config-schema.yaml |  2 +-
+ inc/fastrpc_config_parser.h             |  2 +-
+ src/fastrpc_config_parser.c             |  2 +-
+ 7 files changed, 161 insertions(+), 24 deletions(-)
+
+diff --git a/.github/workflows/abi-compat.yml b/.github/workflows/abi-compat.yml
+index 60e3c0a1..281ef33a 100644
+--- a/.github/workflows/abi-compat.yml
++++ b/.github/workflows/abi-compat.yml
+@@ -36,18 +36,69 @@ jobs:
+           # fetch-depth: 0 required for git worktree to access development branch
+           # without full history, worktree creation will fail
+           fetch-depth: 0
+-          
+-      - name: Install ABI tools & build dependencies
++
++      - name: Configure APT for amd64 + arm64 (ports) and update
++        shell: bash
+         run: |
++          set -euxo pipefail
++
++          # Detect Ubuntu codename
++          CODENAME="$(. /etc/os-release; echo "${VERSION_CODENAME}")"
++          : "${CODENAME:?Failed to read VERSION_CODENAME from /etc/os-release}"
++          echo "Detected Ubuntu codename: ${CODENAME}"
++
++          # 1) Enable ARM64 multiarch
++          sudo dpkg --add-architecture arm64
++
++          # 2) Overwrite main sources to be amd64-only (archive + security)
++          sudo tee /etc/apt/sources.list > /dev/null <<EOF
++          deb [arch=amd64] http://archive.ubuntu.com/ubuntu ${CODENAME} main restricted universe multiverse
++          deb [arch=amd64] http://archive.ubuntu.com/ubuntu ${CODENAME}-updates main restricted universe multiverse
++          deb [arch=amd64] http://archive.ubuntu.com/ubuntu ${CODENAME}-backports main restricted universe multiverse
++          deb [arch=amd64] http://security.ubuntu.com/ubuntu ${CODENAME}-security main restricted universe multiverse
++          EOF
++
++          # 3) Add Ubuntu Ports for arm64 only
++          sudo tee /etc/apt/sources.list.d/arm64-ports.list > /dev/null <<EOF
++          deb [arch=arm64] http://ports.ubuntu.com/ubuntu-ports ${CODENAME} main restricted universe multiverse
++          deb [arch=arm64] http://ports.ubuntu.com/ubuntu-ports ${CODENAME}-updates main restricted universe multiverse
++          deb [arch=arm64] http://ports.ubuntu.com/ubuntu-ports ${CODENAME}-backports main restricted universe multiverse
++          deb [arch=arm64] http://ports.ubuntu.com/ubuntu-ports ${CODENAME}-security main restricted universe multiverse
++          EOF
++
++          # 4) Remove deb822 sources that may still request arm64 from security.ubuntu.com
++          sudo rm -f /etc/apt/sources.list.d/ubuntu.sources || true
++
++          # 5) Clean and update indices (amd64 from archive/security; arm64 from ports)
++          sudo apt-get clean
+           sudo apt-get update
+-          sudo apt-get install -y abi-compliance-checker abi-dumper automake g++-aarch64-linux-gnu binutils-aarch64-linux-gnu
++
++      - name: Install ABI tools & build dependencies (incl. ARM64 libyaml)
++        shell: bash
++        run: |
++          set -euxo pipefail
++          sudo apt-get install -y \
++            abi-compliance-checker abi-dumper elfutils \
++            automake autoconf libtool pkg-config \
++            gcc-aarch64-linux-gnu g++-aarch64-linux-gnu binutils-aarch64-linux-gnu \
++            libyaml-dev \
++            libyaml-0-2:arm64 libyaml-dev:arm64
++
++          # Sanity checks
+           abi-compliance-checker -version
+           abi-dumper -version
+ 
++          # ARM64 pkg-config file for yaml must exist
++          ls -l /usr/include/yaml.h
++          ls -l /usr/lib/aarch64-linux-gnu/pkgconfig/yaml-0.1.pc
++
+       # -------------------------------------------------------------------------
+       # Build Phase: Compile both PR and baseline versions
+       # -------------------------------------------------------------------------
+       - name: Build PR (AArch64, with debug info)
++        shell: bash
++        env:
++          PKG_CONFIG_PATH: /usr/lib/aarch64-linux-gnu/pkgconfig
+         run: |
+           ./gitcompile --host=aarch64-linux-gnu
+           ls -l src/.libs || true
+@@ -59,6 +110,9 @@ jobs:
+           
+       - name: Build baseline (AArch64, with debug info)
+         working-directory: ../baseline
++        shell: bash
++        env:
++          PKG_CONFIG_PATH: /usr/lib/aarch64-linux-gnu/pkgconfig
+         run: |
+           ./gitcompile --host=aarch64-linux-gnu
+           ls -l src/.libs || true
+diff --git a/.github/workflows/build_linux_arm64.yml b/.github/workflows/build_linux_arm64.yml
+index ca590787..cfcb8e0c 100644
+--- a/.github/workflows/build_linux_arm64.yml
++++ b/.github/workflows/build_linux_arm64.yml
+@@ -20,27 +20,69 @@ jobs:
+     - name: Git checkout
+       uses: actions/checkout@v4
+ 
+-    - name: Install auto tools
++    - name: Configure APT for amd64 + arm64 (ports) and update
++      shell: bash
+       run: |
+-        sudo apt-get install automake
+-    
+-    - name: Download Linaro tools and untar
++        set -euxo pipefail
++
++        # Detect Ubuntu codename
++        CODENAME="$(. /etc/os-release; echo "${VERSION_CODENAME}")"
++        : "${CODENAME:?Failed to read VERSION_CODENAME from /etc/os-release}"
++        echo "Detected Ubuntu codename: ${CODENAME}"
++
++        # 1) Enable arm64 multiarch
++        sudo dpkg --add-architecture arm64
++
++        # 2) Overwrite main sources to be amd64-only (archive + security)
++        sudo tee /etc/apt/sources.list > /dev/null <<EOF
++        deb [arch=amd64] http://archive.ubuntu.com/ubuntu ${CODENAME} main restricted universe multiverse
++        deb [arch=amd64] http://archive.ubuntu.com/ubuntu ${CODENAME}-updates main restricted universe multiverse
++        deb [arch=amd64] http://archive.ubuntu.com/ubuntu ${CODENAME}-backports main restricted universe multiverse
++        deb [arch=amd64] http://security.ubuntu.com/ubuntu ${CODENAME}-security main restricted universe multiverse
++        EOF
++
++        # 3) Add Ubuntu Ports for arm64 only
++        sudo tee /etc/apt/sources.list.d/arm64-ports.list > /dev/null <<EOF
++        deb [arch=arm64] http://ports.ubuntu.com/ubuntu-ports ${CODENAME} main restricted universe multiverse
++        deb [arch=arm64] http://ports.ubuntu.com/ubuntu-ports ${CODENAME}-updates main restricted universe multiverse
++        deb [arch=arm64] http://ports.ubuntu.com/ubuntu-ports ${CODENAME}-backports main restricted universe multiverse
++        deb [arch=arm64] http://ports.ubuntu.com/ubuntu-ports ${CODENAME}-security main restricted universe multiverse
++        EOF
++
++        # 4) Remove deb822 sources that may still request arm64 from security.ubuntu.com
++        sudo rm -f /etc/apt/sources.list.d/ubuntu.sources || true
++
++        # 5) Clean and update indices (amd64 from archive/security; arm64 from ports)
++        sudo apt-get clean
++        sudo apt-get update
++
++    - name: Install auto tools and dependencies
+       run: |
+-        wget -c https://releases.linaro.org/components/toolchain/binaries/latest-7/aarch64-linux-gnu/gcc-linaro-7.5.0-2019.12-i686_aarch64-linux-gnu.tar.xz
+-        tar xf gcc-linaro-7.5.0-2019.12-i686_aarch64-linux-gnu.tar.xz
++        set -euxo pipefail
++        sudo apt-get install -y --no-install-recommends \
++          automake autoconf libtool pkg-config \
++          gcc-aarch64-linux-gnu g++-aarch64-linux-gnu binutils-aarch64-linux-gnu\
++          libyaml-dev \
++          libyaml-0-2:arm64 libyaml-dev:arm64
++
++    - name: Sanity check libyaml (headers + ARM64 pc)
++      run: |
++        set -euxo pipefail
++        ls -l /usr/include/yaml.h
++        ls -l /usr/lib/aarch64-linux-gnu/pkgconfig/yaml-0.1.pc
++        PKG_CONFIG_PATH=/usr/lib/aarch64-linux-gnu/pkgconfig pkg-config --cflags --libs yaml-0.1
+ 
+     - name: Set Up Build Environment and compile code for LE platform
+       run: |
+-  
+         # Set Up Build Environment
+-        export PATH="$PWD/gcc-linaro-7.5.0-2019.12-i686_aarch64-linux-gnu/bin/:$PATH"
+         export CC=aarch64-linux-gnu-gcc
+         export CXX=aarch64-linux-gnu-g++
+         export AS=aarch64-linux-gnu-as
+         export LD=aarch64-linux-gnu-ld
+         export RANLIB=aarch64-linux-gnu-ranlib
+         export STRIP=aarch64-linux-gnu-strip
+-        
++        export PKG_CONFIG_PATH=/usr/lib/aarch64-linux-gnu/pkgconfig
++
+         # Compile the source code
+         ./gitcompile --host=aarch64-linux-gnu
+ 
+diff --git a/.github/workflows/build_linux_gnu.yml b/.github/workflows/build_linux_gnu.yml
+index 8fb6ffb7..841ce3a6 100644
+--- a/.github/workflows/build_linux_gnu.yml
++++ b/.github/workflows/build_linux_gnu.yml
+@@ -20,9 +20,14 @@ jobs:
+     - name: Git checkout
+       uses: actions/checkout@v4
+ 
+-    - name: Install auto tools
++    - name: Install Autotools + dependencies
+       run: |
+-        sudo apt-get install automake
++        sudo apt-get update
++        sudo apt-get install -y \
++          build-essential \
++          autoconf automake libtool pkg-config \
++          libyaml-dev \
++          tar gzip
+ 
+     - name: Compile code for LE platform
+       run: |
+diff --git a/.github/workflows/codeql.yml b/.github/workflows/codeql.yml
+index 5cf263c9..588a214d 100644
+--- a/.github/workflows/codeql.yml
++++ b/.github/workflows/codeql.yml
+@@ -34,14 +34,50 @@ jobs:
+     - name: Checkout repository
+       uses: actions/checkout@v4
+ 
+-    - name: Install auto tools
++    - name: Configure APT for amd64 + arm64 (ports) and update
++      shell: bash
+       run: |
+-        sudo apt-get install automake
+-    
+-    - name: Download Linaro tools and untar
++        set -euxo pipefail
++
++        # Detect Ubuntu codename
++        CODENAME="$(. /etc/os-release; echo "${VERSION_CODENAME}")"
++        : "${CODENAME:?Failed to read VERSION_CODENAME from /etc/os-release}"
++        echo "Detected Ubuntu codename: ${CODENAME}"
++
++        # 1) Enable arm64 multiarch
++        sudo dpkg --add-architecture arm64
++
++        # 2) Overwrite main sources to be amd64-only (archive + security)
++        sudo tee /etc/apt/sources.list > /dev/null <<EOF
++        deb [arch=amd64] http://archive.ubuntu.com/ubuntu ${CODENAME} main restricted universe multiverse
++        deb [arch=amd64] http://archive.ubuntu.com/ubuntu ${CODENAME}-updates main restricted universe multiverse
++        deb [arch=amd64] http://archive.ubuntu.com/ubuntu ${CODENAME}-backports main restricted universe multiverse
++        deb [arch=amd64] http://security.ubuntu.com/ubuntu ${CODENAME}-security main restricted universe multiverse
++        EOF
++
++        # 3) Add Ubuntu Ports for arm64 only
++        sudo tee /etc/apt/sources.list.d/arm64-ports.list > /dev/null <<EOF
++        deb [arch=arm64] http://ports.ubuntu.com/ubuntu-ports ${CODENAME} main restricted universe multiverse
++        deb [arch=arm64] http://ports.ubuntu.com/ubuntu-ports ${CODENAME}-updates main restricted universe multiverse
++        deb [arch=arm64] http://ports.ubuntu.com/ubuntu-ports ${CODENAME}-backports main restricted universe multiverse
++        deb [arch=arm64] http://ports.ubuntu.com/ubuntu-ports ${CODENAME}-security main restricted universe multiverse
++        EOF
++
++        # 4) Remove deb822 sources that may still request arm64 from security.ubuntu.com
++        sudo rm -f /etc/apt/sources.list.d/ubuntu.sources || true
++
++        # 5) Clean and update indices (amd64 from archive/security; arm64 from ports)
++        sudo apt-get clean
++        sudo apt-get update
++
++    - name: Install auto tools and dependencies
+       run: |
+-        wget -c https://releases.linaro.org/components/toolchain/binaries/latest-7/aarch64-linux-gnu/gcc-linaro-7.5.0-2019.12-i686_aarch64-linux-gnu.tar.xz
+-        tar xf gcc-linaro-7.5.0-2019.12-i686_aarch64-linux-gnu.tar.xz
++        set -euxo pipefail
++        sudo apt-get install -y --no-install-recommends \
++          automake autoconf libtool pkg-config \
++          gcc-aarch64-linux-gnu g++-aarch64-linux-gnu binutils-aarch64-linux-gnu\
++          libyaml-dev \
++          libyaml-0-2:arm64 libyaml-dev:arm64
+     
+     # Initializes the CodeQL tools for scanning.
+     - name: Initialize CodeQL
+@@ -55,13 +91,13 @@ jobs:
+       name: Set Up Build Environment and compile code for LE platform
+       run: |
+         # Set Up Build Environment
+-        export PATH="$PWD/gcc-linaro-7.5.0-2019.12-i686_aarch64-linux-gnu/bin/:$PATH"
+         export CC=aarch64-linux-gnu-gcc
+         export CXX=aarch64-linux-gnu-g++
+         export AS=aarch64-linux-gnu-as
+         export LD=aarch64-linux-gnu-ld
+         export RANLIB=aarch64-linux-gnu-ranlib
+         export STRIP=aarch64-linux-gnu-strip
++        export PKG_CONFIG_PATH=/usr/lib/aarch64-linux-gnu/pkgconfig
+         
+         # Compile the source code
+         chmod 777 gitcompile
+diff --git a/Docs/schemas/fastrpc-config-schema.yaml b/Docs/schemas/fastrpc-config-schema.yaml
+index 105efdc9..94e11dfa 100644
+--- a/Docs/schemas/fastrpc-config-schema.yaml
++++ b/Docs/schemas/fastrpc-config-schema.yaml
+@@ -1 +1 @@
+-machines: map(key=str(), value=map(DSP_LIBRARY_PATH=regex('^/.+/')))
+\ No newline at end of file
++machines: map(key=str(), value=map(DSP_LIBRARY_PATH=regex('^/.+/')))
+diff --git a/inc/fastrpc_config_parser.h b/inc/fastrpc_config_parser.h
+index 8c5061ee..42a1a818 100644
+--- a/inc/fastrpc_config_parser.h
++++ b/inc/fastrpc_config_parser.h
+@@ -11,4 +11,4 @@ extern char DSP_LIBS_LOCATION[PATH_MAX];
+ 
+ void configure_dsp_paths();
+ 
+-#endif /*FASTRPC_YAML_PARSER_H*/
+\ No newline at end of file
++#endif /*FASTRPC_YAML_PARSER_H*/
+diff --git a/src/fastrpc_config_parser.c b/src/fastrpc_config_parser.c
+index cdecc94a..786aebe8 100644
+--- a/src/fastrpc_config_parser.c
++++ b/src/fastrpc_config_parser.c
+@@ -178,4 +178,4 @@ void configure_dsp_paths() {
+ 
+   fclose(file);
+   parse_config_dir(machine_name);
+-}
+\ No newline at end of file
++}
