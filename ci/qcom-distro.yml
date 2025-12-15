@@ -33,6 +33,10 @@ repos:
     branch: master
     url: https://git.yoctoproject.org/meta-selinux
 
+  meta-updater:
+    branch: master
+    url: https://github.com/uptane/meta-updater
+
 local_conf_header:
   virtualization:
     SKIP_META_VIRT_SANITY_CHECK = "1"

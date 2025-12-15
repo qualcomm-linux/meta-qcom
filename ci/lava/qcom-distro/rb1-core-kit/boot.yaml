@@ -13,10 +13,10 @@ actions:
         - cp overlay*.tar.gz overlay.tar.gz
         - echo "OVERLAY=overlay.tar.gz" >> $IMAGE_PATH/flash.settings
         - echo "OVERLAY_PATH=/home/" >> $IMAGE_PATH/flash.settings
-        - echo "DEVICE_TYPE=qcs6490-rb3gen2" >> $IMAGE_PATH/flash.settings
+        - echo "DEVICE_TYPE=qrb2210-rb1" >> $IMAGE_PATH/flash.settings
         - cat $IMAGE_PATH/flash.settings
     timeout:
-      minutes: 5
+      minutes: 10
     to: downloads
 - deploy:
     images:
@@ -61,5 +61,5 @@ metadata:
 priority: 50
 timeouts:
   job:
-    minutes: 15
+    minutes: 20
 visibility: public

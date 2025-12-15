@@ -18,7 +18,7 @@ RRECOMMENDS:${PN}-firmware = " \
     linux-firmware-qcom-vpu \
 "
 
-RRECOMMENDS:${PN}-hexagon-dsp-binaries = " \
+RDEPENDS:${PN}-hexagon-dsp-binaries = " \
     hexagon-dsp-binaries-thundercomm-rb5-adsp \
     hexagon-dsp-binaries-thundercomm-rb5-cdsp \
     hexagon-dsp-binaries-thundercomm-rb5-sdsp \

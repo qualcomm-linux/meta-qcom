@@ -3,6 +3,6 @@
 header:
   version: 14
   includes:
-  - ci/base.yml
+   - ci/qcom-distro.yml
 
-machine: qcs615-adp-air
+distro: qcom-distro-kvm

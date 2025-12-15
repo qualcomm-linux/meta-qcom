@@ -14,7 +14,7 @@ RRECOMMENDS:${PN}-firmware = " \
     linux-firmware-qcom-sar2130p-compute \
 "
 
-RRECOMMENDS:${PN}-hexagon-dsp-binaries = " \
+RDEPENDS:${PN}-hexagon-dsp-binaries = " \
     hexagon-dsp-binaries-qcom-qar2130p-adsp \
     hexagon-dsp-binaries-qcom-qar2130p-cdsp \
 "

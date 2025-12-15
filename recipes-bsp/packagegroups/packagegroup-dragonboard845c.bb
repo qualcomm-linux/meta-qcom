@@ -17,7 +17,7 @@ RRECOMMENDS:${PN}-firmware = " \
     linux-firmware-qcom-venus-5.2 \
 "
 
-RRECOMMENDS:${PN}-hexagon-dsp-binaries = " \
+RDEPENDS:${PN}-hexagon-dsp-binaries = " \
     hexagon-dsp-binaries-thundercomm-db845c-adsp \
     hexagon-dsp-binaries-thundercomm-db845c-cdsp \
     hexagon-dsp-binaries-thundercomm-db845c-sdsp \

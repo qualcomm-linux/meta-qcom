@@ -8,12 +8,12 @@ inherit kernel cml1
 
 COMPATIBLE_MACHINE = "(qcom)"
 
-LINUX_VERSION ?= "6.17+6.18-rc5"
+LINUX_VERSION ?= "6.18"
 
 PV = "${LINUX_VERSION}+git"
 
-# tag: qcom-next-6.18-rc5-20251114
-SRCREV ?= "53919c1f684a75dc898ae3e5290d9ed8919b32ac"
+# tag: qcom-next-6.18-20251209
+SRCREV ?= "03e1fe7c48e7e640591c75bafa29f09a6aa011af"
 
 SRCBRANCH ?= "nobranch=1"
 SRCBRANCH:class-devupstream ?= "branch=qcom-next"
@@ -22,7 +22,7 @@ SRC_URI = "git://github.com/qualcomm-linux/kernel.git;${SRCBRANCH};protocol=http
 
 # Additional kernel configs.
 SRC_URI += " \
-    file://configs/qcom.cfg \
+    file://configs/bsp-additions.cfg \
 "
 
 # To build tip of qcom-next branch set preferred
@@ -36,12 +36,14 @@ S = "${UNPACKDIR}/${BP}"
 KBUILD_DEFCONFIG ?= "defconfig"
 KBUILD_DEFCONFIG:qcom-armv7a = "qcom_defconfig"
 
-KBUILD_CONFIG_EXTRA = "${S}/kernel/configs/hardening.config"
+KBUILD_CONFIG_EXTRA = "${S}/kernel/configs/hardening.config "
+KBUILD_CONFIG_EXTRA:append:aarch64 = " ${S}/arch/arm64/configs/prune.config"
+KBUILD_CONFIG_EXTRA:append:aarch64 = " ${S}/arch/arm64/configs/qcom.config"
 
 do_configure:prepend() {
     # Use a copy of the 'defconfig' from the actual repo to merge fragments
     cp ${S}/arch/${ARCH}/configs/${KBUILD_DEFCONFIG} ${B}/.config
 
     # Merge fragment for QCOM value add features
-    ${S}/scripts/kconfig/merge_config.sh -m -O ${B} ${B}/.config ${@" ".join(find_cfgs(d))} ${KBUILD_CONFIG_EXTRA}
+    ${S}/scripts/kconfig/merge_config.sh -m -O ${B} ${B}/.config ${KBUILD_CONFIG_EXTRA} ${@" ".join(find_cfgs(d))}
 }

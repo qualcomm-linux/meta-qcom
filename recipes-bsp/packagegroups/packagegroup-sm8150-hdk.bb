@@ -19,7 +19,7 @@ RRECOMMENDS:${PN}-firmware = " \
     linux-firmware-qcom-sm8150-sensors \
 "
 
-RRECOMMENDS:${PN}-hexagon-dsp-binaries = " \
+RDEPENDS:${PN}-hexagon-dsp-binaries = " \
     hexagon-dsp-binaries-qcom-sm8150-hdk-adsp \
     hexagon-dsp-binaries-qcom-sm8150-hdk-cdsp \
     hexagon-dsp-binaries-qcom-sm8150-hdk-sdsp \

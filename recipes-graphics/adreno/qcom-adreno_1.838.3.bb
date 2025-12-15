@@ -1,13 +1,17 @@
 SUMMARY = "Qualcomm Adreno Graphics User Mode libraries"
 
-DESCRIPTION = "Collection of prebuilt User Mode libraries to support OpenGL ES, Vulkan, and OpenCL APIs for Qualcomm Adreno GPUs."
+DESCRIPTION = "Collection of prebuilt User Mode libraries to support OpenGL ES, Vulkan, and OpenCL APIs for Qualcomm Adreno GPUs.\
+               For Qualcomm-specific OpenCL extensions declared in cl_ext_qcom.h, documentation is available in the Adreno OpenCL SDK: \
+               https://softwarecenter.qualcomm.com/catalog/item/Adreno_OpenCL_SDK"
 
-LICENSE = "CLOSED"
+LICENSE = "LICENSE.qcom-2"
+LIC_FILES_CHKSUM = "file://NO.LOGIN.BINARY.LICENSE.QTI.pdf;md5=4ceffe94cb40cdce6d2f4fb93cc063d1 \
+                    file://NOTICE;md5=18837ae43f290ad72cdcccead4d7700a "
 
 # no top-level dir in the archive, unpack to subdir to prevent UNPACKDIR pollution
-SRC_URI = "https://qartifactory-edge.qualcomm.com/artifactory/qsc_releases/software/chip/component/gfx-adreno.le.0.0/250908/prebuilt_yocto/${BPN}_${PV}_armv8-2a.tar.gz;subdir=${BPN}-${PV}"
-
-SRC_URI[sha256sum] = "02974d294597994a255f7aca6d6d61422fb44f11bd4cf6064e183c3888ea9def"
+SRC_URI = "https://qartifactory-edge.qualcomm.com/artifactory/qsc_releases/software/chip/component/gfx-adreno.le.0.0/${PBT_BUILD_DATE}/prebuilt_yocto/${BPN}_${PV}_armv8-2a.tar.gz;subdir=${BPN}-${PV}"
+PBT_BUILD_DATE = "251203"
+SRC_URI[sha256sum] = "770e31ac848cc1aa0e94bde840222f8f0e9af411592fa7ede9bfe509c00b87d2"
 
 # These are listed here in order to identify RDEPENDS
 DEPENDS += " glib-2.0 libdmabufheap libdrm virtual/libgbm msm-gbm-backend \
@@ -34,6 +38,7 @@ RDEPENDS:${PN}-common += " kgsl-dlkm"
 RDEPENDS:${PN}-egl += " ${PN}-common ${PN}-gles1 ${PN}-gles2 msm-gbm-backend"
 RDEPENDS:${PN}-vulkan += " ${PN}-common msm-gbm-backend"
 RDEPENDS:${PN}-cl += " ${PN}-common"
+RDEPENDS:${PN}-dev += "${@bb.utils.contains('DISTRO_FEATURES', 'opencl', 'opencl-headers-dev', '', d)}"
 
 RDEPENDS:${PN} = " \
     ${@bb.utils.contains('DISTRO_FEATURES', 'glvnd', 'qcom-adreno-egl', '', d)} \
@@ -44,6 +49,11 @@ RDEPENDS:${PN} = " \
 ALLOW_EMPTY:${PN} = "1"
 
 do_install () {
+    if ${@bb.utils.contains('DISTRO_FEATURES', 'opencl', 'true', 'false', d)}; then
+        install -d ${D}${includedir}/CL
+        cp ${S}/usr/include/CL/cl_ext_qcom.h ${D}${includedir}/CL/
+    fi
+
     install -d ${D}/${libdir}
     cp -r ${S}/usr/lib/* ${D}/${libdir}/
 

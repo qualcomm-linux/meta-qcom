@@ -6,7 +6,7 @@ LIC_FILES_CHKSUM = "file://LICENSE.txt;md5=b234ee4d69f5fce4486a80fdaf4a4263"
 SRC_URI = "git://github.com/qualcomm-linux/camera-driver.git;protocol=https;branch=camera-kernel.qclinux.0.0"
 
 PV = "0.0+git"
-SRCREV = "b83287268663dab7675d40893a476ee1a3d8b238"
+SRCREV = "336a8f53aa022c4c8795e7d65b315493f40963d9"
 
 inherit module
 

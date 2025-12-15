@@ -9,6 +9,8 @@ PV = "0.0+git"
 SRCREV = "d06e599d197790c9e84ac41a51bf124a69768c4f"
 
 DEPENDS = "qrtr udev"
+RPROVIDES:${PN} = "virtual-diag-router"
+RCONFLICTS:${PN} = "diag-router"
 
 do_compile () {
 	oe_runmake

@@ -13,7 +13,7 @@ PACKAGE_INSTALL += " \
     bluez5 \
     bootrr \
     dhcpcd \
-    diag \
+    virtual-diag-router \
     dropbear \
     e2fsprogs \
     e2fsprogs-e2fsck \

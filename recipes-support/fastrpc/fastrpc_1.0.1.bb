@@ -5,7 +5,7 @@ SECTION = "devel"
 LICENSE = "BSD-3-Clause"
 LIC_FILES_CHKSUM = "file://LICENSE.txt;md5=b67986b6880754696d418dbaa2cf51d1"
 
-SRCREV = "2d1768e9d602641660aa2232c96577042c1b6294"
+SRCREV = "27235935b19fad234cb561b1e9d4984a51ee9e9f"
 SRC_URI = "\
     git://github.com/qualcomm/fastrpc.git;branch=main;protocol=https \
     file://adsprpcd.service \
