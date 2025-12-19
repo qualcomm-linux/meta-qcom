@@ -1,0 +1,27 @@
+From 422d6a4ca772710f4af0b458c1a7ae7ca2461274 Mon Sep 17 00:00:00 2001
+From: Rob Clark <rob.clark@oss.qualcomm.com>
+Date: Mon, 14 Jul 2025 09:44:10 -0700
+Subject: [PATCH 4/5] work_group_picking: max_z_size cannot exceed max wg size
+
+If max_size is less than max_z_size then dividing by wg_z gives zero,
+leading to nonsense grid sizes like 0x0x64
+Upstream-Status: Pending
+---
+ tensorflow/lite/delegates/gpu/common/task/work_group_picking.cc | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/tensorflow/lite/delegates/gpu/common/task/work_group_picking.cc b/tensorflow/lite/delegates/gpu/common/task/work_group_picking.cc
+index a4946b37fcd..915aee861d7 100644
+--- a/tensorflow/lite/delegates/gpu/common/task/work_group_picking.cc
++++ b/tensorflow/lite/delegates/gpu/common/task/work_group_picking.cc
+@@ -304,6 +304,7 @@ void GetPossibleWorkGroupsConv(TuningType tuning_type, const GpuInfo& gpu_info,
+         max_z_size = gpu_info.adreno_info.IsAdreno3xx() ? 16 : 64;
+       }
+       max_z_size = std::min(max_z_size, gpu_info.GetMaxWorkGroupSizeForZ());
++      max_z_size = std::min(max_z_size, kernel_info.max_work_group_size);
+       work_groups->push_back(
+           GetWorkGroupConv(grid, kernel_info.max_work_group_size, max_z_size));
+       return;
+-- 
+2.34.1
+
