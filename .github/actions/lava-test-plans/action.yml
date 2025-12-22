@@ -26,6 +26,10 @@ runs:
           path: lava-test-plans
           ref: cdb8221de2a8f78533ef6b812fc4f5a2461c5525
 
+      - uses: actions/setup-python@v6
+        with:
+          python-version: 3.11
+
       - name: 'Download build URLs'
         uses: actions/download-artifact@v6
         with:
@@ -42,6 +46,7 @@ runs:
           OUT_PATH="${GITHUB_WORKSPACE}/out"
           VARS_OUT_PATH="${OUT_PATH}/vars"
           JOBS_OUT_PATH="${OUT_PATH}/jobs"
+          echo "JOBS_OUT_PATH=${JOBS_OUT_PATH}" >> $GITHUB_ENV
           mkdir -p "${VARS_OUT_PATH}"
           mkdir -p "${JOBS_OUT_PATH}"
           echo "PROJECT_NAME=${GITHUB_REPOSITORY#*/}" >> "${VARS_OUT_PATH}/gh-variables.ini"
@@ -100,12 +105,12 @@ runs:
       - name: "List files"
         shell: bash
         run: |
-          echo $GITHUB_WORKSPACE
-          ls -R $GITHUB_WORKSPACE
+          echo "${GITHUB_WORKSPACE}"
+          ls -R "${GITHUB_WORKSPACE}"
 
       - name: 'Upload test jobs'
         uses: actions/upload-artifact@v4
         with:
           name: ${{ inputs.prefix }}-${{ inputs.machine }}-${{ inputs.distro_name }}
-          path: ${{ env.MACHINE}}*-${{ inputs.distro_name }}*
+          path: ${{ env.JOBS_OUT_PATH }}/**
 
