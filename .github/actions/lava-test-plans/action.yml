@@ -36,27 +36,31 @@ runs:
       - name: Run lava-test-plans
         shell: bash
         run: |
+          set -euo pipefail
           cd lava-test-plans && pip install .
-          lava-test-plans --help
-          echo "PROJECT_NAME=${GITHUB_REPOSITORY#*/}" >> gh-variables.ini
-          echo "PROJECT=projects/${GITHUB_REPOSITORY#*/}/" >> gh-variables.ini
-          #echo "PROJECT_NAME=meta-qcom" >> gh-variables.ini
-          #echo "PROJECT=projects/meta-qcom/" >> gh-variables.ini
-          echo "LAVA_JOB_PRIORITY=50" >> gh-variables.ini
-          echo "OS_INFO=qcom-distro" >> gh-variables.ini
-          echo "BUILD_NUMBER=${{ github.run_id }}-${{ github.run_attempt }}" >> gh-variables.ini
-          echo "DOCKER_IMAGE_POSTPROCESS=ghcr.io/foundriesio/lava-lmp-sign:main" >> gh-variables.ini
-          echo "AUTH_HEADER_NAME=Authentication" >> gh-variables.ini
-          echo "AUTH_HEADER_TOKEN=Q_GITHUB_TOKEN" >> gh-variables.ini
-          echo "TEST_DEFINITIONS_REPOSITORY=https://github.com/qualcomm-linux/qcom-linux-testkit/" >> gh-variables.ini
-          echo "FLASHER_DEVICE_TYPE=qcs" >> gh-variables.ini
+          lava-test-plans --version
+          OUT_PATH="${GITHUB_WORKSPACE}/out"
+          VARS_OUT_PATH="${OUT_PATH}/vars"
+          JOBS_OUT_PATH="${OUT_PATH}/jobs"
+          mkdir -p "${VARS_OUT_PATH}"
+          mkdir -p "${JOBS_OUT_PATH}"
+          echo "PROJECT_NAME=${GITHUB_REPOSITORY#*/}" >> "${VARS_OUT_PATH}/gh-variables.ini"
+          echo "PROJECT=projects/${GITHUB_REPOSITORY#*/}/" >> "${VARS_OUT_PATH}/gh-variables.ini"
+          echo "LAVA_JOB_PRIORITY=50" >> "${VARS_OUT_PATH}/gh-variables.ini"
+          echo "OS_INFO=qcom-distro" >> "${VARS_OUT_PATH}/gh-variables.ini"
+          echo "BUILD_NUMBER=${{ github.run_id }}-${{ github.run_attempt }}" >> "${VARS_OUT_PATH}/gh-variables.ini"
+          echo "DOCKER_IMAGE_POSTPROCESS=ghcr.io/foundriesio/lava-lmp-sign:main" >> "${VARS_OUT_PATH}/gh-variables.ini"
+          echo "AUTH_HEADER_NAME=Authentication" >> "${VARS_OUT_PATH}/gh-variables.ini"
+          echo "AUTH_HEADER_TOKEN=Q_GITHUB_TOKEN" >> "${VARS_OUT_PATH}/gh-variables.ini"
+          echo "TEST_DEFINITIONS_REPOSITORY=https://github.com/qualcomm-linux/qcom-linux-testkit/" >> "${VARS_OUT_PATH}/gh-variables.ini"
+          echo "FLASHER_DEVICE_TYPE=qcs" >> "${VARS_OUT_PATH}/gh-variables.ini"
           IMAGE_TYPE="core-image-base"
           if [ "${{ inputs.distro_name }}" = "qcom-distro" ]; then
               IMAGE_TYPE="qcom-multimedia-image"
-              echo "AUTO_LOGIN_PASSWORD_PROMPT=Password" >> gh-variables.ini
-              echo "AUTO_LOGIN_PASSWORD=oelinux123" >> gh-variables.ini
+              echo "AUTO_LOGIN_PASSWORD_PROMPT=Password" >> "${VARS_OUT_PATH}/gh-variables.ini"
+              echo "AUTO_LOGIN_PASSWORD=oelinux123" >> "${VARS_OUT_PATH}/gh-variables.ini"
           fi
-          echo "IMAGE_FILE_NAME=${IMAGE_TYPE}-${{ inputs.machine }}.rootfs.qcomflash.tar.gz" >> gh-variables.ini
+          echo "IMAGE_FILE_NAME=${IMAGE_TYPE}-${{ inputs.machine }}.rootfs.qcomflash.tar.gz" >> "${VARS_OUT_PATH}/gh-variables.ini"
           export BUILD_URL=""
           export BUILD_URL_FILE="$GITHUB_WORKSPACE/build-url_${{ inputs.machine }}_${{ inputs.distro_name }}/build-url_${{ inputs.machine }}_${{ inputs.distro_name }}"
           echo "${BUILD_URL_FILE}"
@@ -68,31 +72,28 @@ runs:
              # fail action if BUILD_URL is empty. At this point the variable should be filled in
              exit 1
           fi
-          echo "BUILD_DOWNLOAD_URL=${BUILD_URL}/" >> gh-variables.ini
+          echo "BUILD_DOWNLOAD_URL=${BUILD_URL}/" >> "${VARS_OUT_PATH}/gh-variables.ini"
 
-          echo "ROOTFS_URL=${BUILD_URL}/${{ inputs.distro_name }}/${{ inputs.machine }}/${IMAGE_TYPE}-${{ inputs.machine }}.rootfs.qcomflash.tar.gz" >> gh-variables.ini
+          echo "ROOTFS_URL=${BUILD_URL}/${{ inputs.distro_name }}/${{ inputs.machine }}/${IMAGE_TYPE}-${{ inputs.machine }}.rootfs.qcomflash.tar.gz" >> "${VARS_OUT_PATH}/gh-variables.ini"
 
           if [ "${{ inputs.machine }}" = "qcom-armv8a" ]; then
-              echo "ROOTFS_IMG_FILE=core-image-base-qcom-armv8a.rootfs.ext4" >> gh-variables.ini
-              cp gh-variables.ini dragonboard-410c.ini
+              echo "ROOTFS_IMG_FILE=core-image-base-qcom-armv8a.rootfs.ext4" >> "${VARS_OUT_PATH}/gh-variables.ini"
+              cp "${VARS_OUT_PATH}/gh-variables.ini" dragonboard-410c.ini
               echo "DEVICE_TYPE=dragonboard-410c" >> dragonboard-410c.ini
               echo "BOOT_IMG_FILE=boot-apq8016-sbc-qcom-armv8a.img" >> dragonboard-410c.ini
               cat dragonboard-410c.ini
-              #lava-test-plans --dry-run --variables dragonboard-410c.ini --test-plan "meta-qcom/${{ inputs.distro_name }}/${{ inputs.testplan }}" --device-type "dragonboard-410c" --dry-run-path ../dragonboard-410c-${{ inputs.distro_name }}-${{ inputs.testplan }} || true
-              lava-test-plans --dry-run --variables dragonboard-410c.ini --test-plan "${GITHUB_REPOSITORY#*/}/${{ inputs.distro_name }}/${{ inputs.testplan }}" --device-type "dragonboard-410c" --dry-run-path ../dragonboard-410c-${{ inputs.distro_name }}-${{ inputs.testplan }} || true
-              cp gh-variables.ini dragonboard-820c.ini
+              lava-test-plans --dry-run --variables dragonboard-410c.ini --test-plan "${GITHUB_REPOSITORY#*/}/${{ inputs.distro_name }}/${{ inputs.testplan }}" --device-type "dragonboard-410c" --dry-run-path "${JOBS_OUT_PATH}/dragonboard-410c-${{ inputs.distro_name }}-${{ inputs.testplan }}" || true
+              cp "${VARS_OUT_PATH}/gh-variables.ini" dragonboard-820c.ini
               echo "BOOT_IMG_FILE=boot-apq8096-db820c-qcom-armv8a.img" >> dragonboard-820c.ini
               echo "DEVICE_TYPE=dragonboard-820c" >> dragonboard-820c.ini
               cat dragonboard-820c.ini
-              #lava-test-plans --dry-run --variables dragonboard-820c.ini --test-plan "meta-qcom/${{ inputs.distro_name }}/${{ inputs.testplan }}" --device-type "dragonboard-820c" --dry-run-path ../dragonboard-820c-${{ inputs.distro_name }}-${{ inputs.testplan }} || true
-              lava-test-plans --dry-run --variables dragonboard-820c.ini --test-plan "${GITHUB_REPOSITORY#*/}/${{ inputs.distro_name }}/${{ inputs.testplan }}" --device-type "dragonboard-820c" --dry-run-path ../dragonboard-820c-${{ inputs.distro_name }}-${{ inputs.testplan }} || true
+              lava-test-plans --dry-run --variables dragonboard-820c.ini --test-plan "${GITHUB_REPOSITORY#*/}/${{ inputs.distro_name }}/${{ inputs.testplan }}" --device-type "dragonboard-820c" --dry-run-path "${JOBS_OUT_PATH}/dragonboard-820c-${{ inputs.distro_name }}-${{ inputs.testplan }}" || true
               echo "MACHINE=dragonboard" >> $GITHUB_ENV
           else
-              echo "DEVICE_TYPE=${{ inputs.machine }}" >> gh-variables.ini
+              echo "DEVICE_TYPE=${{ inputs.machine }}" >> "${VARS_OUT_PATH}/gh-variables.ini"
 
-              cat gh-variables.ini
-              #lava-test-plans --dry-run --variables gh-variables.ini --test-plan "meta-qcom/${{ inputs.distro_name }}/${{ inputs.testplan }}" --device-type "${{ inputs.machine }}" --dry-run-path ../${{ inputs.machine }}-${{ inputs.distro_name }}-${{ inputs.testplan }} || true
-              lava-test-plans --dry-run --variables gh-variables.ini --test-plan "${GITHUB_REPOSITORY#*/}/${{ inputs.distro_name }}/${{ inputs.testplan }}" --device-type "${{ inputs.machine }}" --dry-run-path ../${{ inputs.machine }}-${{ inputs.distro_name }}-${{ inputs.testplan }} || true
+              cat "${VARS_OUT_PATH}/gh-variables.ini"
+              lava-test-plans --dry-run --variables "${VARS_OUT_PATH}/gh-variables.ini" --test-plan "${GITHUB_REPOSITORY#*/}/${{ inputs.distro_name }}/${{ inputs.testplan }}" --device-type "${{ inputs.machine }}" --dry-run-path "${JOBS_OUT_PATH}/${{ inputs.machine }}-${{ inputs.distro_name }}-${{ inputs.testplan }}" || true
               echo "MACHINE=${{ inputs.machine }}" >> $GITHUB_ENV
           fi
 
