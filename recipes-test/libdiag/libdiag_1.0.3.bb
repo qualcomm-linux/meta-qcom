@@ -11,6 +11,7 @@ SRC_URI[sha256sum] = "e6780a404aaa89ffa7f20e659efae4f7b45beaeda8ca1fc05b5a1229ae
 S = "${UNPACKDIR}"
 
 DEPENDS += "glib-2.0"
+RDEPENDS:${PN} += "diag-router"
 
 inherit lib_package
 
