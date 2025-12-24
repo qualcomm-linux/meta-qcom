@@ -1,0 +1,116 @@
+name: Run lava-test-plans
+inputs:
+  machine:
+    required: true
+  distro_name:
+    required: true
+  build_id:
+    description: "ID of the workflow from which build URL will be downloaded"
+    required: true
+  gh_token:
+    description: "Github token. It's required to download artifacts from the workflow"
+    required: true
+  prefix:
+    description: "Prefix for the compressed file that is uploaded as workflow artifact"
+    default: testjobs
+  testplan:
+    description: "Name of the test plan to use in job generation"
+    default: boot
+
+runs:
+  using: "composite"
+  steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: qualcomm-linux/lava-test-plans
+          path: lava-test-plans
+          ref: cdb8221de2a8f78533ef6b812fc4f5a2461c5525
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: 3.11
+
+      - name: 'Download build URLs'
+        uses: actions/download-artifact@v6
+        with:
+          github-token: ${{ inputs.gh_token }}
+          run-id: ${{ inputs.build_id }}
+          pattern: build-url_*
+
+      - name: Run lava-test-plans
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd lava-test-plans && pip install .
+          lava-test-plans --version
+          OUT_PATH="${GITHUB_WORKSPACE}/out"
+          VARS_OUT_PATH="${OUT_PATH}/vars"
+          JOBS_OUT_PATH="${OUT_PATH}/jobs"
+          echo "JOBS_OUT_PATH=${JOBS_OUT_PATH}" >> $GITHUB_ENV
+          mkdir -p "${VARS_OUT_PATH}"
+          mkdir -p "${JOBS_OUT_PATH}"
+          echo "PROJECT_NAME=${GITHUB_REPOSITORY#*/}" >> "${VARS_OUT_PATH}/gh-variables.ini"
+          echo "PROJECT=projects/${GITHUB_REPOSITORY#*/}/" >> "${VARS_OUT_PATH}/gh-variables.ini"
+          echo "LAVA_JOB_PRIORITY=50" >> "${VARS_OUT_PATH}/gh-variables.ini"
+          echo "OS_INFO=qcom-distro" >> "${VARS_OUT_PATH}/gh-variables.ini"
+          echo "BUILD_NUMBER=${{ github.run_id }}-${{ github.run_attempt }}" >> "${VARS_OUT_PATH}/gh-variables.ini"
+          echo "DOCKER_IMAGE_POSTPROCESS=ghcr.io/foundriesio/lava-lmp-sign:main" >> "${VARS_OUT_PATH}/gh-variables.ini"
+          echo "AUTH_HEADER_NAME=Authentication" >> "${VARS_OUT_PATH}/gh-variables.ini"
+          echo "AUTH_HEADER_TOKEN=Q_GITHUB_TOKEN" >> "${VARS_OUT_PATH}/gh-variables.ini"
+          echo "TEST_DEFINITIONS_REPOSITORY=https://github.com/qualcomm-linux/qcom-linux-testkit/" >> "${VARS_OUT_PATH}/gh-variables.ini"
+          echo "FLASHER_DEVICE_TYPE=qcs" >> "${VARS_OUT_PATH}/gh-variables.ini"
+          IMAGE_TYPE="core-image-base"
+          if [ "${{ inputs.distro_name }}" = "qcom-distro" ]; then
+              IMAGE_TYPE="qcom-multimedia-image"
+              echo "AUTO_LOGIN_PASSWORD_PROMPT=Password" >> "${VARS_OUT_PATH}/gh-variables.ini"
+              echo "AUTO_LOGIN_PASSWORD=oelinux123" >> "${VARS_OUT_PATH}/gh-variables.ini"
+          fi
+          echo "IMAGE_FILE_NAME=${IMAGE_TYPE}-${{ inputs.machine }}.rootfs.qcomflash.tar.gz" >> "${VARS_OUT_PATH}/gh-variables.ini"
+          export BUILD_URL=""
+          export BUILD_URL_FILE="$GITHUB_WORKSPACE/build-url_${{ inputs.machine }}_${{ inputs.distro_name }}/build-url_${{ inputs.machine }}_${{ inputs.distro_name }}"
+          echo "${BUILD_URL_FILE}"
+          if [ -f "$BUILD_URL_FILE" ]; then
+              export BUILD_URL=$(cat "${BUILD_URL_FILE}")
+          fi
+          if [ -z "${BUILD_URL}" ]; then
+             echo "BUILD_URL missing"
+             # fail action if BUILD_URL is empty. At this point the variable should be filled in
+             exit 1
+          fi
+          echo "BUILD_DOWNLOAD_URL=${BUILD_URL}/" >> "${VARS_OUT_PATH}/gh-variables.ini"
+
+          echo "ROOTFS_URL=${BUILD_URL}/${{ inputs.distro_name }}/${{ inputs.machine }}/${IMAGE_TYPE}-${{ inputs.machine }}.rootfs.qcomflash.tar.gz" >> "${VARS_OUT_PATH}/gh-variables.ini"
+
+          if [ "${{ inputs.machine }}" = "qcom-armv8a" ]; then
+              echo "ROOTFS_IMG_FILE=core-image-base-qcom-armv8a.rootfs.ext4" >> "${VARS_OUT_PATH}/gh-variables.ini"
+              cp "${VARS_OUT_PATH}/gh-variables.ini" dragonboard-410c.ini
+              echo "DEVICE_TYPE=dragonboard-410c" >> dragonboard-410c.ini
+              echo "BOOT_IMG_FILE=boot-apq8016-sbc-qcom-armv8a.img" >> dragonboard-410c.ini
+              cat dragonboard-410c.ini
+              lava-test-plans --dry-run --variables dragonboard-410c.ini --test-plan "${GITHUB_REPOSITORY#*/}/${{ inputs.distro_name }}/${{ inputs.testplan }}" --device-type "dragonboard-410c" --dry-run-path "${JOBS_OUT_PATH}/dragonboard-410c-${{ inputs.distro_name }}-${{ inputs.testplan }}" || true
+              cp "${VARS_OUT_PATH}/gh-variables.ini" dragonboard-820c.ini
+              echo "BOOT_IMG_FILE=boot-apq8096-db820c-qcom-armv8a.img" >> dragonboard-820c.ini
+              echo "DEVICE_TYPE=dragonboard-820c" >> dragonboard-820c.ini
+              cat dragonboard-820c.ini
+              lava-test-plans --dry-run --variables dragonboard-820c.ini --test-plan "${GITHUB_REPOSITORY#*/}/${{ inputs.distro_name }}/${{ inputs.testplan }}" --device-type "dragonboard-820c" --dry-run-path "${JOBS_OUT_PATH}/dragonboard-820c-${{ inputs.distro_name }}-${{ inputs.testplan }}" || true
+              echo "MACHINE=dragonboard" >> $GITHUB_ENV
+          else
+              echo "DEVICE_TYPE=${{ inputs.machine }}" >> "${VARS_OUT_PATH}/gh-variables.ini"
+
+              cat "${VARS_OUT_PATH}/gh-variables.ini"
+              lava-test-plans --dry-run --variables "${VARS_OUT_PATH}/gh-variables.ini" --test-plan "${GITHUB_REPOSITORY#*/}/${{ inputs.distro_name }}/${{ inputs.testplan }}" --device-type "${{ inputs.machine }}" --dry-run-path "${JOBS_OUT_PATH}/${{ inputs.machine }}-${{ inputs.distro_name }}-${{ inputs.testplan }}" || true
+              echo "MACHINE=${{ inputs.machine }}" >> $GITHUB_ENV
+          fi
+
+      - name: "List files"
+        shell: bash
+        run: |
+          echo "${GITHUB_WORKSPACE}"
+          ls -R "${GITHUB_WORKSPACE}"
+
+      - name: 'Upload test jobs'
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ inputs.prefix }}-${{ inputs.machine }}-${{ inputs.distro_name }}
+          path: ${{ env.JOBS_OUT_PATH }}/**
+
