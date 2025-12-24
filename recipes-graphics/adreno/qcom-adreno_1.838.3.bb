@@ -66,7 +66,8 @@ do_install () {
     fi
 
     install -d ${D}${datadir}/glvnd/egl_vendor.d
-    cp ${S}/usr/share/glvnd/egl_vendor.d/EGL_adreno.json ${D}${datadir}/glvnd/egl_vendor.d/
+    # Copy and rename to prioritize adreno over mesa
+    cp ${S}/usr/share/glvnd/egl_vendor.d/EGL_adreno.json ${D}${datadir}/glvnd/egl_vendor.d/10_EGL_adreno.json
 
     install -d ${D}${datadir}/vulkan/icd.d
     cp ${S}/usr/share/vulkan/icd.d/adrenovk.json ${D}${datadir}/vulkan/icd.d/
@@ -87,7 +88,7 @@ FILES:${PN}-common = "${libdir}/libllvm-*.so.* \
 FILES:${PN}-egl = "${libdir}/libEGL_adreno.so.1 \
                    ${@bb.utils.contains('DISTRO_FEATURES', 'wayland', '${libdir}/libeglSubDriverWayland.so.*', '', d)} \
                    ${@bb.utils.contains('DISTRO_FEATURES', 'x11', '${libdir}/libeglSubDriverX11.so.*', '', d)} \
-                   ${datadir}/glvnd/egl_vendor.d/EGL_adreno.json"
+                   ${datadir}/glvnd/egl_vendor.d/10_EGL_adreno.json"
 FILES:${PN}-gles2 = "${libdir}/libGLESv2*.so.*"
 FILES:${PN}-gles1 = "${libdir}/libGLESv1*.so.*"
 FILES:${PN}-vulkan = "${libdir}/libvulkan_*.so.* \
