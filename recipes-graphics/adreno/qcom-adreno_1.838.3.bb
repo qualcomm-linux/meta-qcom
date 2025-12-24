@@ -34,9 +34,8 @@ RPROVIDES:${PN}-egl += "virtual-egl-icd"
 RPROVIDES:${PN}-cl += "virtual-opencl-icd"
 RPROVIDES:${PN}-vulkan += "virtual-vulkan-icd"
 
-RDEPENDS:${PN}-common += " kgsl-dlkm"
-RDEPENDS:${PN}-egl += " ${PN}-common ${PN}-gles1 ${PN}-gles2 msm-gbm-backend"
-RDEPENDS:${PN}-vulkan += " ${PN}-common msm-gbm-backend"
+RDEPENDS:${PN}-egl += " kgsl-dlkm ${PN}-common ${PN}-gles1 ${PN}-gles2 msm-gbm-backend"
+RDEPENDS:${PN}-vulkan += " kgsl-dlkm ${PN}-common msm-gbm-backend"
 RDEPENDS:${PN}-cl += " ${PN}-common"
 RDEPENDS:${PN}-dev += "${@bb.utils.contains('DISTRO_FEATURES', 'opencl', 'opencl-headers-dev', '', d)}"
 
