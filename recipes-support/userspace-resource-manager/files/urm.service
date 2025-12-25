@@ -1,0 +1,10 @@
+[Unit]
+Description=Userspace Resource Manager(URM) Service
+
+[Service]
+Restart=on-failure
+ExecStart=/usr/bin/urm
+TimeoutStopSec=2
+
+[Install]
+WantedBy=multi-user.target
