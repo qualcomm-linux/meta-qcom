@@ -4,12 +4,12 @@ LICENSE = "LICENSE.qcom-2"
 LIC_FILES_CHKSUM = "file://${UNPACKDIR}/usr/share/doc/${PN}/NOLOGINBINARYLICENSEQTI.pdf;md5=4ceffe94cb40cdce6d2f4fb93cc063d1 \
                     file://${UNPACKDIR}/usr/share/doc/${PN}/NOTICE;md5=4b722aa0574e24873e07b94e40b92e4d "
 
-PBT_BUILD_DATE = "251120"
+PBT_BUILD_DATE = "251222"
 ARTIFACTORY_URL = "https://qartifactory-edge.qualcomm.com/artifactory/qsc_releases/software/chip/component/computervision-fastcv.qclinux.0.1/${PBT_BUILD_DATE}/prebuilt_yocto"
 PBT_ARCH = "armv8a"
 
 SRC_URI = "${ARTIFACTORY_URL}/${BPN}_${PV}_${PBT_ARCH}.tar.gz"
-SRC_URI[sha256sum] = "14a88a64fa02f41a105965de5c6f9932f1fbf929bebff677d7a450e294bd7f5d"
+SRC_URI[sha256sum] = "3fe9238e3a12ddbc666a34107c5b0ead7bbe136fdaa3b4405246f692144c916c"
 S = "${UNPACKDIR}"
 
 DEPENDS += "glib-2.0 fastrpc"
@@ -20,6 +20,7 @@ COMPATIBLE_MACHINE = "^$"
 COMPATIBLE_MACHINE:aarch64 = "(.*)"
 
 do_install() {
+    install -d ${D}${bindir}/
     install -d ${D}${libdir}/pkgconfig
     install -d ${D}${datadir}/doc/${PN}
     install -d ${D}${includedir}/fastcv
@@ -46,9 +47,10 @@ do_install() {
     install -m 0644 ${S}/usr/lib/dsp/cdsp/cv/v75/MONACO/*.so ${D}${datadir}/qcom/qcs8300/Qualcomm/QCS8300-RIDE/dsp/cdsp
     install -m 0644 ${S}/usr/lib/dsp/cdsp/cv/v73/LEMANS/*.so ${D}${datadir}/qcom/sa8775p/Qualcomm/SA8775P-RIDE/dsp/cdsp
 
+    install -m 0755 ${S}/usr/bin/fastcv_simple_test64 ${D}${bindir}
 }
 
-PACKAGE_BEFORE_PN = "${PN}-dsp"
+PACKAGE_BEFORE_PN = "${PN}-dsp fastcv-apps"
 
 PACKAGES += "\
     ${PN}-qcs615-ride-dsp \
@@ -58,11 +60,13 @@ PACKAGES += "\
 "
 
 FILES:${PN}-dsp = "${libdir}/libfastcvdsp_stub.so.*"
+FILES:fastcv-apps = "${bindir}/fastcv_simple_test64"
 
 RDEPENDS:${PN}-qcs615-ride-dsp = "${PN}-dsp"
 RDEPENDS:${PN}-qcs8300-ride-dsp = "${PN}-dsp"
 RDEPENDS:${PN}-sa8775p-ride-dsp = "${PN}-dsp"
 RDEPENDS:${PN}-thundercomm-rb3gen2-dsp = "${PN}-dsp"
+RDEPENDS:fastcv-apps = "${PN}"
 
 INSANE_SKIP:${PN}-qcs615-ride-dsp = "arch libdir"
 INSANE_SKIP:${PN}-qcs8300-ride-dsp = "arch libdir"
