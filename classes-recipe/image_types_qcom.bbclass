@@ -19,6 +19,7 @@ QCOM_DTB_FILE ?= "dtb.bin"
 
 QCOM_BOOT_FILES_SUBDIR ?= ""
 QCOM_PARTITION_FILES_SUBDIR ??= "${QCOM_BOOT_FILES_SUBDIR}"
+QCOM_PARTITION_FILES_SUBDIR_SPINOR ??= ""
 
 QCOM_PARTITION_CONF ?= "qcom-partition-conf"
 
@@ -35,6 +36,19 @@ do_image_qcomflash[depends] += "${@ ['', '${QCOM_PARTITION_CONF}:do_deploy'][d.g
 				${@'${QCOM_ESP_IMAGE}:do_image_complete' if d.getVar('QCOM_ESP_IMAGE') != '' else  ''} \
 				${@'abl2esp:do_deploy' if d.getVar('ABL_SIGNATURE_VERSION') else  ''}"
 IMAGE_TYPEDEP:qcomflash += "${IMAGE_QCOMFLASH_FS_TYPE}"
+
+deploy_partition_files() {
+    for pbin in $1/gpt_main*.bin $1/gpt_backup*.bin \
+                $1/gpt_both*.bin $1/zeros_*.bin \
+                $1/rawprogram[0-9].xml $1/patch*.xml ; do
+        install -m 0644 ${pbin} $2
+    done
+
+    if [ -e "$1/contents.xml" ]; then
+        install -m 0644 "$1/contents.xml" $2/contents.xml
+    fi
+
+}
 
 create_qcomflash_pkg() {
     # esp image
@@ -72,25 +86,15 @@ create_qcomflash_pkg() {
     # rootfs image
     install -m 0644 ${IMGDEPLOYDIR}/${IMAGE_LINK_NAME}.${IMAGE_QCOMFLASH_FS_TYPE} rootfs.img
 
-    # partition bins
-    # skip BLANK_GPT and WIPE_PARTITIONS for rawprogram xml files
+    # partition bins/xml files
     if [ -n "${QCOM_PARTITION_FILES_SUBDIR}" ]; then
-        for pbin in ${DEPLOY_DIR_IMAGE}/${QCOM_PARTITION_FILES_SUBDIR}/gpt_main*.bin \
-                    ${DEPLOY_DIR_IMAGE}/${QCOM_PARTITION_FILES_SUBDIR}/gpt_backup*.bin \
-                    ${DEPLOY_DIR_IMAGE}/${QCOM_PARTITION_FILES_SUBDIR}/gpt_both*.bin \
-                    ${DEPLOY_DIR_IMAGE}/${QCOM_PARTITION_FILES_SUBDIR}/zeros_*.bin \
-                    ${DEPLOY_DIR_IMAGE}/${QCOM_PARTITION_FILES_SUBDIR}/rawprogram[0-9].xml \
-                    ${DEPLOY_DIR_IMAGE}/${QCOM_PARTITION_FILES_SUBDIR}/patch*.xml ; do
-            install -m 0644 ${pbin} .
-        done
-
-        if [ -e "${DEPLOY_DIR_IMAGE}/${QCOM_PARTITION_FILES_SUBDIR}/contents.xml" ]; then
-            install -m 0644 "${DEPLOY_DIR_IMAGE}/${QCOM_PARTITION_FILES_SUBDIR}/contents.xml" contents.xml
-        fi
+        deploy_partition_files ${DEPLOY_DIR_IMAGE}/${QCOM_PARTITION_FILES_SUBDIR} .
     fi
 
     if [ -n "${QCOM_BOOT_FILES_SUBDIR}" ]; then
-        if [ -n "${QCOM_CDT_FILE}" ]; then
+        # install CDT file if present,for targets with spinor, CDT file
+        # will be in spinor subfolder instead of root folder
+        if [ -n "${QCOM_CDT_FILE}" ] && [ -e "${DEPLOY_DIR_IMAGE}/${QCOM_BOOT_FILES_SUBDIR}/${QCOM_CDT_FILE}.bin" ]; then
             install -m 0644 ${DEPLOY_DIR_IMAGE}/${QCOM_BOOT_FILES_SUBDIR}/${QCOM_CDT_FILE}.bin cdt.bin
         fi
 
@@ -118,6 +122,25 @@ create_qcomflash_pkg() {
         if [ -d "${DEPLOY_DIR_IMAGE}/${QCOM_BOOT_FILES_SUBDIR}/sail_nor" ]; then
             install -d sail_nor
             find "${DEPLOY_DIR_IMAGE}/${QCOM_BOOT_FILES_SUBDIR}/sail_nor" -maxdepth 1 -type f -exec install -m 0644 {} sail_nor \;
+        fi
+
+        # SPI-NOR firmware, partition bins, CDT etc.
+        if [ -d "${DEPLOY_DIR_IMAGE}/${QCOM_BOOT_FILES_SUBDIR}/spinor" ]; then
+            install -d spinor
+            find "${DEPLOY_DIR_IMAGE}/${QCOM_BOOT_FILES_SUBDIR}/spinor" -maxdepth 1 -type f -exec install -m 0644 {} spinor \;
+
+            # partition bins/xml files
+            if [ -n "${QCOM_PARTITION_FILES_SUBDIR_SPINOR}" ]; then
+                deploy_partition_files ${DEPLOY_DIR_IMAGE}/${QCOM_PARTITION_FILES_SUBDIR_SPINOR} spinor
+            fi
+
+            # cdt file
+            if [ -n "${QCOM_CDT_FILE}" ]; then
+                install -m 0644 ${DEPLOY_DIR_IMAGE}/${QCOM_BOOT_FILES_SUBDIR}/spinor/${QCOM_CDT_FILE}.bin spinor/cdt.bin
+            fi
+
+            # copy programer to support flash of HLOS images
+            find "${DEPLOY_DIR_IMAGE}/${QCOM_BOOT_FILES_SUBDIR}/spinor" -maxdepth 1 -type f -name 'xbl_s_devprg_ns.melf' -exec install -m 0644 {} . \;
         fi
     fi
 
