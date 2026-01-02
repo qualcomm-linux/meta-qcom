@@ -15,6 +15,7 @@ FW_QCOM_LIST = "\
     ipa_fws.mbn \
     modem.mbn modemuw.jsn \
     slpi.mbn slpir.jsn \
+    wlanmdsp.mbn \
 "
 
 S = "${UNPACKDIR}"
@@ -30,6 +31,7 @@ SPLIT_FIRMWARE_PACKAGES = "\
     linux-firmware-qcom-${FW_QCOM_NAME}-ipa \
     linux-firmware-qcom-${FW_QCOM_NAME}-modem \
     linux-firmware-qcom-${FW_QCOM_NAME}-sensors \
+    linux-firmware-qcom-${FW_QCOM_NAME}-wifi \
     linux-firmware-qcom-adreno-a640 \
 "
 
