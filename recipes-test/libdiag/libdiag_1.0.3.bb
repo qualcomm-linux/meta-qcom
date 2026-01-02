@@ -38,5 +38,5 @@ do_install() {
 
     # Install headers
     install -d ${D}${includedir}/diag
-    install -m 0644 ${S}/usr/include/diag/*.h ${D}${includedir}/
+    install -m 0644 ${S}/usr/include/diag/*.h ${D}${includedir}/diag/
 }
