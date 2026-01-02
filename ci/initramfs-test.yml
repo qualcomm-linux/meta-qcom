@@ -9,6 +9,7 @@ target:
   - initramfs-firmware-dragonboard820c-image
   - initramfs-firmware-dragonboard845c-image
   - initramfs-firmware-qar2130p-image
+  - initramfs-firmware-qcs615-ride-image
   - initramfs-firmware-qcs8300-ride-image
   - initramfs-firmware-rb1-image
   - initramfs-firmware-rb2-image

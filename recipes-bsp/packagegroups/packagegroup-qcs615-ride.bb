@@ -1,4 +1,4 @@
-SUMMARY = "Packages for the QCS615-ADP-Air platform"
+SUMMARY = "Packages for the QCS615-ride platform"
 
 inherit packagegroup
 
