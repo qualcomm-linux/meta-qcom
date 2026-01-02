@@ -5,19 +5,17 @@ SECTION = "devel"
 LICENSE = "BSD-3-Clause"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=424e013ed97b36284f3b9ce27bb16a56"
 
-DEPENDS = "qrtr"
+DEPENDS = "qrtr zstd"
 
-inherit systemd
+inherit systemd meson pkgconfig
 
-SRCREV = "de42697a2466cc5ee267ffe36ab4e8494f005fb0"
+SRCREV = "0ed681362b6f7ac7381e0320501823be6d843006"
 SRC_URI = "git://github.com/linux-msm/${BPN}.git;branch=master;protocol=https \
 "
 
 PV = "0.0+"
 
-do_install () {
-    oe_runmake install DESTDIR=${D} prefix=${prefix} servicedir=${systemd_unitdir}/system
-}
+EXTRA_OEMESON = "-Dsystemd-unit-prefix=${systemd_system_unitdir}"
 
 SYSTEMD_SERVICE:${PN} = "tqftpserv.service"
 RDEPENDS:${PN} += "qrtr"

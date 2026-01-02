@@ -7,15 +7,19 @@ LIC_FILES_CHKSUM = "file://LICENSE;md5=ca25dbf5ebfc1a058bfc657c895aac2f"
 
 inherit systemd
 
-SRCREV = "7a5ae7e0a57be3e09e0256b51b9075ee6b860322"
-SRC_URI = "git://github.com/linux-msm/${BPN}.git;branch=master;protocol=https"
+SRCREV = "44facf5694036ebda53fd09c9535774982df5247"
+SRC_URI = "git://github.com/linux-msm/${BPN}.git;branch=master;protocol=https;tag=v1.1.1"
 DEPENDS = "qmic-native qrtr udev"
-
-PV = "0.2+"
 
 do_install () {
     oe_runmake install DESTDIR=${D} prefix=${prefix} servicedir=${systemd_unitdir}/system
 }
 
+SYSTEMD_PACKAGES = "${PN} ${PN}-dir"
+
 SYSTEMD_SERVICE:${PN} = "rmtfs.service"
 RDEPENDS:${PN} += "qrtr"
+
+PACKAGES += "${PN}-dir"
+SYSTEMD_SERVICE:${PN}-dir = "rmtfs-dir.service"
+RDEPENDS:${PN}-dir += "${PN}"
