@@ -1,0 +1,37 @@
+From 561995d724b53107d8edff5bc84fdcd21aed9c33 Mon Sep 17 00:00:00 2001
+From: Koen Kooi <koen.kooi@oss.qualcomm.com>
+Date: Fri, 11 Jul 2025 10:11:45 +0200
+Subject: [PATCH 3/5] OpenCL wrapper: try loading libOpenCL.so.1 if
+ libOpenCL.so isn't present
+
+On most Linux distributions libOpenCL.so is only available when
+development packages are installed, so try loading libOpenCL.so.1 if
+libOpenCL.so isn't present.
+
+Upstream-Status: Pending
+Signed-off-by: Koen Kooi <koen.kooi@oss.qualcomm.com>
+---
+ tensorflow/lite/delegates/gpu/cl/opencl_wrapper.cc | 7 +++++++
+ 1 file changed, 7 insertions(+)
+
+diff --git a/tensorflow/lite/delegates/gpu/cl/opencl_wrapper.cc b/tensorflow/lite/delegates/gpu/cl/opencl_wrapper.cc
+index 2eb95df35ae..8ac71c9de67 100644
+--- a/tensorflow/lite/delegates/gpu/cl/opencl_wrapper.cc
++++ b/tensorflow/lite/delegates/gpu/cl/opencl_wrapper.cc
+@@ -142,6 +142,13 @@ absl::Status LoadOpenCLOnce() {
+   }
+ #else
+   libopencl = dlopen(kClLibName, RTLD_NOW | RTLD_LOCAL);
++  // If, on Linux, the .so is not installed, but the .so.1 is present, try to load that
++  if (!libopencl) {
++    char kClLibSoName[100];
++    strcpy(kClLibSoName, kClLibName);
++    strcat(kClLibSoName, ".1");
++    libopencl = dlopen(kClLibSoName, RTLD_NOW | RTLD_LOCAL);
++  }
+ #endif
+   if (libopencl) {
+     TFLITE_LOG(INFO) << "Loaded OpenCL library with dlopen.";
+-- 
+2.34.1
+
