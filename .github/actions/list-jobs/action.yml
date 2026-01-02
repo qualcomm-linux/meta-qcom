@@ -1,0 +1,54 @@
+name: List LAVA test jobs for subsequent steps
+inputs:
+  prefix:
+    description: Test job name prefix. Will be used for searching .yaml files
+    required: true
+  build_id:
+    description: "ID of the workflow from which build URL will be downloaded"
+    required: true
+  gh_token:
+    description: "Github token. It's required to download artifacts from the workflow"
+    required: true
+
+outputs:
+  jobmatrix:
+    description: Job matrix composed from downloaded LAVA test job files
+    value: ${{ steps.listjobs.outputs.jobmatrix }}
+runs:
+  using: "composite"
+  steps:
+    - name: 'Download build URLs'
+      uses: actions/download-artifact@v6
+      with:
+        github-token: ${{ inputs.gh_token }}
+        run-id: ${{ inputs.build_id }}
+        pattern: ${{ inputs.prefix }}*
+
+    - name: "List files"
+      shell: bash
+      run: |
+        echo $GITHUB_WORKSPACE
+        ls -R $GITHUB_WORKSPACE
+
+    - name: "List jobs"
+      id: listjobs
+      shell: bash
+      run: |
+        JOBFILES=$(find . -name "*.yaml" | grep "${{ inputs.prefix }}")
+        RESULT_JSON=$(jq -n '{target: []}')
+        for J in $JOBFILES
+          do
+              echo $J
+              NAME=$(echo "$J" | cut --delimiter "/" --field 3)
+              echo $NAME
+              F_TMP="${J#*/}"
+              RESULT_NAME="${F_TMP//\//-}"
+              echo $RESULT_NAME
+              RESULT_JSON=$(echo "$RESULT_JSON" | jq -c --arg path "${J}" --arg result_file "${RESULT_NAME}" --arg name "${NAME}" '.target += [$ARGS.named]')
+              echo "$RESULT_JSON"
+          done
+          echo "$RESULT_JSON"
+
+        echo "jobmatrix=$RESULT_JSON" >> $GITHUB_OUTPUT
+        echo "Preparing testjob files"
+
