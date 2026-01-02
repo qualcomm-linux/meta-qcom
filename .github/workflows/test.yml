@@ -224,26 +224,27 @@ jobs:
     permissions:
       checks: write
       pull-requests: write
+    outputs:
+      summary_id: ${{ steps.generate-summary.outputs.artifact_id }}
 
     steps:
-      - name: Download Artifacts
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Generate Summary
+        id: generate-summary
+        uses: ./.github/actions/test-job-summary
+        with:
+          build_id: ${{ github.run_id }}
+          gh_token: ${{ secrets.GITHUB_TOKEN }}
+          summary_file_name: test_job_summary
+
+      - name: Download Summary
         uses: actions/download-artifact@v6
         with:
-          path: artifacts
-
-      - name: "List files"
-        run: |
-          echo $GITHUB_WORKSPACE
-          ls -R $GITHUB_WORKSPACE
+          artifact-ids: ${{ steps.generate-summary.outputs.artifact_id }}
 
       - name: Publish Test Job Details
         run: |
-          for json_file in $(find ${{ github.workspace }} -name "test-job-*.json")
-          do
-              DEVICE_TYPE=$(cat "$json_file" | jq -r ".requested_device_type")
-              URL=$(cat "$json_file" | jq -r ".url")
-              JOB_ID=$(cat "$json_file" | jq -r ".id")
-              JOB_TITLE=$(cat "$json_file"| jq -r ".description")
-              echo " * [Job $JOB_ID on $DEVICE_TYPE]($URL) - ${JOB_TITLE}"
-              echo " * [Job $JOB_ID on $DEVICE_TYPE]($URL) - ${JOB_TITLE}" >> $GITHUB_STEP_SUMMARY
-          done
+            cat test_job_summary >> $GITHUB_STEP_SUMMARY
