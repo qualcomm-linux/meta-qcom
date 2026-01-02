@@ -28,14 +28,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
 
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Download Artifacts
+      - name: Download Result Summary
+        id: download-result-summary
         uses: actions/download-artifact@v6
         with:
-          path: artifacts
+          artifact-ids: ${{ needs.test.outputs.summary_id }}
+          path: results_summary
 
       - name: Download event file
         uses: actions/download-artifact@v6
@@ -54,16 +52,9 @@ jobs:
         run: |
           echo "## Test run [workflow](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})" > pr-comment.txt
           echo "## Test jobs for commit ${{ github.event.workflow_run.head_sha }}" >> pr-comment.txt
-          for json_file in $(find ${{ github.workspace }} -name "test-job-*.json")
-          do
-              DEVICE_TYPE=$(cat "$json_file" | jq -r ".requested_device_type")
-              URL=$(cat "$json_file" | jq -r ".url")
-              JOB_ID=$(cat "$json_file" | jq -r ".id")
-              JOB_TITLE=$(cat "$json_file"| jq -r ".description")
-              echo " * [Job $JOB_ID on $DEVICE_TYPE]($URL) - ${JOB_TITLE}"
-              echo " * [Job $JOB_ID on $DEVICE_TYPE]($URL) - ${JOB_TITLE}" >> pr-comment.txt
-          done
           PR_NUMBER=$(cat "artifacts/Event File/event.json" | jq -r ".number")
+          RESULT_FILE_NAME=$(find ./results_summary/ -type f)
+          cat "${RESULT_FILE_NAME}" >> pr-comment.txt
           echo "pr_number=$PR_NUMBER" >> $GITHUB_OUTPUT
 
       - name: Comment on PR
