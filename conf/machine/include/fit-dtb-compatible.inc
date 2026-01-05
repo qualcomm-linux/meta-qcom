@@ -1,18 +1,20 @@
 # Add compatible strings for DTBs.
 # FIT_DTB_COMPATIBLE[<dtb_name>] = "<compatible-string>"
-# This variable maps a DTB name (without .dtb extension) to its
-# Device Tree "compatible" string.
+# FIT_DTB_COMPATIBLE[base_dtb_name+overlay1.dtbo+overlay2.dtbo] = "<compatible-string-for-overlay>"
+# This variable maps a DTB name (without .dtb extension) or a combination of base DTB and overlays
+# (e.g., base_dtb_name+overlay1.dtbo+overlay2.dtbo) to its Device Tree "compatible" string.
+
 
 FIT_DTB_COMPATIBLE[apq8016-sbc] = "qcom,apq8016-sbc"
 FIT_DTB_COMPATIBLE[apq8096-db820c] = "qcom,apq8096-sbc"
-FIT_DTB_COMPATIBLE[kaanapali-mtp] = "qcom,kaanapali-mtp"
 FIT_DTB_COMPATIBLE[hamoa-iot-evk] = "qcom,hamoa-evk"
+FIT_DTB_COMPATIBLE[kaanapali-mtp] = "qcom,kaanapali-mtp"
 FIT_DTB_COMPATIBLE[lemans-evk] = "qcom,qcs9075v2-iot"
+FIT_DTB_COMPATIBLE[lemans-evk+lemans-evk-camx.dtbo] = "qcom,qcs9075v2-iot-camx"
 FIT_DTB_COMPATIBLE[lemans-evk-camera-csi1-imx577] = "qcom,lemans-evk"
-FIT_DTB_COMPATIBLE[lemans-evk-camx] = "qcom,qcs9075v2-iot-camx"
 FIT_DTB_COMPATIBLE[monaco-evk] = "qcom,qcs8275-iot"
+FIT_DTB_COMPATIBLE[monaco-evk+monaco-evk-camx.dtbo] = "qcom,qcs8275-iot-camx"
 FIT_DTB_COMPATIBLE[monaco-evk-camera-imx577] = "qcom,monaco-evk"
-FIT_DTB_COMPATIBLE[monaco-evk-camx] = "qcom,qcs8275-iot-camx"
 FIT_DTB_COMPATIBLE[qcm6490-idp] = "qcom,qcm6490-idp"
 FIT_DTB_COMPATIBLE[qcom-apq8064-asus-nexus7-flo] = "qcom,apq8064"
 FIT_DTB_COMPATIBLE[qcom-apq8064-ifc6410] = "qcom,apq8064-ifc6410"
@@ -22,10 +24,10 @@ FIT_DTB_COMPATIBLE[qcom-msm8974-lge-nexus5-hammerhead] = "qcom,msm8974"
 FIT_DTB_COMPATIBLE[qcs404-evb-4000] = "qcom,qcs404-evb-4000"
 FIT_DTB_COMPATIBLE[qcs615-ride] = "qcom,qcs615-adp"
 FIT_DTB_COMPATIBLE[qcs6490-rb3gen2] = "qcom,qcs6490-iot"
+FIT_DTB_COMPATIBLE[qcs6490-rb3gen2+qcs6490-rb3gen2-vision-mezzanine-camx.dtbo] = "qcom,qcs6490-iot-camx"
 FIT_DTB_COMPATIBLE[qcs6490-rb3gen2-vision-mezzanine] = "qcom,qcs6490-iot-subtype2"
-FIT_DTB_COMPATIBLE[qcs6490-rb3gen2-vision-mezzanine-camx] = "qcom,qcs6490-iot-camx"
 FIT_DTB_COMPATIBLE[qcs8300-ride] = "qcom,qcs8300-adp"
-FIT_DTB_COMPATIBLE[qcs8300-ride-camx] = "qcom,qcs8300-adp-camx"
+FIT_DTB_COMPATIBLE[qcs8300-ride+qcs8300-ride-camx.dtbo] = "qcom,qcs8300-adp-camx"
 FIT_DTB_COMPATIBLE[qcs9100-ride] = "qcom,qcs9100-qam"
 FIT_DTB_COMPATIBLE[qcs9100-ride-camx] = "qcom,qcs9100-qam-camx"
 FIT_DTB_COMPATIBLE[qcs9100-ride-r3] = "qcom,qcs9100-qamr2"
