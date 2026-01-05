@@ -3,6 +3,9 @@
 #
 # Syntax:
 # FIT_DTB_COMPATIBLE[<dtb-name>] = "<compatible>[ <compatible>[ <compatible>...]]"
+# This variable also maps a combination of base DTB and overlays
+# Syntax:
+# FIT_DTB_COMPATIBLE[base_dtb_name+overlay1+overlay2] = "<compatible>[ <compatible>[ <compatible>...]]"
 
 FIT_DTB_COMPATIBLE[apq8016-sbc] = "qcom,apq8016-sbc"
 FIT_DTB_COMPATIBLE[apq8096-db820c] = "qcom,apq8096-sbc"
