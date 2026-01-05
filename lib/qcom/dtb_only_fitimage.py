@@ -15,7 +15,7 @@ import shlex
 import subprocess
 import bb
 from typing import Tuple
-from oe.fitimage import ItsNodeRootKernel, get_compatible_from_dtb
+from oe.fitimage import ItsNodeRootKernel, ItsNodeConfiguration, get_compatible_from_dtb
 
 # Custom extension of ItsNodeRootKernel to inject compatible strings
 class QcomItsNodeRoot(ItsNodeRootKernel):
@@ -65,16 +65,77 @@ class QcomItsNodeRoot(ItsNodeRootKernel):
             opt_props,
             compatible_str
         )
-        self._dtbs.append((dtb_node, compatible_str))
+        self._dtbs.append(dtb_node)
 
-    def fitimage_emit_section_config(self):
-        counter = 0
-        for counter, (dtb_node, compatible_str) in enumerate(self._dtbs):
-            # conf-0 corresponds to qcom-metadata.dtb, skipping it as it's metadata-only
-            if counter == 0:
+    def _fitimage_emit_one_section_config(self, conf_node_name, dtb=None):
+        """Emit the fitImage ITS configuration section"""
+        opt_props = {}
+        conf_desc = []
+
+        if dtb:
+            conf_desc.append("FDT blob")
+            opt_props["fdt"] = dtb.name
+            if dtb.compatible:
+                opt_props["compatible"] = dtb.compatible
+
+        ItsNodeConfiguration(
+            conf_node_name,
+            self.configurations,
+            description="FDT Blob",
+            opt_props=opt_props
+        )
+
+    def fitimage_emit_section_config(self, overlay_groups, base_compats, overlay_compats):
+        conf_idx = 1
+        for dtb_node in self._dtbs:
+            # Skip qcom metadata blob
+            if dtb_node.name.endswith("qcom-metadata.dtb"):
                 continue
-            conf_name = f"{self._conf_prefix}{counter}"
-            self._fitimage_emit_one_section_config(conf_name, dtb_node)
+
+            # Add conf- entries only for dtb
+            if dtb_node.name.endswith(".dtb"):
+                conf_name = f"{self._conf_prefix}{conf_idx}"
+                self._fitimage_emit_one_section_config(conf_name, dtb_node)
+
+                dtb_name = dtb_node.name
+                if dtb_name.startswith("fdt-"):
+                    dtb_name = dtb_name[len("fdt-"):]
+                if dtb_name.endswith(".dtb"):
+                    dtb_name = dtb_name[:-len(".dtb")]
+                base_dtb = dtb_name
+
+                # base-only conf compatible
+                base_compat = base_compats.get(base_dtb, "")
+                conf_node = self.configurations.sub_nodes[-1]
+                if base_compat:
+                    conf_node.add_property('compatible', base_compat)
+
+                # Generate conf entries for DTBO groups along with their base DTB
+                for items in overlay_groups.get(base_dtb, []):
+                    fdt_base = f"fdt-{base_dtb}.dtb"
+                    fdt_ovls = []
+                    for it in items:
+                        name = it
+                        if not name.startswith("fdt-"):
+                            name = f"fdt-{name}"
+                        if not name.endswith(".dtbo"):
+                            name = f"{name}.dtbo"
+                        fdt_ovls.append(name)
+
+                    fdtentries = [fdt_base] + fdt_ovls
+                    conf_idx += 1
+                    conf_name = f"{self._conf_prefix}{conf_idx}"
+                    self._fitimage_emit_one_section_config(conf_name, dtb_node)
+
+                    # Lookup overlay compat using '+'-joined key to match BitBake flag
+                    composite_key = "+".join([base_dtb] + items)
+                    compat_str = overlay_compats.get(composite_key, "")
+
+                    conf_node = self.configurations.sub_nodes[-1]
+                    conf_node.add_property('fdt', fdtentries)
+                    conf_node.add_property('compatible', compat_str)
+                conf_idx += 1
+
 
     # Override mkimage assemble to inject extra opts
     def run_mkimage_assemble(self, itsfile, fitfile):
