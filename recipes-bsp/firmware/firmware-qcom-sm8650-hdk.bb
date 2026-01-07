@@ -12,29 +12,15 @@ FW_QCOM_LIST = "\
     adsp.mbn adsp_dtb.mbn adspr.jsn adsps.jsn adspua.jsn battmgr.jsn \
     cdsp.mbn cdsp_dtb.mbn cdspr.jsn \
     ipa_fws.mbn \
-    gen70900_zap.mbn \
 "
 
 S = "${UNPACKDIR}"
 
 require recipes-bsp/firmware/firmware-qcom.inc
 require recipes-bsp/firmware/firmware-qcom-nhlos.inc
-require recipes-bsp/firmware/firmware-qcom-adreno.inc
 
 SPLIT_FIRMWARE_PACKAGES = "\
-    linux-firmware-qcom-${FW_QCOM_NAME}-adreno \
     linux-firmware-qcom-${FW_QCOM_NAME}-audio \
     linux-firmware-qcom-${FW_QCOM_NAME}-compute \
     linux-firmware-qcom-${FW_QCOM_NAME}-ipa \
-    linux-firmware-qcom-adreno-g709 \
 "
-
-do_install:prepend() {
-    if [ -n "${ADRENO_URI}" ] ; then
-        install -d ${D}${FW_QCOM_BASE_PATH}
-        install -m 0644 ${UNPACKDIR}/adreno/${ADRENO_PATH}/gen70900_sqe.fw ${D}${FW_QCOM_BASE_PATH}
-        install -m 0644 ${UNPACKDIR}/adreno/${ADRENO_PATH}/gmu_gen70900.bin ${D}${FW_QCOM_BASE_PATH}
-    fi
-}
-
-FILES:linux-firmware-qcom-adreno-g709 += "${FW_QCOM_BASE_PATH}/gen70900_sqe.fw ${FW_QCOM_BASE_PATH}/gmu_gen70900.bin"
