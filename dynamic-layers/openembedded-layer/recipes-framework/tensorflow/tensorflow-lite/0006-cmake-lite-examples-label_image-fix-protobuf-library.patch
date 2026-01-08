@@ -1,0 +1,32 @@
+From a4dfda5ee9566127837008f4590ed20b6e29cb99 Mon Sep 17 00:00:00 2001
+From: Koen Kooi <koen.kooi@oss.qualcomm.com>
+Date: Thu, 9 Oct 2025 18:47:20 +0200
+Subject: [PATCH 6/6] cmake: lite/examples/label_image: fix protobuf library
+ name
+
+When wanting to link against 'libfoo.so', you need to specify '-lfoo' to
+the linker, not '-llibfoo', so remove the redundant 'lib' prefix for
+protobuf.
+
+Fixes: "ld: cannot find -llibprotobuf: No such file or directory"
+
+Signed-off-by: Koen Kooi <koen.kooi@oss.qualcomm.com>
+Upstream-Status: Pending
+---
+ tensorflow/lite/examples/label_image/CMakeLists.txt | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/tensorflow/lite/examples/label_image/CMakeLists.txt b/tensorflow/lite/examples/label_image/CMakeLists.txt
+index 07ab2343ae5..2fcb09ce96e 100644
+--- a/tensorflow/lite/examples/label_image/CMakeLists.txt
++++ b/tensorflow/lite/examples/label_image/CMakeLists.txt
+@@ -84,5 +84,5 @@ target_compile_options(label_image
+ target_link_libraries(label_image
+   tensorflow-lite
+   profiling_info_proto
+-  libprotobuf
++  protobuf
+ )
+-- 
+2.34.1
+
