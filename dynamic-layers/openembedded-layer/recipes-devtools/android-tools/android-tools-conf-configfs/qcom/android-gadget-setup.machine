@@ -1,6 +1,7 @@
 manufacturer=Qualcomm
 model=`hostname`
 androidserial="$(sed -n -e '/androidboot.serialno/  s/.*androidboot.serialno=\([^ ]*\).*/\1/gp ' /proc/cmdline)"
+[ -z "$androidserial" ] && [ -e /sys/class/dmi/id/product_serial ] && androidserial=$(cat /sys/class/dmi/id/product_serial)
 [ -z "$androidserial" ] && [ -e /dev/sda ] && scsiserialline=$(udevadm info /dev/sda | grep ID_SCSI_SERIAL) && scsiserialvalue=$(echo "$scsiserialline" | awk -F= '{print $2}') && androidserial=$(echo -n "$scsiserialvalue" | crc32)
 [ -z "$androidserial" ] && [ -e /sys/class/mmc_host/mmc0/mmc0:0001/serial ] && androidserial=$(sed 's/0x//' /sys/class/mmc_host/mmc0/mmc0:0001/serial)
 [ -n "$androidserial" ] && serial="$androidserial"
