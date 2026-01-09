@@ -1,0 +1,35 @@
+From f6d1928d09ff7aef2d64542930600a30934ab98b Mon Sep 17 00:00:00 2001
+From: "Petar G. Georgiev" <quic_petarg@quicinc.com>
+Date: Thu, 18 May 2023 11:38:14 +0300
+Subject: [PATCH] waylandsink: support gap buffers
+
+- When a GAP buffer is received for rendering, simply drop it.
+
+Upstream-Status: Submitted [https://gitlab.freedesktop.org/gstreamer/gstreamer/-/merge_requests/10275 ]
+
+Signed-off-by: Petar G. Georgiev <quic_petarg@quicinc.com>
+---
+ ext/wayland/gstwaylandsink.c | 7 +++++++
+ 1 file changed, 7 insertions(+)
+
+diff --git a/ext/wayland/gstwaylandsink.c b/ext/wayland/gstwaylandsink.c
+index a7187c5..b1bec1c 100644
+--- a/ext/wayland/gstwaylandsink.c
++++ b/ext/wayland/gstwaylandsink.c
+@@ -904,6 +904,13 @@ gst_wayland_sink_show_frame (GstVideoSink * vsink, GstBuffer * buffer)
+     }
+   }
+ 
++  /* GAP buffer, nothing further to do */
++  if (gst_buffer_get_size (buffer) == 0 &&
++      GST_BUFFER_FLAG_IS_SET (buffer, GST_BUFFER_FLAG_GAP)) {
++    GST_LOG_OBJECT (self, "buffer %p dropped (gap in the stream)", buffer);
++    goto done;
++  }
++
+   /* make sure that the application has called set_render_rectangle() */
+   if (G_UNLIKELY (gst_wl_window_get_render_rectangle (self->window)->w == 0))
+     goto no_window_size;
+-- 
+2.34.1
+

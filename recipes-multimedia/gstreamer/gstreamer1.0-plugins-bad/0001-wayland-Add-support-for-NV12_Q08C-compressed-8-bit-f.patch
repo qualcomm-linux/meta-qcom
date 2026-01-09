@@ -1,0 +1,118 @@
+From 3dd7f653cd03216302f3c3e1d5e567986c26f3bc Mon Sep 17 00:00:00 2001
+From: Raja Ganapathi Busam <rbusam@qti.qualcomm.com>
+Date: Fri, 9 Jan 2026 15:04:05 +0530
+Subject: [PATCH] wayland: Add support for NV12_Q08C (compressed 8-bit)
+ format
+
+- Add NV12_Q08C to static caps
+- Update the modifier value in set_caps for NV12_Q08C
+- Add NV12_Q08C to shm formats if present in dmabuf formats
+
+Upstream-Status: Denied [Adding NV12_Q08C format is denied by upstream, for compatibility, need to maintain this patch. https://gitlab.freedesktop.org/gstreamer/gstreamer/-/merge_requests/9712 ]
+
+Signed-off-by: Raja Ganapathi Busam <rbusam@qti.qualcomm.com>
+---
+ ext/wayland/gstwaylandsink.c            | 34 +++++++++++++++++++++++++
+ gst-libs/gst/wayland/gstwlvideoformat.c |  1 +
+ gst-libs/gst/wayland/gstwlvideoformat.h |  6 +++--
+ 3 files changed, 39 insertions(+), 2 deletions(-)
+
+diff --git a/ext/wayland/gstwaylandsink.c b/ext/wayland/gstwaylandsink.c
+index 19a3e8c..030fe1b 100644
+--- a/ext/wayland/gstwaylandsink.c
++++ b/ext/wayland/gstwaylandsink.c
+@@ -568,11 +568,30 @@ gst_wayland_sink_get_caps (GstBaseSink * bsink, GstCaps * filter)
+ 
+   if (self->display) {
+     GValue format_list = G_VALUE_INIT;
++    GValue value = G_VALUE_INIT;
++    gint j;
+ 
+     g_value_init (&format_list, GST_TYPE_LIST);
+ 
+     /* Add corresponding dmabuf formats */
+     gst_wl_display_fill_dmabuf_format_list (self->display, &format_list);
++
++    for (j = 0; j < gst_value_list_get_size (&format_list); j++) {
++      const GValue *vlist = gst_value_list_get_value (&format_list, j);
++      guint32 fourcc;
++      guint64 modifier;
++
++      fourcc = gst_video_dma_drm_fourcc_from_string (g_value_get_string (vlist),
++          &modifier);
++      if (fourcc == DRM_FORMAT_NV12 &&
++          modifier == DRM_FORMAT_MOD_QCOM_COMPRESSED) {
++        GST_DEBUG_OBJECT (self, "Found NV12_Q08C in DMAbuf format list");
++        g_value_init (&value, G_TYPE_STRING);
++        g_value_set_static_string (&value,
++            gst_video_format_to_string (GST_VIDEO_FORMAT_NV12_Q08C));
++      }
++    }
++
+     gst_structure_take_value (gst_caps_get_structure (caps, 0), "drm-format",
+         &format_list);
+ 
+@@ -580,6 +599,10 @@ gst_wayland_sink_get_caps (GstBaseSink * bsink, GstCaps * filter)
+ 
+     /* Add corresponding shm formats */
+     gst_wl_display_fill_shm_format_list (self->display, &format_list);
++    if (G_VALUE_HOLDS_STRING (&value)) {
++      GST_DEBUG_OBJECT (self, "Adding NV12_Q08C to SHM format list");
++      gst_value_list_append_and_take_value (&format_list, &value);
++    }
+     gst_structure_take_value (gst_caps_get_structure (caps, 1), "format",
+         &format_list);
+ 
+@@ -706,6 +729,17 @@ gst_wayland_sink_set_caps (GstBaseSink * bsink, GstCaps * caps)
+     if (!gst_video_info_dma_drm_from_video_info (&self->drm_info,
+             &self->video_info, DRM_FORMAT_MOD_LINEAR))
+       gst_video_info_dma_drm_init (&self->drm_info);
++
++    if (GST_VIDEO_INFO_FORMAT (&self->video_info) == GST_VIDEO_FORMAT_NV12_Q08C) {
++      self->drm_info.vinfo = self->video_info;
++      self->drm_info.drm_fourcc = gst_video_dma_drm_fourcc_from_format (
++          GST_VIDEO_FORMAT_NV12);
++      self->drm_info.drm_modifier = DRM_FORMAT_MOD_QCOM_COMPRESSED;
++
++      GST_DEBUG_OBJECT (self, "DRM format %" GST_FOURCC_FORMAT " Modifier "
++          "0x%016" G_GINT64_MODIFIER "x", GST_FOURCC_ARGS (
++              self->drm_info.drm_fourcc), self->drm_info.drm_modifier);
++    }
+   }
+ 
+   self->video_info_changed = TRUE;
+diff --git a/gst-libs/gst/wayland/gstwlvideoformat.c b/gst-libs/gst/wayland/gstwlvideoformat.c
+index 1c0ea59..1800243 100644
+--- a/gst-libs/gst/wayland/gstwlvideoformat.c
++++ b/gst-libs/gst/wayland/gstwlvideoformat.c
+@@ -94,6 +94,7 @@ static const wl_VideoFormat wl_formats[] = {
+   {WL_SHM_FORMAT_YVU420, DRM_FORMAT_YVU420, GST_VIDEO_FORMAT_YV12},
+   {WL_SHM_FORMAT_YUV422, DRM_FORMAT_YUV422, GST_VIDEO_FORMAT_Y42B},
+   {WL_SHM_FORMAT_YUV444, DRM_FORMAT_YUV444, GST_VIDEO_FORMAT_v308},
++  {WL_SHM_FORMAT_NV12, DRM_FORMAT_NV12, GST_VIDEO_FORMAT_NV12_Q08C},
+ };
+ 
+ enum wl_shm_format
+diff --git a/gst-libs/gst/wayland/gstwlvideoformat.h b/gst-libs/gst/wayland/gstwlvideoformat.h
+index 5d7eb7c..a07e110 100644
+--- a/gst-libs/gst/wayland/gstwlvideoformat.h
++++ b/gst-libs/gst/wayland/gstwlvideoformat.h
+@@ -39,11 +39,13 @@ G_BEGIN_DECLS
+ #if G_BYTE_ORDER == G_BIG_ENDIAN
+ #define GST_WL_VIDEO_FORMATS "{ AYUV, RGBA, ARGB, BGRA, ABGR, P010_10LE, " \
+     "NV12_10LE40, v308, RGBx, xRGB, BGRx, xBGR, RGB, BGR, Y42B, NV16, NV61, " \
+-    "YUY2, YVYU, UYVY, I420, YV12, NV12, NV21, Y41B, YUV9, YVU9, BGR16, RGB16 }"
++    "YUY2, YVYU, UYVY, I420, YV12, NV12, NV21, Y41B, YUV9, YVU9, BGR16, RGB16, " \
++    "NV12_Q08C }"
+ #elif G_BYTE_ORDER == G_LITTLE_ENDIAN
+ #define GST_WL_VIDEO_FORMATS "{ AYUV, RGBA, ARGB, BGRA, ABGR, P010_10LE, " \
+     "NV12_10LE40, v308, RGBx, xRGB, BGRx, xBGR, RGB, BGR, Y42B, NV16, NV61, " \
+-    "YUY2, YVYU, UYVY, I420, YV12, NV12, NV21, Y41B, YUV9, YVU9, BGR16, RGB16 }"
++    "YUY2, YVYU, UYVY, I420, YV12, NV12, NV21, Y41B, YUV9, YVU9, BGR16, RGB16, " \
++    "NV12_Q08C }"
+ #endif
+ 
+ GST_WL_API
+-- 
+2.34.1
+

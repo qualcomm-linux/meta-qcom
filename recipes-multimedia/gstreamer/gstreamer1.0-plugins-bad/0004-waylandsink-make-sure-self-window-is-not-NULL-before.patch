@@ -1,0 +1,49 @@
+From 15e8f4f0a5cf0fdc7ad4c087225b921f302a13f0 Mon Sep 17 00:00:00 2001
+From 96b800f82a3084eec8e4e970a7f5ce6743967e45 Mon Sep 17 00:00:00 2001
+From: Michael Olbrich <m.olbrich@pengutronix.de>
+Date: Wed, 25 Jun 2025 16:17:58 +0200
+Subject: [PATCH] waylandsink: make sure self->window is not NULL before using
+ it
+
+self->window is created with the first frame, so it is not available when
+properties are set during construction of the element.
+Skip calling gst_wl_window_ensure_fullscreen() in this case.
+
+The window is already constructed with the current configured fullscreen state,
+nothing else in needed here.
+
+Without this, running e.g. 'gst-launch-1.0 -v videotestsrc ! waylandsink
+fullscreen=true' will result in:
+
+GStreamer-Wayland-CRITICAL **: 14:11:19.921: gst_wl_window_ensure_fullscreen: assertion 'self' failed
+
+Part-of: <https://gitlab.freedesktop.org/gstreamer/gstreamer/-/merge_requests/9283>
+
+Upstream-Status: Backport [https://gitlab.freedesktop.org/gstreamer/gstreamer/-/commit/96b800f82a3084eec8e4e970a7f5ce6743967e45 ]
+---
+ ext/wayland/gstwaylandsink.c | 8 +++++---
+ 1 file changed, 5 insertions(+), 3 deletions(-)
+
+diff --git a/ext/wayland/gstwaylandsink.c b/ext/wayland/gstwaylandsink.c
+index b1bec1c..a4c911d 100644
+--- a/ext/wayland/gstwaylandsink.c
++++ b/ext/wayland/gstwaylandsink.c
+@@ -209,10 +209,12 @@ gst_wayland_sink_set_fullscreen (GstWaylandSink * self, gboolean fullscreen)
+   if (fullscreen == self->fullscreen)
+     return;
+ 
+-  g_mutex_lock (&self->render_lock);
+   self->fullscreen = fullscreen;
+-  gst_wl_window_ensure_fullscreen (self->window, fullscreen);
+-  g_mutex_unlock (&self->render_lock);
++  if (self->window) {
++    g_mutex_lock (&self->render_lock);
++    gst_wl_window_ensure_fullscreen (self->window, fullscreen);
++    g_mutex_unlock (&self->render_lock);
++  }
+ }
+ 
+ static void
+-- 
+2.34.1
+
