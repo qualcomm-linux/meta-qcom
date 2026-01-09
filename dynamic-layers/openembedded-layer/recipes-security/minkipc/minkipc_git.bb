@@ -33,6 +33,7 @@ FILES:${PN}-qteesupplicant = "${bindir}/qtee_supplicant \
                               ${nonarch_libdir}/udev/rules.d/99-qcomtee-udev.rules \
 "
 
+RDEPENDS:${PN}-qteesupplicant = " ${PN}"
 # Currently, this recipe only builds and installs for ARMv8 (aarch64) machine.
 COMPATIBLE_MACHINE = "^$"
 COMPATIBLE_MACHINE:aarch64 = "(.*)"
