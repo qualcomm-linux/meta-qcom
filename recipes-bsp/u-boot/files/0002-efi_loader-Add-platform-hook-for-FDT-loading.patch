@@ -1,0 +1,83 @@
+From 3612d5e11184e4aa50f1183c7c7d14ee4f834e20 Mon Sep 17 00:00:00 2001
+From: Aswin Murugan <aswin.murugan@oss.qualcomm.com>
+Date: Tue, 6 Jan 2026 17:51:32 +0530
+Subject: [PATCH 2/5] efi_loader: Add platform hook for FDT loading
+
+Introduce a weak function efi_load_platform_fdt() to allow platforms
+to provide custom device tree selection logic. This enables platforms
+with special requirements (such as multi-DTB selection based on
+hardware detection) to load fdt.
+
+The default weak implementation does nothing, Platforms can provide
+a strong implementation to load platform-specific device trees.
+
+Signed-off-by: Aswin Murugan <aswin.murugan@oss.qualcomm.com>
+---
+ include/efi_loader.h         |  2 ++
+ lib/efi_loader/efi_bootmgr.c |  4 ++++
+ lib/efi_loader/efi_fdt.c     | 23 +++++++++++++++++++++++
+ 3 files changed, 29 insertions(+)
+
+diff --git a/include/efi_loader.h b/include/efi_loader.h
+index 3e70ac07055..62c3df48f71 100644
+--- a/include/efi_loader.h
++++ b/include/efi_loader.h
+@@ -1303,4 +1303,6 @@ int efi_get_distro_fdt_name(char *fname, int size, int seq);
+ 
+ void efi_load_distro_fdt(efi_handle_t handle, void **fdt, efi_uintn_t *fdt_size);
+ 
++void efi_load_platform_fdt(efi_handle_t handle, void **fdt, efi_uintn_t *fdt_size);
++
+ #endif /* _EFI_LOADER_H */
+diff --git a/lib/efi_loader/efi_bootmgr.c b/lib/efi_loader/efi_bootmgr.c
+index a687f4d8e85..ed06a65feb7 100644
+--- a/lib/efi_loader/efi_bootmgr.c
++++ b/lib/efi_loader/efi_bootmgr.c
+@@ -1332,6 +1332,10 @@ efi_status_t efi_bootmgr_run(void *fdt)
+ 			efi_load_distro_fdt(handle, &fdt_distro, &fdt_size);
+ 			fdt = fdt_distro;
+ 		}
++		if (!fdt) {
++			efi_load_platform_fdt(handle, &fdt_distro, &fdt_size);
++			fdt = fdt_distro;
++		}
+ 	}
+ 
+ 	/*
+diff --git a/lib/efi_loader/efi_fdt.c b/lib/efi_loader/efi_fdt.c
+index bfaa9cfc207..bfcfd933adf 100644
+--- a/lib/efi_loader/efi_fdt.c
++++ b/lib/efi_loader/efi_fdt.c
+@@ -78,6 +78,29 @@ int efi_get_distro_fdt_name(char *fname, int size, int seq)
+ 	return 0;
+ }
+ 
++/**
++ * efi_load_platform_fdt() - Platform-specific FDT loading hook (weak)
++ *
++ * @handle:	handle of loaded image
++ * @fdt:	on return device-tree, must be freed via efi_free_pages()
++ * @fdt_size:	buffer size
++ *
++ * This weak function allows platforms to provide custom DTB selection logic.
++ * The default implementation does nothing, allowing the standard distro boot
++ * path to handle FDT loading. Platforms can override this function to
++ * implement custom multi-DTB selection or other platform-specific logic.
++ *
++ * If this function successfully loads a DTB, it should set *fdt to point to
++ * the loaded DTB and return. If it cannot load a DTB, it should set *fdt to
++ * NULL, and the standard distro boot logic will be used as fallback.
++ */
++__weak void efi_load_platform_fdt(efi_handle_t handle, void **fdt,
++				  efi_uintn_t *fdt_size)
++{
++	/* Default: do nothing, let standard distro boot handle it */
++	*fdt = NULL;
++}
++
+ /**
+  * efi_load_distro_fdt() - load distro device-tree
+  *
+-- 
+2.34.1
+
