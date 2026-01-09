@@ -2,6 +2,14 @@
 
 DEPENDS:append:qcom = " skales-native xxd-native"
 
+SRC_URI += " \
+            file://0001-smem-msm-Fix-memory-region-lookup-direct-reg-mapping.patch \
+            file://0002-efi_loader-Add-platform-hook-for-FDT-loading.patch \
+            file://0003-soc-qcom-smem-Added-socinfo-header-file.patch \
+            file://0004-mach-snapdragon-Implement-Qualcomm-multi-DTB-selecti.patch \
+            file://0005-fs-fat-Handle-FAT-sector-size-mismatch.patch \
+          "
+
 # Don't add extra dependencies for non-qcom machines and layers
 COMPILE_EXTRA_DEPENDS = ""
 COMPILE_EXTRA_DEPENDS:qcom = "virtual/kernel:do_deploy"
