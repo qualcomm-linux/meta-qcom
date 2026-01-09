@@ -1,0 +1,498 @@
+From 4cddc38cab1f1e60540861528786d7926f9b5e5c Mon Sep 17 00:00:00 2001
+From: Challa Koti Reddy <challako@qti.qualcomm.com>
+Date: Thu, 8 Jan 2026 09:27:49 +0530
+Subject: [PATCH] refpolicy: Add SELinux policy for qcom location daemons
+
+Adds necessary permissions for qcom_loc_hal_daemon,
+qcom_loc_launcher and test app (running in initrc_t or
+unconfined_t context) for socket creation, communication.
+
+Upstream-Status: Inappropriate [Qualcomm specific change]
+
+Signed-off-by: Challa Koti Reddy <challako@qti.qualcomm.com>
+---
+ .../modules/services/qcom_loc_hal_daemon.fc   |   6 +
+ .../modules/services/qcom_loc_hal_daemon.if   |  57 ++++++
+ .../modules/services/qcom_loc_hal_daemon.te   |  57 ++++++
+ policy/modules/services/qcom_loc_launcher.fc  |  22 +++
+ policy/modules/services/qcom_loc_launcher.if  | 181 ++++++++++++++++++
+ policy/modules/services/qcom_loc_launcher.te  | 109 +++++++++++
+ 6 files changed, 432 insertions(+)
+ create mode 100644 policy/modules/services/qcom_loc_hal_daemon.fc
+ create mode 100644 policy/modules/services/qcom_loc_hal_daemon.if
+ create mode 100644 policy/modules/services/qcom_loc_hal_daemon.te
+ create mode 100644 policy/modules/services/qcom_loc_launcher.fc
+ create mode 100644 policy/modules/services/qcom_loc_launcher.if
+ create mode 100644 policy/modules/services/qcom_loc_launcher.te
+
+diff --git a/policy/modules/services/qcom_loc_hal_daemon.fc b/policy/modules/services/qcom_loc_hal_daemon.fc
+new file mode 100644
+index 000000000..dd606473d
+--- /dev/null
++++ b/policy/modules/services/qcom_loc_hal_daemon.fc
+@@ -0,0 +1,6 @@
++#Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
++#SPDX-License-Identifier: BSD-3-Clause-Clear
++
++#file_context for location hal daemon
++
++/usr/bin/location_hal_daemon -- gen_context(system_u:object_r:qcom_loc_hal_daemon_exec_t,s0)
+diff --git a/policy/modules/services/qcom_loc_hal_daemon.if b/policy/modules/services/qcom_loc_hal_daemon.if
+new file mode 100644
+index 000000000..5b7c3cd73
+--- /dev/null
++++ b/policy/modules/services/qcom_loc_hal_daemon.if
+@@ -0,0 +1,57 @@
++#Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
++#SPDX-License-Identifier: BSD-3-Clause-Clear
++
++## <summary>location hal daemon</summary>
++
++########################################
++## <summary>
++##    Generic rules for location clients.
++## </summary>
++## <desc>
++##    <p>
++##    Generic rules for location clients. Single
++##    macro to include to all location client
++##    related rules.
++##    </p>
++## </desc>
++## <param name="domain">
++##    <summary>
++##    Generic rules for location clients.
++##    </summary>
++## </param>
++#
++interface(`qcom_loc_locclient_generic_rules',`
++    gen_require(`
++        type qcom_loc_hal_daemon_t, qcom_loc_sock_t, qcom_loc_data_t;
++    ')
++    manage_sock_files_pattern($1, qcom_loc_sock_t, qcom_loc_sock_t);
++    allow $1 qcom_loc_hal_daemon_t:unix_dgram_socket sendto;
++    allow qcom_loc_hal_daemon_t $1:unix_dgram_socket sendto;
++')
++
++########################################
++## <summary>
++##       Util interface for adding sendto permission for unix_dgram_socket for location hal daemon services domain.
++## </summary>
++## <desc>
++##    <p>
++##    Allow the specified domain with sendto permission to unix_dgram_socket for location hal daemon services domain.
++##    </p>
++## </desc>
++## <param name="domain">
++##      <summary>
++##      Domain allowed access.
++##      </summary>
++## </param>
++## <param name="type">
++##      <summary>
++##      File type allowed to read/write
++##      </summary>
++## </param>
++#
++interface(`qcom_loc_haldaemon_unix_dgram_sendto',`
++    gen_require(`
++        type qcom_loc_hal_daemon_t;
++    ')
++    allow $1 qcom_loc_hal_daemon_t:unix_dgram_socket sendto;
++')
+diff --git a/policy/modules/services/qcom_loc_hal_daemon.te b/policy/modules/services/qcom_loc_hal_daemon.te
+new file mode 100644
+index 000000000..f17e80ff9
+--- /dev/null
++++ b/policy/modules/services/qcom_loc_hal_daemon.te
+@@ -0,0 +1,57 @@
++#Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
++#SPDX-License-Identifier: BSD-3-Clause-Clear
++
++policy_module(qcom_loc_hal_daemon, 1.0)
++
++type qcom_loc_hal_daemon_t;
++type qcom_loc_hal_daemon_exec_t;
++
++init_daemon_domain(qcom_loc_hal_daemon_t, qcom_loc_hal_daemon_exec_t)
++
++# Send syslog messages.
++logging_send_syslog_msg(qcom_loc_hal_daemon_t)
++logging_manage_runtime_sockets(qcom_loc_hal_daemon_t)
++
++# read location /etc files
++qcom_loc_read_loc_etc_files(qcom_loc_hal_daemon_t)
++
++files_read_etc_files(qcom_loc_hal_daemon_t)
++files_read_etc_runtime_files(qcom_loc_hal_daemon_t)
++
++dev_read_sysfs(qcom_loc_hal_daemon_t)
++dev_read_urand(qcom_loc_hal_daemon_t)
++
++rw_fifo_files_pattern(qcom_loc_hal_daemon_t, self, self);
++
++fs_search_tmpfs(qcom_loc_hal_daemon_t)
++files_read_generic_tmp_symlinks(qcom_loc_hal_daemon_t)
++
++allow qcom_loc_hal_daemon_t self:process getsched;
++
++allow qcom_loc_hal_daemon_t self:{socket udp_socket unix_dgram_socket qipcrtr_socket} create_socket_perms;
++
++qcom_loc_manage_loc_data_files(qcom_loc_hal_daemon_t)
++qcom_loc_manage_loc_sock_files(qcom_loc_hal_daemon_t)
++
++qcom_loc_interact_with_loclauncher(qcom_loc_hal_daemon_t)
++
++allow qcom_loc_hal_daemon_t self:netlink_route_socket r_netlink_socket_perms;
++
++## Read virtual memory overcommit sysctl - /proc/sys/vm/overcommit_memory
++kernel_read_vm_overcommit_sysctl(qcom_loc_hal_daemon_t)
++
++# communicate with self and location daemons
++allow qcom_loc_hal_daemon_t self:unix_dgram_socket sendto;
++qcom_loc_launcherdaemon_unix_dgram_sendto(qcom_loc_hal_daemon_t, {qcom_loc_launcher_t qcom_xtra_daemon_t})
++
++miscfiles_read_localization(qcom_loc_hal_daemon_t)
++
++# add rules for default lca client test app to work
++gen_require(`
++type initrc_t, unconfined_t;
++')
++# initrc_t context is used when test app is launched from adb shell
++qcom_loc_locclient_generic_rules(initrc_t)
++# unconfined_t context is used when test app is launched from ssh session
++qcom_loc_locclient_generic_rules(unconfined_t)
++
+diff --git a/policy/modules/services/qcom_loc_launcher.fc b/policy/modules/services/qcom_loc_launcher.fc
+new file mode 100644
+index 000000000..ad73eabd8
+--- /dev/null
++++ b/policy/modules/services/qcom_loc_launcher.fc
+@@ -0,0 +1,22 @@
++#Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
++#SPDX-License-Identifier: BSD-3-Clause-Clear
++
++#file_context for location launcher and child process
++/usr/bin/loc_launcher      -- gen_context(system_u:object_r:qcom_loc_launcher_exec_t,s0)
++/usr/bin/xtra-daemon       -- gen_context(system_u:object_r:qcom_xtra_daemon_exec_t,s0)
++
++## location data files
++/var/lib/location(/.*)?             gen_context(system_u:object_r:qcom_loc_data_t,s0)
++/var/lib/location-partner(/.*)?     gen_context(system_u:object_r:qcom_loc_data_t,s0)
++
++## socket files
++/run/location(/.*)?          gen_context(system_u:object_r:qcom_loc_sock_t,s0)
++/run/loc_client(/.*)?        gen_context(system_u:object_r:qcom_loc_sock_t,s0)
++/run/loc_client/hal_daemon   gen_context(system_u:object_r:qcom_loc_sock_t,s0)
++
++## location conf files
++/etc/batching.conf  -- gen_context(system_u:object_r:qcom_loc_etc_t,s0)
++/etc/gps.conf       -- gen_context(system_u:object_r:qcom_loc_etc_t,s0)
++/etc/izat.conf      -- gen_context(system_u:object_r:qcom_loc_etc_t,s0)
++/etc/cacert_location.pem  -- gen_context(system_u:object_r:qcom_loc_etc_t,s0)
++
+diff --git a/policy/modules/services/qcom_loc_launcher.if b/policy/modules/services/qcom_loc_launcher.if
+new file mode 100644
+index 000000000..06ee6e4c1
+--- /dev/null
++++ b/policy/modules/services/qcom_loc_launcher.if
+@@ -0,0 +1,181 @@
++#Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
++#SPDX-License-Identifier: BSD-3-Clause-Clear
++
++## <summary>location launcher</summary>
++
++########################################
++## <summary>
++##    Read location conf files in /etc.
++## </summary>
++## <desc>
++##    <p>
++##    Allow the specified domain to read location conf
++##    files in /etc. These files are location framework
++##    related system configuration files
++##    </p>
++## </desc>
++## <param name="domain">
++##    <summary>
++##    Domain allowed access for location conf files.
++##    </summary>
++## </param>
++#
++interface(`qcom_loc_read_loc_etc_files',`
++    gen_require(`
++        type etc_t, qcom_loc_etc_t;
++    ')
++
++    allow $1 etc_t:dir list_dir_perms;
++    read_files_pattern($1, etc_t, qcom_loc_etc_t)
++    read_lnk_files_pattern($1, etc_t, qcom_loc_etc_t)
++')
++
++########################################
++## <summary>
++##       Read, write and manage location data files
++## </summary>
++## <desc>
++##    <p>
++##    Allow the specified domain to manage location data
++##    files. These files are location framework related
++##    files.
++##    </p>
++## </desc>
++## <param name="domain">
++##      <summary>
++##      Domain allowed access.
++##      </summary>
++## </param>
++## <param name="type">
++##      <summary>
++##      File type allowed to read/write
++##      </summary>
++## </param>
++#
++interface(`qcom_loc_manage_loc_data_files',`
++    gen_require(`
++        type var_t, var_lib_t, qcom_loc_data_t;
++    ')
++    allow $1 var_t:dir search_dir_perms;
++    allow $1 var_lib_t:dir search_dir_perms;
++    manage_dirs_pattern($1, qcom_loc_data_t, qcom_loc_data_t)
++    manage_files_pattern($1, qcom_loc_data_t, qcom_loc_data_t)
++    manage_sock_files_pattern($1, qcom_loc_data_t, qcom_loc_data_t)
++')
++
++########################################
++## <summary>
++##       Read, write and manage location socket files
++## </summary>
++## <desc>
++##    <p>
++##    Allow the specified domain to manage location socket
++##    files. These socket files are created by location
++##    daemons or client application for communication.
++##    </p>
++## </desc>
++## <param name="domain">
++##      <summary>
++##      Domain allowed access.
++##      </summary>
++## </param>
++## <param name="type">
++##      <summary>
++##      File type allowed to read/write
++##      </summary>
++## </param>
++#
++interface(`qcom_loc_manage_loc_sock_files',`
++    gen_require(`
++        type qcom_loc_sock_t;
++    ')
++    manage_dirs_pattern($1, qcom_loc_sock_t, qcom_loc_sock_t)
++    manage_sock_files_pattern($1, qcom_loc_sock_t, qcom_loc_sock_t)
++    manage_lnk_files_pattern($1, qcom_loc_sock_t, qcom_loc_sock_t)
++')
++
++########################################
++## <summary>
++##       Add rules for daemons to communicate with loc_launcher
++## </summary>
++## <desc>
++##    <p>
++##    Allow the specified domain to communicate with location launcher
++##    service. These rules are required only for location related
++##    daemons or services.
++##    </p>
++## </desc>
++## <param name="domain">
++##      <summary>
++##      Domain allowed access.
++##      </summary>
++## </param>
++## <param name="type">
++##      <summary>
++##      File type allowed to read/write
++##      </summary>
++## </param>
++#
++interface(`qcom_loc_interact_with_loclauncher',`
++    gen_require(`
++        type qcom_loc_launcher_t;
++    ')
++    allow $1 qcom_loc_launcher_t:unix_stream_socket { connectto rw_stream_socket_perms };
++    allow $1 qcom_loc_launcher_t:unix_dgram_socket { read write };
++    allow $1 qcom_loc_launcher_t:unix_dgram_socket sendto;
++')
++
++########################################
++## <summary>
++##       Util interface for adding sendto permission for unix_dgram_socket for location launcher services domain.
++## </summary>
++## <desc>
++##    <p>
++##    Allow the specified domain with sendto permission to unix_dgram_socket for location launcher services domain.
++##    </p>
++## </desc>
++## <param name="domain">
++##      <summary>
++##      Domain allowed access.
++##      </summary>
++## </param>
++## <param name="type">
++##      <summary>
++##      File type allowed to read/write
++##      </summary>
++## </param>
++#
++interface(`qcom_loc_launcherdaemon_unix_dgram_sendto',`
++    gen_require(`
++        type qcom_loc_launcher_t, qcom_xtra_daemon_t;
++    ')
++    allow $1 $2:unix_dgram_socket sendto;
++')
++
++########################################
++## <summary>
++##       Util interface to set required permission for tcp connect
++## </summary>
++## <desc>
++##    <p>
++##    Allow the specified location domain with permissions for tcp connect operations.
++##    </p>
++## </desc>
++## <param name="domain">
++##      <summary>
++##      Domain allowed access.
++##      </summary>
++## </param>
++## <param name="type">
++##      <summary>
++##      File type allowed to read/write
++##      </summary>
++## </param>
++#
++interface(`qcom_loc_tcp_socket_connect',`
++    gen_require(`
++        type commplex_main_port_t, xen_port_t;
++    ')
++    corenet_tcp_connect_http_port($1)
++    allow $1  self:tcp_socket { read write create connect getattr setopt name_connect getopt };
++')
+diff --git a/policy/modules/services/qcom_loc_launcher.te b/policy/modules/services/qcom_loc_launcher.te
+new file mode 100644
+index 000000000..7a827371c
+--- /dev/null
++++ b/policy/modules/services/qcom_loc_launcher.te
+@@ -0,0 +1,109 @@
++#Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
++#SPDX-License-Identifier: BSD-3-Clause-Clear
++
++policy_module(qcom_loc_launcher, 1.0)
++
++#########################
++## loc-launcher
++type qcom_loc_launcher_t;
++type qcom_loc_launcher_exec_t;
++
++init_daemon_domain(qcom_loc_launcher_t, qcom_loc_launcher_exec_t)
++corecmd_search_bin(qcom_loc_launcher_t)
++
++allow qcom_loc_launcher_t self:capability { setuid setgid net_admin };
++
++# loc-launcher sends signal to child process
++allow qcom_loc_launcher_t { self qcom_xtra_daemon_t }:process signal;
++
++miscfiles_read_localization(qcom_loc_launcher_t)
++
++# read generic SSL/TLS certificates.
++miscfiles_read_generic_certs(qcom_loc_launcher_t)
++
++allow qcom_loc_launcher_t self:netlink_generic_socket create_socket_perms;
++
++#########################
++#### location conf files
++type qcom_loc_etc_t;
++files_type(qcom_loc_etc_t)
++
++#########################
++#### location socket files
++type qcom_loc_sock_t;
++dev_node(qcom_loc_sock_t)
++
++#########################
++#### location data files
++type qcom_loc_data_t;
++files_type(qcom_loc_data_t)
++
++
++#########################
++#### xtra-daemon
++type qcom_xtra_daemon_t;
++type qcom_xtra_daemon_exec_t;
++
++init_daemon_domain(qcom_xtra_daemon_t, qcom_xtra_daemon_exec_t)
++# xtra-daemon is launched by loc_launcher instead of init
++domtrans_pattern(qcom_loc_launcher_t, qcom_xtra_daemon_exec_t, qcom_xtra_daemon_t)
++
++# read certificates in /usr/share/ca-certificates/mozilla for https xtra download
++files_read_usr_files(qcom_xtra_daemon_t, usr_t, usr_t)
++# read generic SSL/TLS certificates.
++miscfiles_read_generic_certs(qcom_xtra_daemon_t)
++
++#########################
++#### common rules for loc-launcher daemons and child process
++
++# Send syslog messages.
++logging_send_syslog_msg({ qcom_loc_launcher_t qcom_xtra_daemon_t })
++logging_manage_runtime_sockets({ qcom_loc_launcher_t qcom_xtra_daemon_t })
++
++# read location /etc files
++qcom_loc_read_loc_etc_files({ qcom_loc_launcher_t qcom_xtra_daemon_t })
++
++files_read_etc_files({ qcom_loc_launcher_t qcom_xtra_daemon_t })
++files_read_etc_runtime_files({ qcom_loc_launcher_t qcom_xtra_daemon_t })
++
++dev_read_sysfs({ qcom_loc_launcher_t qcom_xtra_daemon_t })
++dev_read_urand({ qcom_loc_launcher_t qcom_xtra_daemon_t })
++
++rw_fifo_files_pattern({ qcom_loc_launcher_t qcom_xtra_daemon_t }, self, self)
++
++## Read virtual memory overcommit sysctl - /proc/sys/vm/overcommit_memory
++kernel_read_vm_overcommit_sysctl(qcom_loc_launcher_t)
++kernel_read_vm_overcommit_sysctl(qcom_xtra_daemon_t)
++
++# tmp directory access
++fs_search_tmpfs( { qcom_loc_launcher_t qcom_xtra_daemon_t } )
++files_read_generic_tmp_symlinks({ qcom_loc_launcher_t qcom_xtra_daemon_t })
++
++qcom_loc_manage_loc_data_files( { qcom_loc_launcher_t qcom_xtra_daemon_t } )
++qcom_loc_manage_loc_sock_files({ qcom_loc_launcher_t qcom_xtra_daemon_t })
++
++qcom_loc_interact_with_loclauncher({ qcom_xtra_daemon_t })
++
++## communicate with self and lochald
++allow { qcom_loc_launcher_t qcom_xtra_daemon_t } self:unix_dgram_socket sendto;
++qcom_loc_haldaemon_unix_dgram_sendto( { qcom_loc_launcher_t qcom_xtra_daemon_t } )
++
++allow { qcom_loc_launcher_t qcom_xtra_daemon_t } self:netlink_route_socket r_netlink_socket_perms;
++
++allow { qcom_loc_launcher_t } self:unix_dgram_socket create_socket_perms;
++allow { qcom_loc_launcher_t qcom_xtra_daemon_t } self:udp_socket create_socket_perms;
++allow { qcom_xtra_daemon_t } self:unix_dgram_socket { read write };
++
++# Read from random number generator - /dev/random
++dev_read_rand(qcom_xtra_daemon_t)
++
++# TCP connection required for few
++qcom_loc_tcp_socket_connect({ qcom_xtra_daemon_t })
++
++# read resolv.conf file
++systemd_read_resolved_runtime(qcom_xtra_daemon_t)
++
++# read /etc/hosts
++sysnet_read_config(qcom_xtra_daemon_t)
++
++allow { qcom_loc_launcher_t qcom_xtra_daemon_t } self:qipcrtr_socket create_socket_perms;
+-- 
+2.34.1
+
