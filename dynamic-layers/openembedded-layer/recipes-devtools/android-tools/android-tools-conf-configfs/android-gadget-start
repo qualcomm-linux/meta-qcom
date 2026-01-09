@@ -1,0 +1,35 @@
+#!/bin/sh
+
+set -e
+
+sleep 3
+
+n=0
+while true; do
+    count=`ls /sys/class/udc | wc -l`
+    if [ $count -gt 2 ]; then
+        udcname=a600000.usb
+    else
+        udcname=`ls -1 /sys/class/udc | head -n 1`
+    fi
+
+    if [ -n "$udcname" ] || [ $n -eq 30 ]; then
+        break
+    fi
+
+    sleep 1
+    n=$(expr $n + 1)
+done
+
+n=0
+# Try writing to UDC again as it may fail due to ADB/Diag service dependency
+while true; do
+    configfs_udc=`cat /sys/kernel/config/usb_gadget/adb/UDC`
+    if [ "$configfs_udc" = "$udcname" ] || [ $n -eq 30 ]; then
+        break
+    fi
+
+    echo $udcname > /sys/kernel/config/usb_gadget/adb/UDC
+    sleep 1
+    n=$(expr $n + 1)
+done
