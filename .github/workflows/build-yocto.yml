@@ -2,6 +2,11 @@ name: Build Yocto
 
 on:
   workflow_call:
+    inputs:
+      sdk:
+        required: false
+        type: string
+        default: "0"
     outputs:
       artifacts_url:
         description: "URL to retrieve build artifacts"
@@ -102,6 +107,7 @@ jobs:
           kernel_dirname: ${{matrix.kernel.dirname}}
           cache_dir: ${CACHE_DIR}
           kas: ${KAS_CONTAINER}
+          sdk: ${{inputs.sdk}}
 
   compile:
     needs: compile_warm_up
@@ -187,6 +193,7 @@ jobs:
           kernel_dirname: ${{matrix.kernel.dirname}}
           cache_dir: ${CACHE_DIR}
           kas: ${KAS_CONTAINER}
+          sdk: ${{inputs.sdk}}
 
   publish_summary:
     needs: compile

@@ -14,6 +14,11 @@ repos:
 
   oe-core:
     url: https://github.com/openembedded/openembedded-core
+    patches:
+      plain:
+        repo: meta-qcom
+        path: 0001-Revert-rust-enable-default-uwtable-and-ignore-arm-no.patch
+        path: 0002-Revert-rust-Upgrade-1.91.1-1.92.0.patch
     layers:
       meta:
 

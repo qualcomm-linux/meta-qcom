@@ -1,0 +1,51 @@
+From a9abd687766be71bff9ccfdea3276fab988e8214 Mon Sep 17 00:00:00 2001
+From: Jose Quaresma <jose.quaresma@foundries.io>
+Date: Fri, 9 Jan 2026 16:55:13 +0000
+Subject: [PATCH 1/2] Revert "rust: enable default uwtable and ignore arm
+ no_std test"
+
+This reverts commit f38b4e8b35d6ce2dba9c1f933e3b22b22c065574.
+
+Upstream-Status: Pending
+
+Signed-off-by: Jose Quaresma <jose.quaresma@foundries.io>
+---
+ meta/classes-recipe/rust-target-config.bbclass       |  1 -
+ .../rust/files/rust-oe-selftest.patch                | 12 ------------
+ 2 files changed, 13 deletions(-)
+
+diff --git a/meta/classes-recipe/rust-target-config.bbclass b/meta/classes-recipe/rust-target-config.bbclass
+index 2a06c4ae8b1..33a290412e8 100644
+--- a/meta/classes-recipe/rust-target-config.bbclass
++++ b/meta/classes-recipe/rust-target-config.bbclass
+@@ -418,7 +418,6 @@ def rust_gen_target(d, thing, wd, arch):
+         tspec['llvm-floatabi'] = "soft"
+     elif fpu == "hard":
+         tspec['llvm-floatabi'] = "hard"
+-    tspec['default-uwtable'] = True
+     tspec['dynamic-linking'] = True
+     tspec['executables'] = True
+     tspec['linker-is-gnu'] = True
+diff --git a/meta/recipes-devtools/rust/files/rust-oe-selftest.patch b/meta/recipes-devtools/rust/files/rust-oe-selftest.patch
+index d1fba81612f..b39b326455d 100644
+--- a/meta/recipes-devtools/rust/files/rust-oe-selftest.patch
++++ b/meta/recipes-devtools/rust/files/rust-oe-selftest.patch
+@@ -254,15 +254,3 @@ index a3562f2fd93..d4e52ed91be 100644
+      fn linux_hwcap2_aarch64() {
+          let file =
+              concat!(env!("CARGO_MANIFEST_DIR"), "/src/detect/test_data/linux-hwcap2-aarch64.auxv");
+-diff --git a/tests/ui/no_std/simple-runs.rs b/tests/ui/no_std/simple-runs.rs
+-index af44dfe..e6674e5 100644
+---- a/tests/ui/no_std/simple-runs.rs
+-+++ b/tests/ui/no_std/simple-runs.rs
+-@@ -2,6 +2,7 @@
+- 
+- //@ run-pass
+- //@ compile-flags: -Cpanic=abort
+-+//@ ignore-arm FIXME(#146996)
+- //@ ignore-wasm different `main` convention
+- 
+- #![feature(lang_items)]
+-- 
+2.52.0
+

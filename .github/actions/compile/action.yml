@@ -14,6 +14,9 @@ inputs:
     required: true
   kas:
     required: true
+  sdk:
+    required: false
+    default: "0"
 outputs:
   url:
     description: Location of the published binaries
@@ -57,6 +60,11 @@ runs:
 
         if [ "${{ inputs.machine }}" = "qcom-armv8a" ]; then
           ${{inputs.kas}} build ci/mirror.yml:ci/${{ inputs.machine }}.yml${{ inputs.distro_yaml }}${{ inputs.kernel_yaml }}:ci/initramfs-test.yml
+
+          # SDK only with the default kernel
+          if [ "${{ inputs.sdk }}" = "1" ] && [ "${{ inputs.kernel_yaml }}" = "" ] ; then
+            ${{inputs.kas}} build ci/mirror.yml:ci/${{ inputs.machine }}.yml${{ inputs.distro_yaml }}${{ inputs.kernel_yaml }} --task populate_sdk
+          fi
         fi
 
     - uses: actions/upload-artifact@v4
@@ -83,6 +91,9 @@ runs:
         find $deploy_dir/ -maxdepth 1 -type f -exec cp {} $uploads_dir/ \;
         find $deploy_dir/ -maxdepth 1 -type l \( -name boot-*.img -o -name *.rootfs.ext4.gz -o -name *.rootfs.qcomflash.tar.gz \) -exec cp -d {} $uploads_dir/ \;
         cp buildchart.svg kas-build.yml $uploads_dir/
+        if [ -d $deploy_dir/../../sdk ]; then
+          cp $deploy_dir/../../sdk/* $uploads_dir/
+        fi
 
     - name: Upload private artifacts
       uses: qualcomm-linux/upload-private-artifact-action@v1
