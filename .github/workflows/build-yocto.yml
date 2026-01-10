@@ -36,7 +36,7 @@ jobs:
         run: |
           ${KAS_CONTAINER} lock --update ci/base.yml:ci/qcom-distro.yml
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v6
         with:
           name: kas-lock
           path: ci/*.lock.yml

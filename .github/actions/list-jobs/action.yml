@@ -34,12 +34,12 @@ runs:
       id: listjobs
       shell: bash
       run: |
-        JOBFILES=$(find . -name "*.yaml" | grep "${{ inputs.prefix }}")
+        JOBFILES=$(find . -name "${{ input.prefix }}*.yaml")
         RESULT_JSON=$(jq -n '{target: []}')
         for J in $JOBFILES
           do
               echo $J
-              NAME=$(echo "$J" | cut --delimiter "/" --field 3)
+              NAME=$(basename "$J")
               echo $NAME
               F_TMP="${J#*/}"
               RESULT_NAME="${F_TMP//\//-}"
