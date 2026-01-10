@@ -1,0 +1,6 @@
+header:
+  version: 14
+
+local_conf_header:
+  kernelprovider: |
+    PREFERRED_PROVIDER_virtual/kernel = "linux-qcom-next-rt"
