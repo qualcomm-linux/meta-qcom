@@ -15,7 +15,7 @@ import shlex
 import subprocess
 import bb
 from typing import Tuple
-from oe.fitimage import ItsNodeRootKernel, get_compatible_from_dtb
+from oe.fitimage import ItsNodeRootKernel
 
 # Custom extension of ItsNodeRootKernel to inject compatible strings
 class QcomItsNodeRoot(ItsNodeRootKernel):
