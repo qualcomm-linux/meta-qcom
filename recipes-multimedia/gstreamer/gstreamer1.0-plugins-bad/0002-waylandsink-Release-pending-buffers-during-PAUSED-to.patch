@@ -1,0 +1,71 @@
+From 1ceb41fd9f93e3650edfeb581dd03c1118c7b519 Mon Sep 17 00:00:00 2001
+From: Pratik Pachange <ppachang@qti.qualcomm.com>
+Date: Fri, 9 Jan 2026 17:32:32 +0530
+Subject: [PATCH] waylandsink: Release pending buffers during PAUSED to
+ READY state change
+
+Add functionality to forcibly release any pending buffers in the
+wayland compositor at GST_STATE_CHANGE_PAUSED_TO_READY. This is
+needed because some live sources may require all buffers to be
+returned when transitioning to READY state.
+
+Upstream-Status: Submitted [https://gitlab.freedesktop.org/gstreamer/gstreamer/-/merge_requests/10386 ]
+
+Signed-off-by: Pratik Pachange <ppachang@qti.qualcomm.com>
+---
+ ext/wayland/gstwaylandsink.c        |  1 +
+ gst-libs/gst/wayland/gstwldisplay.c | 16 ++++++++++++++++
+ gst-libs/gst/wayland/gstwldisplay.h |  3 +++
+ 3 files changed, 20 insertions(+)
+
+diff --git a/ext/wayland/gstwaylandsink.c b/ext/wayland/gstwaylandsink.c
+index 030fe1b..a7187c5 100644
+--- a/ext/wayland/gstwaylandsink.c
++++ b/ext/wayland/gstwaylandsink.c
+@@ -477,6 +477,7 @@ gst_wayland_sink_change_state (GstElement * element, GstStateChange transition)
+         }
+       }
+ 
++      gst_wl_display_force_release_buffers (self->display);
+       break;
+     case GST_STATE_CHANGE_READY_TO_NULL:
+       g_mutex_lock (&self->display_lock);
+diff --git a/gst-libs/gst/wayland/gstwldisplay.c b/gst-libs/gst/wayland/gstwldisplay.c
+index c580565..2542efb 100644
+--- a/gst-libs/gst/wayland/gstwldisplay.c
++++ b/gst-libs/gst/wayland/gstwldisplay.c
+@@ -767,3 +767,19 @@ gst_wl_display_has_own_display (GstWlDisplay * self)
+ 
+   return priv->own_display;
+ }
++
++void
++gst_wl_display_force_release_buffers (GstWlDisplay * self)
++{
++  GstWlDisplayPrivate *priv = gst_wl_display_get_instance_private (self);
++
++  /* to avoid buffers being unregistered from another thread
++   * at the same time, take their ownership */
++  g_mutex_lock (&priv->buffers_mutex);
++  g_hash_table_foreach (priv->buffers, gst_wl_ref_wl_buffer, NULL);
++  g_mutex_unlock (&priv->buffers_mutex);
++
++  g_hash_table_foreach (priv->buffers,
++      (GHFunc) gst_wl_buffer_force_release_and_unref, NULL);
++  g_hash_table_remove_all (priv->buffers);
++}
+diff --git a/gst-libs/gst/wayland/gstwldisplay.h b/gst-libs/gst/wayland/gstwldisplay.h
+index b2f0ca3..a4b3803 100644
+--- a/gst-libs/gst/wayland/gstwldisplay.h
++++ b/gst-libs/gst/wayland/gstwldisplay.h
+@@ -121,4 +121,7 @@ struct wp_single_pixel_buffer_manager_v1 * gst_wl_display_get_single_pixel_buffe
+ GST_WL_API
+ gboolean gst_wl_display_has_own_display (GstWlDisplay * self);
+ 
++GST_WL_API
++void gst_wl_display_force_release_buffers (GstWlDisplay * self);
++
+ G_END_DECLS
+-- 
+2.34.1
+
