@@ -1,0 +1,51 @@
+From 41b772e4fec4a4bbf5d0ff9a8ee5bc88b7ded428 Mon Sep 17 00:00:00 2001
+From: Raja Ganapathi Busam <quic_rbusam@quicinc.com>
+Date: Thu, 13 Mar 2025 22:11:35 +0530
+Subject: [PATCH] videometa: Update the aggregation logic for stride align
+
+- Stride aligns can be of any number
+- Current aggregation logic for stride align will work only
+  when the stride aligns are power of 2
+- Taking least common multiple of the stride aligns to aggregate
+
+Upstream-Status: Denied [https://gitlab.freedesktop.org/gstreamer/gstreamer/-/merge_requests/10195]
+
+Signed-off-by: Raja Ganapathi Busam <rbusam@qti.qualcomm.com>
+---
+ gst-libs/gst/video/gstvideometa.c | 21 ++++++++++++++++++---
+ 1 file changed, 18 insertions(+), 3 deletions(-)
+
+diff --git a/gst-libs/gst/video/gstvideometa.c b/gst-libs/gst/video/gstvideometa.c
+index e3a2372..974fd2a 100644
+--- a/gst-libs/gst/video/gstvideometa.c
++++ b/gst-libs/gst/video/gstvideometa.c
+@@ -174,9 +174,24 @@ gst_video_meta_api_params_aggregator (GstStructure ** aggregated_params,
+   aggregated_align.padding_right =
+       MAX (align0.padding_right, align1.padding_right);
+
+-  for (int n = 0; n < GST_VIDEO_MAX_PLANES; ++n)
+-    aggregated_align.stride_align[n] =
+-        align0.stride_align[n] | align1.stride_align[n];
++  // Calculate the lowest common multiple for the stride alignments.
++  for (int n = 0; n < GST_VIDEO_MAX_PLANES; ++n) {
++    guint max = 0;
++
++    max = MAX (align0.stride_align[n], align1.stride_align[n]);
++    aggregated_align.stride_align[n] = max;
++
++    if ((align0.stride_align[n] == 0) || (align1.stride_align[n] == 0))
++      continue;
++
++    while (
++        ((aggregated_align.stride_align[n] + 1) % (align0.stride_align[n] + 1)
++            != 0)
++        || ((aggregated_align.stride_align[n] + 1)
++                % (align1.stride_align[n] + 1)
++            != 0))
++      aggregated_align.stride_align[n] += max + 1;
++  }
+
+   *aggregated_params = gst_structure_new_empty ("video-meta");
+
+--
+2.34.1
