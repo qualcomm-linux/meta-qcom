@@ -8,6 +8,7 @@ inherit dtb-fit-image
 
 DTBBIN_DEPLOYDIR = "${WORKDIR}/qcom_dtbbin_deploy-${PN}"
 DTBBIN_SIZE ?= "4096"
+MULTIDTB_NAME ?= "multi-dtb"
 
 do_qcom_dtbbin_deploy[depends] += "dosfstools-native:do_populate_sysroot mtools-native:do_populate_sysroot"
 do_qcom_dtbbin_deploy[cleandirs] = "${DTBBIN_DEPLOYDIR}"
@@ -24,9 +25,9 @@ do_qcom_dtbbin_deploy() {
         rm -rf ${DTBBIN_DEPLOYDIR}/$dtb_base_name
     done
 
-    # Generate qclinux_fit.img along side combined-dtb.dtb
-    mkfs.vfat -S ${QCOM_VFAT_SECTOR_SIZE} -C ${DTBBIN_DEPLOYDIR}/multi-dtb.vfat ${DTBBIN_SIZE}
-    mcopy -i "${DTBBIN_DEPLOYDIR}/multi-dtb.vfat" -vsmpQ ${DEPLOY_DIR_IMAGE}/qclinuxfitImage ::/qclinux_fit.img
+    # Generate image with qclinuxfitImage along side individual dtb images
+    mkfs.vfat -S ${QCOM_VFAT_SECTOR_SIZE} -C ${DTBBIN_DEPLOYDIR}/dtb-${MULTIDTB_NAME}-image.vfat ${DTBBIN_SIZE}
+    mcopy -i "${DTBBIN_DEPLOYDIR}/dtb-${MULTIDTB_NAME}-image.vfat" -vsmpQ ${DEPLOY_DIR_IMAGE}/qclinuxfitImage ::/qclinux_fit.img
 }
 addtask qcom_dtbbin_deploy after do_populate_sysroot do_packagedata before do_deploy
 
