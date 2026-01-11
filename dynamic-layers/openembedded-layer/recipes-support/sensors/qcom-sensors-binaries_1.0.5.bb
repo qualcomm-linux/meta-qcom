@@ -5,9 +5,9 @@ validate sensor services functionality through the Sensinghub Interface."
 LICENSE = "LICENSE.qcom-2"
 LIC_FILES_CHKSUM = "file://LICENSE.qcom-2;md5=f33ba334514c4dfabc6ab7377babb377"
 
-PBT_BUILD_DATE = "251216"
+PBT_BUILD_DATE = "260110"
 SRC_URI = "https://qartifactory-edge.qualcomm.com/artifactory/qsc_releases/software/chip/component/sensors.lnx.0.0/${PBT_BUILD_DATE}/prebuilt_yocto/qcom-sensors-prebuilts_${PV}_armv8a.tar.gz"
-SRC_URI[sha256sum] = "f0daac75a263a6931211aa1f2eb2a6b52ffef73c784d0b784f9277371a037d40"
+SRC_URI[sha256sum] = "8b8ab3ccfd286682257bb732b899248f49a0526631a257888df7f90e1930c64d"
 
 S = "${UNPACKDIR}"
 
@@ -25,9 +25,9 @@ do_install() {
     install -d ${D}${libdir}
     install -d ${D}${libdir}/pkgconfig
     install -d ${D}${includedir}
-    install -d ${D}/etc/sensors/config
+    install -d ${D}${sysconfdir}/sensors/config
+    install -d ${D}${sysconfdir}/sensors/registry
     install -d ${D}${systemd_system_unitdir}
-    install -d ${D}/etc/sensors/registry/registry
 
     # Install binaries
     install -m 0755 ${S}/usr/bin/* ${D}${bindir}/
@@ -44,7 +44,9 @@ do_install() {
     oe_libinstall -C ${S}/usr/lib -so libSEESalt ${D}${libdir}
 
     # Install registry and Service files
-    install -m 0644 ${S}/etc/sensors/config/* ${D}/etc/sensors/config/
+    install -m 0644 ${S}/etc/sensors/sns_reg_config ${D}${sysconfdir}/sensors/
+    install -m 0644 ${S}/etc/sensors/config/* ${D}${sysconfdir}/sensors/config/
+    install -m 0644 ${S}/etc/sensors/registry/sns_reg_version ${D}${sysconfdir}/sensors/registry/
     install -m 0644 ${S}${systemd_system_unitdir}/sscrpcd.service ${D}${systemd_system_unitdir}/sscrpcd.service
 
     # Install pkgconfig
