@@ -1,7 +1,6 @@
 DESCRIPTION = "Huge image with all firmware files. This is intended to check for possible conflicts, etc."
 
 PACKAGE_INSTALL = " \
-    linux-firmware \
     ${@bb.utils.contains('DISTRO_FEATURES', 'wifi', 'wireless-regdb-static', '', d)} \
 "
 
