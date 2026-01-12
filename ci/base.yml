@@ -33,6 +33,17 @@ local_conf_header:
     INHERIT += "buildstats-summary"
     INHERIT += "buildhistory"
     INHERIT += "rm_work"
+  diskmon: |
+    BB_DISKMON_DIRS ??= "\
+      STOPTASKS,${TMPDIR},1G,100K \
+      STOPTASKS,${DL_DIR},1G,100K \
+      STOPTASKS,${SSTATE_DIR},1G,100K \
+      STOPTASKS,/tmp,100M,100K \
+      HALT,${TMPDIR},100M,1K \
+      HALT,${DL_DIR},100M,1K \
+      HALT,${SSTATE_DIR},100M,1K \
+      HALT,/tmp,10M,1K"
+
   cmdline: |
     KERNEL_CMDLINE_EXTRA:append = " qcom_scm.download_mode=1"
   qcomflash: |
