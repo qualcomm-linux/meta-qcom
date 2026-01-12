@@ -59,6 +59,10 @@ runs:
           echo "AUTH_HEADER_TOKEN=Q_GITHUB_TOKEN" >> "${VARS_OUT_PATH}/gh-variables.ini"
           echo "TEST_DEFINITIONS_REPOSITORY=https://github.com/qualcomm-linux/qcom-linux-testkit/" >> "${VARS_OUT_PATH}/gh-variables.ini"
           echo "FLASHER_DEVICE_TYPE=qcs" >> "${VARS_OUT_PATH}/gh-variables.ini"
+          # Add pvt tag for iq-9075-evk
+          if [ "${{ inputs.machine }}" = "iq-9075-evk" ]; then
+            echo "TAGS=pvt" >> gh-variables.ini
+          fi
           IMAGE_TYPE="core-image-base"
           if [ "${{ inputs.distro_name }}" = "qcom-distro" ]; then
               IMAGE_TYPE="qcom-multimedia-image"
