@@ -1,0 +1,67 @@
+From 618e42da0ddeb6f1d27c24411a87628e202b139f Mon Sep 17 00:00:00 2001
+From: Tushar Darote <quic_tdarote@quicinc.com>
+Date: Thu, 9 Oct 2025 22:42:17 +0200
+Subject: [PATCH 6/8] feat(tflite): Add dynamic OpenCL library loading support
+
+This change adds support for dynamically loading the OpenCL library by:
+1. Detecting OpenCL installation using pkg-config in CMakeLists.txt
+2. Setting the appropriate library name based on OpenCL version
+3. Passing the library name as a compile-time definition to the OpenCL wrapper
+4. Modifying the OpenCL wrapper to use the configured library name instead of hardcoded defaults
+
+The change allows TensorFlow Lite to properly locate and load OpenCL libraries on systems where the default library naming may differ from the hardcoded "libOpenCL.so" path.
+
+Fixes potential issues with OpenCL library loading on various Linux distributions and systems with non-standard OpenCL installations.
+
+Upstream-Status: Pending
+Change-Id: I8987e4ce0206257b08e9720fee433770d7fefec6
+Signed-off-by: Tushar Darote <quic_tdarote@quicinc.com>
+---
+ tensorflow/lite/CMakeLists.txt                     | 14 ++++++++++++++
+ tensorflow/lite/delegates/gpu/cl/opencl_wrapper.cc |  4 ++++
+ 2 files changed, 18 insertions(+)
+
+diff --git a/tensorflow/lite/CMakeLists.txt b/tensorflow/lite/CMakeLists.txt
+index 3198ec61e0b..591dca9efaa 100644
+--- a/tensorflow/lite/CMakeLists.txt
++++ b/tensorflow/lite/CMakeLists.txt
+@@ -745,6 +745,20 @@ if (NOT BUILD_SHARED_LIBS)
+   list(APPEND TFLITE_TARGET_PUBLIC_OPTIONS "-DTFL_STATIC_LIBRARY_BUILD")
+ endif()
+ 
++find_package(PkgConfig)
++pkg_check_modules(OPENCL opencl)
++
++if(OPENCL_FOUND)
++  string(REGEX MATCH "^[0-9]+" OPENCL_VERSION_MAJOR ${OPENCL_VERSION})
++  set(CL_LIB_NAME "libOpenCL.so.${OPENCL_VERSION_MAJOR}")
++else()
++  set(CL_LIB_NAME "libOpenCL.so")
++endif()
++
++target_compile_definitions(tensorflow-lite
++  PRIVATE CL_LIB_NAME=\"${CL_LIB_NAME}\"
++)
++
+ target_compile_options(tensorflow-lite
+   PUBLIC ${TFLITE_TARGET_PUBLIC_OPTIONS}
+   PRIVATE ${TFLITE_TARGET_PRIVATE_OPTIONS}
+diff --git a/tensorflow/lite/delegates/gpu/cl/opencl_wrapper.cc b/tensorflow/lite/delegates/gpu/cl/opencl_wrapper.cc
+index 2eb95df35ae..49551fd372a 100644
+--- a/tensorflow/lite/delegates/gpu/cl/opencl_wrapper.cc
++++ b/tensorflow/lite/delegates/gpu/cl/opencl_wrapper.cc
+@@ -119,7 +119,11 @@ absl::Status LoadOpenCLOnce() {
+   static const char* kClLibName =
+       "/System/Library/Frameworks/OpenCL.framework/OpenCL";
+ #else
++#ifndef CL_LIB_NAME
+   static const char* kClLibName = "libOpenCL.so";
++#else
++  static const char* kClLibName = CL_LIB_NAME;
++#endif
+ #endif
+ #ifdef __ANDROID__
+   libopencl = AndroidDlopenSphalLibrary(kClLibName, RTLD_NOW | RTLD_LOCAL);
+-- 
+2.34.1
+

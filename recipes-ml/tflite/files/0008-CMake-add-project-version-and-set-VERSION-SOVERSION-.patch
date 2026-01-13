@@ -1,0 +1,49 @@
+From 81a3ce18aec89e72fffb71b5151a84ad288af39a Mon Sep 17 00:00:00 2001
+From: Tushar Darote <tdarote@qti.qualcomm.com>
+Date: Fri, 2 Jan 2026 12:04:09 +0530
+Subject: [PATCH 8/8] CMake: add project version and set VERSION/SOVERSION for
+ tensorflowlite_c
+
+This change updates the CMake configuration for the TensorFlow Lite C API:
+- Adds VERSION 2.20.0 to the `project()` declaration.
+- Sets target properties for `tensorflowlite_c`:
+  - VERSION = ${PROJECT_VERSION}
+  - SOVERSION = ${PROJECT_VERSION_MAJOR}
+
+These changes ensure proper versioning of shared libraries, improve ABI compatibility, and align with packaging best practices.
+
+Upstream-Status: Inappropriate [OE specific]
+Change-Id: I54178fa179b72e4b7c70e24264d9b2c0bde0ef87
+Signed-off-by: Tushar Darote <tdarote@qti.qualcomm.com>
+---
+ tensorflow/lite/c/CMakeLists.txt | 7 ++++++-
+ 1 file changed, 6 insertions(+), 1 deletion(-)
+
+diff --git a/tensorflow/lite/c/CMakeLists.txt b/tensorflow/lite/c/CMakeLists.txt
+index 9fcafb14495..a6891be5869 100644
+--- a/tensorflow/lite/c/CMakeLists.txt
++++ b/tensorflow/lite/c/CMakeLists.txt
+@@ -14,7 +14,7 @@
+ # limitations under the License.
+ 
+ cmake_minimum_required(VERSION 3.16)
+-project(tensorflow-lite-c C CXX)
++project(tensorflow-lite-c VERSION 2.20.0 LANGUAGES C CXX)
+ 
+ option(TFLITE_C_BUILD_SHARED_LIBS "Build shared libraries" ON)
+ 
+@@ -129,6 +129,11 @@ if (TFLITE_C_BUILD_SHARED_LIBS)
+   endif()
+ endif()
+ 
++set_target_properties(tensorflowlite_c PROPERTIES
++  VERSION ${PROJECT_VERSION}
++  SOVERSION ${PROJECT_VERSION_MAJOR}
++)
++
+ target_link_libraries(tensorflowlite_c
+   tensorflow-lite
+ )
+-- 
+2.34.1
+
