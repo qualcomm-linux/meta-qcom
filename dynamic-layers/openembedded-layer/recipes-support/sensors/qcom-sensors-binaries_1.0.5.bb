@@ -11,7 +11,7 @@ SRC_URI[sha256sum] = "8b8ab3ccfd286682257bb732b899248f49a0526631a257888df7f90e19
 
 S = "${UNPACKDIR}"
 
-DEPENDS = "glib-2.0 protobuf sensinghub qmi-framework libdiag fastrpc"
+DEPENDS = "abseil-cpp-legacy glib-2.0 protobuf sensinghub qmi-framework libdiag fastrpc"
 
 inherit systemd
 
