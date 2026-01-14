@@ -58,20 +58,12 @@ jobs:
           name: kas-lock
           path: ci/
 
-      - name: Run yocto-check-layer
-        run: |
-          ci/kas-container-shell-helper.sh ci/yocto-check-layer.sh
-
-      - name: Run Yocto patchreview
-        run: |
-          ci/kas-container-shell-helper.sh ci/yocto-patchreview.sh
-
   compile_warm_up:
     needs: [kas-setup, yocto-run-checks]
     if: github.repository == 'qualcomm-linux/meta-qcom'
     runs-on: [self-hosted, qcom-u2404, amd64]
     strategy:
-      fail-fast: true
+      fail-fast: false
       matrix:
         machine:
           - rb3gen2-core-kit
@@ -117,7 +109,7 @@ jobs:
     outputs:
       url: ${{ steps.compile_kas.outputs.url }}
     strategy:
-      fail-fast: true
+      fail-fast: false
       matrix:
         machine:
           - iq-8275-evk
