@@ -1,0 +1,31 @@
+From 2ebf1716f635bd119cd33f69aaa69b1067e13913 Mon Sep 17 00:00:00 2001
+From: Jose Quaresma <jose.quaresma@foundries.io>
+Date: Wed, 14 Jan 2026 10:07:12 +0000
+Subject: [PATCH] Revert "pseudo: Update to pull in openat2 and efault return
+ code changes"
+
+This reverts commit 51f1388dd1679a28ec3ca468cf16aa0ea32bccf9.
+
+Upstream-Status: Pending
+
+Signed-off-by: Jose Quaresma <jose.quaresma@foundries.io>
+---
+ meta/recipes-devtools/pseudo/pseudo_git.bb | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/meta/recipes-devtools/pseudo/pseudo_git.bb b/meta/recipes-devtools/pseudo/pseudo_git.bb
+index a1a00d1a95c..c18318bd538 100644
+--- a/meta/recipes-devtools/pseudo/pseudo_git.bb
++++ b/meta/recipes-devtools/pseudo/pseudo_git.bb
+@@ -12,7 +12,7 @@ SRC_URI:append:class-nativesdk = " \
+     file://older-glibc-symbols.patch"
+ SRC_URI[prebuilt.sha256sum] = "ed9f456856e9d86359f169f46a70ad7be4190d6040282b84c8d97b99072485aa"
+ 
+-SRCREV = "9ce8c09980af23ebd4ebf072010469882d0459a6"
++SRCREV = "d1db9c219abf92f15303486a409292237f1fc790"
+ PV = "1.9.2+git"
+ 
+ # largefile and 64bit time_t support adds these macros via compiler flags globally
+-- 
+2.52.0
+
