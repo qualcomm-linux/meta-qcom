@@ -12,6 +12,7 @@ PACKAGE_INSTALL += " \
     packagegroup-dragonboard820c-firmware \
     packagegroup-dragonboard845c-firmware \
     packagegroup-hamoa-iot-evk-firmware \
+    packagegroup-purwa-iot-evk-firmware \
     packagegroup-iq-8275-evk-firmware \
     packagegroup-iq-9075-evk-firmware \
     packagegroup-qcs615-ride-firmware \
@@ -24,6 +25,7 @@ PACKAGE_INSTALL += " \
     packagegroup-dragonboard820c-hexagon-dsp-binaries \
     packagegroup-dragonboard845c-hexagon-dsp-binaries \
     packagegroup-hamoa-iot-evk-hexagon-dsp-binaries \
+    packagegroup-purwa-iot-evk-hexagon-dsp-binaries \
     packagegroup-iq-8275-evk-hexagon-dsp-binaries \
     packagegroup-iq-9075-evk-hexagon-dsp-binaries \
     packagegroup-qcs615-ride-hexagon-dsp-binaries \
