@@ -145,6 +145,7 @@ jobs:
         machine:
           - iq-8275-evk
           - iq-9075-evk
+          - iq-x5121-evk
           - iq-x7181-evk
           - kaanapali-mtp
           - qcm6490-idp
