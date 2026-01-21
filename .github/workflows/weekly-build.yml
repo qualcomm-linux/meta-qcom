@@ -1,0 +1,35 @@
+name: Weekly Build
+
+on:
+  schedule:
+  # NOTE - changes to the cron spec should be pushed by https://github.com/quic-yocto-ci
+  # so that build notification emails will be sent out properly.
+  - cron: "13 13 * * 1,4"   # Monday, Thursday job - pick a random "minute"  - top of hour can be busy in github
+
+permissions:
+  checks: write
+  pull-requests: write
+  contents: read
+  packages: read
+
+jobs:
+  build-weekly:
+    uses: ./.github/workflows/build-yocto.yml
+    with:
+      mode: "weekly"
+      sdk: "1"
+  test-weekly:
+    uses: ./.github/workflows/test.yml
+    needs: build-weekly
+    secrets: inherit
+    with:
+      build_id: ${{ github.run_id }}
+  publish-test-results:
+    uses: ./.github/workflows/publish-results.yml
+    needs: test-weekly
+    secrets: inherit
+    with:
+      workflow_id: ${{ github.run_id }}
+      event_name: ${{ github.event_name }}
+      event_file: ${{ github.event_path }}
+      commit: ${{ github.sha }}
