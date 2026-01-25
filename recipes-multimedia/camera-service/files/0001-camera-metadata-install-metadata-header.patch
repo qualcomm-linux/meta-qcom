@@ -1,0 +1,155 @@
+This patch file is from Qualcomm Technologies, Inc. and is provided
+under the following license:
+
+Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
+SPDX-License-Identifier: BSD-3-Clause-Clear
+
+From b4a7b5da6b513fd3f9afe658015b818ccd620fc9 Mon Sep 17 00:00:00 2001
+From: Murali Krishna Bellamkonda <murabell@qti.qualcomm.com>
+Date: Tue, 20 Jan 2026 12:50:25 +0530
+Subject: [PATCH] camera-metadata: install metadata header
+
+- AOSP camera metadata implementation is platform-dependent in the
+  Qualcomm camera stack. Since the IMSDK qmmfsrc plugin relies on
+  camera metadata, this component must remain platform-independent.
+
+- The Plugin and the QMMF client depend on the following open-source
+  metadata headers:
+  * camera_metadata.h
+  * camera_vendor_tags.h
+  * camera_metadata_tags.h
+
+- Because the client and plugin cannot access metadata in camera stack,
+  they will instead use these three headers directly from the Android OS.
+
+Upstream-Status: Inappropriate [OE-specific]
+Reason: This change is only required for QC Yocto integration/packaging
+        and is not intended for upstream.
+Signed-off-by: Murali Krishna Bellamkonda <murabell@qti.qualcomm.com>
+---
+ CMakeLists.txt                               | 19 +++++++++++
+ camera/include/system/camera_metadata.h      |  5 +++
+ camera/include/system/camera_metadata_tags.h | 35 --------------------
+ camera_metadata.pc.in                        |  7 ++++
+ 4 files changed, 31 insertions(+), 35 deletions(-)
+ create mode 100644 CMakeLists.txt
+ create mode 100644 camera_metadata.pc.in
+
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+new file mode 100644
+index 00000000..bef7fdcd
+--- /dev/null
++++ b/CMakeLists.txt
+@@ -0,0 +1,19 @@
++cmake_minimum_required(VERSION 3.16)
++
++project(camera_metadata VERSION 1.0)
++
++# Generate and install pkg-config file
++configure_file(
++    camera_metadata.pc.in
++    ${CMAKE_CURRENT_BINARY_DIR}/camera_metadata.pc
++    @ONLY
++)
++
++install(
++    FILES ${CMAKE_CURRENT_BINARY_DIR}/camera_metadata.pc
++    DESTINATION ${CMAKE_INSTALL_LIBDIR}/pkgconfig
++)
++
++install(DIRECTORY
++  camera/include/system
++  DESTINATION include/camera-metadata)
+diff --git a/camera/include/system/camera_metadata.h b/camera/include/system/camera_metadata.h
+index d99340e1..11b62b6d 100644
+--- a/camera/include/system/camera_metadata.h
++++ b/camera/include/system/camera_metadata.h
+@@ -19,7 +19,12 @@
+ 
+ #include <string.h>
+ #include <stdint.h>
++
++#ifdef HAVE_ANDROID_UTILS
+ #include <cutils/compiler.h>
++#else
++#define ANDROID_API
++#endif
+ 
+ #ifdef __cplusplus
+ extern "C" {
+diff --git a/camera/include/system/camera_metadata_tags.h b/camera/include/system/camera_metadata_tags.h
+index e3425264..d93dd326 100644
+--- a/camera/include/system/camera_metadata_tags.h
++++ b/camera/include/system/camera_metadata_tags.h
+@@ -65,10 +65,6 @@ typedef enum camera_metadata_section {
+     ANDROID_DISTORTION_CORRECTION,
+     ANDROID_HEIC,
+     ANDROID_HEIC_INFO,
+-    ANDROID_AUTOMOTIVE,
+-    ANDROID_AUTOMOTIVE_LENS,
+-    ANDROID_EXTENSION,
+-    ANDROID_JPEGR,
+     ANDROID_SECTION_COUNT,
+ 
+     VENDOR_SECTION = 0x8000
+@@ -113,10 +109,6 @@ typedef enum camera_metadata_section_start {
+                                                                 << 16,
+     ANDROID_HEIC_START             = ANDROID_HEIC              << 16,
+     ANDROID_HEIC_INFO_START        = ANDROID_HEIC_INFO         << 16,
+-    ANDROID_AUTOMOTIVE_START       = ANDROID_AUTOMOTIVE        << 16,
+-    ANDROID_AUTOMOTIVE_LENS_START  = ANDROID_AUTOMOTIVE_LENS   << 16,
+-    ANDROID_EXTENSION_START        = ANDROID_EXTENSION         << 16,
+-    ANDROID_JPEGR_START            = ANDROID_JPEGR             << 16,
+     VENDOR_SECTION_START           = VENDOR_SECTION            << 16
+ } camera_metadata_section_start_t;
+ 
+@@ -573,33 +565,6 @@ typedef enum camera_metadata_tag {
+     ANDROID_HEIC_INFO_MAX_JPEG_APP_SEGMENTS_COUNT,    // byte         | system       | HIDL v3.4
+     ANDROID_HEIC_INFO_END,
+ 
+-    ANDROID_AUTOMOTIVE_LOCATION =                     // enum         | public       | HIDL v3.8
+-            ANDROID_AUTOMOTIVE_START,
+-    ANDROID_AUTOMOTIVE_END,
+-
+-    ANDROID_AUTOMOTIVE_LENS_FACING =                  // enum[]       | public       | HIDL v3.8
+-            ANDROID_AUTOMOTIVE_LENS_START,
+-    ANDROID_AUTOMOTIVE_LENS_END,
+-
+-    ANDROID_EXTENSION_STRENGTH =                      // int32        | fwk_java_public
+-            ANDROID_EXTENSION_START,
+-    ANDROID_EXTENSION_CURRENT_TYPE,                   // int32        | fwk_java_public
+-    ANDROID_EXTENSION_END,
+-
+-    ANDROID_JPEGR_AVAILABLE_JPEG_R_STREAM_CONFIGURATIONS = 
+-                                                      // enum[]       | ndk_public   | HIDL v3.9
+-            ANDROID_JPEGR_START,
+-    ANDROID_JPEGR_AVAILABLE_JPEG_R_MIN_FRAME_DURATIONS,
+-                                                      // int64[]      | ndk_public   | HIDL v3.9
+-    ANDROID_JPEGR_AVAILABLE_JPEG_R_STALL_DURATIONS,   // int64[]      | ndk_public   | HIDL v3.9
+-    ANDROID_JPEGR_AVAILABLE_JPEG_R_STREAM_CONFIGURATIONS_MAXIMUM_RESOLUTION,
+-                                                      // enum[]       | ndk_public   | HIDL v3.9
+-    ANDROID_JPEGR_AVAILABLE_JPEG_R_MIN_FRAME_DURATIONS_MAXIMUM_RESOLUTION,
+-                                                      // int64[]      | ndk_public   | HIDL v3.9
+-    ANDROID_JPEGR_AVAILABLE_JPEG_R_STALL_DURATIONS_MAXIMUM_RESOLUTION,
+-                                                      // int64[]      | ndk_public   | HIDL v3.9
+-    ANDROID_JPEGR_END,
+-
+ } camera_metadata_tag_t;
+ 
+ /**
+diff --git a/camera_metadata.pc.in b/camera_metadata.pc.in
+new file mode 100644
+index 00000000..e4507eb0
+--- /dev/null
++++ b/camera_metadata.pc.in
+@@ -0,0 +1,7 @@
++prefix=@CMAKE_INSTALL_PREFIX@
++includedir=${prefix}/include/camera-metadata
++
++Name: @PROJECT_NAME@
++Description: @PROJECT_DESCRIPTION@
++Version: @PROJECT_VERSION@
++Cflags: -I${includedir}
+-- 
+2.34.1
+
