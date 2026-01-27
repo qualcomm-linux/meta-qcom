@@ -16,4 +16,3 @@ MACHINE_EXTRA_RRECOMMENDS += " \
     packagegroup-qcom-boot-additional \
 "
 
-EXTRA_IMAGEDEPENDS += "firmware-qcom-boot-qcs615"
