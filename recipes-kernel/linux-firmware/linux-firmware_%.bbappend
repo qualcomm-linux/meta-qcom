@@ -3,11 +3,12 @@ FILESEXTRAPATHS:prepend := "${THISDIR}/${PN}:"
 ALTERNATIVES_CLASS = ""
 ALTERNATIVES_CLASS:qcom = "update-alternatives"
 
-WHENCE_CHKSUM:qcom = "fa1ecc68d64a3281098513d08149c230"
+WHENCE_CHKSUM:qcom = "6c66609fecf32d955a6ff58d48c9a89c"
 PATCHTOOL:qcom = "git"
 
 SRC_URI:append:qcom = " \
     file://0001-linux-firmware-qcom-sync-audioreach-firmwares-from-v.patch \
+    file://0001-qcom-Update-audio-topology-for-LEMANS-and-MONACO.patch \
 "
 
 PACKAGES:append:qcom = " \

@@ -1,0 +1,57 @@
+From 180e99d91a50001d782903fc662f2a65faf6b795 Mon Sep 17 00:00:00 2001
+From: Mohammad Rafi Shaik <mohammad.rafi.shaik@oss.qualcomm.com>
+Date: Fri, 23 Jan 2026 15:50:34 +0530
+Subject: [PATCH] qcom: Update audio topology for LEMANS and MONACO
+
+Update LEMANS and MONACO EVK audio topology to support
+stereo channel audio capture.
+Upstream-Status: Denied [https://gitlab.com/kernel-firmware/linux-firmware/-/merge_requests/880/]
+Signed-off-by: Mohammad Rafi Shaik <mohammad.rafi.shaik@oss.qualcomm.com>
+---
+ WHENCE                           |   3 ++-
+ qcom/qcs8300/MONACO-EVK-tplg.bin | Bin 10892 -> 10892 bytes
+ qcom/sa8775p/LEMANS-EVK-tplg.bin | Bin 10892 -> 10892 bytes
+ 3 files changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/WHENCE b/WHENCE
+index 526426b9..c539306e 100644
+--- a/WHENCE
++++ b/WHENCE
+@@ -8749,6 +8749,7 @@ Originates from https://github.com/linux-msm/audioreach-topology.git
+ Driver: qcom-qcs8300 - Qualcomm ASoC topology
+ File: qcom/qcs8300/MONACO-EVK-tplg.bin
+ Version: v0.1.0
++Info: DATE=19.01.2026
+ 
+ Licence: Redistributable. See LICENCE.linaro for details
+ Originates from https://github.com/linux-msm/audioreach-topology.git
+@@ -8759,7 +8760,7 @@ Driver: qcom-qcs9100 - Qualcomm ASoC topology
+ File: qcom/sa8775p/LEMANS-EVK-tplg.bin
+ Link: qcom/qcs9100/LEMANS-EVK-tplg.bin -> ../sa8775p/LEMANS-EVK-tplg.bin
+ Version: v1.0.1
+-Info: DATE=10.01.2026
++Info: DATE=19.01.2026
+ 
+ Licence: Redistributable. See LICENCE.linaro for details
+ Originates from https://github.com/linux-msm/audioreach-topology.git
+diff --git a/qcom/qcs8300/MONACO-EVK-tplg.bin b/qcom/qcs8300/MONACO-EVK-tplg.bin
+index ecb5db48b7053d740487d0152f6ce49f33dd94f4..5ec140479c33b57672cd8b2a326bf3bd6b294102 100644
+GIT binary patch
+delta 15
+WcmeAP?FrowqBzk+XLExh4<`UI0R=(;
+
+delta 17
+YcmeAP?FrowqR7ZN(NTMIgCY+n05>@WPyhe`
+
+diff --git a/qcom/sa8775p/LEMANS-EVK-tplg.bin b/qcom/sa8775p/LEMANS-EVK-tplg.bin
+index b92404bda704a4a134bcc1ae223db26c0d8d8e33..8599c685830c93ae4bd2c37d22f54281ed09a666 100644
+GIT binary patch
+delta 15
+WcmeAP?FrowqBzk+XLExh4<`UI0R=(;
+
+delta 17
+YcmeAP?FrowqR7ZN(NTMIgCY+n05>@WPyhe`
+
+-- 
+2.34.1
+
