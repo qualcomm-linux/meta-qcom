@@ -12,6 +12,11 @@ on:
         description: "URL to retrieve build artifacts"
         value: ${{ jobs.create-output.outputs.url }}
 
+# Concurrency is used to prevent multiple workflows from running for the same PR
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 env:
   CACHE_DIR: /efs/qli/meta-qcom
   KAS_REPO_REF_DIR: /efs/qli/meta-qcom/kas-mirrors
