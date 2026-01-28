@@ -16,6 +16,7 @@ jobs:
   build-nightly:
     uses: ./.github/workflows/build-yocto.yml
     with:
+      mode: "daily"
       sdk: "1"
   test-nightly:
     uses: ./.github/workflows/test.yml
