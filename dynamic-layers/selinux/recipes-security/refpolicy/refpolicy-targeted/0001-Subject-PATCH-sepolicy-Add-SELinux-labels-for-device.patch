@@ -1,0 +1,671 @@
+From 250f6dd437166d673fd51aad867691e0bf458834 Mon Sep 17 00:00:00 2001
+From: Kas User <kas@example.com>
+Date: Fri, 16 Jan 2026 18:10:34 +0530
+Subject: [PATCH] Subject: [PATCH] sepolicy: Add SELinux labels for device
+ nodes and define interfaces for policy reuse This change introduces SELinux
+ labels for several device nodes and adds new refpolicy-style interfaces to
+ manage access to these nodes. The interfaces allow domains to consume these
+ permissions cleanly without duplicating direct allow rules, improving
+ maintainability and modularity of the policy.
+
+Upstream-Status: Inappropriate [Qualcomm specific change]
+Signed-off-by: Jaihind Yadav <jaihindy@jaihindy.qti.qualcomm.com>
+---
+ policy/modules/kernel/devices.fc |  52 ++++
+ policy/modules/kernel/devices.if | 511 +++++++++++++++++++++++++++++++
+ policy/modules/kernel/devices.te |  63 ++++
+ 3 files changed, 626 insertions(+)
+
+diff --git a/policy/modules/kernel/devices.fc b/policy/modules/kernel/devices.fc
+index ab33cde0a..81c790083 100644
+--- a/policy/modules/kernel/devices.fc
++++ b/policy/modules/kernel/devices.fc
+@@ -253,3 +253,55 @@ ifdef(`distro_redhat',`
+ ifdef(`distro_gentoo',`
+ /var/empty/dev		-d	gen_context(system_u:object_r:device_t,s0)
+ ')
++
++/dev/dma_heap/qcom,qseecom    -c gen_context(system_u:object_r:qcom_qseecom_heap_dev_t,s0)
++/dev/dma_heap/qcom,qseecom-ta -c gen_context(system_u:object_r:qcom_qseecom_heap_dev_t,s0)
++/dev/bsg/ufs-bsg0             -c gen_context(system_u:object_r:qcom_ufs_bsg_dev_t,s0)
++/dev/bsg/0:0:0:49476          -c gen_context(system_u:object_r:qcom_ufs_bsg_dev_t,s0)
++/dev/mmcblk0rpmb          -c gen_context(system_u:object_r:qcom_mmc_rpmb_dev_t,s0)
++/dev/smcinvoke                -c gen_context(system_u:object_r:qcom_smcinvoke_dev_t,s0)
++/dev/fastrpc-adsp-secure  -c    gen_context(system_u:object_r:qcom_adsp_secure_device_t,s0)
++/dev/fastrpc-cdsp-secure  -c    gen_context(system_u:object_r:qcom_cdsp_secure_device_t,s0)
++/dev/fastrpc-cdsp1-secure  -c    gen_context(system_u:object_r:qcom_cdsp_secure_device_t,s0)
++/dev/fastrpc-gdsp0-secure  -c    gen_context(system_u:object_r:qcom_gdsp_secure_device_t,s0)
++/dev/fastrpc-gdsp1-secure  -c    gen_context(system_u:object_r:qcom_gdsp_secure_device_t,s0)
++/dev/fastrpc-adsp  -c           gen_context(system_u:object_r:qcom_adsp_device_t,s0)
++/dev/fastrpc-cdsp  -c           gen_context(system_u:object_r:qcom_cdsp_device_t,s0)
++/dev/fastrpc-cdsp1  -c           gen_context(system_u:object_r:qcom_cdsp_device_t,s0)
++/dev/fastrpc-gdsp0  -c           gen_context(system_u:object_r:qcom_gdsp_device_t,s0)
++/dev/fastrpc-gdsp1  -c           gen_context(system_u:object_r:qcom_gdsp_device_t,s0)
++
++/dev/byte-cntr    -c            gen_context(system_u:object_r:qcom_coresight_device_t,s0)
++/dev/byte-cntr1    -c            gen_context(system_u:object_r:qcom_coresight_device_t,s0)
++/dev/tmc_etf0    -c            gen_context(system_u:object_r:qcom_coresight_device_t,s0)
++/dev/tmc_etf1    -c            gen_context(system_u:object_r:qcom_coresight_device_t,s0)
++/dev/tmc_etr0    -c            gen_context(system_u:object_r:qcom_coresight_device_t,s0)
++/dev/tmc_etr1    -c            gen_context(system_u:object_r:qcom_coresight_device_t,s0)
++/dev/stm0    -c            gen_context(system_u:object_r:qcom_coresight_device_t,s0)
++
++#Audio driver nodes
++/dev/dma_heap/qcom,audio-ml   -c gen_context(system_u:object_r:qcom_audioml_heap_device_t,s0)
++/dev/aud_pasthru_adsp         -c gen_context(system_u:object_r:qcom_audio_device_t,s0)
++/dev/msm_audio_mem            -c gen_context(system_u:object_r:qcom_audio_device_t,s0)
++/dev/msm_audio_mem_cma        -c gen_context(system_u:object_r:qcom_audio_device_t,s0)
++
++#rpmsg dev nodes
++/dev/rpmsg_ctrl0 -c gen_context(system_u:object_r:qcom_rpmsg_device_t,s0)
++/dev/rpmsg_ctrl1 -c gen_context(system_u:object_r:qcom_rpmsg_device_t,s0)
++/dev/rpmsg_ctrl2 -c gen_context(system_u:object_r:qcom_rpmsg_device_t,s0)
++
++#Dmabuf Heap Nodes
++/dev/dma_heap/qcom,system    -c gen_context(system_u:object_r:qcom_system_heap_dev_t,s0)
++/dev/dma_heap/qcom,secure-pixel    -c gen_context(system_u:object_r:qcom_secure_pixel_heap_dev_t,s0)
++/dev/dma_heap/qcom,secure-non-pixel    -c gen_context(system_u:object_r:qcom_secure_non_pixel_heap_dev_t,s0)
++
++#Membuf nodes
++/dev/membuf    -c gen_context(system_u:object_r:qcom_membuf_dev_t,s0)
++/dev/mem_buf_vm(/.*)?    -c gen_context(system_u:object_r:qcom_mem_buf_vm_dev_t,s0)
++
++#camera service nodes
++/dev/media[0-2]               -c gen_context(system_u:object_r:qcom_cam_server_dev_t,s0)
++/dev/v4l-subdev[0-9]|1[0-8]   -c gen_context(system_u:object_r:qcom_cam_server_dev_t,s0)
++
++#gpu dev node
++/dev/kgsl-3d0   -c gen_context(system_u:object_r:qcom_gpu_device_t,s0)
+diff --git a/policy/modules/kernel/devices.if b/policy/modules/kernel/devices.if
+index dd8072f37..940fdfe44 100644
+--- a/policy/modules/kernel/devices.if
++++ b/policy/modules/kernel/devices.if
+@@ -6167,3 +6167,514 @@ interface(`dev_unconfined',`
+ 
+ 	typeattribute $1 devices_unconfined_type;
+ ')
++
++# Copyright (c) 2023-2025 Qualcomm Innovation Center, Inc. All rights reserved.
++# SPDX-License-Identifier: BSD-3-Clause-Clear
++
++#####################
++## <summary>
++## Allow allocation of buffer from qseecom heap
++## </summary>
++## <param name="domain">
++##  <summary>
++##  Domain allowed to rw /dev/dma_heap/qseecom*
++##  heaps
++##  </summary>
++## </param>
++#
++
++interface(`qcom_qseecom_alloc_buf_rw',`
++        gen_require(`
++                type qcom_qseecom_heap_dev_t;
++        ')
++
++        allow $1 qcom_qseecom_heap_dev_t:chr_file rw_chr_file_perms;
++')
++
++#####################
++## <summary>
++## Allow open/read/write from smcinvoke device
++## </summary>
++## <param name="domain">
++##  <summary>
++##  Domain allowed rw to smcinvoke device
++##  to communicate with trustzone
++##  </summary>
++## </param>
++#
++
++interface(`qcom_allow_smcinvoke_rw',`
++        gen_require(`
++                type qcom_smcinvoke_dev_t;
++        ')
++
++        allow $1 qcom_smcinvoke_dev_t:chr_file rw_chr_file_perms;
++')
++
++#####################
++## <summary>
++## Allow open/read from adsp device nodes
++## </summary>
++## <param name="domain">
++##  <summary>
++##  Domain allowed rw to adsp device
++##  to communicate with sscrpcd
++##  </summary>
++## </param>
++#
++
++interface(`qcom_allow_adsp_device_rw',`
++        gen_require(`
++                type qcom_adsp_device_t;
++        ')
++
++        allow $1 qcom_adsp_device_t:chr_file rw_chr_file_perms;
++')
++
++#####################
++## <summary>
++## Allow open/read/write from ufs-bsg device
++## </summary>
++## <param name="domain">
++##  <summary>
++##  Domain allowed rw to ufs-bsg0 device
++##  </summary>
++## </param>
++#
++
++interface(`qcom_allow_ufs_bsg_rw',`
++       gen_require(`
++               type qcom_ufs_bsg_dev_t;
++       ')
++
++       allow $1 qcom_ufs_bsg_dev_t:chr_file rw_chr_file_perms;
++')
++
++#####################
++## <summary>
++## Allow open/read/write from mmc rpmb device
++## </summary>
++## <param name="domain">
++##  <summary>
++##  Domain allowed rw to mmc rpmb device
++##  </summary>
++## </param>
++#
++
++interface(`qcom_allow_mmc_rpmb_rw',`
++       gen_require(`
++               type qcom_mmc_rpmb_dev_t;
++       ')
++
++       allow $1 qcom_mmc_rpmb_dev_t:chr_file rw_chr_file_perms;
++')
++
++########################################
++## <summary>
++##      Read Write the audio devices.
++## </summary>
++## <param name="domain">
++##      <summary>
++##      Domain allowed access.
++##      </summary>
++## </param>
++#
++interface(`qcom_dev_audio_rw_device',`
++	gen_require(`
++		type device_t, qcom_audio_device_t;
++	')
++
++	rw_chr_files_pattern($1, device_t, qcom_audio_device_t)
++')
++
++
++########################################
++## <summary>
++##      Allow read/ioctl/open for adsp secure device.
++## </summary>
++## <param name="domain">
++##      <summary>
++##      Domain allowed access.
++##      </summary>
++## </param>
++##
++interface(`qcom_adsp_secure_read_device',`
++   gen_require(`
++       type device_t, qcom_adsp_secure_device_t;
++   ')
++
++   read_chr_files_pattern($1, device_t, qcom_adsp_secure_device_t)
++')
++
++########################################
++## <summary>
++##      Allow read for dmaheap/qcom,audioml device.
++## </summary>
++## <param name="domain">
++##      <summary>
++##      Domain allowed access.
++##      </summary>
++## </param>
++#
++interface(`qcom_audioml_dmabuf_read_device',`
++   gen_require(`
++       type device_t, qcom_audioml_heap_device_t;
++   ')
++
++   read_chr_files_pattern($1, device_t, qcom_audioml_heap_device_t)
++')
++
++########################################
++## <summary>
++##       Add rules for pd_mapper interaction
++## </summary>
++## <desc>
++##    <p>
++##    Allow the pd_mapper domain to read sysfs_t dir, file and link file.
++##    </p>
++## </desc>
++## <param name="domain">
++##      <summary>
++##      Domain allowed access.
++##      </summary>
++## </param>
++## <param name="type">
++##      <summary>
++##      File type allowed to read
++##      </summary>
++## </param>
++#
++interface(`qcom_read_pd_mapper',`
++    gen_require(`
++        type sysfs_t;
++    ')
++    allow $1 sysfs_t:dir read;
++    allow $1 sysfs_t:file { read open };
++    allow $1 sysfs_t:lnk_file read;
++')
++
++#######################################
++## <summary>
++##      Allow read/ioctl/open for cdsp secure device.
++## </summary>
++## <param name="domain">
++##      <summary>
++##      Domain allowed access.
++##      </summary>
++## </param>
++
++interface(`qcom_cdsp_secure_read_device',`
++	gen_require(`
++		type device_t, qcom_cdsp_secure_device_t;
++	')
++	read_chr_files_pattern($1, device_t, qcom_cdsp_secure_device_t)
++')
++
++########################################
++## <summary>
++##      Allow read/ioctl/open for gdsp secure device.
++## </summary>
++## <param name="domain">
++##      <summary>
++##      Domain allowed access.
++##      </summary>
++## </param>
++##
++
++interface(`qcom_gdsp_secure_read_device',`
++   gen_require(`
++       type device_t, qcom_gdsp_secure_device_t;
++   ')
++   read_chr_files_pattern($1, device_t, qcom_gdsp_secure_device_t)
++')
++
++########################################
++## <summary>
++##      Allow read/write/ioctl/open for rpmsg device.
++## </summary>
++## <param name="domain">
++##      <summary>
++##      Domain allowed access.
++##      </summary>
++## </param>
++##
++interface(`qcom_rpmsg_device_rw',`
++   gen_require(`
++       type device_t, qcom_rpmsg_device_t;
++   ')
++    allow $1 qcom_rpmsg_device_t:chr_file rw_chr_file_perms;
++')
++
++####################
++## <summary>
++## Allow allocation of buffer from qcom,system heap
++## </summary>
++## <param name="domain">
++##  <summary>
++##  Domain allowed to rw /dev/dma_heap/qcom,system*
++##  heaps
++##  </summary>
++## </param>
++#
++interface(`qcom_system_alloc_buf_rw',`
++	gen_require(`
++		type qcom_system_heap_dev_t;
++	')
++
++	allow $1 qcom_system_heap_dev_t:chr_file rw_chr_file_perms;
++')
++
++####################
++## <summary>
++## Allow allocation of buffer from qcom,secure-pixel heap
++## </summary>
++## <param name="domain">
++##  <summary>
++##  Domain allowed to rw /dev/dma_heap/qcom,secure-pixel*
++##  heaps
++##  </summary>
++## </param>
++#
++interface(`qcom_secure_pixel_alloc_buf_rw',`
++	gen_require(`
++		type qcom_secure_pixel_heap_dev_t;
++		')
++
++	allow $1 qcom_secure_pixel_heap_dev_t:chr_file rw_chr_file_perms;
++')
++
++####################
++## <summary>
++## Allow allocation of buffer from qcom,secure-non-pixel heap
++## </summary>
++## <param name="domain">
++##  <summary>
++##  Domain allowed to rw /dev/dma_heap/qcom,secure-non-pixel*
++##  heaps
++##  </summary>
++## </param>
++#
++interface(`qcom_secure_non_pixel_alloc_buf_rw',`
++	gen_require(`
++		type qcom_secure_non_pixel_heap_dev_t;
++	')
++
++	allow $1 qcom_secure_non_pixel_heap_dev_t:chr_file rw_chr_file_perms;
++')
++
++#####################
++## <summary>
++## Allow rw access to membuf node
++## </summary>
++## <param name="domain">
++##  <summary>
++##  Domain allowed to rw /dev/membuf*
++##  heaps
++##  </summary>
++## </param>
++##
++interface(`qcom_membuf_rw',`
++	gen_require(`
++		type qcom_membuf_dev_t;
++		')
++
++	allow $1 qcom_membuf_dev_t:chr_file rw_chr_file_perms;
++')
++
++#####################
++## <summary>
++## Allow rw access to mem_buf_vm node
++## </summary>
++## <param name="domain">
++##  <summary>
++##  Domain allowed to rw /dev/mem_buf_vm*
++##  heaps
++##  </summary>
++## </param>
++##
++interface(`qcom_mem_buf_vm_rw',`
++	gen_require(`
++		type qcom_mem_buf_vm_dev_t;
++		')
++
++	allow $1 qcom_mem_buf_vm_dev_t:chr_file rw_chr_file_perms;
++')
++
++########################################
++## <summary>
++##      Search the device.
++## </summary>
++## <param name="domain">
++##      <summary>
++##      Domain allowed access.
++##      </summary>
++## </param>
++#
++interface(`search_dev',`
++    gen_require(`
++        type device_t;
++    ')
++
++    search_dirs_pattern($1,device_t,device_t)
++')
++
++#####################
++## <summary>
++##      Allow read/write camera device
++## </summary>
++## <param name="domain">
++##      <summary>
++##              Domain allowed rw to camera device
++##      </summary>
++## </param>
++#
++interface(`qcom_cam_server_device_rw',`
++    gen_require(`
++        type qcom_cam_server_dev_t;
++    ')
++        allow $1 qcom_cam_server_dev_t:chr_file { rw_chr_file_perms map } ;
++')
++
++########################################
++## <summary>
++##      Read Write the gpu device.
++## </summary>
++## <param name="domain">
++##      <summary>
++##      Domain allowed access.
++##      </summary>
++## </param>
++#
++interface(`qcom_dev_gpu_rw_device',`
++    gen_require(`
++        type device_t, qcom_gpu_device_t;
++    ')
++    rw_chr_files_pattern($1, device_t, qcom_gpu_device_t)
++    allow $1 qcom_gpu_device_t:chr_file map;
++')
++
++########################################
++## <summary>
++##      Read the system device.
++## </summary>
++## <param name="domain">
++##      <summary>
++##      Domain allowed access.
++##      </summary>
++## </param>
++#
++interface(`qcom_dev_read_write_system_dmabuf',`
++    gen_require(`
++        type device_t, system_dmabuf_device_t;
++    ')
++
++    rw_chr_files_pattern($1, device_t, system_dmabuf_device_t)
++')
++
++####################################
++## <summary>
++##  Allow read/Write on cdsp device
++## </summary>
++## <param name="domain">
++##    <summary>
++##    Domain allowed access.
++##    </summary>
++## </param>
++#
++interface(`qcom_cdsp_rw', `
++    gen_require(`
++        type qcom_cdsp_secure_device_t;
++    ')
++     allow $1 qcom_cdsp_secure_device_t:chr_file { rw_chr_file_perms };
++')
++
++####################################
++## <summary>
++##  Allow read/Write on gdsp device
++## </summary>
++## <param name="domain">
++##    <summary>
++##    Domain allowed access.
++##    </summary>
++## </param>
++#
++interface(`qcom_gdsp_rw', `
++    gen_require(`
++        type qcom_gdsp_secure_device_t;
++    ')
++     allow $1 qcom_gdsp_secure_device_t:chr_file { rw_chr_file_perms };
++')
++
++########################################
++## <summary>
++##      Add allow rule for display service to read and getattr /dev/dri dir
++## </summary>
++## <param name="domain">
++##      <summary>
++##      Domain allowed access.
++##      </summary>
++## </param>
++#
++
++interface(`qcom_dev_display_getattr_device',`
++        gen_require(`
++                type device_t;
++        ')
++        allow $1 device_t:dir { getattr search read };
++')
++
++
++########################################
++## <summary>
++##      Search usbfs directories
++## </summary>
++## <param name="domain">
++##      <summary>
++##      Domain allowed access.
++##      </summary>
++## </param>
++#
++interface(`fs_list_usbfs_dirs',`
++        gen_require(`
++                type usbfs_t;
++        ')
++
++        allow $1 usbfs_t:dir list_dir_perms;
++')
++
++########################################
++## <summary>
++##      Read and write usbfs files.
++## </summary>
++## <param name="domain">
++##      <summary>
++##      Domain allowed access.
++##      </summary>
++## </param>
++#
++interface(`fs_rw_usbfs_files',`
++        gen_require(`
++                type usbfs_t;
++        ')
++
++        rw_files_pattern($1, usbfs_t, usbfs_t)
++')
++
++########################################
++## <summary>
++##	Allow permissions for usb_fs mounting
++## </summary>
++## <param name="domain">
++##	<summary>
++##	Domain allowed to mount f_fs.
++##	</summary>
++## </param>
++#
++interface(`fs_mount_usbfs',`
++	gen_require(`
++		type usbfs_t;
++	')
++
++	allow $1 usbfs_t:filesystem {mount};
++')
++
+diff --git a/policy/modules/kernel/devices.te b/policy/modules/kernel/devices.te
+index 84c0069ab..9156a5bb0 100644
+--- a/policy/modules/kernel/devices.te
++++ b/policy/modules/kernel/devices.te
+@@ -467,3 +467,66 @@ allow devices_unconfined_type self:capability sys_rawio;
+ allow devices_unconfined_type device_node:blk_file { execmod execute manage_blk_file_perms map mounton quotaon relabel_blk_file_perms watch watch_mount watch_reads watch_sb watch_with_perm };
+ allow devices_unconfined_type device_node:chr_file { execmod execute manage_chr_file_perms map mounton quotaon relabel_chr_file_perms watch watch_mount watch_reads watch_sb watch_with_perm };
+ allow devices_unconfined_type mtrr_device_t:file { entrypoint exec_file_perms execmod manage_file_perms mounton quotaon relabel_file_perms watch watch_mount watch_reads watch_sb watch_with_perm };
++
++type qcom_audio_device_t;
++dev_node(qcom_audio_device_t)
++
++type qcom_audioml_heap_device_t;
++dev_node(qcom_audioml_heap_device_t)
++
++type qcom_qseecom_heap_dev_t;
++dev_node(qcom_qseecom_heap_dev_t)
++
++type qcom_smcinvoke_dev_t;
++dev_node(qcom_smcinvoke_dev_t)
++
++type qcom_ufs_bsg_dev_t;
++dev_node(qcom_ufs_bsg_dev_t)
++
++type qcom_mmc_rpmb_dev_t;
++dev_node(qcom_mmc_rpmb_dev_t)
++
++type qcom_adsp_secure_device_t;
++dev_node(qcom_adsp_secure_device_t)
++
++type qcom_cdsp_secure_device_t;
++dev_node(qcom_cdsp_secure_device_t)
++
++type qcom_gdsp_secure_device_t;
++dev_node(qcom_gdsp_secure_device_t)
++
++type qcom_adsp_device_t;
++dev_node(qcom_adsp_device_t)
++
++type qcom_cdsp_device_t;
++dev_node(qcom_cdsp_device_t)
++
++type qcom_gdsp_device_t;
++dev_node(qcom_gdsp_device_t)
++
++type qcom_rpmsg_device_t;
++dev_node(qcom_rpmsg_device_t)
++
++type qcom_system_heap_dev_t;
++dev_node(qcom_system_heap_dev_t)
++
++type qcom_secure_pixel_heap_dev_t;
++dev_node(qcom_secure_pixel_heap_dev_t)
++
++type qcom_secure_non_pixel_heap_dev_t;
++dev_node(qcom_secure_non_pixel_heap_dev_t)
++
++type qcom_membuf_dev_t;
++dev_node(qcom_membuf_dev_t)
++
++type qcom_mem_buf_vm_dev_t;
++dev_node(qcom_mem_buf_vm_dev_t)
++
++type qcom_coresight_device_t;
++dev_node(qcom_coresight_device_t)
++
++type qcom_cam_server_dev_t;
++dev_node(qcom_cam_server_dev_t)
++
++type qcom_gpu_device_t;
++dev_node(qcom_gpu_device_t)
+-- 
+2.43.0
+
