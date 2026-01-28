@@ -3,6 +3,11 @@ name: Build Yocto
 on:
   workflow_call:
     inputs:
+      mode:
+        description: "daily or weekly"
+        required: false
+        type: string
+        default: "daily"
       sdk:
         required: false
         type: string
@@ -17,6 +22,14 @@ env:
   KAS_REPO_REF_DIR: /efs/qli/meta-qcom/kas-mirrors
 
 jobs:
+  validate-inputs:
+    runs-on: [self-hosted, qcom-u2404, amd64]
+    steps:
+      - run: |
+          case "${{ inputs.mode }}" in
+            daily|weekly) echo "Running in ${{ inputs.mode }} mode" ;;
+            *) echo "Invalid mode: ${{ inputs.mode }}. Use daily|weekly." && exit 1 ;;
+          esac
   kas-setup:
     if: github.repository_owner == 'qualcomm-linux'
     runs-on: [self-hosted, qcom-u2404, amd64]
@@ -87,9 +100,9 @@ jobs:
         run: |
           ci/kas-container-shell-helper.sh ci/yocto-patchreview.sh
 
-  compile_warm_up:
+  compile_daily_warm_up:
     needs: [kas-setup, yocto-run-checks]
-    if: github.repository_owner == 'qualcomm-linux'
+    if: ${{ github.repository_owner == 'qualcomm-linux' && inputs.mode == 'daily' }}
     runs-on: [self-hosted, qcom-u2404, amd64]
     strategy:
       fail-fast: true
@@ -117,7 +130,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Run kas build
+      - name: Run daily warmup kas build
         uses: ./.github/actions/compile
         with:
           machine: ${{matrix.machine}}
@@ -128,9 +141,9 @@ jobs:
           cache_dir: ${CACHE_DIR}
           sdk: ${{inputs.sdk}}
 
-  compile:
-    needs: compile_warm_up
-    if: github.repository_owner == 'qualcomm-linux'
+  compile_daily:
+    needs: compile_daily_warm_up
+    if: ${{ github.repository_owner == 'qualcomm-linux' && inputs.mode == 'daily' }}
     runs-on: [self-hosted, qcom-u2404, amd64]
     outputs:
       url: ${{ steps.compile_kas.outputs.url }}
@@ -242,7 +255,50 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Run kas build
+      - name: Run daily kas build
+        uses: ./.github/actions/compile
+        id: compile_kas
+        with:
+          machine: ${{matrix.machine}}
+          distro_yaml: ${{matrix.distro.yamlfile}}
+          distro_name: ${{matrix.distro.name}}
+          kernel_yaml: ${{matrix.kernel.yamlfile}}
+          kernel_dirname: ${{matrix.kernel.dirname}}
+          cache_dir: ${CACHE_DIR}
+          kas: ${KAS_CONTAINER}
+          sdk: ${{inputs.sdk}}
+
+  compile_weekly_warm_up:
+    needs: [kas-setup, yocto-run-checks]
+    if: ${{ github.repository_owner == 'qualcomm-linux' && inputs.mode == 'weekly' }}
+    runs-on: [self-hosted, qcom-u2404, amd64]
+    name: ${{ matrix.machine }}/${{ matrix.distro.name }}${{ matrix.kernel.dirname }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run weekly warmup kas build
+        uses: ./.github/actions/compile
+        with:
+          machine: ${{matrix.machine}}
+          distro_yaml: ${{matrix.distro.yamlfile}}
+          distro_name: ${{matrix.distro.name}}
+          kernel_yaml: ${{matrix.kernel.yamlfile}}
+          kernel_dirname: ${{matrix.kernel.dirname}}
+          cache_dir: ${CACHE_DIR}
+          kas: ${KAS_CONTAINER}
+          sdk: ${{inputs.sdk}}
+
+  compile_weekly:
+    needs: [kas-setup, yocto-run-checks]
+    if: ${{ github.repository_owner == 'qualcomm-linux' && inputs.mode == 'weekly' }}
+    runs-on: [self-hosted, qcom-u2404, amd64]
+    outputs:
+      url: ${{ steps.compile_kas.outputs.url }}
+    name: ${{ matrix.machine }}/${{ matrix.distro.name }}${{ matrix.kernel.dirname }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run weekly kas build
         uses: ./.github/actions/compile
         id: compile_kas
         with:
@@ -255,7 +311,8 @@ jobs:
           sdk: ${{inputs.sdk}}
 
   publish_summary:
-    needs: compile
+    needs: [compile_daily, compile_weekly]
+    if: ${{ always() && (needs.compile_daily.result == 'success' || needs.compile_weekly.result == 'success') }}
     runs-on: [self-hosted, qcom-u2404, amd64]
     steps:
       - name: 'Download build URLs'
