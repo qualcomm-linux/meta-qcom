@@ -14,6 +14,8 @@ permissions:
 jobs:
   build:
     uses: ./.github/workflows/build-yocto.yml
+    with:
+      mode: "daily"
   test:
     uses: ./.github/workflows/test.yml
     needs: [build]
