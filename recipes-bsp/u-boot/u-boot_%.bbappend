@@ -1,6 +1,13 @@
 # This is a bbappend to add support for generating Android style boot images for chainloading u-boot from ABL
 
+FILESEXTRAPATHS:prepend:qcom := "${THISDIR}/files:"
+
 DEPENDS:append:qcom = " skales-native xxd-native"
+
+SRC_URI:append:qcom = " \
+    file://0001-smem-msm-Fix-memory-region-lookup-direct-reg-mapping.patch \
+    file://0002-fs-fat-Handle-FAT-sector-size-mismatch.patch \
+"
 
 # Don't add extra dependencies for non-qcom machines and layers
 COMPILE_EXTRA_DEPENDS = ""
