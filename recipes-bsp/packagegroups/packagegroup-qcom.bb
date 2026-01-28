@@ -14,7 +14,7 @@ RDEPENDS:${PN}-boot-essential = " \
     pd-mapper \
     qrtr \
     rmtfs \
-    tqftpserv \
+    virtual-tftp-server \
 "
 
 RDEPENDS:${PN}-boot-additional:append:aarch64 = " \
