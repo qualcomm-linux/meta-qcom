@@ -1,0 +1,6 @@
+Name: tensorflow lite
+Description: tensorflow lite shared library
+Version: 2.20.0
+Requires:
+Libs: -L/usr/lib -ltensorflowlite_c
+Cflags: -I/usr/include
