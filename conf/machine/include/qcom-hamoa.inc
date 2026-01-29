@@ -4,8 +4,6 @@ SOC_FAMILY = "hamoa"
 require conf/machine/include/qcom-base.inc
 require conf/machine/include/qcom-common.inc
 
-QCOM_VFAT_SECTOR_SIZE = "512"
-
 DEFAULTTUNE = "armv8-6a-crypto"
 require conf/machine/include/arm/arch-armv8-6a.inc
 
