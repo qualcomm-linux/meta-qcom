@@ -159,6 +159,14 @@ jobs:
                 name: qcom-distro
                 yamlfile: ':ci/qcom-distro-prop-image.yml'
             kernel:
+                type: rt-6.18
+                dirname: "+linux-qcom-rt-6.18"
+                yamlfile: ":ci/linux-qcom-rt-6.18.yml"
+          - machine: iq-9075-evk
+            distro:
+                name: qcom-distro
+                yamlfile: ':ci/qcom-distro-prop-image.yml'
+            kernel:
                 type: qcom-next-rt
                 dirname: "+linux-qcom-next-rt"
                 yamlfile: ":ci/linux-qcom-next-rt.yml"
