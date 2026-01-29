@@ -1,0 +1,67 @@
+From 62c45defd3223fafc7fd8721c753be0919ae14da Mon Sep 17 00:00:00 2001
+From: Gangabhavani Yenugula <gyenugul@qti.qualcomm.com>
+Date: Tue, 20 Jan 2026 17:22:52 +0530
+Subject: [PATCH] refpolicy: Introduce SELinux domain and policies for
+ pd-mapper service
+
+After labeling pd-mapper bin, pd-mapper.service fails to start under SELinux enforcing mode
+because it lacks permissions to access sysfs nodes and create and communicate with sockets.
+This results in service startup errors.
+
+Introduce SELinux policy rules granting pd-mapper.service the necessary
+permissions to access sysfs nodes, socket creation, and communication.
+
+Upstream-Status: Inappropriate [Qualcomm specific change]
+
+Signed-off-by: Gangabhavani Yenugula <gyenugul@qti.qualcomm.com>
+---
+ policy/modules/services/qcom_pd_mapper.fc |  4 ++++
+ policy/modules/services/qcom_pd_mapper.if |  4 ++++
+ policy/modules/services/qcom_pd_mapper.te | 13 +++++++++++++
+ 3 files changed, 21 insertions(+)
+ create mode 100644 policy/modules/services/qcom_pd_mapper.fc
+ create mode 100644 policy/modules/services/qcom_pd_mapper.if
+ create mode 100644 policy/modules/services/qcom_pd_mapper.te
+
+diff --git a/policy/modules/services/qcom_pd_mapper.fc b/policy/modules/services/qcom_pd_mapper.fc
+new file mode 100644
+index 000000000..e0bc196cf
+--- /dev/null
++++ b/policy/modules/services/qcom_pd_mapper.fc
+@@ -0,0 +1,4 @@
++#Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
++#SPDX-License-Identifier: BSD-3-Clause-Clear
++
++/usr/bin/pd-mapper      --      gen_context(system_u:object_r:qcom_pd_mapper_exec_t,s0)
+diff --git a/policy/modules/services/qcom_pd_mapper.if b/policy/modules/services/qcom_pd_mapper.if
+new file mode 100644
+index 000000000..410c42f92
+--- /dev/null
++++ b/policy/modules/services/qcom_pd_mapper.if
+@@ -0,0 +1,4 @@
++#Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
++#SPDX-License-Identifier: BSD-3-Clause-Clear
++
++## <summary>Interfaces for the pd-mapper service</summary>
+diff --git a/policy/modules/services/qcom_pd_mapper.te b/policy/modules/services/qcom_pd_mapper.te
+new file mode 100644
+index 000000000..9b7e1b70d
+--- /dev/null
++++ b/policy/modules/services/qcom_pd_mapper.te
+@@ -0,0 +1,13 @@
++#Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
++#SPDX-License-Identifier: BSD-3-Clause-Clear
++
++policy_module(qcom_pd_mapper, 1.0)
++
++type qcom_pd_mapper_t;
++type qcom_pd_mapper_exec_t;
++
++init_daemon_domain(qcom_pd_mapper_t, qcom_pd_mapper_exec_t)
++
++dev_read_sysfs(qcom_pd_mapper_t)
++
++allow qcom_pd_mapper_t self:qipcrtr_socket connected_socket_perms;
+-- 
+2.34.1
+
