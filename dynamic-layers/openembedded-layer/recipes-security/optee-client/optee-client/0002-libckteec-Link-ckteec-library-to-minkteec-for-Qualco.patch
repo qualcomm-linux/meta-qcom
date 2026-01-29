@@ -1,0 +1,128 @@
+From ad5cfc73216d00f665e6f4d886e2fd35ba57b7e9 Mon Sep 17 00:00:00 2001
+From: Harshal Dev <harshal.dev@oss.qualcomm.com>
+Date: Mon, 12 Jan 2026 18:06:37 +0530
+Subject: [PATCH] libckteec: Link ckteec library to minkteec for Qualcomm
+ platforms
+
+Link the ckteec library which provides the PKCS#11 standard interface to
+minkteec library which exposes the Global Platform (GP) interface for
+talking to the Qualcomm Trusted Execution Environment (QTEE) on Qualcomm
+platforms.
+
+Currently, QTEE only supports Object-based MINK IPC protocol for
+communication and so, minkteec must be used instead of the teec library
+on Qualcomm platforms to talk to the PKCS#11 Trusted Application via
+conversion between the GP interface and the MINK protocol.
+
+Upstream-Status: Pending
+
+Signed-off-by: Harshal Dev <harshal.dev@oss.qualcomm.com>
+---
+ libckteec/CMakeLists.txt              | 27 ++++++++++++++++++++++-----
+ libckteec/cmake/FindMINKADAPTOR.cmake | 21 +++++++++++++++++++++
+ libckteec/cmake/FindMINKTEEC.cmake    | 21 +++++++++++++++++++++
+ 3 files changed, 64 insertions(+), 5 deletions(-)
+ create mode 100644 libckteec/cmake/FindMINKADAPTOR.cmake
+ create mode 100644 libckteec/cmake/FindMINKTEEC.cmake
+
+diff --git a/libckteec/CMakeLists.txt b/libckteec/CMakeLists.txt
+index 4b6ccc7..cbac0a9 100644
+--- a/libckteec/CMakeLists.txt
++++ b/libckteec/CMakeLists.txt
+@@ -12,6 +12,26 @@ endif()
+ 
+ include(GNUInstallDirs)
+ 
++list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
++
++set(MINKADAPTOR_DIR_HINT "" CACHE PATH "Hint path for minkadaptor directory")
++
++find_package(MINKADAPTOR REQUIRED)
++if(NOT MINKADAPTOR_FOUND)
++	message(FATAL_ERROR "MINKADAPTOR not found")
++endif()
++
++include_directories(${MINKADAPTOR_INCLUDE_DIRS})
++
++set(MINKTEEC_DIR_HINT "" CACHE PATH "Hint path for minkteec directory")
++
++find_package(MINKTEEC REQUIRED)
++if(NOT MINKTEEC_FOUND)
++	message(FATAL_ERROR "MINKTEEC not found")
++endif()
++
++include_directories(${MINKTEEC_INCLUDE_DIRS})
++
+ ################################################################################
+ # Source files
+ ################################################################################
+@@ -58,13 +78,10 @@ target_include_directories(ckteec
+ 	PRIVATE src
+ )
+ 
+-target_include_directories(teec
+-	PUBLIC include
+-)
+-
+ target_link_libraries(ckteec
+ 	PRIVATE pthread
+-	PRIVATE teec
++	PRIVATE ${MINKTEEC_LIBRARIES}
++	PRIVATE ${MINKADAPTOR_LIBRARIES}
+ 	PRIVATE m
+ )
+ 
+diff --git a/libckteec/cmake/FindMINKADAPTOR.cmake b/libckteec/cmake/FindMINKADAPTOR.cmake
+new file mode 100644
+index 0000000..041023d
+--- /dev/null
++++ b/libckteec/cmake/FindMINKADAPTOR.cmake
+@@ -0,0 +1,21 @@
++find_path(MINKADAPTOR_INCLUDE_DIR
++        NAMES MinkCom.h
++        HINTS ${MINKADAPTOR_DIR_HINT}
++        PATH_SUFFIXES include
++)
++
++find_library(MINKADAPTOR_LIBRARY
++        NAMES minkadaptor
++        HINTS ${MINKADAPTOR_DIR_HINT}
++        PATH_SUFFIXES lib
++)
++
++if(MINKADAPTOR_INCLUDE_DIR AND MINKADAPTOR_LIBRARY)
++        set(MINKADAPTOR_FOUND TRUE)
++        set(MINKADAPTOR_LIBRARIES ${MINKADAPTOR_LIBRARY})
++        set(MINKADAPTOR_INCLUDE_DIRS ${MINKADAPTOR_INCLUDE_DIR})
++else()
++        set(MINKADAPTOR_FOUND FALSE)
++endif()
++
++mark_as_advanced(MINKADAPTOR_INCLUDE_DIR MINKADAPTOR_LIBRARY)
+diff --git a/libckteec/cmake/FindMINKTEEC.cmake b/libckteec/cmake/FindMINKTEEC.cmake
+new file mode 100644
+index 0000000..353449e
+--- /dev/null
++++ b/libckteec/cmake/FindMINKTEEC.cmake
+@@ -0,0 +1,21 @@
++find_path(MINKTEEC_INCLUDE_DIR
++        NAMES tee_client_api.h
++        HINTS ${MINKTEEC_DIR_HINT}
++        PATH_SUFFIXES include
++)
++
++find_library(MINKTEEC_LIBRARY
++        NAMES minkteec
++        HINTS ${MINKTEEC_DIR_HINT}
++        PATH_SUFFIXES lib
++)
++
++if(MINKTEEC_INCLUDE_DIR AND MINKTEEC_LIBRARY)
++        set(MINKTEEC_FOUND TRUE)
++        set(MINKTEEC_LIBRARIES ${MINKTEEC_LIBRARY})
++        set(MINKTEEC_INCLUDE_DIRS ${MINKTEEC_INCLUDE_DIR})
++else()
++        set(MINKTEEC_FOUND FALSE)
++endif()
++
++mark_as_advanced(MINKTEEC_INCLUDE_DIR MINKTEEC_LIBRARY)
