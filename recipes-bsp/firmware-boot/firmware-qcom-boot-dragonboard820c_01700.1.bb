@@ -3,7 +3,7 @@ SUMMARY = "Prebuilt bootlader images for Dragonboard 820c"
 LICENSE = "LICENSE.qcom"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=4d087ee0965cb059f1b2f9429e166f64"
 
-SRC_URI = "https://releases.linaro.org/96boards/dragonboard820c/qualcomm/firmware/linux-board-support-package-r${PV}.zip"
+SRC_URI = "https://artifacts.codelinaro.org/artifactory/clo-549-96boards-backup/96boards/dragonboard820c/qualcomm/firmware/linux-board-support-package-r${PV}.zip"
 SRC_URI[sha256sum] = "6ee9c461b2b5dd2d3bd705bb5ea3f44b319ecb909b2772f305ce12439e089cd9"
 
 BOOTBINARIES = "linux-board-support-package-r${PV}"
