@@ -1,0 +1,6 @@
+header:
+  version: 14
+
+local_conf_header:
+  cmdline: |
+    KERNEL_CMDLINE_EXTRA:append = " quiet"
