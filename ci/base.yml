@@ -31,7 +31,6 @@ local_conf_header:
   base: |
     CONF_VERSION = "2"
     INHERIT += "buildstats-summary"
-    INHERIT += "buildhistory"
     INHERIT += "rm_work"
   diskmon: |
     BB_DISKMON_DIRS ??= "\
