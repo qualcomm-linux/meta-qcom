@@ -1,0 +1,10 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/siemens/kas/master/kas/schema-kas.json
+
+header:
+  version: 14
+  includes:
+  - ci/mirror.yml
+
+local_conf_header:
+  ci: |
+    INHERIT:remove = "rm_work"
