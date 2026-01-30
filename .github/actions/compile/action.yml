@@ -100,8 +100,11 @@ runs:
         deploy_dir=../kas/build/tmp/deploy/images/${{inputs.machine}}
         uploads_dir=./uploads/${{ inputs.distro_name }}${{ inputs.kernel_dirname }}/${{ inputs.machine }}
         mkdir -p $uploads_dir
-        find $deploy_dir/ -maxdepth 1 -type f -exec cp {} $uploads_dir/ \;
-        find $deploy_dir/ -maxdepth 1 -type l \( -name boot-*.img -o -name *.rootfs.ext4.gz -o -name *.rootfs.qcomflash.tar.gz -o -name *.rootfs.ostreecommit.tar.xz \) -exec cp -d {} $uploads_dir/ \;
+        # Publish everything that is linked by bitbake at the end of the build (avoid timestamp and duplication)
+        find $deploy_dir/ -maxdepth 1 -type l -exec cp --dereference {} $uploads_dir/ \;
+        # Files without links: *.vfat, *.elf, *.efi, efi.stub, fit *.its, qcom-metadata.dtb and qclinuxfitImage
+        # Copy *.efi, *.efi and *.vfat as they are useful for debugging
+        find $deploy_dir/ -maxdepth 1 -type f \( -name \*.efi -o -name \*.elf -o -name dtb-\*.vfat \) -exec cp {} $uploads_dir/ \;
         cp buildchart.svg kas-build.yml $uploads_dir/
         if [ -d $deploy_dir/../../sdk ]; then
           cp $deploy_dir/../../sdk/* $uploads_dir/
