@@ -1,0 +1,27 @@
+From ed9406ca5db327cc0db01f40f2be43a7a470cf3f Mon Sep 17 00:00:00 2001
+From: Rob Clark <rob.clark@oss.qualcomm.com>
+Date: Thu, 3 Jul 2025 10:44:44 +0200
+Subject: [PATCH 2/8] softmax1x1: take reported max threads into account
+
+Upstream-Status: Pending
+---
+ tensorflow/lite/delegates/gpu/common/tasks/softmax1x1.cc | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/tensorflow/lite/delegates/gpu/common/tasks/softmax1x1.cc b/tensorflow/lite/delegates/gpu/common/tasks/softmax1x1.cc
+index 54c0050781e..e3b0b6e5509 100644
+--- a/tensorflow/lite/delegates/gpu/common/tasks/softmax1x1.cc
++++ b/tensorflow/lite/delegates/gpu/common/tasks/softmax1x1.cc
+@@ -124,6 +124,9 @@ std::string Softmax1x1::GetSoftmaxKernelCode(const OperationDef& op_def) {
+   args_.AddFloat("mask_w");
+ 
+   std::string c;
++  c += "__attribute__((work_group_size_hint(" + std::to_string(work_group_size_.x) +
++                                         ", " + std::to_string(work_group_size_.y) +
++                                         ", " + std::to_string(work_group_size_.z) + ")))\n";
+   c += "MAIN_FUNCTION($0) {\n";
+   if (op_def.dst_tensors[0].HasAxis(Axis::BATCH)) {
+     c += "  int linear_id = GROUP_ID_1;\n";
+-- 
+2.34.1
+
