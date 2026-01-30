@@ -7,3 +7,4 @@ header:
 
 local_conf_header:
   ci: |
+    INHERIT:remove = "rm_work"
