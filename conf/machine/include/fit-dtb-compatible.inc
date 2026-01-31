@@ -1,7 +1,9 @@
-# Add compatible strings for DTBs.
-# FIT_DTB_COMPATIBLE[<dtb_name>] = "<compatible-string>"
-# This variable maps a DTB name (without .dtb extension) to its
-# Device Tree "compatible" string.
+# Mapping from a DTB name (without the .dtb extension) to its
+# Device Tree "compatible" string(s). When present multiple
+# compatible strings must be separated by colons (:).
+#
+# Syntax:
+# FIT_DTB_COMPATIBLE[<dtb-name>] = "<compatible-string>[:<compatible-string>[:<compatible-string>...]]"
 
 FIT_DTB_COMPATIBLE[apq8016-sbc] = "qcom,apq8016-sbc"
 FIT_DTB_COMPATIBLE[apq8096-db820c] = "qcom,apq8096-sbc"

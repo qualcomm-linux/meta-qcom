@@ -69,12 +69,17 @@ class QcomItsNodeRoot(ItsNodeRootKernel):
 
     def fitimage_emit_section_config(self):
         counter = 0
+        compatibles_count = 0
         for counter, (dtb_node, compatible_str) in enumerate(self._dtbs):
             # conf-0 corresponds to qcom-metadata.dtb, skipping it as it's metadata-only
             if counter == 0:
                 continue
-            conf_name = f"{self._conf_prefix}{counter}"
-            self._fitimage_emit_one_section_config(conf_name, dtb_node)
+            # add one config for each comaptible string of DTB
+            for compatible in compatible_str.split(":"):
+                compatibles_count += 1
+                conf_name = f"{self._conf_prefix}{compatibles_count}"
+                dtb_node.compatible = compatible
+                self._fitimage_emit_one_section_config(conf_name, dtb_node)
 
     # Override mkimage assemble to inject extra opts
     def run_mkimage_assemble(self, itsfile, fitfile):
