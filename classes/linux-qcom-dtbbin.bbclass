@@ -16,6 +16,8 @@ do_qcom_dtbbin_deploy() {
         bbdebug 1 " combining: $dtbf"
         dtb=`normalize_dtb "$dtbf"`
         dtb_ext=${dtb##*.}
+        # Skip DTBOs
+        [ "$dtb_ext" = "dtbo" ] && continue
         dtb_base_name=`basename $dtb .$dtb_ext`
         mkdir -p ${DTBBIN_DEPLOYDIR}/$dtb_base_name
         cp ${D}/${KERNEL_DTBDEST}/$dtb_base_name.dtb ${DTBBIN_DEPLOYDIR}/$dtb_base_name/combined-dtb.dtb
