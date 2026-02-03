@@ -115,10 +115,6 @@ jobs:
             yamlfile: ""
           - name: qcom-distro
             yamlfile: ':ci/qcom-distro-prop-image.yml'
-          - name: qcom-distro-selinux
-            yamlfile: ':ci/qcom-distro-selinux.yml'
-          - name: qcom-distro-sota
-            yamlfile: ':ci/qcom-distro-sota.yml'
         kernel:
           - type: default
             dirname: ""
@@ -166,10 +162,6 @@ jobs:
             yamlfile: ""
           - name: qcom-distro
             yamlfile: ':ci/qcom-distro-prop-image.yml'
-          - name: qcom-distro-selinux
-            yamlfile: ':ci/qcom-distro-selinux.yml'
-          - name: qcom-distro-sota
-            yamlfile: ':ci/qcom-distro-sota.yml'
         kernel:
           - type: default
             dirname: ""
@@ -189,44 +181,12 @@ jobs:
                 yamlfile: ":ci/linux-yocto-dev.yml"
           - machine: iq-9075-evk
             distro:
-                name: qcom-distro
-                yamlfile: ':ci/qcom-distro-prop-image.yml'
-            kernel:
-                type: rt-6.18
-                dirname: "+linux-qcom-rt-6.18"
-                yamlfile: ":ci/linux-qcom-rt-6.18.yml"
-          - machine: iq-9075-evk
-            distro:
-                name: qcom-distro
-                yamlfile: ':ci/qcom-distro-prop-image.yml'
-            kernel:
-                type: qcom-next-rt
-                dirname: "+linux-qcom-next-rt"
-                yamlfile: ":ci/linux-qcom-next-rt.yml"
-          - machine: iq-9075-evk
-            distro:
-                name: performance
-                yamlfile: ':ci/qcom-distro-prop-image.yml:ci/performance.yml'
-            kernel:
-                type: 6.18
-                dirname: "+linux-qcom-6.18"
-                yamlfile: ":ci/linux-qcom-6.18.yml"
-          - machine: iq-9075-evk
-            distro:
                 name: qcom-distro-kvm
                 yamlfile: ':ci/qcom-distro-kvm.yml'
             kernel:
                 type: default
                 dirname: ""
                 yamlfile: ""
-          - machine: iq-8275-evk
-            distro:
-                name: performance
-                yamlfile: ':ci/qcom-distro-prop-image.yml:ci/performance.yml'
-            kernel:
-                type: 6.18
-                dirname: "+linux-qcom-6.18"
-                yamlfile: ":ci/linux-qcom-6.18.yml"
           - machine: iq-8275-evk
             distro:
                 name: qcom-distro-kvm
@@ -272,6 +232,24 @@ jobs:
     needs: [kas-setup, yocto-run-checks]
     if: ${{ github.repository_owner == 'qualcomm-linux' && inputs.mode == 'weekly' }}
     runs-on: [self-hosted, qcom-u2404, amd64]
+    strategy:
+      fail-fast: true
+      matrix:
+        machine:
+          - rb3gen2-core-kit
+          - qcom-armv8a
+        distro:
+          - name: qcom-distro-selinux
+            yamlfile: ':ci/qcom-distro-selinux.yml'
+          - name: qcom-distro-sota
+            yamlfile: ':ci/qcom-distro-sota.yml'
+        kernel:
+          - type: default
+            dirname: ""
+            yamlfile: ""
+          - type: 6.18
+            dirname: "+linux-qcom-6.18"
+            yamlfile: ":ci/linux-qcom-6.18.yml"
     name: ${{ matrix.machine }}/${{ matrix.distro.name }}${{ matrix.kernel.dirname }}
     steps:
       - uses: actions/checkout@v4
@@ -294,6 +272,61 @@ jobs:
     runs-on: [self-hosted, qcom-u2404, amd64]
     outputs:
       url: ${{ steps.compile_kas.outputs.url }}
+    strategy:
+      fail-fast: true
+      matrix:
+        machine:
+          - iq-8275-evk
+          - iq-9075-evk
+          - iq-x7181-evk
+          - kaanapali-mtp
+          - qcm6490-idp
+          - qcs615-ride
+          - qcs8300-ride-sx
+          - qcs9100-ride-sx
+          - rb1-core-kit
+          - sm8750-mtp
+        distro:
+          - name: qcom-distro-selinux
+            yamlfile: ':ci/qcom-distro-selinux.yml'
+          - name: qcom-distro-sota
+            yamlfile: ':ci/qcom-distro-sota.yml'
+        kernel:
+          - type: default
+            dirname: ""
+            yamlfile: ""
+          - type: 6.18
+            dirname: "+linux-qcom-6.18"
+            yamlfile: ":ci/linux-qcom-6.18.yml"
+          - type: rt-6.18
+            dirname: "+linux-qcom-rt-6.18"
+            yamlfile: ":ci/linux-qcom-rt-6.18.yml"
+        include:
+          # Additional builds for specific machines
+          - machine: iq-9075-evk
+            distro:
+                name: qcom-distro
+                yamlfile: ':ci/qcom-distro-prop-image.yml'
+            kernel:
+                type: qcom-next-rt
+                dirname: "+linux-qcom-next-rt"
+                yamlfile: ":ci/linux-qcom-next-rt.yml"
+          - machine: iq-9075-evk
+            distro:
+                name: performance
+                yamlfile: ':ci/qcom-distro-prop-image.yml:ci/performance.yml'
+            kernel:
+                type: 6.18
+                dirname: "+linux-qcom-6.18"
+                yamlfile: ":ci/linux-qcom-6.18.yml"
+          - machine: iq-8275-evk
+            distro:
+                name: performance
+                yamlfile: ':ci/qcom-distro-prop-image.yml:ci/performance.yml'
+            kernel:
+                type: 6.18
+                dirname: "+linux-qcom-6.18"
+                yamlfile: ":ci/linux-qcom-6.18.yml"
     name: ${{ matrix.machine }}/${{ matrix.distro.name }}${{ matrix.kernel.dirname }}
     steps:
       - uses: actions/checkout@v4
