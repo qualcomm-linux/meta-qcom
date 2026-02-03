@@ -16,12 +16,12 @@ SRC_URI = " \
     https://qartifactory-edge.qualcomm.com/artifactory/qsc_releases/software/chip/component/camx.qclinux.0.0/${PBT_BUILD_DATE}/prebuilt_yocto/camxapi-lemans_${PV}_armv8-2a.tar.gz;name=camxapi \
     "
 
-SRC_URI[camxlib.sha256sum] = "1d50d674a31efcee469cca426e96fa8f6b91adfdaa6b16efaade902cace0a4c7"
-SRC_URI[camx.sha256sum] = "d78783a9adf4ac6bb7461cf37bcbfe341ace1ae12c575a159084fe4e58f1c4b6"
-SRC_URI[chicdk.sha256sum] = "d976d49276a2c126058b79bf47a7358d02385f990d2462ed0c205d566b38c82e"
-SRC_URI[camxcommon.sha256sum] = "a113f4ce1aa32ab2e69620f2f6a1fe2de4d0ba10a29ed6feddf5a635852740f7"
-SRC_URI[camxapi.sha256sum] = "4226952e8c5fa35535dd13c1f56befd836a6b266c0bc2dacc7a24aa1c98c2a67"
-PBT_BUILD_DATE = "260120"
+SRC_URI[camxlib.sha256sum] = "caff6285e066edc1f4ab6c98fd6d79beaee54e6f3875699bb44392e14108843d"
+SRC_URI[camx.sha256sum] = "ba9faebcfa9d423ac63706f77dcfdac10ce843199ea0efc4229e35b3d20271a8"
+SRC_URI[chicdk.sha256sum] = "0d6e3bee536c75151eb67f6ba16788147327189e43efe8062d88aa483243e293"
+SRC_URI[camxcommon.sha256sum] = "080dc041a709a557e6455f9a3f825f1dc5d703690eb36deae99cae05cdf64956"
+SRC_URI[camxapi.sha256sum] = "6520347b1a96bc55132c33b3100c4100fc5c28a05c4ee02d7f4a91d6574b3934"
+PBT_BUILD_DATE = "260130"
 
 S = "${UNPACKDIR}"
 

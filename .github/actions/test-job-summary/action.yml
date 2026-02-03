@@ -1,0 +1,137 @@
+name: LAVA test job summary
+inputs:
+  build_id:
+    description: "ID of the workflow from which build URL will be downloaded"
+    required: true
+  gh_token:
+    description: "Github token. It's required to download artifacts from the workflow"
+    required: true
+  prefix:
+    description: "Prefix for the compressed file that is uploaded as workflow artifact"
+    default: test-job*
+  summary_file_name:
+    description: "File name that is used to save test job summary"
+    default: step-summary.txt
+outputs:
+  artifact_id:
+    description: "ID of the uploaded artifact"
+    value: ${{ steps.upload-summary.outputs.artifact-id }}
+runs:
+  using: "composite"
+
+  steps:
+      - name: Download Artifacts
+        uses: actions/download-artifact@v6
+        with:
+          github-token: ${{ inputs.gh_token }}
+          run-id: ${{ inputs.build_id }}
+          path: artifacts
+
+      - name: "List files"
+        shell: bash
+        run: |
+          echo $GITHUB_WORKSPACE
+          ls -R $GITHUB_WORKSPACE
+
+      - name: Publish Test Job Details
+        shell: bash
+        run: |
+          INPUT=$(for TESTJOB in $(find ${{ github.workspace }} -name "${{ inputs.prefix }}.json")
+          do
+              JOB_ID=$(cat "${TESTJOB}" | jq ".id")
+              JOB_URL="https://lava.infra.foundries.io/results/$JOB_ID"
+              JOB_DETAILS=$(curl -s "https://lava.infra.foundries.io/api/v0.2/jobs/$JOB_ID/")
+              JOB_HEALTH=$(echo "$JOB_DETAILS" | jq -r ".health")
+              JOB_STATE=$(echo "$JOB_DETAILS" | jq -r ".state")
+              JOB_DEVICE_TYPE=$(echo "$JOB_DETAILS" | jq -r ".requested_device_type")
+              if [ "${JOB_STATE}" = "Finished" ] && [ ${JOB_HEALTH} = "Complete" ]; then
+                  # get suites and results
+                  JOB_SUITES=$(curl -s "https://lava.infra.foundries.io/api/v0.2/jobs/$JOB_ID/suites/")
+                  TEST_RESULTS=$(for SUITE in $(echo "$JOB_SUITES" | jq -r -c ".results[]")
+                  do
+                      SUITE_NAME=$(echo "$SUITE" | jq -r ".name")
+                      SUITE_ID=$(echo "$SUITE" | jq -r ".id")
+                      SUITE_TESTS=$(curl -s "https://lava.infra.foundries.io/api/v0.2/jobs/$JOB_ID/suites/$SUITE_ID/tests/")
+                      if [ "$SUITE_NAME" != "lava" ]; then
+                          TEST_NAME=$(echo "$SUITE_TESTS" | jq -r -c ".results[] | .name")
+                          TEST_RESULT=$(echo "$SUITE_TESTS" | jq -r -c ".results[] | .result")
+                          TEST_URL="${JOB_URL}"
+                          TEST_RESULT_OBJ=$(jq --arg url "$TEST_URL" --arg result "$TEST_RESULT" -n -c '$ARGS.named')
+                          if [ -n "$TEST_NAME" ]; then
+                              jq -n -c --arg key "$TEST_NAME" --argjson value "$TEST_RESULT_OBJ" '$ARGS.named'
+                          fi
+                      else
+                          TEST_NAME="boot"
+                          TEST_URL="${JOB_URL}"
+                          TEST_RESULT_OBJ=$(jq --arg url "$TEST_URL" --arg result "pass" -n -c '$ARGS.named')
+                          jq -n -c --arg key "$TEST_NAME" --argjson value "$TEST_RESULT_OBJ" '$ARGS.named'
+                      fi
+                  done | jq -s -c --sort-keys 'from_entries')
+              fi
+              echo "{\"key\": \"$JOB_DEVICE_TYPE\", \"value\": $TEST_RESULTS}" | jq
+          # combine entries from boot jobs and pre-merge jobs
+          done | jq -s -c 'reduce .[] as $i ({}; .[$i.key] = ((.[$i.key] // {}) + $i.value))')
+          echo "$INPUT"
+          DEVICES=$(echo "$INPUT" | jq -r 'keys[]' | sort)
+
+          RESULTS=$(echo "$INPUT" | jq -r '.[] | keys[]?' | sort -u)
+
+          # Print header row
+          printf "| %s |" "Test"
+          printf "| %s |" "Test" >> ${{inputs.summary_file_name}}
+          for D in $DEVICES; do
+            printf " %s |" "$D"
+            printf " %s |" "$D" >> ${{inputs.summary_file_name}}
+          done
+          echo
+          echo >> ${{inputs.summary_file_name}}
+
+          ## Print separator
+          printf "| ---- |"
+          printf "| ---- |" >> ${{inputs.summary_file_name}}
+          for _ in $DEVICES; do
+            printf " ---- |"
+            printf " ---- |" >> ${{inputs.summary_file_name}}
+          done
+          echo
+          echo >> ${{inputs.summary_file_name}}
+
+          for R in $RESULTS; do
+            printf "| %s |" "$R"
+            printf "| %s |" "$R" >> ${{inputs.summary_file_name}}
+
+            for D in $DEVICES; do
+              VALUE=$(echo "$INPUT" | jq -r --arg d "$D" --arg r "$R" '.[$d][$r].result // ""')
+              URL=$(echo "$INPUT" | jq -r --arg d "$D" --arg r "$R" '.[$d][$r].url // ""')
+              CHECKMARK=":white_check_mark:"
+              if [ "${VALUE}" = "fail" ]; then CHECKMARK=":x:"; fi
+              if [ "${VALUE}" = "skip" ]; then CHECKMARK=":warning:"; fi
+              if [ -z "${VALUE}" ]; then CHECKMARK=":no_entry_sign:"; fi
+              printf " %s [%s](%s) |" "$CHECKMARK" "$VALUE" "$URL"
+              printf " %s [%s](%s) |" "$CHECKMARK" "$VALUE" "$URL" >> ${{inputs.summary_file_name}}
+            done
+            echo >> ${{inputs.summary_file_name}}
+          done
+          echo "### All jobs summary" >> ${{inputs.summary_file_name}}
+          echo "" >> ${{inputs.summary_file_name}}
+          echo "| Job ID | Device | State | Health |" >> ${{inputs.summary_file_name}}
+          echo "| ---- | ---- | ---- | ---- |" >> ${{inputs.summary_file_name}}
+          for TESTJOB in $(find ${{ github.workspace }} -name "${{ inputs.prefix }}.json")
+          do
+              JOB_ID=$(cat "${TESTJOB}" | jq ".id")
+              JOB_URL="https://lava.infra.foundries.io/results/$JOB_ID"
+              JOB_DETAILS=$(curl -s "https://lava.infra.foundries.io/api/v0.2/jobs/$JOB_ID/")
+              JOB_HEALTH=$(echo "$JOB_DETAILS" | jq -r ".health")
+              JOB_STATE=$(echo "$JOB_DETAILS" | jq -r ".state")
+              JOB_DEVICE_TYPE=$(echo "$JOB_DETAILS" | jq -r ".requested_device_type")
+              echo "| [$JOB_ID]($JOB_URL) | $JOB_DEVICE_TYPE | $JOB_STATE | $JOB_HEALTH |" >> ${{inputs.summary_file_name}}
+          done
+      - name: Upload summary
+        id: upload-summary
+        uses: actions/upload-artifact@v6
+        with:
+          github-token: ${{ inputs.gh_token }}
+          run-id: ${{ inputs.build_id }}
+          path: ${{inputs.summary_file_name}}
+          name: ${{inputs.summary_file_name}}
+

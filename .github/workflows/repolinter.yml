@@ -9,7 +9,7 @@ on:
 
 jobs:
   repolinter:
-    if: github.repository == 'qualcomm-linux/meta-qcom'
+    if: github.repository_owner == 'qualcomm-linux'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Repo

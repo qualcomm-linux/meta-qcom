@@ -52,6 +52,13 @@ def get_dspso_path(path):
 
 handle_dspso_image() {
     for path in adsp cdsp sdsp ; do
+        case "${PACKAGES}" in
+	    *${path}*)
+	    ;;
+	    *)
+	    continue
+	    ;;
+	esac
         mkdir -p ${B}/dspso-$path
         debugfs $1 -R "ls -p /$path" | \
             grep '^/[0-9]*/100' | cut -d/ -f6 | \

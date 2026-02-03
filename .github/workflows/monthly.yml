@@ -6,7 +6,7 @@ on:
 
 jobs:
   sstate-cache-cleanup:
-    if: github.repository == 'qualcomm-linux/meta-qcom'
+    if: github.repository_owner == 'qualcomm-linux'
     runs-on: [self-hosted, qcom-u2404, amd64-ssd]
     steps:
       - name: Clean up the persistant sstate-cache dir

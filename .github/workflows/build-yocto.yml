@@ -15,15 +15,16 @@ on:
 env:
   CACHE_DIR: /efs/qli/meta-qcom
   KAS_REPO_REF_DIR: /efs/qli/meta-qcom/kas-mirrors
-  KAS_CONTAINER: /efs/qli/meta-qcom/kas-mirrors/kas-container
 
 jobs:
   kas-setup:
-    if: github.repository == 'qualcomm-linux/meta-qcom'
+    if: github.repository_owner == 'qualcomm-linux'
     runs-on: [self-hosted, qcom-u2404, amd64]
     steps:
-      - name: Update kas-container
+      - name: Setting up kas-container
         run: |
+          KAS_CONTAINER=$RUNNER_TEMP/kas-container
+          echo "KAS_CONTAINER=$KAS_CONTAINER" >> $GITHUB_ENV
           LATEST=$(git ls-remote --tags --refs --sort="v:refname" https://github.com/siemens/kas | tail -n1 | sed 's/.*\///')
           wget -qO ${KAS_CONTAINER} https://raw.githubusercontent.com/siemens/kas/refs/tags/$LATEST/kas-container
           chmod +x ${KAS_CONTAINER}
@@ -41,22 +42,42 @@ jobs:
         run: |
           ${KAS_CONTAINER} lock --update ci/base.yml:ci/qcom-distro.yml
 
-      - uses: actions/upload-artifact@v4
+      - name: Upload kas lockfile
+        uses: actions/upload-artifact@v6
         with:
-          name: kas-lock
+          name: kas-lockfile
           path: ci/*.lock.yml
+
+      - name: Upload kas-container
+        uses: actions/upload-artifact@v4
+        with:
+          name: kas-container
+          path: ${{ env.KAS_CONTAINER }}
 
   yocto-run-checks:
     needs: kas-setup
-    if: github.repository == 'qualcomm-linux/meta-qcom'
+    if: github.repository_owner == 'qualcomm-linux'
     runs-on: [self-hosted, qcom-u2404, amd64]
     steps:
       - uses: actions/checkout@v4
 
-      - uses: actions/download-artifact@v6
+      - name: Download kas lockfile
+        uses: actions/download-artifact@v6
         with:
-          name: kas-lock
-          path: ci/
+          name: kas-lockfile
+          path: ci
+
+      - name: Download kas-container
+        uses: actions/download-artifact@v6
+        with:
+          name: kas-container
+          path: ${{ runner.temp }}
+
+      - name: Setting up kas-container
+        run: |
+          KAS_CONTAINER=$RUNNER_TEMP/kas-container
+          echo "KAS_CONTAINER=$KAS_CONTAINER" >> $GITHUB_ENV
+          chmod +x $KAS_CONTAINER
 
       - name: Run yocto-check-layer
         run: |
@@ -68,7 +89,7 @@ jobs:
 
   compile_warm_up:
     needs: [kas-setup, yocto-run-checks]
-    if: github.repository == 'qualcomm-linux/meta-qcom'
+    if: github.repository_owner == 'qualcomm-linux'
     runs-on: [self-hosted, qcom-u2404, amd64]
     strategy:
       fail-fast: true
@@ -105,12 +126,11 @@ jobs:
           kernel_yaml: ${{matrix.kernel.yamlfile}}
           kernel_dirname: ${{matrix.kernel.dirname}}
           cache_dir: ${CACHE_DIR}
-          kas: ${KAS_CONTAINER}
           sdk: ${{inputs.sdk}}
 
   compile:
     needs: compile_warm_up
-    if: github.repository == 'qualcomm-linux/meta-qcom'
+    if: github.repository_owner == 'qualcomm-linux'
     runs-on: [self-hosted, qcom-u2404, amd64]
     outputs:
       url: ${{ steps.compile_kas.outputs.url }}
@@ -154,6 +174,14 @@ jobs:
                 type: additional
                 dirname: "+linux-yocto-dev"
                 yamlfile: ":ci/linux-yocto-dev.yml"
+          - machine: iq-9075-evk
+            distro:
+                name: qcom-distro
+                yamlfile: ':ci/qcom-distro-prop-image.yml'
+            kernel:
+                type: rt-6.18
+                dirname: "+linux-qcom-rt-6.18"
+                yamlfile: ":ci/linux-qcom-rt-6.18.yml"
           - machine: iq-9075-evk
             distro:
                 name: qcom-distro
@@ -208,7 +236,6 @@ jobs:
           kernel_yaml: ${{matrix.kernel.yamlfile}}
           kernel_dirname: ${{matrix.kernel.dirname}}
           cache_dir: ${CACHE_DIR}
-          kas: ${KAS_CONTAINER}
           sdk: ${{inputs.sdk}}
 
   publish_summary:

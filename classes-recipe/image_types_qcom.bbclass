@@ -100,6 +100,7 @@ create_qcomflash_pkg() {
                 \( -name '*.elf' ! -name 'abl2esp*.elf' ! -name 'xbl_config*.elf' \) -o \
                 -name '*.mbn*' -o \
                 -name '*.fv' -o \
+                -name 'cdt_*.bin' -o \
                 -name 'logfs_*.bin' -o \
                 -name 'sec.dat'` ; do
             install -m 0644 ${bfw} .

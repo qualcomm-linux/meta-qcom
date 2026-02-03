@@ -3,7 +3,7 @@ SUMMARY = "Prebuilt bootlader images for Dragonboard 410c"
 LICENSE = "LICENSE.qcom"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=4d087ee0965cb059f1b2f9429e166f64"
 
-SRC_URI = "https://releases.linaro.org/96boards/dragonboard410c/qualcomm/firmware/linux-board-support-package-r${PV}.zip"
+SRC_URI = "https://artifacts.codelinaro.org/artifactory/clo-549-96boards-backup/96boards/dragonboard410c/qualcomm/firmware/linux-board-support-package-r${PV}.zip"
 SRC_URI[sha256sum] = "93070f58fa3aa6467baa881935c37c4da2df2a8af3248746931ce3d11a3a1200"
 
 BOOTBINARIES = "linux-board-support-package-r${PV}"

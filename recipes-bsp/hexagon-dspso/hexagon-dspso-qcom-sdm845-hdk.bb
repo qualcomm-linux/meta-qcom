@@ -2,10 +2,10 @@
 # DSPSO_URI:pn-firmware-qcom-sm8150-hdk = "..."  to local.conf. Use "file://"
 # if the file is provided locally.
 
-DESCRIPTION = "Hexagon DSP binaries for SM8150 HDK (aka HDK855) board"
+DESCRIPTION = "Hexagon DSP binaries for SDM845 HDK (aka HDK845) board"
 
-DSPSO_SOC = "sm8150"
-DSPSO_DEVICE = "SM8150-HDK"
+DSPSO_SOC = "sdm845"
+DSPSO_DEVICE = "SDM845-HDK"
 
 LICENSE = "CLOSED"
 DEPENDS = "firmware-${DSP_PKG_NAME}"
@@ -13,4 +13,6 @@ S = "${UNPACKDIR}"
 
 require hexagon-dspso.inc
 
-SKIP_FILEDEPS:hexagon-dsp-binaries-${DSP_PKG_NAME}-cdsp = "1"
+# Only package SLPI binaries, ADSP and CDSP are provided by
+# hexagon-dsp-binaries
+PACKAGES = "hexagon-dsp-binaries-${DSP_PKG_NAME}-sdsp"

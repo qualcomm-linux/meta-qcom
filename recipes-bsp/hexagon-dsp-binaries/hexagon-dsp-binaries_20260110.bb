@@ -22,6 +22,7 @@ NO_GENERIC_LICENSE[dspso-WHENCE] = "WHENCE"
 
 SRC_URI = " \
     git://github.com/linux-msm/dsp-binaries;protocol=https;branch=trunk;tag=${PV} \
+    file://0001-conf-link-DB845c-to-SDM845-HDK.patch \
 "
 
 SRCREV = "9efc74739b457bed846e53bb8cf46d524ce58791"
@@ -57,6 +58,8 @@ PACKAGE_BEFORE_PN =+ "\
     ${PN}-qcom-sa8775p-ride-adsp \
     ${PN}-qcom-sa8775p-ride-cdsp \
     ${PN}-qcom-sa8775p-ride-gdsp \
+    ${PN}-qcom-sdm845-hdk-adsp \
+    ${PN}-qcom-sdm845-hdk-cdsp \
     ${PN}-qcom-sm8750-mtp-adsp \
     ${PN}-qcom-sm8750-mtp-cdsp \
     ${PN}-thundercomm-db845c-adsp \
@@ -93,6 +96,8 @@ LICENSE:${PN}-qcom-qcs8300-ride-gdsp = "dspso-qcom-2"
 LICENSE:${PN}-qcom-sa8775p-ride-adsp = "dspso-qcom-2"
 LICENSE:${PN}-qcom-sa8775p-ride-cdsp = "dspso-qcom-2"
 LICENSE:${PN}-qcom-sa8775p-ride-gdsp = "dspso-qcom-2"
+LICENSE:${PN}-qcom-sdm845-hdk-adsp = "dspso-qcom"
+LICENSE:${PN}-qcom-sdm845-hdk-cdsp = "dspso-qcom"
 LICENSE:${PN}-qcom-sm8750-mtp-adsp = "dspso-qcom-2"
 LICENSE:${PN}-qcom-sm8750-mtp-cdsp = "dspso-qcom-2"
 LICENSE:${PN}-thundercomm-db845c-adsp = "dspso-qcom"
@@ -172,6 +177,8 @@ FILES:${PN}-qcom-qcs8300-ride-gdsp = "${datadir}/qcom/qcs8300/Qualcomm/QCS8300-R
 FILES:${PN}-qcom-sa8775p-ride-adsp = "${datadir}/qcom/sa8775p/Qualcomm/SA8775P-RIDE/dsp/adsp"
 FILES:${PN}-qcom-sa8775p-ride-cdsp = "${datadir}/qcom/sa8775p/Qualcomm/SA8775P-RIDE/dsp/cdsp*"
 FILES:${PN}-qcom-sa8775p-ride-gdsp = "${datadir}/qcom/sa8775p/Qualcomm/SA8775P-RIDE/dsp/gdsp*"
+FILES:${PN}-qcom-sdm845-hdk-adsp = "${datadir}/qcom/sdm845/Qualcomm/SDM845-HDK/dsp/adsp"
+FILES:${PN}-qcom-sdm845-hdk-cdsp = "${datadir}/qcom/sdm845/Qualcomm/SDM845-HDK/dsp/cdsp*"
 FILES:${PN}-qcom-sm8750-mtp-adsp = "${datadir}/qcom/sm8750/Qualcomm/SM8750-MTP/dsp/adsp"
 FILES:${PN}-qcom-sm8750-mtp-cdsp = "${datadir}/qcom/sm8750/Qualcomm/SM8750-MTP/dsp/cdsp*"
 FILES:${PN}-thundercomm-db845c-adsp = "${datadir}/qcom/sdm845/Thundercomm/db845c/dsp/adsp"
@@ -212,3 +219,19 @@ INSANE_SKIP:${PN}-thundercomm-rb3gen2-cdsp = "arch libdir file-rdeps textrel"
 INSANE_SKIP:${PN}-thundercomm-rb5-adsp = "arch libdir file-rdeps textrel"
 INSANE_SKIP:${PN}-thundercomm-rb5-cdsp = "arch libdir file-rdeps textrel"
 INSANE_SKIP:${PN}-thundercomm-rb5-sdsp = "arch libdir file-rdeps textrel"
+
+SKIP_FILEDEPS:${PN}-qcom-hamoa-iot-evk-adsp = "1"
+SKIP_FILEDEPS:${PN}-qcom-kaanapali-mtp-adsp = "1"
+SKIP_FILEDEPS:${PN}-qcom-kaanapali-mtp-cdsp = "1"
+SKIP_FILEDEPS:${PN}-qcom-qcs8300-ride-adsp = "1"
+SKIP_FILEDEPS:${PN}-qcom-qcs8300-ride-cdsp = "1"
+SKIP_FILEDEPS:${PN}-qcom-qcs8300-ride-gdsp = "1"
+SKIP_FILEDEPS:${PN}-qcom-sa8775p-ride-adsp = "1"
+SKIP_FILEDEPS:${PN}-qcom-sa8775p-ride-cdsp = "1"
+SKIP_FILEDEPS:${PN}-qcom-sa8775p-ride-gdsp = "1"
+SKIP_FILEDEPS:${PN}-qcom-sm8750-mtp-adsp = "1"
+SKIP_FILEDEPS:${PN}-qcom-sm8750-mtp-cdsp = "1"
+SKIP_FILEDEPS:${PN}-thundercomm-db845c-sdsp = "1"
+SKIP_FILEDEPS:${PN}-thundercomm-rb2-cdsp = "1"
+SKIP_FILEDEPS:${PN}-thundercomm-rb3gen2-cdsp = "1"
+SKIP_FILEDEPS:${PN}-thundercomm-rb5-cdsp = "1"

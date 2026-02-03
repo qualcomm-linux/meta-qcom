@@ -1,7 +1,7 @@
-From 201a44526904149c545ef0526ac005f123f4e3d7 Mon Sep 17 00:00:00 2001
+From aa7b4bbcb3a1ddf11a94f1500b05a39041efb7b4 Mon Sep 17 00:00:00 2001
 From: Krishna Chaitanya Chundru <krishna.chundru@oss.qualcomm.com>
-Date: Sat, 12 Apr 2025 07:19:51 +0530
-Subject: [PATCH 2/8] arm64: dts: qcom: qcs6490-rb3gen2: Add TC9563 PCIe switch
+Date: Mon, 5 Jan 2026 15:55:24 +0530
+Subject: [PATCH] arm64: dts: qcom: qcs6490-rb3gen2: Add TC9563 PCIe switch
  node
 
 Add a node for the TC9563 PCIe switch, which has three downstream ports.
@@ -13,24 +13,41 @@ Power to the TC9563 is supplied through two LDO regulators, controlled by
 two GPIOs, which are added as fixed regulators. Configure the TC9563
 through I2C.
 
-Signed-off-by: Krishna Chaitanya Chundru <krishna.chundru@oss.qualcomm.com>
+Upstream-Status: Backport
+[https://git.kernel.org/pub/scm/linux/kernel/git/next/linux-next.git/commit/?id=aa7b4bbcb3a1ddf11a94f1500b05a39041efb7b4]
+
 Reviewed-by: Bjorn Andersson <andersson@kernel.org>
 Acked-by: Manivannan Sadhasivam <manivannan.sadhasivam@linaro.org>
-Upstream-Status: Submitted [https://lore.kernel.org/lkml/20250412-qps615_v4_1-v5-0-5b6a06132fec@oss.qualcomm.com/T/]
+Reviewed-by: Dmitry Baryshkov <dmitry.baryshkov@oss.qualcomm.com>
+Signed-off-by: Krishna Chaitanya Chundru <krishna.chundru@oss.qualcomm.com>
+Link: https://lore.kernel.org/r/20260105-tc9563-v1-1-642fd1fe7893@oss.qualcomm.com
+Signed-off-by: Bjorn Andersson <andersson@kernel.org>
 ---
- arch/arm64/boot/dts/qcom/qcs6490-rb3gen2.dts | 129 +++++++++++++++++++
- arch/arm64/boot/dts/qcom/sc7280.dtsi         |   2 +-
- 2 files changed, 130 insertions(+), 1 deletion(-)
+ arch/arm64/boot/dts/qcom/kodiak.dtsi         |   2 +-
+ arch/arm64/boot/dts/qcom/qcs6490-rb3gen2.dts | 128 +++++++++++++++++++
+ 2 files changed, 129 insertions(+), 1 deletion(-)
 
+diff --git a/arch/arm64/boot/dts/qcom/kodiak.dtsi b/arch/arm64/boot/dts/qcom/kodiak.dtsi
+index c2ccbb67f800..076069f14495 100644
+--- a/arch/arm64/boot/dts/qcom/kodiak.dtsi
++++ b/arch/arm64/boot/dts/qcom/kodiak.dtsi
+@@ -2424,7 +2424,7 @@ pcie1: pcie@1c08000 {
+ 
+ 			status = "disabled";
+ 
+-			pcie@0 {
++			pcie1_port0: pcie@0 {
+ 				device_type = "pci";
+ 				reg = <0x0 0x0 0x0 0x0 0x0>;
+ 				bus-range = <0x01 0xff>;
 diff --git a/arch/arm64/boot/dts/qcom/qcs6490-rb3gen2.dts b/arch/arm64/boot/dts/qcom/qcs6490-rb3gen2.dts
-index 7a36c90ad4ec8b..17d29b922ee95b 100644
+index f29a352b0288..e3d2f01881ae 100644
 --- a/arch/arm64/boot/dts/qcom/qcs6490-rb3gen2.dts
 +++ b/arch/arm64/boot/dts/qcom/qcs6490-rb3gen2.dts
-@@ -218,6 +218,31 @@ vph_pwr: vph-pwr-regulator {
- 		regulator-min-microvolt = <3700000>;
- 		regulator-max-microvolt = <3700000>;
+@@ -262,6 +262,30 @@ active-config0 {
+ 		};
  	};
-+
+ 
 +	vdd_ntn_0p9: regulator-vdd-ntn-0p9 {
 +		compatible = "regulator-fixed";
 +		regulator-name = "VDD_NTN_0P9";
@@ -55,10 +72,10 @@ index 7a36c90ad4ec8b..17d29b922ee95b 100644
 +		regulator-enable-ramp-delay = <10000>;
 +	};
 +
- };
- 
- &apps_rsc {
-@@ -735,6 +760,78 @@ &pcie1_phy {
+ 	wcn6750-pmu {
+ 		compatible = "qcom,wcn6750-pmu";
+ 		pinctrl-0 = <&bt_en>;
+@@ -803,6 +827,78 @@ &pcie1_phy {
  	status = "okay";
  };
  
@@ -82,9 +99,9 @@ index 7a36c90ad4ec8b..17d29b922ee95b 100644
 +
 +		i2c-parent = <&i2c0 0x77>;
 +
-+		reset-gpios = <&pm8350c_gpios 1 GPIO_ACTIVE_LOW>;
++		resx-gpios = <&pm8350c_gpios 1 GPIO_ACTIVE_LOW>;
 +
-+		pinctrl-0 = <&tc9563_rsex_n>;
++		pinctrl-0 = <&tc9563_resx_n>;
 +		pinctrl-names = "default";
 +
 +		pcie@1,0 {
@@ -137,8 +154,8 @@ index 7a36c90ad4ec8b..17d29b922ee95b 100644
  &pm7325_gpios {
  	kypd_vol_up_n: kypd-vol-up-n-state {
  		pins = "gpio6";
-@@ -839,6 +936,38 @@ &sdhc_2 {
- 	status = "okay";
+@@ -1081,6 +1177,38 @@ right_spkr: speaker@0,2 {
+ 	};
  };
  
 +&pm8350c_gpios {
@@ -162,7 +179,7 @@ index 7a36c90ad4ec8b..17d29b922ee95b 100644
 +		power-source = <0>;
 +	};
 +
-+	tc9563_rsex_n: tc9563-resx-state {
++	tc9563_resx_n: tc9563-resx-state {
 +		pins = "gpio1";
 +		function = "normal";
 +
@@ -176,19 +193,6 @@ index 7a36c90ad4ec8b..17d29b922ee95b 100644
  &tlmm {
  	gpio-reserved-ranges = <32 2>, /* ADSP */
  			       <48 4>; /* NFC */
-diff --git a/arch/arm64/boot/dts/qcom/sc7280.dtsi b/arch/arm64/boot/dts/qcom/sc7280.dtsi
-index 0f2caf36910b65..4265fbf6c97e8a 100644
---- a/arch/arm64/boot/dts/qcom/sc7280.dtsi
-+++ b/arch/arm64/boot/dts/qcom/sc7280.dtsi
-@@ -2284,7 +2284,7 @@ pcie1: pcie@1c08000 {
- 
- 			status = "disabled";
- 
--			pcie@0 {
-+			pcie1_port0: pcie@0 {
- 				device_type = "pci";
- 				reg = <0x0 0x0 0x0 0x0 0x0>;
- 				bus-range = <0x01 0xff>;
 -- 
-2.49.0
+2.34.1
 

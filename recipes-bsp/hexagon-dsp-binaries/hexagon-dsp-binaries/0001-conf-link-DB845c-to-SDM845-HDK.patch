@@ -1,0 +1,47 @@
+From a191338880e3de076faf4b88050421b89705507f Mon Sep 17 00:00:00 2001
+From: Dmitry Baryshkov <dmitry.baryshkov@oss.qualcomm.com>
+Date: Fri, 23 Jan 2026 02:58:41 +0200
+Subject: [PATCH] conf: link DB845c to SDM845-HDK
+
+The Qualcomm / Lantronix SDM845-HDK is an non-fused devkit using SDA845
+SoC. For ADSP and CDSP we are going to reuse the existing firmware from
+linux-firmware, so provide symlinks for the Hexagon DSP libraries too.
+
+Signed-off-by: Dmitry Baryshkov <dmitry.baryshkov@oss.qualcomm.com>
+Upstream-Status: Backport [https://github.com/linux-msm/hexagon-dsp-binaries/commit/a191338880e3de076faf4b88050421b89705507f]
+---
+ 00-hexagon-dsp-binaries.yaml | 2 ++
+ config.txt                   | 4 ++++
+ 2 files changed, 6 insertions(+)
+
+diff --git a/00-hexagon-dsp-binaries.yaml b/00-hexagon-dsp-binaries.yaml
+index 035660d47d60..d6c94e7308a6 100644
+--- a/00-hexagon-dsp-binaries.yaml
++++ b/00-hexagon-dsp-binaries.yaml
+@@ -24,6 +24,8 @@ machines:
+     DSP_LIBRARY_PATH: "qcs8300/Qualcomm/QCS8300-RIDE/dsp"
+   "Qualcomm Technologies, Inc. QRB4210 RB2":
+     DSP_LIBRARY_PATH: "qrb4210/Thundercomm/RB2/dsp"
++  "Qualcomm Technologies, Inc. SDM845 HDK":
++    DSP_LIBRARY_PATH: "sdm845/Qualcomm/SDM845-HDK/dsp"
+   "Qualcomm Technologies, Inc. Robotics RB1":
+     DSP_LIBRARY_PATH: "qcm2290/Thundercomm/RB1/dsp"
+   "Qualcomm Technologies, Inc. Robotics RB3gen2":
+diff --git a/config.txt b/config.txt
+index 29700b879219..eeca89a68a8e 100644
+--- a/config.txt
++++ b/config.txt
+@@ -14,6 +14,10 @@ Install: sdm845/Thundercomm/db845c	adsp	ADSP.HT.4.0-00593-SDM845-1
+ Install: sdm845/Thundercomm/db845c	cdsp	CDSP.HT.1.0-00559-SDM845-1
+ Install: sdm845/Thundercomm/db845c	sdsp	SLPI.HY.1.0-00365-SDM845AZL-1
+ 
++# SDM845-HDK uses RB3 firmware (from linux-firmware) for adsp and cdsp
++Link: sdm845/Thundercomm/db845c/dsp/adsp	sdm845/Qualcomm/SDM845-HDK/dsp/adsp
++Link: sdm845/Thundercomm/db845c/dsp/cdsp	sdm845/Qualcomm/SDM845-HDK/dsp/cdsp
++
+ # RB5
+ Install: sm8250/Thundercomm/RB5		adsp	ADSP.HT.5.3.c2-00082-SM8250-1
+ Install: sm8250/Thundercomm/RB5		cdsp	CDSP.HT.2.3.c1-00076-SM8250-1
+-- 
+2.51.0
+

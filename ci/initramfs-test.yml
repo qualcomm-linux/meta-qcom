@@ -3,6 +3,10 @@
 header:
   version: 14
 
+local_conf_header:
+  fwcompress: |
+    FIRMWARE_COMPRESSION = "zst"
+
 target:
   - initramfs-firmware-db8074-image
   - initramfs-firmware-dragonboard410c-image

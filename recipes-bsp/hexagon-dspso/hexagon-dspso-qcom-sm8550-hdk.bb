@@ -12,3 +12,6 @@ DEPENDS = "firmware-${DSP_PKG_NAME}"
 S = "${UNPACKDIR}"
 
 require hexagon-dspso.inc
+
+SKIP_FILEDEPS:hexagon-dsp-binaries-${DSP_PKG_NAME}-adsp = "1"
+SKIP_FILEDEPS:hexagon-dsp-binaries-${DSP_PKG_NAME}-cdsp = "1"
