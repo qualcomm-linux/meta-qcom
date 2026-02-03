@@ -5,6 +5,7 @@
 
 FIT_DTB_COMPATIBLE[apq8016-sbc] = "qcom,apq8016-sbc"
 FIT_DTB_COMPATIBLE[apq8096-db820c] = "qcom,apq8096-sbc"
+FIT_DTB_COMPATIBLE[glymur-crd] = "qcom,glymur-crd"
 FIT_DTB_COMPATIBLE[kaanapali-mtp] = "qcom,kaanapali-mtp"
 FIT_DTB_COMPATIBLE[hamoa-iot-evk] = "qcom,hamoa-evk"
 FIT_DTB_COMPATIBLE[lemans-evk] = "qcom,qcs9075v2-iot"
