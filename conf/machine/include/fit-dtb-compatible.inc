@@ -39,7 +39,7 @@ FIT_DTB_COMPATIBLE[qcs6490-rb3gen2+qcs6490-rb3gen2-industrial-mezzanine] = "qcom
 FIT_DTB_COMPATIBLE[qcs6490-rb3gen2+qcs6490-rb3gen2-vision-mezzanine] = "qcom,qcs6490-iot-subtype2"
 FIT_DTB_COMPATIBLE[qcs6490-rb3gen2+qcs6490-rb3gen2-vision-mezzanine-camx] = "qcom,qcs6490-iot-camx"
 FIT_DTB_COMPATIBLE[qcs8300-ride] = "qcom,qcs8300-adp"
-FIT_DTB_COMPATIBLE[qcs8300-ride-camx] = "qcom,qcs8300-adp-camx"
+FIT_DTB_COMPATIBLE[qcs8300-ride+qcs8300-ride-camx] = "qcom,qcs8300-adp-camx"
 FIT_DTB_COMPATIBLE[qcs9100-ride] = " \
                                      qcom,qcs9100-qam \
                                      qcom,qcs9100v2-qam \
