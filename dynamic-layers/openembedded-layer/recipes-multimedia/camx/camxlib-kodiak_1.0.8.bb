@@ -22,7 +22,7 @@ PBT_BUILD_DATE = "260130"
 
 S = "${UNPACKDIR}"
 
-DEPENDS += "glib-2.0 fastrpc protobuf libxml2 virtual/egl virtual/libgles2 virtual/libopencl1"
+DEPENDS += "glib-2.0 fastrpc protobuf-camx libxml2 virtual/egl virtual/libgles2 virtual/libopencl1"
 
 # This package is currently only used and tested on ARMv8 (aarch64) machines.
 # Therefore, builds for other architectures are not necessary and are explicitly excluded.
