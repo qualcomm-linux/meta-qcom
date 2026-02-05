@@ -10,7 +10,7 @@ PACKAGES = " \
 RRECOMMENDS:${PN}-firmware = " \
     ${@bb.utils.contains_any('DISTRO_FEATURES', 'opencl opengl vulkan', 'linux-firmware-qcom-adreno-a660 linux-firmware-qcom-qcm6490-adreno', '', d)} \
     ${@bb.utils.contains('DISTRO_FEATURES', 'wifi', 'linux-firmware-ath11k-wcn6750 linux-firmware-qcom-qcm6490-wifi', '', d)} \
-    ${@bb.utils.contains('DISTRO_FEATURES', 'bluetooth', 'linux-firmware-qca-wcn6750', '', d)} \
+    ${@bb.utils.contains('DISTRO_FEATURES', 'bluetooth', 'linux-firmware-qca-qca61x4-usb linux-firmware-qca-wcn6750 linux-firmware-qca-qcc2072 ', '', d)} \
     camxfirmware-kodiak \
     linux-firmware-qcom-qcm6490-audio \
     linux-firmware-qcom-qcm6490-compute \
