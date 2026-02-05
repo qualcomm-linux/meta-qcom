@@ -68,7 +68,10 @@ FIT_DTB_COMPATIBLE[sa8775p-ride-r3] = " \
                                         qcom,sa8775p-qamr2 \
                                         qcom,sa8775pv2-qamr2 \
 "
-FIT_DTB_COMPATIBLE[sa8775p-ride-r3-camx] = "qcom,sa8775p-qamr2-camx"
+FIT_DTB_COMPATIBLE[sa8775p-ride-r3+sa8775p-ride-camx] = " \
+    qcom,sa8775p-qamr2-camx \
+    qcom,sa8775pv2-qamr2-camx \
+"
 FIT_DTB_COMPATIBLE[sdm845-db845c] = "qcom,sdm845"
 FIT_DTB_COMPATIBLE[sm8450-hdk] = "qcom,sm8450-hdk"
 FIT_DTB_COMPATIBLE[sm8750-mtp] = "qcom,sm8750-mtp"
