@@ -1,0 +1,6 @@
+header:
+  version: 14
+
+local_conf_header:
+  bootloaderprovider: |
+    PREFERRED_PROVIDER_virtual/bootloader = "u-boot-qcom"
