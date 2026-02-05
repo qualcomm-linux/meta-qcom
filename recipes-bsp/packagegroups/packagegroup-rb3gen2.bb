@@ -5,6 +5,11 @@ inherit packagegroup
 PACKAGES = " \
     ${PN}-firmware \
     ${PN}-hexagon-dsp-binaries \
+    ${PN}-industrial-mezzanine-firmware \
+"
+
+RRECOMMENDS:${PN}-industrial-mezzanine-firmware = " \
+    ${@bb.utils.contains('DISTRO_FEATURES', 'bluetooth', 'linux-firmware-qca-qca61x4-usb linux-firmware-qca-qcc2072', '', d)} \
 "
 
 RRECOMMENDS:${PN}-firmware = " \
