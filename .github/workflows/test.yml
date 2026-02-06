@@ -30,6 +30,7 @@ jobs:
         distro:
           - name: poky-altcfg
           - name: qcom-distro
+          - name: qcom-distro+linux-qcom-6.18
     steps:
       - uses: actions/checkout@v4
         with:
@@ -146,6 +147,7 @@ jobs:
         distro:
           - name: poky-altcfg
           - name: qcom-distro
+          - name: qcom-distro+linux-qcom-6.18
     steps:
       - id: print-condition
         name: "Print condition"
