@@ -222,6 +222,22 @@ jobs:
                 type: default
                 dirname: ""
                 yamlfile: ""
+          - machine: qcs615-ride
+            distro:
+                name: poky-altcfg
+                yamlfile: ''
+            kernel:
+                type: u-boot-qcom-6.18
+                dirname: "+linux-qcom-6.18+u-boot-qcom"
+                yamlfile: ":ci/linux-qcom-6.18.yml:ci/u-boot-qcom.yml"
+          - machine: rb3gen2-core-kit
+            distro:
+                name: poky-altcfg
+                yamlfile: ''
+            kernel:
+                type: u-boot-qcom-6.18
+                dirname: "+linux-qcom-6.18+u-boot-qcom"
+                yamlfile: ":ci/linux-qcom-6.18.yml:ci/u-boot-qcom.yml"
     name: ${{ matrix.machine }}/${{ matrix.distro.name }}${{ matrix.kernel.dirname }}
     steps:
       - uses: actions/checkout@v4
