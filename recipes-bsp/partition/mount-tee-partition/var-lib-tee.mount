@@ -1,0 +1,16 @@
+# Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
+#
+# SPDX-License-Identifier: BSD-3-Clause-Clear
+
+[Unit]
+Description=Mount persist partition at /var/lib/tee
+Before=local-fs.target
+
+[Mount]
+DirectoryMode=0755
+What=/dev/disk/by-partlabel/persist
+Where=/var/lib/tee
+Type=ext4
+
+[Install]
+WantedBy=local-fs.target
