@@ -8,17 +8,15 @@ LICENSE = "LICENSE.qcom-2"
 LIC_FILES_CHKSUM = "file://usr/share/doc/${BPN}/NO.LOGIN.BINARY.LICENSE.QTI.pdf;md5=7a5da794b857d786888bbf2b7b7529c8 \
                     file://usr/share/doc/${BPN}/NOTICE;md5=04facc2e07e3d41171a931477be0c690"
 
+PBT_BUILD_DATE = "260203"
 SRC_URI = " \
    https://qartifactory-edge.qualcomm.com/artifactory/qsc_releases/software/chip/component/camx.qclinux.0.0/${PBT_BUILD_DATE}/prebuilt_yocto/${BPN}_${PV}_armv8-2a.tar.gz;name=camxlib \
    https://qartifactory-edge.qualcomm.com/artifactory/qsc_releases/software/chip/component/camx.qclinux.0.0/${PBT_BUILD_DATE}/prebuilt_yocto/camx-kodiak_${PV}_armv8-2a.tar.gz;name=camx \
    https://qartifactory-edge.qualcomm.com/artifactory/qsc_releases/software/chip/component/camx.qclinux.0.0/${PBT_BUILD_DATE}/prebuilt_yocto/chicdk-kodiak_${PV}_armv8-2a.tar.gz;name=chicdk \
-   https://qartifactory-edge.qualcomm.com/artifactory/qsc_releases/software/chip/component/camx.qclinux.0.0/${PBT_BUILD_DATE}/prebuilt_yocto/camxapi-kodiak_${PV}_armv8-2a.tar.gz;name=camxapi \
    "
-SRC_URI[camxlib.sha256sum] = "63fa521da6326509623e5259e80cfdcd1ca3529dbfe3bb8f80ef83cc6220ef78"
-SRC_URI[camx.sha256sum] = "7951026b1c264f23dda13bdae9f6c0deff40afba39f1ff82b1fd43faaa27aa96"
-SRC_URI[chicdk.sha256sum] = "56156961df0514394066c657ae65d20749d2ee017fd341e81d0d3d04f6a1ef30"
-SRC_URI[camxapi.sha256sum] = "8f24a0821c35e2ad3f2f90f4a7980cffbffa3e28365dd8825c73ace3ccf584ff"
-PBT_BUILD_DATE = "260130"
+SRC_URI[camxlib.sha256sum] = "2c2ba360dd0b19637a983d2426188f9677e7fff12d3704361b995812fbc47e7d"
+SRC_URI[camx.sha256sum] = "5f42f2ab165f49d0b39113baf2b7bd842d5ffa793d2cf44efc209fc8e121e9bd"
+SRC_URI[chicdk.sha256sum] = "491f171b533fa7249ddfb4b32bfbe822ff4125021708d2e0f0a6737068b2eee4"
 
 S = "${UNPACKDIR}"
 
@@ -39,11 +37,9 @@ do_install() {
     install -d ${D}${datadir}/doc/camx-kodiak
     install -d ${D}${datadir}/doc/chicdk-kodiak
     install -d ${D}${bindir}
-    install -d ${D}${includedir}/camx/kodiak
 
     cp -r ${S}/usr/lib/* ${D}${libdir}
     cp -r ${S}/usr/bin/* ${D}${bindir}
-    cp -r ${S}/usr/include/*  ${D}${includedir}/camx/kodiak
 
     # Remove unnecessary development symlinks (.so) from the staged image
     rm -f ${D}${libdir}/camx/kodiak/*${SOLIBSDEV}
@@ -63,6 +59,7 @@ do_install() {
 
 PACKAGE_BEFORE_PN += "camx-kodiak chicdk-kodiak"
 RDEPENDS:${PN} += "chicdk-kodiak"
+RDEPENDS:${pn}-dev += "camxcommon-headers-dev"
 
 FILES:camx-kodiak = "\
     ${libdir}/libcamera_hardware_kodiak*${SOLIBS} \
@@ -102,7 +99,6 @@ FILES:${PN} = "\
     "
 FILES:${PN}-dev = "\
     ${libdir}/*${SOLIBSDEV} \
-    ${includedir}/ \
     "
 # Preserve ${PN} naming to avoid ambiguity in package identification.
 DEBIAN_NOAUTONAME:${PN} = "1"
