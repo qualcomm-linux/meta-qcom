@@ -20,6 +20,7 @@ concurrency:
 env:
   CACHE_DIR: /efs/qli/meta-qcom
   KAS_CLONE_DEPTH: 1
+  KAS_PREMIRRORS: "https://git\\.openembedded\\.org/ https://github.com/openembedded/\n"
 
 jobs:
   kas-setup:
