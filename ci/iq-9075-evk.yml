@@ -5,4 +5,16 @@ header:
   includes:
   - ci/base.yml
 
+repos:
+  meta-security:
+    url: https://git.yoctoproject.org/meta-security
+    branch: master
+    layers:
+      meta-tpm:
+
+local_conf_header:
+  enable-tpm2: |
+    DISTRO_FEATURES:append = " tpm2"
+    IMAGE_INSTALL:append = " packagegroup-security-tpm2"
+
 machine: iq-9075-evk
