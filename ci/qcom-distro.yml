@@ -11,7 +11,7 @@ repos:
     branch: main
 
   meta-openembedded:
-    url: https://github.com/openembedded/meta-openembedded
+    url: https://git.openembedded.org/meta-openembedded
     layers:
       meta-filesystems:
       meta-gnome:
