@@ -1,0 +1,41 @@
+From 8e0268dfa07b409a40a661a8c62f83832a2ba94b Mon Sep 17 00:00:00 2001
+From: Vladimir Zapolskiy <vladimir.zapolskiy@linaro.org>
+Date: Thu, 20 Nov 2025 02:46:04 +0200
+Subject: [PATCH] media: qcom: camss: use a handy
+ v4l2_async_nf_add_fwnode_remote() function
+
+Another code simplification makes parsing of remote endpoints easy.
+
+Upstream-Status: Submitted [https://lore.kernel.org/all/20251120004604.2573803-3-vladimir.zapolskiy@linaro.org]
+Link: https://lore.kernel.org/all/20251120004604.2573803-3-vladimir.zapolskiy@linaro.org/
+Tested-by: Loic Poulain <loic.poulain@oss.qualcomm.com>
+Signed-off-by: Vladimir Zapolskiy <vladimir.zapolskiy@linaro.org>
+---
+ drivers/media/platform/qcom/camss/camss.c | 13 ++-----------
+ 1 file changed, 2 insertions(+), 11 deletions(-)
+
+diff --git a/drivers/media/platform/qcom/camss/camss.c b/drivers/media/platform/qcom/camss/camss.c
+index 8e0809202362..7f44b60bcd72 100644
+--- a/drivers/media/platform/qcom/camss/camss.c
++++ b/drivers/media/platform/qcom/camss/camss.c
+@@ -4271,18 +4271,9 @@ static int camss_parse_ports(struct camss *camss)
+ 
+ 	fwnode_graph_for_each_endpoint(fwnode, ep) {
+ 		struct camss_async_subdev *csd;
+-		struct fwnode_handle *remote;
+ 
+-		remote = fwnode_graph_get_remote_port_parent(ep);
+-		if (!remote) {
+-			dev_err(dev, "Cannot get remote parent\n");
+-			ret = -EINVAL;
+-			goto err_cleanup;
+-		}
+-
+-		csd = v4l2_async_nf_add_fwnode(&camss->notifier, remote,
+-					       struct camss_async_subdev);
+-		fwnode_handle_put(remote);
++		csd = v4l2_async_nf_add_fwnode_remote(&camss->notifier, ep,
++						      typeof(*csd));
+ 		if (IS_ERR(csd)) {
+ 			ret = PTR_ERR(csd);
+ 			goto err_cleanup;

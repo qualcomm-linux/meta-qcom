@@ -20,6 +20,9 @@ SRCBRANCH:class-devupstream ?= "branch=qcom-next"
 
 SRC_URI = "git://github.com/qualcomm-linux/kernel.git;${SRCBRANCH};protocol=https"
 
+# Apply additional qcom patches
+require ${PN}/qcs615.inc
+
 # Additional kernel configs.
 SRC_URI += " \
     file://configs/bsp-additions.cfg \

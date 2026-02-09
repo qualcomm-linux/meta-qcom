@@ -1,0 +1,36 @@
+From f748ec1cc1df471ebd212056f6e3fef25de0e92c Mon Sep 17 00:00:00 2001
+From: Wenmeng Liu <wenmeng.liu@oss.qualcomm.com>
+Date: Fri, 23 Jan 2026 17:19:56 +0800
+Subject: [PATCH] media: i2c: imx412: Extend the power-on waiting time
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+The Arducam IMX577 module requires a longer reset time than the 1000µs
+configured in the current driver. Increase the wait time after power-on
+to ensure proper initialization.
+
+Upstream-Status: Submitted [https://lore.kernel.org/all/20260123-imx412-v7-2-e58303f2b76b@oss.qualcomm.com]
+Link: https://lore.kernel.org/all/20260123-imx412-v7-2-e58303f2b76b@oss.qualcomm.com/
+Signed-off-by: Wenmeng Liu <wenmeng.liu@oss.qualcomm.com>
+---
+ drivers/media/i2c/imx412.c | 6 +++++-
+ 1 file changed, 5 insertions(+), 1 deletion(-)
+
+diff --git a/drivers/media/i2c/imx412.c b/drivers/media/i2c/imx412.c
+index aa63dfc34918..e25e0a9ff65c 100644
+--- a/drivers/media/i2c/imx412.c
++++ b/drivers/media/i2c/imx412.c
+@@ -1037,7 +1037,11 @@ static int imx412_power_on(struct device *dev)
+ 		goto error_reset;
+ 	}
+ 
+-	usleep_range(1000, 1200);
++	/*
++	 * Certain Arducam IMX577 module variants require a longer reset settle
++	 * time. Increasing the delay from 1ms to 10ms ensures reliable startup.
++	 */
++	usleep_range(10000, 12000);
+ 
+ 	return 0;
+ 

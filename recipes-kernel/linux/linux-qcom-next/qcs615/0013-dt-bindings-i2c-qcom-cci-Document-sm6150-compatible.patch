@@ -1,0 +1,37 @@
+From 9b18ad5bceccd82af76307ef4bae2b5526a562a9 Mon Sep 17 00:00:00 2001
+From: Wenmeng Liu <wenmeng.liu@oss.qualcomm.com>
+Date: Thu, 22 Jan 2026 18:48:53 +0800
+Subject: [PATCH] dt-bindings: i2c: qcom-cci: Document sm6150 compatible
+
+Add the sm6150 CCI device string compatible.
+
+Upstream-Status: Submitted [https://lore.kernel.org/all/20260122-sm6150_evk-v5-2-039b170450a3@oss.qualcomm.com]
+Link: https://lore.kernel.org/all/20260122-sm6150_evk-v5-2-039b170450a3@oss.qualcomm.com/
+Reviewed-by: Vladimir Zapolskiy <vladimir.zapolskiy@linaro.org>
+Signed-off-by: Wenmeng Liu <wenmeng.liu@oss.qualcomm.com>
+Reviewed-by: Krzysztof Kozlowski <krzysztof.kozlowski@oss.qualcomm.com>
+Reviewed-by: Loic Poulain <loic.poulain@oss.qualcomm.com>
+---
+ Documentation/devicetree/bindings/i2c/qcom,i2c-cci.yaml | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/Documentation/devicetree/bindings/i2c/qcom,i2c-cci.yaml b/Documentation/devicetree/bindings/i2c/qcom,i2c-cci.yaml
+index 399a09409e07..35d3a0685ac4 100644
+--- a/Documentation/devicetree/bindings/i2c/qcom,i2c-cci.yaml
++++ b/Documentation/devicetree/bindings/i2c/qcom,i2c-cci.yaml
+@@ -34,6 +34,7 @@ properties:
+               - qcom,sc8280xp-cci
+               - qcom,sdm670-cci
+               - qcom,sdm845-cci
++              - qcom,sm6150-cci
+               - qcom,sm6350-cci
+               - qcom,sm8250-cci
+               - qcom,sm8450-cci
+@@ -251,6 +252,7 @@ allOf:
+           contains:
+             enum:
+               - qcom,sa8775p-cci
++              - qcom,sm6150-cci
+               - qcom,sm8550-cci
+               - qcom,sm8650-cci
+               - qcom,x1e80100-cci

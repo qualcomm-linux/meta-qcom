@@ -1,0 +1,33 @@
+From 3c116481de2fca334c25294ab54d8f47b8552d36 Mon Sep 17 00:00:00 2001
+From: Sudarshan Shetty <tessolveupstream@gmail.com>
+Date: Wed, 14 Jan 2026 15:30:41 +0530
+Subject: [PATCH 01/19] dt-bindings: arm: qcom: talos-evk: Add QCS615 Talos EVK
+ SMARC platform
+
+Add binding support for the Qualcomm Technologies, Inc. Talos EVK
+SMARC platform based on the QCS615 SoC.
+
+Upstream-Status: Submitted [https://lore.kernel.org/all/20260114100043.1310164-2-tessolveupstream@gmail.com]
+Link: https://lore.kernel.org/all/20260114100043.1310164-2-tessolveupstream@gmail.com/
+Acked-by: Krzysztof Kozlowski <krzysztof.kozlowski@linaro.org>
+Signed-off-by: Sudarshan Shetty <tessolveupstream@gmail.com>
+Signed-off-by: Jie Gan <jie.gan@oss.qualcomm.com>
+---
+ Documentation/devicetree/bindings/arm/qcom.yaml | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/Documentation/devicetree/bindings/arm/qcom.yaml b/Documentation/devicetree/bindings/arm/qcom.yaml
+index 41a6492bdf3b..9b6a5ef90bad 100644
+--- a/Documentation/devicetree/bindings/arm/qcom.yaml
++++ b/Documentation/devicetree/bindings/arm/qcom.yaml
+@@ -881,6 +881,7 @@ properties:
+       - items:
+           - enum:
+               - qcom,qcs615-ride
++              - qcom,talos-evk
+           - const: qcom,qcs615
+           - const: qcom,sm6150
+ 
+-- 
+2.43.0
+

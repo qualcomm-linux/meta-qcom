@@ -1,0 +1,56 @@
+From 763131d892395cadc967e658fe61a2cb48414e38 Mon Sep 17 00:00:00 2001
+From: Wenmeng Liu <wenmeng.liu@oss.qualcomm.com>
+Date: Thu, 22 Jan 2026 18:48:55 +0800
+Subject: [PATCH] arm64: dts: qcom: talos: Add camera MCLK pinctrl
+
+Define pinctrl definitions to enable camera master clocks on Talos.
+
+Upstream-Status: Submitted [https://lore.kernel.org/all/20260122-sm6150_evk-v5-4-039b170450a3@oss.qualcomm.com]
+Link: https://lore.kernel.org/all/20260122-sm6150_evk-v5-4-039b170450a3@oss.qualcomm.com/
+Reviewed-by: Konrad Dybcio <konrad.dybcio@oss.qualcomm.com>
+Reviewed-by: Dmitry Baryshkov <dmitry.baryshkov@oss.qualcomm.com>
+Reviewed-by: Vladimir Zapolskiy <vladimir.zapolskiy@linaro.org>
+Signed-off-by: Wenmeng Liu <wenmeng.liu@oss.qualcomm.com>
+---
+ arch/arm64/boot/dts/qcom/talos.dtsi | 28 ++++++++++++++++++++++++++++
+ 1 file changed, 28 insertions(+)
+
+diff --git a/arch/arm64/boot/dts/qcom/talos.dtsi b/arch/arm64/boot/dts/qcom/talos.dtsi
+index 3ba8bf03c655..af7f8643a10a 100644
+--- a/arch/arm64/boot/dts/qcom/talos.dtsi
++++ b/arch/arm64/boot/dts/qcom/talos.dtsi
+@@ -1571,6 +1571,34 @@ tlmm: pinctrl@3100000 {
+ 			#interrupt-cells = <2>;
+ 			wakeup-parent = <&pdc>;
+ 
++			cam0_default: cam0-default-state {
++				pins = "gpio28";
++				function = "cam_mclk";
++				drive-strength = <2>;
++				bias-disable;
++			};
++
++			cam1_default: cam1-default-state {
++				pins = "gpio29";
++				function = "cam_mclk";
++				drive-strength = <2>;
++				bias-disable;
++			};
++
++			cam2_default: cam2-default-state {
++				pins = "gpio30";
++				function = "cam_mclk";
++				drive-strength = <2>;
++				bias-disable;
++			};
++
++			cam3_default: cam3-default-state {
++				pins = "gpio31";
++				function = "cam_mclk";
++				drive-strength = <2>;
++				bias-disable;
++			};
++
+ 			cci_i2c0_default: cci-i2c0-default-state {
+ 				/* SDA, SCL */
+ 				pins = "gpio32", "gpio33";

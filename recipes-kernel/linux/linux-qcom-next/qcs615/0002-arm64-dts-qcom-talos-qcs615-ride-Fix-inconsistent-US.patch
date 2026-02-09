@@ -1,0 +1,61 @@
+From f7668bbcbe8a8fe3338a4f27e54018a8a5401ad7 Mon Sep 17 00:00:00 2001
+From: Sudarshan Shetty <tessolveupstream@gmail.com>
+Date: Wed, 14 Jan 2026 15:30:42 +0530
+Subject: [PATCH 02/19] arm64: dts: qcom: talos/qcs615-ride: Fix inconsistent
+ USB PHY node naming
+
+The USB PHY nodes has inconsistent labels as 'usb_1_hspy'
+and 'usb_hsphy_2' across talos.dtsi and qcs615-ride.dts.
+This patch renames them to follow a consistent naming
+scheme.
+
+No functional changes, only label renaming.
+
+Upstream-Status: Submitted [https://lore.kernel.org/all/20260114100043.1310164-3-tessolveupstream@gmail.com]
+Link: https://lore.kernel.org/all/20260114100043.1310164-3-tessolveupstream@gmail.com/
+Reviewed-by: Dmitry Baryshkov <dmitry.baryshkov@oss.qualcomm.com>
+Signed-off-by: Sudarshan Shetty <tessolveupstream@gmail.com>
+Signed-off-by: Jie Gan <jie.gan@oss.qualcomm.com>
+---
+ arch/arm64/boot/dts/qcom/qcs615-ride.dts | 2 +-
+ arch/arm64/boot/dts/qcom/talos.dtsi      | 4 ++--
+ 2 files changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/arch/arm64/boot/dts/qcom/qcs615-ride.dts b/arch/arm64/boot/dts/qcom/qcs615-ride.dts
+index f061ae156e0c..e28dabac0a7d 100644
+--- a/arch/arm64/boot/dts/qcom/qcs615-ride.dts
++++ b/arch/arm64/boot/dts/qcom/qcs615-ride.dts
+@@ -647,7 +647,7 @@ bluetooth {
+ 	};
+ };
+ 
+-&usb_1_hsphy {
++&usb_hsphy_1 {
+ 	vdd-supply = <&vreg_l5a>;
+ 	vdda-pll-supply = <&vreg_l12a>;
+ 	vdda-phy-dpdm-supply = <&vreg_l13a>;
+diff --git a/arch/arm64/boot/dts/qcom/talos.dtsi b/arch/arm64/boot/dts/qcom/talos.dtsi
+index bad8dbb68d1d..008dcced46a9 100644
+--- a/arch/arm64/boot/dts/qcom/talos.dtsi
++++ b/arch/arm64/boot/dts/qcom/talos.dtsi
+@@ -4548,7 +4548,7 @@ osm_l3: interconnect@18321000 {
+ 			#interconnect-cells = <1>;
+ 		};
+ 
+-		usb_1_hsphy: phy@88e2000 {
++		usb_hsphy_1: phy@88e2000 {
+ 			compatible = "qcom,qcs615-qusb2-phy";
+ 			reg = <0x0 0x88e2000 0x0 0x180>;
+ 
+@@ -4682,7 +4682,7 @@ usb_1_dwc3: usb@a600000 {
+ 				iommus = <&apps_smmu 0x140 0x0>;
+ 				interrupts = <GIC_SPI 133 IRQ_TYPE_LEVEL_HIGH>;
+ 
+-				phys = <&usb_1_hsphy>, <&usb_qmpphy>;
++				phys = <&usb_hsphy_1>, <&usb_qmpphy>;
+ 				phy-names = "usb2-phy", "usb3-phy";
+ 
+ 				snps,dis-u1-entry-quirk;
+-- 
+2.43.0
+
