@@ -102,6 +102,8 @@ jobs:
             yamlfile: ':ci/qcom-distro-prop-image.yml'
           - name: qcom-distro-catchall
             yamlfile: ':ci/qcom-distro-catchall.yml'
+          - name: debug
+            yamlfile: ':ci/qcom-distro-prop-image.yml:ci/debug.yml'
           - name: performance
             yamlfile: ':ci/qcom-distro-prop-image.yml:ci/performance.yml'
         kernel:
@@ -157,6 +159,8 @@ jobs:
             yamlfile: ':ci/qcom-distro-prop-image.yml'
           - name: qcom-distro-catchall
             yamlfile: ':ci/qcom-distro-catchall.yml'
+          - name: debug
+            yamlfile: ':ci/qcom-distro-prop-image.yml:ci/debug.yml'
           - name: performance
             yamlfile: ':ci/qcom-distro-prop-image.yml:ci/performance.yml'
         kernel:
