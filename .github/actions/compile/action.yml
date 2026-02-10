@@ -46,8 +46,10 @@ runs:
       run: |
         # use a monthly sstate cache folder
         echo "DL_DIR=${{inputs.cache_dir}}/downloads" >> $GITHUB_ENV
-        echo "SSTATE_DIR=${{inputs.cache_dir}}/sstate-cache-$(date '+%Y-%m')" >> $GITHUB_ENV
+        SSTATE_DIR=${{inputs.cache_dir}}/sstate-cache-$(date '+%Y-%m')
+        echo "SSTATE_DIR=$SSTATE_DIR" >> $GITHUB_ENV
         echo "KAS_WORK_DIR=$PWD/../kas" >> $GITHUB_ENV
+        mkdir -vp $SSTATE_DIR/hashserver
 
     - name: Dump kas-build yaml
       shell: bash
