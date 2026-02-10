@@ -10,3 +10,4 @@ local_conf_header:
   hashserver: |
     BB_HASHSERVE ??= "auto"
     BB_SIGNATURE_HANDLER = "OEEquivHash"
+    BB_HASHSERVE_DB_DIR = "${SSTATE_DIR}/hashserver"
