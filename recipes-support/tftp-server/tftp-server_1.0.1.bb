@@ -13,9 +13,14 @@ SRC_URI[sha256sum] = "6dffae734607ce7bbde40a839b60960558df45796ed66dfd78a74ddf91
 
 S = "${UNPACKDIR}"
 
-DEPENDS += "glib-2.0 virtual/kernel qmi-framework libcap"
+DEPENDS += "glib-2.0 qmi-framework libcap"
 RPROVIDES:${PN} += "virtual-tftp-server"
 RCONFLICTS:${PN} += "tqftpserv"
+
+# This package is currently only used and tested on ARMv8 (aarch64) machines.
+# Therefore, builds for other architectures are not necessary and are explicitly excluded.
+COMPATIBLE_MACHINE = "^$"
+COMPATIBLE_MACHINE:aarch64 = "(.*)"
 
 FILES:${PN} += "/lib/systemd/*"
 FILES:${PN} += "/etc/tmpfiles.d/*"
