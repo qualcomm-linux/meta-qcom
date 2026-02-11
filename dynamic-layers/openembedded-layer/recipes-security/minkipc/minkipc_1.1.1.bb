@@ -13,28 +13,28 @@ LIC_FILES_CHKSUM = "file://LICENSE.txt;md5=2b1366ebba1ebd9ae25ad19626bbca93"
 
 inherit cmake systemd pkgconfig
 
-SRC_URI = "git://github.com/qualcomm/minkipc.git;branch=main;protocol=https"
-SRCREV = "337b2e0b86b4ad9ab76d5f18b02bac08c14b10a6"
-PV = "0.0+git"
+SRC_URI = "git://github.com/qualcomm/minkipc.git;branch=main;protocol=https;tag=v${PV}"
+SRCREV = "307a2f368051d0436d450a9d1f5fa14ff0f94580"
 
 DEPENDS += "qcbor qcomtee mink-idl-compiler-native glib-2.0"
 
 EXTRA_OECMAKE = " \
+    -DBUILD_UNITTEST=ON \
     -DMINKIDLC_BIN_DIR=${STAGING_BINDIR_NATIVE} \
     -DSYSTEMD_UNIT_DIR=${systemd_unitdir}/system \
     -DUDEV_DIR=${nonarch_libdir}/udev/rules.d \
+    -DMINKIPC_LIBEXEC_DIR=${base_bindir} \
 "
 
 PACKAGE_BEFORE_PN += "${PN}-qteesupplicant"
 
-SYSTEMD_SERVICE:${PN}-qteesupplicant = "qteesupplicant.service"
+SYSTEMD_PACKAGES = "${PN}-qteesupplicant"
+SYSTEMD_SERVICE:${PN}-qteesupplicant = "qteesupplicant.service sfsconfig.service"
+
 FILES:${PN}-qteesupplicant = "${bindir}/qtee_supplicant \
-                              ${systemd_unitdir}/system/qteesupplicant.service \
                               ${nonarch_libdir}/udev/rules.d/99-qcomtee-udev.rules \
+                              ${base_bindir}/sfs_config \
 "
 
 RDEPENDS:${PN}-qteesupplicant = "${PN}"
 
-# Currently, this recipe only builds and installs for ARMv8 (aarch64) machine.
-COMPATIBLE_MACHINE = "^$"
-COMPATIBLE_MACHINE:aarch64 = "(.*)"
