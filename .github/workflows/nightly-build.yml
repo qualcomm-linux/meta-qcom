@@ -5,6 +5,7 @@ on:
   # NOTE - changes to the cron spec should be pushed by https://github.com/quic-yocto-ci
   # so that build notification emails will be sent out properly.
   - cron: "23 23 * * *"   # daily job - pick a random "minute"  - top of hour can be busy in github
+  workflow_dispatch:
 
 permissions:
   checks: write
