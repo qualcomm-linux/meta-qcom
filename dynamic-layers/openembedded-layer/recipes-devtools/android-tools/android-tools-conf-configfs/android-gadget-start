@@ -4,6 +4,72 @@ set -e
 
 sleep 10
 
-ls /sys/class/udc/ | head -n 1 | xargs echo -n > /sys/kernel/config/usb_gadget/adb/UDC
+# Speed-only selection:
+# 1) Pick UDC with highest maximum_speed
+# 2) Tie-breaker: lexicographic order (first one found via sort)
+#
+# Recognized speeds:
+#   super-speed-plus, super-speed, high-speed, full-speed, low-speed
 
-echo "Setting UDC $(ls /sys/class/udc/ | head -n 1) for USB ADB Gadget usage"
+UDC_FOLDER="/sys/class/udc"
+GADGET_PATH="/sys/kernel/config/usb_gadget/adb"
+
+if [ ! -d "$UDC_FOLDER" ]; then
+    echo "Error: UDC folder '$UDC_FOLDER' not found." >&2
+    return 1
+fi
+if [ ! -d "$GADGET_PATH" ]; then
+    echo "Error: Gadget path '$GADGET_PATH' does not exist." >&2
+    return 1
+fi
+
+# Return a normalized rank for a speed string.
+# Higher number == better.
+speed_rank() {
+    # Kernel ABI guarantees specific lowercase values
+    case "$1" in
+        "super-speed-plus") echo 5 ;;
+        "super-speed")      echo 4 ;;
+        "high-speed")       echo 3 ;;
+        "full-speed")       echo 2 ;;
+        "low-speed")        echo 1 ;;
+        *)                  echo 0 ;;
+    esac
+}
+
+# Read maximum speed capability for a UDC.
+read_max_speed() {
+    p="$1"
+    if [ -f "$p/maximum_speed" ]; then
+        cat "$p/maximum_speed" 2>/dev/null
+        return 0
+    fi
+    echo ""
+}
+
+best_udc=""
+best_max_rank=-1
+
+# Iterate all UDCs and select the best one by maximum_speed.
+for udc in $(ls -1 "$UDC_FOLDER" 2>/dev/null | sort); do
+    udc_path="$UDC_FOLDER/$udc"
+    [ -d "$udc_path" ] || continue
+
+    max_text="$(read_max_speed "$udc_path")"
+    max_rank="$(speed_rank "$max_text")"
+
+    # Initialize or update if we found a faster controller
+    # Strict inequality (>): maintains lexicographical order (first one wins) on ties
+    if [ -z "$best_udc" ] || [ "$max_rank" -gt "$best_max_rank" ]; then
+        best_udc="$udc"
+        best_max_rank="$max_rank"
+    fi
+done
+
+if [ -z "$best_udc" ]; then
+    echo "Error: No UDC controller found in $UDC_FOLDER" >&2
+    return 1
+fi
+
+echo "Binding Gadget to UDC: $best_udc (maximum_speed='$(read_max_speed "$UDC_FOLDER/$best_udc")')" >&2
+echo -n "$best_udc" > "$GADGET_PATH/UDC"
