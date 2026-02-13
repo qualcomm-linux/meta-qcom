@@ -70,13 +70,15 @@ python do_generate_qcom_fitimage() {
         base_stem = parts[0]
         ovl_stems = parts[1:]
 
-        # Skip base+overlay combinations not present in KERNEL_DEVICETREE to avoid generating invalid FIT configs
-        # from declarative FIT_DTB_COMPATIBLE metadata
-        if not (base_stem in base_dtb_list and all(ovl in overlay_dtbo_list for ovl in ovl_stems)):
+        # Only require base DTB to exist, overlays are optional
+        # This allows using base DTB without any overlays
+        if base_stem not in base_dtb_list:
             continue
 
+        # Filter overlays to only include those actually present in KERNEL_DEVICETREE
+        available_overlays = [ovl for ovl in ovl_stems if ovl in overlay_dtbo_list]
         base = base_stem + ".dtb"
-        overlays = [ovl + ".dtbo" for ovl in ovl_stems]
+        overlays = [ovl + ".dtbo" for ovl in available_overlays]
 
         overlay_groups.setdefault(base, []).append(overlays)
         overlay_compats[key] = compat_val
@@ -92,7 +94,8 @@ python do_generate_qcom_fitimage() {
             dtb_key = os.path.splitext(fname)[0].replace(',', '_')
             compatible = d.getVarFlag("FIT_DTB_COMPATIBLE", dtb_key) or ""
             if not compatible:
-                bb.fatal(f"FIT_DTB_COMPATIBLE[{dtb_key}] is not set for base DTB '{fname}'.")
+                bb.warn(f"FIT_DTB_COMPATIBLE[{dtb_key}] is not set for base DTB '{fname}'.")
+                continue
 
         root_node.fitimage_emit_section_dtb(fname, dtb_path, compatible_str=compatible, dtb_type="flat_dt")
 
