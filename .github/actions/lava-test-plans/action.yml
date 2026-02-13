@@ -56,6 +56,7 @@ runs:
           echo "PROJECT=projects/${GITHUB_REPOSITORY#*/}/" >> "${VARS_OUT_PATH}/gh-variables.ini"
           echo "LAVA_JOB_PRIORITY=50" >> "${VARS_OUT_PATH}/gh-variables.ini"
           echo "OS_INFO=qcom-distro" >> "${VARS_OUT_PATH}/gh-variables.ini"
+          echo "AUDIO_CLIPS_BASE_DIR=/home/AudioClips/" >> "${VARS_OUT_PATH}/gh-variables.ini"
           echo "BUILD_NUMBER=${{ github.run_id }}-${{ github.run_attempt }}" >> "${VARS_OUT_PATH}/gh-variables.ini"
           echo "DOCKER_IMAGE_POSTPROCESS=ghcr.io/foundriesio/lava-lmp-sign:main" >> "${VARS_OUT_PATH}/gh-variables.ini"
           echo "AUTH_HEADER_NAME=Authentication" >> "${VARS_OUT_PATH}/gh-variables.ini"
