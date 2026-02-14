@@ -3,6 +3,11 @@ name: Build Yocto
 on:
   workflow_call:
     inputs:
+      mode:
+        description: "daily or weekly"
+        required: false
+        type: string
+        default: "daily"
       sdk:
         required: false
         type: string
@@ -22,6 +27,14 @@ env:
   KAS_CLONE_DEPTH: 1
 
 jobs:
+  validate-inputs:
+    runs-on: [self-hosted, qcom-u2404, amd64]
+    steps:
+      - run: |
+          case "${{ inputs.mode }}" in
+            daily|weekly) echo "Running in ${{ inputs.mode }} mode" ;;
+            *) echo "Invalid mode: ${{ inputs.mode }}. Use daily|weekly." && exit 1 ;;
+          esac
   kas-setup:
     if: github.repository_owner == 'qualcomm-linux'
     runs-on: [self-hosted, qcom-u2404, amd64]
@@ -85,9 +98,9 @@ jobs:
         run: |
           ci/kas-container-shell-helper.sh ci/yocto-patchreview.sh
 
-  compile_warm_up:
+  compile_daily_warm_up:
     needs: [kas-setup, yocto-run-checks]
-    if: github.repository_owner == 'qualcomm-linux'
+    if: ${{ github.repository_owner == 'qualcomm-linux' && inputs.mode == 'daily' }}
     runs-on: [self-hosted, qcom-u2404, amd64]
     strategy:
       fail-fast: true
@@ -102,8 +115,6 @@ jobs:
             yamlfile: ':ci/qcom-distro-prop-image.yml'
           - name: qcom-distro-catchall
             yamlfile: ':ci/qcom-distro-catchall.yml'
-          - name: performance
-            yamlfile: ':ci/qcom-distro-prop-image.yml:ci/performance.yml'
         kernel:
           - type: default
             dirname: ""
@@ -111,14 +122,11 @@ jobs:
           - type: 6.18
             dirname: "+linux-qcom-6.18"
             yamlfile: ":ci/linux-qcom-6.18.yml"
-          - type: rt-6.18
-            dirname: "+linux-qcom-rt-6.18"
-            yamlfile: ":ci/linux-qcom-rt-6.18.yml"
     name: ${{ matrix.machine }}/${{ matrix.distro.name }}${{ matrix.kernel.dirname }}
     steps:
       - uses: actions/checkout@v4
 
-      - name: Run kas build
+      - name: Run daily warmup kas build
         uses: ./.github/actions/compile
         with:
           machine: ${{matrix.machine}}
@@ -129,9 +137,9 @@ jobs:
           cache_dir: ${CACHE_DIR}
           sdk: ${{inputs.sdk}}
 
-  compile:
-    needs: compile_warm_up
-    if: github.repository_owner == 'qualcomm-linux'
+  compile_daily:
+    needs: compile_daily_warm_up
+    if: ${{ github.repository_owner == 'qualcomm-linux' && inputs.mode == 'daily' }}
     runs-on: [self-hosted, qcom-u2404, amd64]
     outputs:
       url: ${{ steps.compile_kas.outputs.url }}
@@ -157,8 +165,6 @@ jobs:
             yamlfile: ':ci/qcom-distro-prop-image.yml'
           - name: qcom-distro-catchall
             yamlfile: ':ci/qcom-distro-catchall.yml'
-          - name: performance
-            yamlfile: ':ci/qcom-distro-prop-image.yml:ci/performance.yml'
         kernel:
           - type: default
             dirname: ""
@@ -179,14 +185,6 @@ jobs:
                 type: additional
                 dirname: "+linux-yocto-dev"
                 yamlfile: ":ci/linux-yocto-dev.yml"
-          - machine: iq-9075-evk
-            distro:
-                name: qcom-distro
-                yamlfile: ':ci/qcom-distro-prop-image.yml'
-            kernel:
-                type: qcom-next-rt
-                dirname: "+linux-qcom-next-rt"
-                yamlfile: ":ci/linux-qcom-next-rt.yml"
           - machine: iq-9075-evk
             distro:
                 name: qcom-distro-kvm
@@ -223,7 +221,106 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Run kas build
+      - name: Run daily kas build
+        uses: ./.github/actions/compile
+        id: compile_kas
+        with:
+          machine: ${{matrix.machine}}
+          distro_yaml: ${{matrix.distro.yamlfile}}
+          distro_name: ${{matrix.distro.name}}
+          kernel_yaml: ${{matrix.kernel.yamlfile}}
+          kernel_dirname: ${{matrix.kernel.dirname}}
+          cache_dir: ${CACHE_DIR}
+          kas: ${KAS_CONTAINER}
+          sdk: ${{inputs.sdk}}
+
+  compile_weekly_warm_up:
+    needs: [kas-setup, yocto-run-checks]
+    if: ${{ github.repository_owner == 'qualcomm-linux' && inputs.mode == 'weekly' }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: true
+      matrix:
+        machine:
+          - rb3gen2-core-kit
+          - qcom-armv8a
+        distro:
+          - name: qcom-distro-selinux
+            yamlfile: ':ci/qcom-distro-selinux.yml'
+          - name: qcom-distro-sota
+            yamlfile: ':ci/qcom-distro-sota.yml'
+          - name: qcom-distro-catchall+performance
+            yamlfile: ':ci/qcom-distro-catchall.yml:ci/performance.yml'
+        kernel:
+          - type: 6.18
+            dirname: "+linux-qcom-6.18"
+            yamlfile: ":ci/linux-qcom-6.18.yml"
+          - type: rt-6.18
+            dirname: "+linux-qcom-rt-6.18"
+            yamlfile: ":ci/linux-qcom-rt-6.18.yml"
+          - type: qcom-next-rt
+            dirname: "+linux-qcom-next-rt"
+            yamlfile: ":ci/linux-qcom-next-rt.yml"
+    name: ${{ matrix.machine }}/${{ matrix.distro.name }}${{ matrix.kernel.dirname }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run weekly warmup kas build
+        uses: ./.github/actions/compile
+        with:
+          machine: ${{matrix.machine}}
+          distro_yaml: ${{matrix.distro.yamlfile}}
+          distro_name: ${{matrix.distro.name}}
+          kernel_yaml: ${{matrix.kernel.yamlfile}}
+          kernel_dirname: ${{matrix.kernel.dirname}}
+          cache_dir: ${CACHE_DIR}
+          kas: ${KAS_CONTAINER}
+          sdk: ${{inputs.sdk}}
+
+  compile_weekly:
+    needs: [kas-setup, yocto-run-checks]
+    if: ${{ github.repository_owner == 'qualcomm-linux' && inputs.mode == 'weekly' }}
+    runs-on: ubuntu-latest
+    outputs:
+      url: ${{ steps.compile_kas.outputs.url }}
+    strategy:
+      fail-fast: true
+      matrix:
+        machine:
+          - iq-8275-evk
+          - iq-9075-evk
+          - iq-x7181-evk
+          - kaanapali-mtp
+          - qcm6490-idp
+          - qcs615-ride
+          - qcs8300-ride-sx
+          - qcs9100-ride-sx
+          - rb1-core-kit
+          - sm8750-mtp
+        distro:
+          - name: qcom-distro-selinux
+            yamlfile: ':ci/qcom-distro-selinux.yml'
+          - name: qcom-distro-sota
+            yamlfile: ':ci/qcom-distro-sota.yml'
+          - name: qcom-distro-catchall+performance
+            yamlfile: ':ci/qcom-distro-catch.yml:ci/performance.yml'
+        kernel:
+          - type: 6.18
+            dirname: "+linux-qcom-6.18"
+            yamlfile: ":ci/linux-qcom-6.18.yml"
+          - type: rt-6.18
+            dirname: "+linux-qcom-rt-6.18"
+            yamlfile: ":ci/linux-qcom-rt-6.18.yml"
+          - type: qcom-next-rt
+            dirname: "+linux-qcom-next-rt"
+            yamlfile: ":ci/linux-qcom-next-rt.yml"
+        include:
+          # Additional builds for specific machines
+    name: ${{ matrix.machine }}/${{ matrix.distro.name }}${{ matrix.kernel.dirname }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run weekly kas build
         uses: ./.github/actions/compile
         id: compile_kas
         with:
@@ -236,7 +333,8 @@ jobs:
           sdk: ${{inputs.sdk}}
 
   publish_summary:
-    needs: compile
+    needs: [compile_daily, compile_weekly]
+    if: ${{ always() && (needs.compile_daily.result == 'success' || needs.compile_weekly.result == 'success') }}
     runs-on: [self-hosted, qcom-u2404, amd64]
     steps:
       - name: 'Download build URLs'
