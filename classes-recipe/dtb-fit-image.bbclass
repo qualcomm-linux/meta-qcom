@@ -46,11 +46,10 @@ python do_generate_qcom_fitimage() {
     shutil.copy(qcom_meta_src, qcom_meta_dst)
     root_node.fitimage_emit_section_dtb("qcom-metadata.dtb", qcom_meta_dst, compatible_str=None, dtb_type="qcom_metadata")
 
-    # KERNEL_DEVICETREE contains both .dtb and .dtbo
-    files_set = {os.path.basename(x) for x in (d.getVar('KERNEL_DEVICETREE') or "").split()}
+    kernel_devicetree_set = {os.path.basename(x) for x in (d.getVar('KERNEL_DEVICETREE') or "").split()}
 
     # Collect DTB/DTBO names selected in KERNEL_DEVICETREE to validate declarative FIT_DTB_COMPATIBLE combinations
-    dtb_keys_list  = {os.path.splitext(f)[0].replace(',', '_') for f in files_set}
+    dtb_keys_list  = {os.path.splitext(f)[0].replace(',', '_') for f in kernel_devicetree_set}
 
     # Parse composite compatible keys :
     # FIT_DTB_COMPATIBLE[base+ovl1+ovl2] = "..."
@@ -66,22 +65,19 @@ python do_generate_qcom_fitimage() {
         if not parts:
             continue
 
-        base_stem = parts[0]
-        ovl_stems = parts[1:]
-
         # Skip base+overlay combinations not present in KERNEL_DEVICETREE to avoid generating invalid FIT configs
         # from declarative FIT_DTB_COMPATIBLE metadata
         if not all(dtb in dtb_keys_list for dtb in parts):
             continue
 
-        base = base_stem + ".dtb"
-        overlays = [ovl + ".dtbo" for ovl in ovl_stems]
+        base = parts[0] + ".dtb"
+        overlays = [ovl + ".dtbo" for ovl in parts[1:]]
 
         overlay_groups.setdefault(base, []).append(overlays)
         overlay_compats[key] = compat_val
 
     # Emit DTB/DTBO sections for every entry from KERNEL_DEVICETREE
-    for fname in files_set:
+    for fname in kernel_devicetree_set:
         dtb_path = os.path.join(dtb_dir, fname)
         if not os.path.exists(dtb_path):
             bb.fatal(f"Required file '{fname}' not found at '{dtb_path}'.")
@@ -91,8 +87,8 @@ python do_generate_qcom_fitimage() {
         if fname.endswith(".dtb"):
             dtb_key = os.path.splitext(dtb_id)[0]
             compatible = d.getVarFlag("FIT_DTB_COMPATIBLE", dtb_key) or ""
-            if not compatible:
-                bb.fatal(f"FIT_DTB_COMPATIBLE[{dtb_key}] is not set for base DTB '{fname}'.")
+            if not compatible and fname not in overlay_groups:
+                bb.fatal(f"FIT_DTB_COMPATIBLE[{dtb_key}] is not set for '{fname}'.")
 
         root_node.fitimage_emit_section_dtb(dtb_id, dtb_path, compatible_str=compatible, dtb_type="flat_dt")
 
