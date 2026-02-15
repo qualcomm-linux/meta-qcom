@@ -11,7 +11,7 @@ FIT_DTB_COMPATIBLE[hamoa-iot-evk] = " \
     qcom,hamoav2.1-evk \
 "
 FIT_DTB_COMPATIBLE[kaanapali-mtp] = "qcom,kaanapali-mtp"
-FIT_DTB_COMPATIBLE[lemans-evk] = " \
+FIT_DTB_COMPATIBLE[lemans-evk+lemans-evk-camera-csi1-imx577] = " \
     qcom,qcs9075-iot \
     qcom,qcs9075v2-iot \
 "
@@ -27,7 +27,7 @@ FIT_DTB_COMPATIBLE[lemans-evk+lemans-evk-camx+lemans-el2] = " \
     qcom,qcs9075-iot-camx-el2kvm \
     qcom,qcs9075v2-iot-camx-el2kvm \
 "
-FIT_DTB_COMPATIBLE[monaco-evk] = "qcom,qcs8275-iot"
+FIT_DTB_COMPATIBLE[monaco-evk+monaco-evk-camera-imx577] = "qcom,qcs8275-iot"
 FIT_DTB_COMPATIBLE[monaco-evk+monaco-evk-camx] = "qcom,qcs8275-iot-camx"
 FIT_DTB_COMPATIBLE[qcm6490-idp] = "qcom,qcm6490-idp"
 FIT_DTB_COMPATIBLE[qcom-apq8064-asus-nexus7-flo] = "qcom,apq8064"
@@ -52,7 +52,10 @@ FIT_DTB_COMPATIBLE[qcs6490-rb3gen2+qcs6490-rb3gen2-vision-mezzanine] = " \
     qcom,qcs5430-iot-subtype2 \
     qcom,qcs6490-iot-subtype2 \
 "
-FIT_DTB_COMPATIBLE[qcs6490-rb3gen2+qcs6490-rb3gen2-vision-mezzanine-camx] = "qcom,qcs6490-iot-camx"
+FIT_DTB_COMPATIBLE[qcs6490-rb3gen2+qcs6490-rb3gen2-vision-mezzanine-camx] = " \
+    qcom,qcs6490-iot-camx \
+    qcom,qcs6490-iot-subtype2-camx \
+"
 FIT_DTB_COMPATIBLE[qcs8300-ride] = "qcom,qcs8300-adp"
 FIT_DTB_COMPATIBLE[qcs8300-ride+qcs8300-ride-camx] = "qcom,qcs8300-adp-camx"
 FIT_DTB_COMPATIBLE[qcs9100-ride] = " \
