@@ -60,3 +60,31 @@ EFI_LINUX_IMG ?= "linux-${MACHINE}.efi"
 # modular boot setups, secure boot workflows, and reducing image size.
 # The -B 8 option enforces 8-byte alignment, as per QCOM UEFI requirements.
 FIT_DTB_MKIMAGE_EXTRA_OPTS ?= "-E -B 8"
+
+# Default values (machines override these)
+QCOM_RT_CPU           ?= ""
+QCOM_IRQAFF           ?= ""
+QCOM_RCU_NOCBS        ?= ""
+QCOM_RCU_EXPEDITED    ?= ""
+QCOM_CPUIDLE_OFF      ?= ""
+
+# Per-arg conditionals
+RT_ARGS_ISOL  = "${@oe.utils.conditional('QCOM_RT_CPU',        '', '', \
+                'isolcpus=${QCOM_RT_CPU}',              d)}"
+RT_ARGS_IRQ   = "${@oe.utils.conditional('QCOM_IRQAFF',        '', '', \
+                'irqaffinity=${QCOM_IRQAFF}',           d)}"
+RT_ARGS_NOCBS = "${@oe.utils.conditional('QCOM_RCU_NOCBS',     '', '', \
+                'rcu_nocbs=${QCOM_RCU_NOCBS}',          d)}"
+RT_ARGS_EXP   = "${@oe.utils.conditional('QCOM_RCU_EXPEDITED', '', '', \
+                'rcupdate.rcu_expedited=${QCOM_RCU_EXPEDITED}', d)}"
+RT_ARGS_IDLE  = "${@oe.utils.conditional('QCOM_CPUIDLE_OFF',   '', '', \
+                'cpuidle.off=${QCOM_CPUIDLE_OFF}',      d)}"
+
+# Combine
+RT_KERNEL_CMDLINE = "${RT_ARGS_ISOL} ${RT_ARGS_IRQ} ${RT_ARGS_NOCBS} \
+                     ${RT_ARGS_EXP} ${RT_ARGS_IDLE}"
+
+# Append only when RT kernel is selected
+KERNEL_CMDLINE_EXTRA:append = "${@bb.utils.contains_any('PREFERRED_PROVIDER_virtual/kernel',\
+                              'linux-qcom-rt linux-qcom-next-rt', \
+                              ' ${RT_KERNEL_CMDLINE}', '', d)}"
