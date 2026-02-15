@@ -29,7 +29,9 @@ SRC_URI += " \
 # virtual/kernel provider to 'linux-qcom-next-upstream'
 BBCLASSEXTEND = "devupstream:target"
 PN:class-devupstream = "linux-qcom-next-upstream"
-SRCREV:class-devupstream ?= "${AUTOREV}"
+
+# Pin this to the qcom-next-6.19-rc6-20260207, override this in local.conf
+SRCREV:class-devupstream ?= "ccc1345fb4742e377d7d89658efe085c62c25164"
 
 S = "${UNPACKDIR}/${BP}"
 
