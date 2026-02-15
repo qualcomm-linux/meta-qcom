@@ -1,11 +1,11 @@
 SUMMARY = "Qualcomm camera firmware for kodiak"
 DESCRIPTION = "Qualcomm camera firmware to support camera functionality on Kodiak"
 LICENSE = "LICENSE.qcom-2"
-LIC_FILES_CHKSUM = "file://usr/share/doc/${BPN}/NO.LOGIN.BINARY.LICENSE.QTI.pdf;md5=7a5da794b857d786888bbf2b7b7529c8"
+LIC_FILES_CHKSUM = "file://usr/share/doc/${BPN}/LICENSE.QCOM-2.txt;md5=165287851294f2fb8ac8cbc5e24b02b0"
 
+PBT_BUILD_DATE = "260209.1"
 SRC_URI = "https://qartifactory-edge.qualcomm.com/artifactory/qsc_releases/software/chip/component/camx.qclinux.0.0/${PBT_BUILD_DATE}/prebuilt_yocto/${BPN}_${PV}_armv8-2a.tar.gz"
-SRC_URI[sha256sum] = "c99789ded4510ef11b81dbb1d596fa2ca13e7815a3666a15dbd07675ce03e23d"
-PBT_BUILD_DATE = "260102"
+SRC_URI[sha256sum] = "e346b7b5b20e8f28e2dc5cf36edc52f25eb3aeab315f77999c55c6dc1b2efbe6"
 
 S = "${UNPACKDIR}"
 
@@ -22,7 +22,7 @@ do_install() {
     install -d ${D}${nonarch_base_libdir}/firmware/qcom/qcm6490
     install -d ${D}${datadir}/doc/${BPN}
 
-    cp -r ${S}/usr/lib/firmware/CAMERA_ICP_170.elf ${D}${nonarch_base_libdir}/firmware/qcom/qcm6490/
+    cp -r ${S}/usr/lib/firmware/qcom/qcm6490/CAMERA_ICP_170.elf ${D}${nonarch_base_libdir}/firmware/qcom/qcm6490/
 
     case "${FIRMWARE_COMPRESSION}" in
         zst | zstd)
@@ -33,18 +33,10 @@ do_install() {
             ;;
     esac
 
-    install -m 0644 ${S}/usr/share/doc/${BPN}/NO.LOGIN.BINARY.LICENSE.QTI.pdf ${D}${datadir}/doc/${BPN}
+    install -m 0644 ${S}/usr/share/doc/${BPN}/LICENSE.QCOM-2.txt ${D}${datadir}/doc/${BPN}
 }
 
 FILES:${PN} = "${nonarch_base_libdir}/firmware/qcom/qcm6490"
-
-# Disable default build deps
-INHIBIT_DEFAULT_DEPS = "1"
-
-# Inhibit stripping and debug-split for the package
-INHIBIT_PACKAGE_STRIP = "1"
-INHIBIT_PACKAGE_DEBUG_SPLIT = "1"
-INHIBIT_SYSROOT_STRIP = "1"
 
 # Firmware file are pre-compiled, pre-stripped, and not target architecture executables.
 # Skipping QA checks: 'already-stripped', 'arch' because:

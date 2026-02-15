@@ -5,18 +5,18 @@ DESCRIPTION = "This recipe introduces Qualcomm CamX camera module which creates 
    chicdk: Camera hardware interface development kit delivering a configurable mechanism for use case selection and camera pipeline topology creation. \
    Includes configurable sensor and tuning binaries, which are essential for enabling full camera functionality."
 LICENSE = "LICENSE.qcom-2"
-LIC_FILES_CHKSUM = "file://usr/share/doc/${BPN}/NO.LOGIN.BINARY.LICENSE.QTI.pdf;md5=7a5da794b857d786888bbf2b7b7529c8 \
+LIC_FILES_CHKSUM = "file://usr/share/doc/${BPN}/LICENSE.QCOM-2.txt;md5=165287851294f2fb8ac8cbc5e24b02b0 \
                     file://usr/share/doc/${BPN}/NOTICE;md5=04facc2e07e3d41171a931477be0c690"
 
-PBT_BUILD_DATE = "260203"
+PBT_BUILD_DATE = "260209.1"
 SRC_URI = " \
    https://qartifactory-edge.qualcomm.com/artifactory/qsc_releases/software/chip/component/camx.qclinux.0.0/${PBT_BUILD_DATE}/prebuilt_yocto/${BPN}_${PV}_armv8-2a.tar.gz;name=camxlib \
    https://qartifactory-edge.qualcomm.com/artifactory/qsc_releases/software/chip/component/camx.qclinux.0.0/${PBT_BUILD_DATE}/prebuilt_yocto/camx-kodiak_${PV}_armv8-2a.tar.gz;name=camx \
    https://qartifactory-edge.qualcomm.com/artifactory/qsc_releases/software/chip/component/camx.qclinux.0.0/${PBT_BUILD_DATE}/prebuilt_yocto/chicdk-kodiak_${PV}_armv8-2a.tar.gz;name=chicdk \
    "
-SRC_URI[camxlib.sha256sum] = "2c2ba360dd0b19637a983d2426188f9677e7fff12d3704361b995812fbc47e7d"
-SRC_URI[camx.sha256sum] = "5f42f2ab165f49d0b39113baf2b7bd842d5ffa793d2cf44efc209fc8e121e9bd"
-SRC_URI[chicdk.sha256sum] = "491f171b533fa7249ddfb4b32bfbe822ff4125021708d2e0f0a6737068b2eee4"
+SRC_URI[camxlib.sha256sum] = "1a1b5ad53075248f3ea39aa299dfa50cac60463bce471be7bc7c68b9be168dc0"
+SRC_URI[camx.sha256sum] = "07d5ca393708f693fabe5a0faf4263172f7f35ebc96b321c788e7a1c56e1a2e5"
+SRC_URI[chicdk.sha256sum] = "d16baa755077c3c9b305fb05c139a6f18713bff55f3a57bb4b7b31801e74e7fb"
 
 S = "${UNPACKDIR}"
 
@@ -48,13 +48,13 @@ do_install() {
     rm -f ${D}${libdir}/camx/kodiak/camera/*${SOLIBSDEV}
 
     install -m 0644 ${S}/usr/share/doc/${BPN}/NOTICE ${D}${datadir}/doc/${BPN}
-    install -m 0644 ${S}/usr/share/doc/${BPN}/NO.LOGIN.BINARY.LICENSE.QTI.pdf ${D}${datadir}/doc/${BPN}
+    install -m 0644 ${S}/usr/share/doc/${BPN}/LICENSE.QCOM-2.txt ${D}${datadir}/doc/${BPN}
 
     install -m 0644 ${S}/usr/share/doc/camx-kodiak/NOTICE ${D}${datadir}/doc/camx-kodiak
-    install -m 0644 ${S}/usr/share/doc/${BPN}/NO.LOGIN.BINARY.LICENSE.QTI.pdf ${D}${datadir}/doc/camx-kodiak
+    install -m 0644 ${S}/usr/share/doc/${BPN}/LICENSE.QCOM-2.txt ${D}${datadir}/doc/camx-kodiak
 
     install -m 0644 ${S}/usr/share/doc/chicdk-kodiak/NOTICE ${D}${datadir}/doc/chicdk-kodiak
-    install -m 0644 ${S}/usr/share/doc/${BPN}/NO.LOGIN.BINARY.LICENSE.QTI.pdf ${D}${datadir}/doc/chicdk-kodiak
+    install -m 0644 ${S}/usr/share/doc/${BPN}/LICENSE.QCOM-2.txt ${D}${datadir}/doc/chicdk-kodiak
 }
 
 PACKAGE_BEFORE_PN += "camx-kodiak chicdk-kodiak"

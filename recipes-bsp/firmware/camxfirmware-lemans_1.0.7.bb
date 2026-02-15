@@ -1,11 +1,11 @@
 SUMMARY = "Qualcomm camera firmware for lemans"
 DESCRIPTION = "Qualcomm camera firmware to support camera functionality on lemans"
 LICENSE = "LICENSE.qcom-2"
-LIC_FILES_CHKSUM = "file://usr/share/doc/${BPN}/NO.LOGIN.BINARY.LICENSE.QTI.pdf;md5=7a5da794b857d786888bbf2b7b7529c8"
+LIC_FILES_CHKSUM = "file://usr/share/doc/${BPN}/LICENSE.QCOM-2.txt;md5=165287851294f2fb8ac8cbc5e24b02b0"
 
+PBT_BUILD_DATE = "260209.1"
 SRC_URI = "https://qartifactory-edge.qualcomm.com/artifactory/qsc_releases/software/chip/component/camx.qclinux.0.0/${PBT_BUILD_DATE}/prebuilt_yocto/${BPN}_${PV}_armv8-2a.tar.gz"
-SRC_URI[sha256sum] = "ec764c3fda048686e8dfa4a710d7fafb2e68cb5633117ad78756c0944a3beb6b"
-PBT_BUILD_DATE = "260102"
+SRC_URI[sha256sum] = "62dd76046c1ae0e34f843285524be02e9fe96093ff68096cb998e9844f729f9d"
 
 S = "${UNPACKDIR}"
 
@@ -23,7 +23,7 @@ do_install() {
     install -d ${D}${nonarch_base_libdir}/firmware/qcom/qcs8300
     install -d ${D}${datadir}/doc/${BPN}
 
-    cp -r ${S}/usr/lib/firmware/CAMERA_ICP.mbn ${D}${nonarch_base_libdir}/firmware/qcom/sa8775p/
+    cp -r ${S}/usr/lib/firmware/qcom/sa8775p/CAMERA_ICP.mbn ${D}${nonarch_base_libdir}/firmware/qcom/sa8775p/
 
     case "${FIRMWARE_COMPRESSION}" in
         zst | zstd)
@@ -34,7 +34,7 @@ do_install() {
             ;;
     esac
 
-    install -m 0644 ${S}/usr/share/doc/${BPN}/NO.LOGIN.BINARY.LICENSE.QTI.pdf ${D}${datadir}/doc/${BPN}
+    install -m 0644 ${S}/usr/share/doc/${BPN}/LICENSE.QCOM-2.txt ${D}${datadir}/doc/${BPN}
 
     ln -srf ${D}${nonarch_base_libdir}/firmware/qcom/sa8775p/CAMERA_ICP.mbn* ${D}${nonarch_base_libdir}/firmware/qcom/qcs8300/
 }
@@ -42,13 +42,6 @@ do_install() {
 PACKAGES += "camxfirmware-monaco"
 FILES:camxfirmware-monaco = "${nonarch_base_libdir}/firmware/qcom/qcs8300"
 FILES:${PN} = "${nonarch_base_libdir}/firmware/qcom/sa8775p"
-
-# Disable default build deps
-INHIBIT_DEFAULT_DEPS = "1"
-
-# Inhibit stripping and debug-split for the package
-INHIBIT_PACKAGE_STRIP = "1"
-INHIBIT_PACKAGE_DEBUG_SPLIT = "1"
 
 # Firmware file are pre-compiled, pre-stripped, and not target architecture executables.
 # Skipping QA checks: 'already-stripped', 'arch' because:

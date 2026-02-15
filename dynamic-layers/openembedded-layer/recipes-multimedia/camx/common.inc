@@ -13,7 +13,7 @@ Includes configurable sensor and tuning binaries, which are essential for enabli
 full camera functionality."
 
 LICENSE = "LICENSE.qcom-2"
-LIC_FILES_CHKSUM = "file://usr/share/doc/${BPN}/NO.LOGIN.BINARY.LICENSE.QTI.pdf;md5=7a5da794b857d786888bbf2b7b7529c8 \
+LIC_FILES_CHKSUM = "file://usr/share/doc/${BPN}/LICENSE.QCOM-2.txt;md5=165287851294f2fb8ac8cbc5e24b02b0 \
                     file://usr/share/doc/${BPN}/NOTICE;md5=198d001f49d9a313355d5219f669a76c"
 
 SRC_URI = " \
@@ -54,19 +54,19 @@ do_install() {
     # Base docs
     install -m 0644 ${S}/usr/share/doc/${BPN}/NOTICE \
         ${D}${datadir}/doc/${BPN}
-    install -m 0644 ${S}/usr/share/doc/${BPN}/NO.LOGIN.BINARY.LICENSE.QTI.pdf \
+    install -m 0644 ${S}/usr/share/doc/${BPN}/LICENSE.QCOM-2.txt \
         ${D}${datadir}/doc/${BPN}
 
     # camx docs
     install -m 0644 ${S}/usr/share/doc/camx-${PLATFORM}/NOTICE \
         ${D}${datadir}/doc/camx-${PLATFORM}
-    install -m 0644 ${S}/usr/share/doc/${BPN}/NO.LOGIN.BINARY.LICENSE.QTI.pdf \
+    install -m 0644 ${S}/usr/share/doc/${BPN}/LICENSE.QCOM-2.txt \
         ${D}${datadir}/doc/camx-${PLATFORM}
 
     # chicdk docs
     install -m 0644 ${S}/usr/share/doc/chicdk-${PLATFORM}/NOTICE \
         ${D}${datadir}/doc/chicdk-${PLATFORM}
-    install -m 0644 ${S}/usr/share/doc/${BPN}/NO.LOGIN.BINARY.LICENSE.QTI.pdf \
+    install -m 0644 ${S}/usr/share/doc/${BPN}/LICENSE.QCOM-2.txt \
         ${D}${datadir}/doc/chicdk-${PLATFORM}
 }
 
