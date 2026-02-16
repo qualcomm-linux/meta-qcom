@@ -1,9 +1,0 @@
-[Unit]
-Description=cDSP RPC daemon
-
-[Service]
-Type=exec
-ExecStart=/bin/sh -c 'source /usr/sbin/guess-dsp.sh && /usr/bin/cdsprpcd'
-
-[Install]
-WantedBy=multi-user.target
