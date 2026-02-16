@@ -41,8 +41,8 @@ FIT_DTB_COMPATIBLE[qcs615-ride] = " \
     qcom,qcs615v1.1-adp \
 "
 FIT_DTB_COMPATIBLE[qcs6490-rb3gen2] = " \
-    qcom,qcs5430-iot \
-    qcom,qcs6490-iot \
+    qcom,qcs5430-iot-subtype5 \
+    qcom,qcs6490-iot-subtype5 \
 "
 FIT_DTB_COMPATIBLE[qcs6490-rb3gen2+qcs6490-rb3gen2-industrial-mezzanine] = " \
     qcom,qcs5430-iot-subtype9 \
