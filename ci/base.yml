@@ -46,7 +46,7 @@ local_conf_header:
   clo-mirrors: |
     MIRRORS:append = " \
     git://github.com git://git.codelinaro.org/clo/yocto-mirrors/github/ \
-    git://.*/.*/ git://git.codelinaro.org/clo/yocto-mirrors/ \
+    git://.*/ git://git.codelinaro.org/clo/yocto-mirrors/ \
     https://.*/.*/ https://artifacts.codelinaro.org/codelinaro-le/ \
     "
   cmdline: |
