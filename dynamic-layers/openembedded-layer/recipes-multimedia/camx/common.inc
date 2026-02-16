@@ -25,7 +25,7 @@ SRC_URI = " \
 
 S = "${UNPACKDIR}"
 
-DEPENDS += "glib-2.0 fastrpc protobuf-camx libxml2"
+DEPENDS += "glib-2.0 fastrpc protobuf libxml2"
 
 # This package is currently only used and tested on ARMv8 (aarch64) machines.
 COMPATIBLE_MACHINE = "^$"
