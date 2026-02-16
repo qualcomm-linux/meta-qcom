@@ -8,19 +8,19 @@ LICENSE = "LICENSE.qcom-2"
 LIC_FILES_CHKSUM = "file://usr/share/doc/${BPN}/LICENSE.QCOM-2.txt;md5=165287851294f2fb8ac8cbc5e24b02b0 \
                     file://usr/share/doc/${BPN}/NOTICE;md5=04facc2e07e3d41171a931477be0c690"
 
-PBT_BUILD_DATE = "260209.1"
+PBT_BUILD_DATE = "260211"
 SRC_URI = " \
    https://qartifactory-edge.qualcomm.com/artifactory/qsc_releases/software/chip/component/camx.qclinux.0.0/${PBT_BUILD_DATE}/prebuilt_yocto/${BPN}_${PV}_armv8-2a.tar.gz;name=camxlib \
    https://qartifactory-edge.qualcomm.com/artifactory/qsc_releases/software/chip/component/camx.qclinux.0.0/${PBT_BUILD_DATE}/prebuilt_yocto/camx-kodiak_${PV}_armv8-2a.tar.gz;name=camx \
    https://qartifactory-edge.qualcomm.com/artifactory/qsc_releases/software/chip/component/camx.qclinux.0.0/${PBT_BUILD_DATE}/prebuilt_yocto/chicdk-kodiak_${PV}_armv8-2a.tar.gz;name=chicdk \
    "
-SRC_URI[camxlib.sha256sum] = "1a1b5ad53075248f3ea39aa299dfa50cac60463bce471be7bc7c68b9be168dc0"
-SRC_URI[camx.sha256sum] = "07d5ca393708f693fabe5a0faf4263172f7f35ebc96b321c788e7a1c56e1a2e5"
-SRC_URI[chicdk.sha256sum] = "d16baa755077c3c9b305fb05c139a6f18713bff55f3a57bb4b7b31801e74e7fb"
+SRC_URI[camxlib.sha256sum] = "abe341eaee99e05ccfacf37238380660630a0b671348a559d6ea918b50ab8634"
+SRC_URI[camx.sha256sum] = "7311b3d3c05a8899c2289e00682fd16e23fdf4ca00205ed6bd4ea2f63f35c371"
+SRC_URI[chicdk.sha256sum] = "f76beb5658f0778db2199c9809ed18e9b4f46dd36e67d5839b7d36561298be1a"
 
 S = "${UNPACKDIR}"
 
-DEPENDS += "glib-2.0 fastrpc protobuf-camx libxml2 virtual/egl virtual/libgles2 virtual/libopencl1"
+DEPENDS += "glib-2.0 fastrpc protobuf libxml2 virtual/egl virtual/libgles2 virtual/libopencl1"
 
 # This package is currently only used and tested on ARMv8 (aarch64) machines.
 # Therefore, builds for other architectures are not necessary and are explicitly excluded.
