@@ -5,4 +5,8 @@ header:
   includes:
   - ci/base.yml
 
+local_conf_header:
+  extra_cmdline_dual_dpu: |
+    KERNEL_CMDLINE_EXTRA:append = " msm.separate_gpu_kms=1"
+
 machine: qcs9100-ride-sx
