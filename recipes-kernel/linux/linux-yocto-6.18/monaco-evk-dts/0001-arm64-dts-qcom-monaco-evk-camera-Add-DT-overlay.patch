@@ -1,0 +1,130 @@
+From d844e132cd7988f3629d2d98cc7465ce07801fd8 Mon Sep 17 00:00:00 2001
+From: Nihal Kumar Gupta <quic_nihalkum@quicinc.com>
+Date: Fri, 13 Feb 2026 18:50:58 +0530
+Subject: [PATCH] arm64: dts: qcom: monaco-evk-camera: Add DT overlay
+
+Monaco EVK board does not include a camera sensor in its default hardware
+configuration. Introducing a device tree overlay to support optional
+integration of the IMX577 sensor via CSIPHY1.
+
+Camera reset is handled through an I2C expander, and power is enabled
+via TLMM GPIO74.
+
+An example media-ctl pipeline for the imx577 is:
+
+media-ctl --reset
+media-ctl -V '"imx577 3-001a":0[fmt:SRGGB10/4056x3040 field:none]'
+media-ctl -V '"msm_csiphy1":0[fmt:SRGGB10/4056x3040]'
+media-ctl -V '"msm_csid0":0[fmt:SRGGB10/4056x3040]'
+media-ctl -V '"msm_vfe0_rdi0":0[fmt:SRGGB10/4056x3040]'
+media-ctl -l '"msm_csiphy1":1->"msm_csid0":0[1]'
+media-ctl -l '"msm_csid0":1->"msm_vfe0_rdi0":0[1]'
+yavta -B capture-mplane -c -I -n 5 -f SRGGB10P -s 4056x3040 -F /dev/video1
+
+Co-developed-by: Ravi Shankar <quic_rshankar@quicinc.com>
+Signed-off-by: Ravi Shankar <quic_rshankar@quicinc.com>
+Co-developed-by: Vishal Verma <quic_vishverm@quicinc.com>
+Signed-off-by: Vishal Verma <quic_vishverm@quicinc.com>
+Signed-off-by: Nihal Kumar Gupta <quic_nihalkum@quicinc.com>
+Reviewed-by: Vladimir Zapolskiy <vladimir.zapolskiy@linaro.org>
+Reviewed-by: Bryan O'Donoghue <bryan.odonoghue@linaro.org>
+Reviewed-by: Konrad Dybcio <konrad.dybcio@oss.qualcomm.com>
+
+Upstream-Status: Submitted [https://lore.kernel.org/all/20260213132058.521474-6-quic_nihalkum@quicinc.com/T/#u]
+Signed-off-by: Jose Quaresma <jose.quaresma@oss.qualcomm.com>
+---
+ arch/arm64/boot/dts/qcom/Makefile             |  4 ++
+ .../dts/qcom/monaco-evk-camera-imx577.dtso    | 66 +++++++++++++++++++
+ 2 files changed, 70 insertions(+)
+ create mode 100644 arch/arm64/boot/dts/qcom/monaco-evk-camera-imx577.dtso
+
+diff --git a/arch/arm64/boot/dts/qcom/Makefile b/arch/arm64/boot/dts/qcom/Makefile
+index 296688f7cb26..4df3044639a4 100644
+--- a/arch/arm64/boot/dts/qcom/Makefile
++++ b/arch/arm64/boot/dts/qcom/Makefile
+@@ -36,6 +36,10 @@ lemans-evk-camera-csi1-imx577-dtbs	:= lemans-evk.dtb lemans-evk-camera-csi1-imx5
+ 
+ dtb-$(CONFIG_ARCH_QCOM)	+= lemans-evk-camera-csi1-imx577.dtb
+ dtb-$(CONFIG_ARCH_QCOM)	+= monaco-evk.dtb
++
++monaco-evk-camera-imx577-dtbs	:= monaco-evk.dtb monaco-evk-camera-imx577.dtbo
++dtb-$(CONFIG_ARCH_QCOM)	+= monaco-evk-camera-imx577.dtb
++
+ dtb-$(CONFIG_ARCH_QCOM)	+= msm8216-samsung-fortuna3g.dtb
+ dtb-$(CONFIG_ARCH_QCOM)	+= msm8916-acer-a1-724.dtb
+ dtb-$(CONFIG_ARCH_QCOM)	+= msm8916-alcatel-idol347.dtb
+diff --git a/arch/arm64/boot/dts/qcom/monaco-evk-camera-imx577.dtso b/arch/arm64/boot/dts/qcom/monaco-evk-camera-imx577.dtso
+new file mode 100644
+index 000000000000..0d5ccd020e6e
+--- /dev/null
++++ b/arch/arm64/boot/dts/qcom/monaco-evk-camera-imx577.dtso
+@@ -0,0 +1,66 @@
++// SPDX-License-Identifier: BSD-3-Clause
++/*
++ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
++ */
++
++/dts-v1/;
++/plugin/;
++
++#include <dt-bindings/clock/qcom,sa8775p-camcc.h>
++#include <dt-bindings/gpio/gpio.h>
++
++&camss {
++	vdda-phy-supply = <&vreg_l4a>;
++	vdda-pll-supply = <&vreg_l5a>;
++
++	status = "okay";
++
++	ports {
++		#address-cells = <1>;
++		#size-cells = <0>;
++
++		port@1 {
++			reg = <1>;
++
++			csiphy1_ep: endpoint {
++				data-lanes = <0 1 2 3>;
++				remote-endpoint = <&imx577_ep1>;
++			};
++		};
++	};
++};
++
++&cci1 {
++	pinctrl-0 = <&cci1_0_default>;
++	pinctrl-1 = <&cci1_0_sleep>;
++
++	status = "okay";
++};
++
++&cci1_i2c0 {
++	#address-cells = <1>;
++	#size-cells = <0>;
++
++	camera@1a {
++		compatible = "sony,imx577";
++		reg = <0x1a>;
++
++		reset-gpios = <&expander2 1 GPIO_ACTIVE_LOW>;
++		pinctrl-0 = <&cam1_default>;
++		pinctrl-names = "default";
++
++		clocks = <&camcc CAM_CC_MCLK1_CLK>;
++		assigned-clocks = <&camcc CAM_CC_MCLK1_CLK>;
++		assigned-clock-rates = <24000000>;
++
++		avdd-supply = <&vreg_cam1_2p8>;
++
++		port {
++			imx577_ep1: endpoint {
++				link-frequencies = /bits/ 64 <600000000>;
++				data-lanes = <1 2 3 4>;
++				remote-endpoint = <&csiphy1_ep>;
++			};
++		};
++	};
++};
+-- 
+2.47.3
+
