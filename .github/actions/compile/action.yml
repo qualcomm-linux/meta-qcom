@@ -23,13 +23,13 @@ runs:
   using: "composite"
   steps:
     - name: Download kas lockfile
-      uses: actions/download-artifact@v6
+      uses: actions/download-artifact@v7
       with:
         name: kas-lockfile
         path: ci/
 
     - name: Download kas-container
-      uses: actions/download-artifact@v6
+      uses: actions/download-artifact@v7
       with:
          name: kas-container
          path: ${{runner.temp}}

@@ -21,7 +21,7 @@ runs:
 
   steps:
       - name: Download Artifacts
-        uses: actions/download-artifact@v6
+        uses: actions/download-artifact@v7
         with:
           github-token: ${{ inputs.gh_token }}
           run-id: ${{ inputs.build_id }}

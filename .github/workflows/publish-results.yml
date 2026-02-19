@@ -28,7 +28,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Download result files
-        uses: actions/download-artifact@v6
+        uses: actions/download-artifact@v7
         with:
             run-id: ${{ inputs.workflow_id }}
             path: artifacts
@@ -36,7 +36,7 @@ jobs:
 
       - name: Download result files PR
         if: ${{ github.run_id != inputs.workflow_id }}
-        uses: actions/download-artifact@v6
+        uses: actions/download-artifact@v7
         with:
             path: artifacts
             github-token: ${{ github.token }}
