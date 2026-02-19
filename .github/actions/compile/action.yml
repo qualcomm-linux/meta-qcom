@@ -117,7 +117,7 @@ runs:
         path: ./uploads
 
     - name: Upload artifacts to S3 bucket
-      uses: qualcomm-linux/upload-private-artifact-action@aws-v1
+      uses: qualcomm-linux/upload-private-artifact-action@aws-v3
       with:
         path: ./uploads
         destination: ${{ github.repository_owner }}/${{ github.event.repository.name }}/${{ github.run_id }}-${{ github.run_attempt }}/
