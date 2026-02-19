@@ -47,7 +47,7 @@ jobs:
           path: ci/*.lock.yml
 
       - name: Upload kas-container
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: kas-container
           path: ${{ env.KAS_CONTAINER }}
