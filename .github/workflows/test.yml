@@ -27,6 +27,7 @@ jobs:
           - qcom-armv8a
           - qcom-armv7a
           - rb1-core-kit
+          - hamoa-iot-evk
         distro:
           - name: poky-altcfg
           - name: qcom-distro

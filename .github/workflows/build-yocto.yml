@@ -150,6 +150,7 @@ jobs:
           - qcs9100-ride-sx
           - rb1-core-kit
           - sm8750-mtp
+          - hamoa-iot-evk
         distro:
           - name: poky-altcfg
             yamlfile: ""
