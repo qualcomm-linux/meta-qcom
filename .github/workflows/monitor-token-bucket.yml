@@ -2,7 +2,7 @@ name: monitor-token-bucket
 on:
   workflow_dispatch:
   schedule:
-    - cron: '0 * * * *'
+    - cron: '0/30 * * * *'
 
 jobs:
   check-limits:
