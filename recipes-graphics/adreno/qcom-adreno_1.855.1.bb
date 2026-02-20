@@ -9,9 +9,9 @@ LIC_FILES_CHKSUM = "file://NO.LOGIN.BINARY.LICENSE.QTI.pdf;md5=4ceffe94cb40cdce6
                     file://NOTICE;md5=18837ae43f290ad72cdcccead4d7700a "
 
 # no top-level dir in the archive, unpack to subdir to prevent UNPACKDIR pollution
-SRC_URI = "https://qartifactory-edge.qualcomm.com/artifactory/qsc_releases/software/chip/component/gfx-adreno.le.0.0/${PBT_BUILD_DATE}/prebuilt_yocto/${BPN}_${PV}_armv8-2a.tar.gz;subdir=${BPN}-${PV}"
-PBT_BUILD_DATE = "251203"
-SRC_URI[sha256sum] = "770e31ac848cc1aa0e94bde840222f8f0e9af411592fa7ede9bfe509c00b87d2"
+SRC_URI = "https://qartifactory-edge.qualcomm.com/artifactory/qsc_releases/software/chip/component/gfx-adreno.le.0.0/${PBT_BUILD_DATE}/prebuilt_yocto/${BPN}_${PV}_armv8a.tar.gz;subdir=${BP}"
+PBT_BUILD_DATE = "260215"
+SRC_URI[sha256sum] = "825574743eecfeaef93201843a27f3b6cdebfae151a70846610da55cd467a7f2"
 
 # These are listed here in order to identify RDEPENDS
 DEPENDS += " glib-2.0 libdmabufheap libdrm virtual/libgbm msm-gbm-backend \
@@ -65,8 +65,7 @@ do_install () {
     fi
 
     install -d ${D}${datadir}/glvnd/egl_vendor.d
-    # Copy and rename to prioritize adreno over mesa
-    cp ${S}/usr/share/glvnd/egl_vendor.d/EGL_adreno.json ${D}${datadir}/glvnd/egl_vendor.d/10_EGL_adreno.json
+    cp ${S}/usr/share/glvnd/egl_vendor.d/10_adreno.json ${D}${datadir}/glvnd/egl_vendor.d/
 
     install -d ${D}${datadir}/vulkan/icd.d
     cp ${S}/usr/share/vulkan/icd.d/adrenovk.json ${D}${datadir}/vulkan/icd.d/
@@ -87,7 +86,7 @@ FILES:${PN}-common = "${libdir}/libllvm-*.so.* \
 FILES:${PN}-egl = "${libdir}/libEGL_adreno.so.1 \
                    ${@bb.utils.contains('DISTRO_FEATURES', 'wayland', '${libdir}/libeglSubDriverWayland.so.*', '', d)} \
                    ${@bb.utils.contains('DISTRO_FEATURES', 'x11', '${libdir}/libeglSubDriverX11.so.*', '', d)} \
-                   ${datadir}/glvnd/egl_vendor.d/10_EGL_adreno.json"
+                   ${datadir}/glvnd/egl_vendor.d/10_adreno.json"
 FILES:${PN}-gles2 = "${libdir}/libGLESv2*.so.*"
 FILES:${PN}-gles1 = "${libdir}/libGLESv1*.so.*"
 FILES:${PN}-vulkan = "${libdir}/libvulkan_*.so.* \
