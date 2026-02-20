@@ -36,10 +36,6 @@ jobs:
 
       - uses: actions/checkout@v4
 
-      - name: Run kas lock
-        run: |
-          ${KAS_CONTAINER} lock --update ci/base.yml:ci/qcom-distro.yml
-
       - name: Upload kas lockfile
         uses: actions/upload-artifact@v6
         with:
