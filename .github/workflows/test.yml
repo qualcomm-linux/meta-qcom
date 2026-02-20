@@ -87,7 +87,7 @@ jobs:
       - name: 'Download job templates'
         uses: actions/download-artifact@v7
         with:
-          pattern: boottest-*
+          pattern: boottest-${{ matrix.target.name }}
 
       - name: Submit ${{ matrix.target.name }}
         timeout-minutes: 20
@@ -217,7 +217,7 @@ jobs:
       - name: 'Download job templates'
         uses: actions/download-artifact@v7
         with:
-          pattern: premerge-*
+          pattern: premerge-${{ matrix.target.name }}
 
       - name: Submit ${{ matrix.target.name }}
         timeout-minutes: 20
