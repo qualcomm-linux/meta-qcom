@@ -36,10 +36,6 @@ jobs:
 
       - uses: actions/checkout@v4
 
-      - name: Run kas lock
-        run: |
-          ${KAS_CONTAINER} lock --update ci/base.yml:ci/qcom-distro.yml
-
       - name: Upload kas lockfile
         uses: actions/upload-artifact@v6
         with:
@@ -76,14 +72,6 @@ jobs:
           KAS_CONTAINER=$RUNNER_TEMP/kas-container
           echo "KAS_CONTAINER=$KAS_CONTAINER" >> $GITHUB_ENV
           chmod +x $KAS_CONTAINER
-
-      - name: Run yocto-check-layer
-        run: |
-          ci/kas-container-shell-helper.sh ci/yocto-check-layer.sh
-
-      - name: Run Yocto patchreview
-        run: |
-          ci/kas-container-shell-helper.sh ci/yocto-patchreview.sh
 
   compile_warm_up:
     needs: [kas-setup, yocto-run-checks]

@@ -1,0 +1,24 @@
+header:
+    version: 14
+overrides:
+    repos:
+        oe-core:
+            commit: 74ba238ff1ba1e9b612aece1989b828f3a8f8770
+        bitbake:
+            commit: d9700632bd6b627d1124fdc83ddf7bfb4199228d
+        meta-yocto:
+            commit: 2486ce2889062500e39446bc07c7d21120a0345e
+        meta-qcom-distro:
+            commit: 062201e74e5331b1e4053aa1f716f3077d7b2c6f
+        meta-openembedded:
+            commit: 4d60ca97ec2f0a7a22ac35a97f716544b54fbe39
+        meta-virtualization:
+            commit: 30c5d74db7489b5938453bfcd3ef9151704e2bd0
+        meta-audioreach:
+            commit: b11d2a0e9018820d822fdd9217f6e2da890ba1ae
+        meta-selinux:
+            commit: 27758bca5ad8f74f387de5cc7c88e73ef2aed951
+        meta-updater:
+            commit: 8ef3734055e7ffbf34df557db68e41fe418662f7
+        meta-security:
+            commit: 9e6d962250aab6e5319215f15b0201ef233c46cd
