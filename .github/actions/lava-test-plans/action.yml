@@ -38,7 +38,7 @@ runs:
         with:
           github-token: ${{ inputs.gh_token }}
           run-id: ${{ inputs.build_id }}
-          pattern: build-url_*
+          name: build-url_${{ inputs.machine }}_${{ inputs.distro }}${{ inputs.kernel }}
 
       - name: Run lava-test-plans
         shell: bash
