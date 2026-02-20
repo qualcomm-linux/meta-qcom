@@ -17,3 +17,5 @@ EXTRA_OEMESON = "-Dsystemd-unit-prefix=${systemd_system_unitdir}"
 
 SYSTEMD_SERVICE:${PN} = "tqftpserv.service"
 RDEPENDS:${PN} += "qrtr"
+RPROVIDES:${PN} += "virtual-tftp-server"
+RCONFLICTS:${PN} += "tftp-server"
