@@ -73,14 +73,6 @@ jobs:
           echo "KAS_CONTAINER=$KAS_CONTAINER" >> $GITHUB_ENV
           chmod +x $KAS_CONTAINER
 
-      - name: Run yocto-check-layer
-        run: |
-          ci/kas-container-shell-helper.sh ci/yocto-check-layer.sh
-
-      - name: Run Yocto patchreview
-        run: |
-          ci/kas-container-shell-helper.sh ci/yocto-patchreview.sh
-
   compile_warm_up:
     needs: [kas-setup, yocto-run-checks]
     if: github.repository_owner == 'qualcomm-linux'
