@@ -63,11 +63,13 @@ do_install() {
     install -m 0644 ${S}/usr/share/doc/${BPN}/LICENSE.QCOM-2.txt \
         ${D}${datadir}/doc/camx-${PLATFORM}
 
-    # chicdk docs
-    install -m 0644 ${S}/usr/share/doc/chicdk-${PLATFORM}/NOTICE \
-        ${D}${datadir}/doc/chicdk-${PLATFORM}
-    install -m 0644 ${S}/usr/share/doc/${BPN}/LICENSE.QCOM-2.txt \
-        ${D}${datadir}/doc/chicdk-${PLATFORM}
+    # chicdk docs, install only when chicdk tar is included in SRC_URI
+    if [ -d "${S}/usr/share/doc/chicdk-${PLATFORM}" ]; then
+        install -m 0644 ${S}/usr/share/doc/chicdk-${PLATFORM}/NOTICE \
+            ${D}${datadir}/doc/chicdk-${PLATFORM}
+        install -m 0644 ${S}/usr/share/doc/${BPN}/LICENSE.QCOM-2.txt \
+            ${D}${datadir}/doc/chicdk-${PLATFORM}
+    fi
 }
 
 
@@ -91,7 +93,7 @@ FILES:chicdk-${PLATFORM} = "\
     ${libdir}/camx/${PLATFORM}/libcommonchiutils*${SOLIBS} \
     ${libdir}/camx/${PLATFORM}/libiccprofile*${SOLIBS} \
     ${libdir}/camx/${PLATFORM}/com.qti.chiusecaseselector*${SOLIBS} \
-    ${libdir}/camx/${PLATFORM}/camera/components/com.qti.node*${SOLIBS} \
+    ${libdir}/camx/${PLATFORM}/camera/components/com.qti*${SOLIBS} \
     ${libdir}/camx/${PLATFORM}/camera/com.qti.sensormodule*${SOLIBS} \
     ${libdir}/camx/${PLATFORM}/camera/*.bin \
     ${libdir}/camx/${PLATFORM}/camera/com.qti.sensor*${SOLIBS} \
@@ -103,13 +105,14 @@ FILES:${PN} = "\
     ${libdir}/libcamera_metadata_${PLATFORM}*${SOLIBS} \
     ${libdir}/camx/${PLATFORM}/*${SOLIBS} \
     ${libdir}/camx/${PLATFORM}/camera/components/com.qti.node.swregistration*${SOLIBS} \
-    ${libdir}/camx/${PLATFORM}/hw/*${SOLIBS} \
     ${libdir}/camx/${PLATFORM}/camera/components/*${SOLIBS} \
 "
 
 FILES:${PN}-dev = "\
     ${libdir}/*${SOLIBSDEV} \
 "
+
+FILES:${PN}-staticdev = "${libdir}/camx/${PLATFORM}/*.a"
 
 # Preserve ${PN} naming to avoid ambiguity in package identification.
 DEBIAN_NOAUTONAME:${PN} = "1"

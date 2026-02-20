@@ -9,9 +9,11 @@ SRC_URI[chicdk.sha256sum]      = "a7eb5b2161ccfc091fac513f40966a3ca13cb952eb206c
 SRC_URI[camxcommon.sha256sum]  = "2a78ffe1a6d475d77640d0e70ed730e6a88ea19337cb8e31f6dc9c7e8083385a"
 
 do_install:append() {
-    install -d ${D}${sysconfdir}/camera/test/NHX/
-
-    cp -r ${S}/etc/camera/test/NHX/*.json ${D}${sysconfdir}/camera/test/NHX/
+    # Copy json only when chicdk tar ball is present in SRC_URI
+    if [ -d "${S}/etc" ]; then
+        install -d ${D}${sysconfdir}/camera/test/NHX/
+        cp -r ${S}/etc/camera/test/NHX/*.json ${D}${sysconfdir}/camera/test/NHX/
+    fi
 }
 
 RPROVIDES:${PN} = "camxlib-monaco"
