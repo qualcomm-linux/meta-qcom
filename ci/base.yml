@@ -51,7 +51,7 @@ local_conf_header:
     https://.*/.*/ https://artifacts.codelinaro.org/codelinaro-le/ \
     "
   cmdline: |
-    KERNEL_CMDLINE_EXTRA:append = " qcom_scm.download_mode=1"
+    KERNEL_CMDLINE_EXTRA:append = " earlycon qcom_geni_serial.con_enabled=1  qcom_scm.download_mode=1"
   qcomflash: |
     IMAGE_CLASSES += "image_types_qcom"
     IMAGE_FSTYPES += "qcomflash"
