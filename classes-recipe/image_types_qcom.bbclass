@@ -18,6 +18,9 @@ QCOM_DTB_FILE ?= "dtb.bin"
 QCOM_BOOT_FILES_SUBDIR ?= ""
 QCOM_PARTITION_FILES_SUBDIR ??= "${QCOM_BOOT_FILES_SUBDIR}"
 QCOM_PARTITION_FILES_SUBDIR_SPINOR ??= ""
+QCOM_PARTITION_FILES_SUBDIR_NVME ??= ""
+QCOM_PARTITION_FILES_SUBDIR_UFS ??= ""
+QCOM_PARTITION_FILES_SUBDIR_EMMC ??= ""
 
 QCOM_PARTITION_CONF ?= "qcom-partition-conf"
 
@@ -83,10 +86,29 @@ create_qcomflash_pkg() {
     # rootfs image
     install -m 0644 ${IMGDEPLOYDIR}/${IMAGE_LINK_NAME}.${IMAGE_QCOMFLASH_FS_TYPE} rootfs.img
 
-    # partition bins/xml files
+    # partition bins/xml files for supported build by default
     if [ -n "${QCOM_PARTITION_FILES_SUBDIR}" ]; then
         deploy_partition_files ${DEPLOY_DIR_IMAGE}/${QCOM_PARTITION_FILES_SUBDIR} .
     fi
+
+    # partition bins/xml files for NVMe
+    if [ -n "${QCOM_PARTITION_FILES_SUBDIR_NVME}" ]; then
+        install -d nvme
+        deploy_partition_files ${DEPLOY_DIR_IMAGE}/${QCOM_PARTITION_FILES_SUBDIR_NVME} nvme
+    fi
+
+    # partition bins/xml files for UFS
+    if [ -n "${QCOM_PARTITION_FILES_SUBDIR_UFS}" ]; then
+        install -d ufs
+        deploy_partition_files ${DEPLOY_DIR_IMAGE}/${QCOM_PARTITION_FILES_SUBDIR_UFS} ufs
+    fi
+    
+    # partition bins/xml files for EMMC
+    if [ -n "${QCOM_PARTITION_FILES_SUBDIR_EMMC}" ]; then
+        install -d emmc
+        deploy_partition_files ${DEPLOY_DIR_IMAGE}/${QCOM_PARTITION_FILES_SUBDIR_EMMC} emmc
+    fi
+
 
     if [ -n "${QCOM_BOOT_FILES_SUBDIR}" ]; then
         # install CDT file if present,for targets with spinor, CDT file
@@ -127,7 +149,7 @@ create_qcomflash_pkg() {
             install -d spinor
             find "${DEPLOY_DIR_IMAGE}/${QCOM_BOOT_FILES_SUBDIR}/spinor" -maxdepth 1 -type f -exec install -m 0644 {} spinor \;
 
-            # partition bins/xml files
+            # partition bins/xml files for SPI-NOR
             if [ -n "${QCOM_PARTITION_FILES_SUBDIR_SPINOR}" ]; then
                 deploy_partition_files ${DEPLOY_DIR_IMAGE}/${QCOM_PARTITION_FILES_SUBDIR_SPINOR} spinor
             fi
