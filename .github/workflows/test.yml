@@ -87,7 +87,13 @@ jobs:
       - name: 'Download job templates'
         uses: actions/download-artifact@v7
         with:
-          pattern: boottest-${{ matrix.target.name }}
+          name: boottest-${{ matrix.target.name }}
+
+      - name: "List files"
+        shell: bash
+        run: |
+          echo $GITHUB_WORKSPACE
+          ls -R $GITHUB_WORKSPACE
 
       - name: Submit ${{ matrix.target.name }}
         timeout-minutes: 20
@@ -217,7 +223,7 @@ jobs:
       - name: 'Download job templates'
         uses: actions/download-artifact@v7
         with:
-          pattern: premerge-${{ matrix.target.name }}
+          name: premerge-${{ matrix.target.name }}
 
       - name: Submit ${{ matrix.target.name }}
         timeout-minutes: 20
