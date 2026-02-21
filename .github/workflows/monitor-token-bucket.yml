@@ -1,0 +1,58 @@
+name: monitor-token-bucket
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0/30 * * * *'
+
+jobs:
+  check-limits:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Fetch and Visualize Rate Limits
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # 1. Fetch REST API Data
+          # We need Limit and Remaining to calculate "Used"
+          REST_JSON=$(gh api /rate_limit --jq '.resources.core')
+          REST_LIMIT=$(echo "$REST_JSON" | jq .limit)
+          REST_REMAIN=$(echo "$REST_JSON" | jq .remaining)
+          REST_USED=$((REST_LIMIT - REST_REMAIN))
+          # 2. Fetch GraphQL API Data
+          GRAPHQL_JSON=$(gh api graphql -f query='query { rateLimit { limit remaining } }' --jq '.data.rateLimit')
+          GQL_LIMIT=$(echo "$GRAPHQL_JSON" | jq .limit)
+          GQL_REMAIN=$(echo "$GRAPHQL_JSON" | jq .remaining)
+          GQL_USED=$((GQL_LIMIT - GQL_REMAIN))
+          
+          # 3. Generate Markdown Summary with Mermaid Charts
+          echo "## 📊 API Rate Limit Report" >> $GITHUB_STEP_SUMMARY
+          
+          # Add a table for precise numbers
+          echo "| API | Limit | Used | Remaining |" >> $GITHUB_STEP_SUMMARY
+          echo "| :--- | :--- | :--- | :--- |" >> $GITHUB_STEP_SUMMARY
+          echo "| **REST** | $REST_LIMIT | $REST_USED | **$REST_REMAIN** |" >> $GITHUB_STEP_SUMMARY
+          echo "| **GraphQL** | $GQL_LIMIT | $GQL_USED | **$GQL_REMAIN** |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          # Add Visual Pie Charts using Mermaid
+          echo "### Visual Usage" >> $GITHUB_STEP_SUMMARY
+          echo '```mermaid' >> $GITHUB_STEP_SUMMARY
+          echo 'pie showData' >> $GITHUB_STEP_SUMMARY
+          echo '    title REST API Usage' >> $GITHUB_STEP_SUMMARY
+          echo "    \"Used\" : $REST_USED" >> $GITHUB_STEP_SUMMARY
+          echo "    \"Remaining\" : $REST_REMAIN" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          echo '```mermaid' >> $GITHUB_STEP_SUMMARY
+          echo 'pie showData' >> $GITHUB_STEP_SUMMARY
+          echo '    title GraphQL API Usage' >> $GITHUB_STEP_SUMMARY
+          echo "    \"Used\" : $GQL_USED" >> $GITHUB_STEP_SUMMARY
+          echo "    \"Remaining\" : $GQL_REMAIN" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+      - name: Fail fast if dangerously low
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          REMAIN=$(gh api /rate_limit --jq '.resources.core.remaining')
+          if [ "$REMAIN" -lt 10 ]; then
+            echo "::error::REST core remaining is only $REMAIN!"
+            exit 1
+          fi
