@@ -7,7 +7,7 @@ DESCRIPTION = "QCOM Firmware for SDM845 HDK (aka HDK845) board"
 LICENSE = "CLOSED"
 
 FW_QCOM_NAME = "sdm845-hdk"
-FW_QCOM_DIR = "sdm845/Qualcomm/SDM845-HDK"
+FW_QCOM_SUBDIR = "sdm845/Qualcomm/SDM845-HDK"
 
 # ADSP, CDSP, modem and WLAN are a part of linux-firmware
 FW_QCOM_LIST = "\
