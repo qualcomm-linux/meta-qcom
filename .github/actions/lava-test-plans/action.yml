@@ -69,8 +69,9 @@ runs:
               echo "AUTO_LOGIN_PASSWORD=oelinux123" >> "${VARS_OUT_PATH}/gh-variables.ini"
           fi
           echo "IMAGE_FILE_NAME=${IMAGE_TYPE}-${{ inputs.machine }}.rootfs.qcomflash.tar.gz" >> "${VARS_OUT_PATH}/gh-variables.ini"
+          ls -R "${GITHUB_WORKSPACE}"
           export BUILD_URL=""
-          export BUILD_URL_FILE="$GITHUB_WORKSPACE/build-url_${{ inputs.machine }}_${{ inputs.distro_name }}${{ inputs.kernel }}/build-url_${{ inputs.machine }}_${{ inputs.distro_name }}${{ inputs.kernel }}"
+          export BUILD_URL_FILE="$GITHUB_WORKSPACE/build-url_${{ inputs.machine }}_${{ inputs.distro_name }}${{ inputs.kernel }}"
           echo "${BUILD_URL_FILE}"
           if [ -f "$BUILD_URL_FILE" ]; then
               export BUILD_URL=$(cat "${BUILD_URL_FILE}")
