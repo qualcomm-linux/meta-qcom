@@ -139,6 +139,7 @@ jobs:
       fail-fast: true
       matrix:
         machine:
+          - glymur-crd
           - iq-615-evk
           - iq-8275-evk
           - iq-9075-evk
