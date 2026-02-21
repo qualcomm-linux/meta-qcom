@@ -4,40 +4,33 @@ SECTION = "devel"
 
 LICENSE = "BSD-3-Clause"
 LIC_FILES_CHKSUM = "file://LICENSE.txt;md5=b67986b6880754696d418dbaa2cf51d1"
-DEPENDS = "libyaml"
+DEPENDS = "libbsd libyaml"
 
-SRCREV = "cff7d44c4f1a2a9657514eecc0348caa3f455de4"
+SRCREV = "3ac74f68dfcc5aa3a9524d1700a4c0d6a92316a8"
 SRC_URI = "\
     git://github.com/qualcomm/fastrpc.git;branch=main;protocol=https;tag=v${PV} \
-    file://adsprpcd.service \
-    file://cdsprpcd.service \
-    file://sdsprpcd.service \
-    file://guess-dsp.sh \
     file://run-ptest \
 "
 
 inherit autotools systemd ptest pkgconfig
 
-PACKAGES += "${PN}-systemd"
-RRECOMMENDS:${PN} += "${PN}-systemd"
+EXTRA_OECONF += "--with-systemdsystemunitdir=${systemd_system_unitdir}"
 
-SYSTEMD_PACKAGES = "${PN} ${PN}-systemd"
-
-SYSTEMD_SERVICE:${PN}-systemd = "adsprpcd.service cdsprpcd.service sdsprpcd.service"
-SYSTEMD_AUTO_ENABLE:${PN}-systemd = "disable"
+SYSTEMD_SERVICE:${PN} = " \
+    adsprpcd.service \
+    adsprpcd_audiopd.service \
+    cdsprpcd.service \
+    cdsp1rpcd.service \
+    gdsp0rpcd.service \
+    gdsp1rpcd.service \
+    sdsprpcd.service \
+"
 
 do_install:append() {
-    install -d ${D}${libdir}/rfsa
-
-    install -d ${D}${systemd_unitdir}/system
-    install -m 0644 ${UNPACKDIR}/adsprpcd.service ${D}${systemd_unitdir}/system
-    install -m 0644 ${UNPACKDIR}/cdsprpcd.service ${D}${systemd_unitdir}/system
-    install -m 0644 ${UNPACKDIR}/sdsprpcd.service ${D}${systemd_unitdir}/system
-
-    install -d ${D}${sbindir}
-    install -m 0755 ${UNPACKDIR}/guess-dsp.sh ${D}${sbindir}
-
     install -d ${D}${datadir}/qcom/
+
+    sed -i -e 's:/usr/bin/:${bindir}/:g' \
+        ${D}${systemd_system_unitdir}/*.service
 }
 
 FILES:${PN} += " \
