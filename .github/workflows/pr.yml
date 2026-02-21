@@ -25,4 +25,6 @@ jobs:
         path: ${{ github.event_path }}
   build-pr:
     uses: ./.github/workflows/build-yocto.yml
+    with:
+      mode: "daily"
 
