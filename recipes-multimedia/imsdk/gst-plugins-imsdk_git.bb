@@ -31,7 +31,11 @@ COMPATIBLE_MACHINE:aarch64 = "(.*)"
 
 PACKAGECONFIG ??= "videoproc sw"
 
-PACKAGECONFIG[ml]           = "-DENABLE_GST_ML_PLUGINS=1, -DENABLE_GST_ML_PLUGINS=0, cairo json-glib opencv qairt-sdk, qairt-sdk"
 PACKAGECONFIG[messaging]    = "-DENABLE_GST_MESSAGING_PLUGINS=1, -DENABLE_GST_MESSAGING_PLUGINS=0, librdkafka mosquitto"
+PACKAGECONFIG[ml]           = "-DENABLE_GST_ML_PLUGINS=1, -DENABLE_GST_ML_PLUGINS=0, cairo json-glib opencv qairt-sdk, qairt-sdk"
 PACKAGECONFIG[sw]           = "-DENABLE_GST_SOFTWARE_PLUGINS=1, -DENABLE_GST_SOFTWARE_PLUGINS=0, gstreamer1.0-rtsp-server smart-venc-ctrl-algo"
+PACKAGECONFIG[tflite]       = "-DENABLE_GST_PLUGIN_MLTFLITE=1, -DENABLE_GST_PLUGIN_MLTFLITE=0, tensorflow-lite"
 PACKAGECONFIG[videoproc]    = "-DENABLE_GST_VIDEOPROC_PLUGINS=1, -DENABLE_GST_VIDEOPROC_PLUGINS=0, cairo"
+
+# The TFLite plugin loads the TensorFlow Lite library at runtime using dlopen(). To ensure runtime availability, added runtime dependency on 'tensorflow-lite'.
+RDEPENDS:${PN}-qtimltflite += "tensorflow-lite"
