@@ -17,7 +17,7 @@ python split_imsdk_module_packages () {
 # List of plugin packages to exclude from OSS meta package
 # Add package names (without version/architecture suffix) to this list
 # Example: to exclude gst-plugins-imsdk-qtimlqnn, add 'qtimlqnn' to the list
-IMSDK_OSS_METAPKG_EXCLUDE ?= "qtimlqnn qtimlsnpe qtismartvencbin"
+IMSDK_OSS_METAPKG_EXCLUDE ?= "qtimlqnn qtimlsnpe qtiqmmfsrc qtismartvencbin"
 
 python set_imsdk_oss_metapkg_rdepends () {
     import os
