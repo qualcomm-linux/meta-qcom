@@ -59,15 +59,6 @@ jobs:
     outputs:
       jobmatrix: ${{ steps.listjobs.outputs.jobmatrix }}
     steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: 'Download job templates'
-        uses: actions/download-artifact@v7
-        with:
-          pattern: boottest-*
-
       - name: "List jobs"
         id: listjobs
         uses: ./.github/actions/list-jobs
@@ -196,14 +187,6 @@ jobs:
     outputs:
       jobmatrix: ${{ steps.listjobs.outputs.jobmatrix }}
     steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-      - name: 'Download job templates'
-        uses: actions/download-artifact@v7
-        with:
-          pattern: premerge-*
-
       - name: "List jobs"
         id: listjobs
         uses: ./.github/actions/list-jobs
@@ -223,7 +206,7 @@ jobs:
       - name: 'Download job templates'
         uses: actions/download-artifact@v7
         with:
-          name: premerge-${{ matrix.target.name }}
+          name: premerge-${{ matrix.target.artifact}}
 
       - name: Submit ${{ matrix.target.name }}
         timeout-minutes: 20

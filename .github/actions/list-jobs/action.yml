@@ -46,7 +46,7 @@ runs:
               F_TMP="${J#*/}"
               RESULT_NAME="${F_TMP//\//-}"
               echo $RESULT_NAME
-              RESULT_JSON=$(echo "$RESULT_JSON" | jq -c --arg path "${J}" --arg result_file "${RESULT_NAME}" --arg name "${NAME}" '.target += [$ARGS.named]')
+              RESULT_JSON=$(echo "$RESULT_JSON" | jq -c --arg path "${J#*/}" --arg artifact "${F_TMP%%/*}" --arg result_file "${RESULT_NAME}" --arg name "${NAME}" '.target += [$ARGS.named]')
               echo "$RESULT_JSON"
           done
           echo "$RESULT_JSON"
