@@ -9,9 +9,13 @@ PACKAGESPLITFUNCS += "set_imsdk_oss_metapkg_rdepends"
 
 python split_imsdk_module_packages () {
     imsdk_root = d.expand('${libdir}/imsdk')
+    bindir = d.expand('${bindir}')
 
     # Qualcomm runtime modules for plugin
     do_split_packages(d, imsdk_root, r'([^/]+)/modules/[^/]+\.so', d.expand('${PN}-%s-modules'), 'IMSDK runtime modules for %s plugin', recursive=True, extra_depends='', match_path=True)
+
+    # Qualcomm Gstreamer sample apps binaries
+    do_split_packages(d, bindir, r'^(.*)$', d.expand('${PN}-bin-%s'), 'Qualcomm Gstreamer Sample Apps Executable %s for $|{PN}', extra_depends='')
 }
 
 # List of plugin packages to exclude from OSS meta package
