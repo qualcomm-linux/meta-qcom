@@ -1,0 +1,66 @@
+name: 'Sync Repo [optionally with PRs]'
+description: 'Fetches and merges a list of open PRs into the current workspace.'
+
+inputs:
+  prs:
+    description: 'A space-separated list of open PR numbers to sync.'
+    required: false
+    default: ''
+  path:
+    description: 'The path on the runner where the repository is checked out.'
+    required: true
+  repo:
+    description: 'The full name of the repository (e.g., owner/repo).'
+    required: true
+  ref:
+    description: 'Repository branch reference'
+    required: true
+
+
+runs:
+  using: "composite"
+  steps:
+
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        repository: ${{ inputs.repo }}
+        fetch-depth: 0
+        path: ${{ inputs.path }}
+        ref: ${{ inputs.ref }}
+
+
+    - name: Configure Git Identity
+      working-directory: ${{ inputs.path }}
+      shell: bash
+      run: |
+        git config --local user.name "github-actions[bot]"
+        git config --local user.email "github-actions[bot]@users.noreply.github.com"
+
+
+    - name: Fetch and Merge PRs
+      if: ${{ inputs.prs != '' }}
+      id: merge_prs
+      working-directory: ${{ inputs.path }}
+      shell: bash
+      run: |
+        for pr_number in ${{ inputs.prs }}; do
+          echo "Syncing PR #${pr_number} into workspace..."
+         
+          git fetch https://github.com/${{ inputs.repo }}.git "pull/${pr_number}/head"
+         
+          if [ $? -ne 0 ]; then
+            echo "::error::Failed to fetch PR #${pr_number}."
+            exit 1
+          fi
+         
+          git merge --no-ff FETCH_HEAD --no-edit
+         
+          if [ $? -ne 0 ]; then
+            echo "::error::Failed to merge PR #${pr_number}. There might be merge conflicts."
+            exit 1
+          fi
+         
+          echo "Successfully merged PR #${pr_number}."
+        done
+        echo "All pending PRs have been successfully synced."

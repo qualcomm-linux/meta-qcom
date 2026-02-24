@@ -7,6 +7,21 @@ on:
         required: false
         type: string
         default: "0"
+      meta-qcom-repo:
+        description: meta-qcom repo name
+        type: string
+        required: false
+        default: "qualcomm-linux/meta-qcom"
+      meta-qcom-ref:
+        description: meta-qcom branch ref
+        type: string
+        required: false
+        default: "master"
+      meta-qcom-prs:
+        description: meta-qcom PRs
+        type: string
+        required: false
+        default: ""
     outputs:
       artifacts_url:
         description: "URL to retrieve build artifacts"
@@ -33,8 +48,14 @@ jobs:
           LATEST=$(git ls-remote --tags --refs --sort="v:refname" https://github.com/siemens/kas | tail -n1 | sed 's/.*\///')
           wget -qO ${KAS_CONTAINER} https://raw.githubusercontent.com/siemens/kas/refs/tags/$LATEST/kas-container
           chmod +x ${KAS_CONTAINER}
-
-      - uses: actions/checkout@v4
+      
+      - name: Sync meta-qcom
+        uses: qualcomm-linux/meta-qcom/.github/actions/sync@master
+        with:
+          repo: ${{ inputs.meta-qcom-repo }}
+          path: .
+          ref: ${{ inputs.meta-qcom-ref }}
+          prs: ${{ inputs.meta-qcom-prs }}
 
       - name: Run kas lock
         run: |
@@ -57,8 +78,15 @@ jobs:
     if: github.repository_owner == 'qualcomm-linux'
     runs-on: [self-hosted, qcom-u2404, amd64]
     steps:
-      - uses: actions/checkout@v4
 
+      - name: Sync meta-qcom
+        uses: qualcomm-linux/meta-qcom/.github/actions/sync@master
+        with:
+          repo: ${{ inputs.meta-qcom-repo }}
+          path: .
+          ref: ${{ inputs.meta-qcom-ref }}
+          prs: ${{ inputs.meta-qcom-prs }}
+      
       - name: Download kas lockfile
         uses: actions/download-artifact@v7
         with:
@@ -116,7 +144,14 @@ jobs:
             yamlfile: ":ci/linux-qcom-rt-6.18.yml"
     name: ${{ matrix.machine }}/${{ matrix.distro.name }}${{ matrix.kernel.dirname }}
     steps:
-      - uses: actions/checkout@v4
+
+      - name: Sync meta-qcom
+        uses: qualcomm-linux/meta-qcom/.github/actions/sync@master
+        with:
+          repo: ${{ inputs.meta-qcom-repo }}
+          path: .
+          ref: ${{ inputs.meta-qcom-ref }}
+          prs: ${{ inputs.meta-qcom-prs }}
 
       - name: Run kas build
         uses: ./.github/actions/compile
@@ -221,7 +256,14 @@ jobs:
                 yamlfile: ""
     name: ${{ matrix.machine }}/${{ matrix.distro.name }}${{ matrix.kernel.dirname }}
     steps:
-      - uses: actions/checkout@v4
+
+      - name: Sync meta-qcom
+        uses: qualcomm-linux/meta-qcom/.github/actions/sync@master
+        with:
+          repo: ${{ inputs.meta-qcom-repo }}
+          path: .
+          ref: ${{ inputs.meta-qcom-ref }}
+          prs: ${{ inputs.meta-qcom-prs }}
 
       - name: Run kas build
         uses: ./.github/actions/compile
