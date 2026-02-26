@@ -12,7 +12,7 @@ LIC_FILES_CHKSUM = "file://LICENSE.pdf;md5=878b885995f453e328edbcd5a1302306"
 NO_GENERIC_LICENSE[qcom-ai-stack] = "LICENSE.pdf"
 
 SRC_URI = "https://softwarecenter.qualcomm.com/api/download/software/sdks/Qualcomm_AI_Runtime_Community/All/${PV}/v${PV}.zip"
-SRC_URI[sha256sum] = "c6306f7d70457e4d8736416bb406d8670f5186fb648dd6808db24e9b2176c28d"
+SRC_URI[sha256sum] = "e3fce35419310bf80aa2947442a4b39366d80237c4bd72946b77832f71b75223"
 
 S = "${UNPACKDIR}/qairt/${PV}"
 
