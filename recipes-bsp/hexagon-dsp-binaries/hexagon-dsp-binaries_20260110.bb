@@ -49,6 +49,8 @@ PACKAGE_BEFORE_PN =+ "\
     ${PN}-qcom-iq9075-evk-gdsp \
     ${PN}-qcom-hamoa-iot-evk-adsp \
     ${PN}-qcom-hamoa-iot-evk-cdsp \
+    ${PN}-qcom-purwa-iot-evk-adsp \
+    ${PN}-qcom-purwa-iot-evk-cdsp \
     ${PN}-qcom-kaanapali-mtp-adsp \
     ${PN}-qcom-kaanapali-mtp-cdsp \
     ${PN}-qcom-qcs615-ride-adsp \
@@ -87,6 +89,8 @@ LICENSE:${PN}-qcom-iq9075-evk-cdsp = "dspso-qcom-2"
 LICENSE:${PN}-qcom-iq9075-evk-gdsp = "dspso-qcom-2"
 LICENSE:${PN}-qcom-hamoa-iot-evk-adsp = "dspso-qcom-2"
 LICENSE:${PN}-qcom-hamoa-iot-evk-cdsp = "dspso-qcom-2"
+LICENSE:${PN}-qcom-purwa-iot-evk-adsp = "dspso-qcom-2"
+LICENSE:${PN}-qcom-purwa-iot-evk-cdsp = "dspso-qcom-2"
 LICENSE:${PN}-qcom-kaanapali-mtp-adsp = "dspso-qcom-2"
 LICENSE:${PN}-qcom-kaanapali-mtp-cdsp = "dspso-qcom-2"
 LICENSE:${PN}-qcom-qcs615-ride-adsp = "dspso-qcom-2"
@@ -128,6 +132,8 @@ RDEPENDS:${PN}-qcom-iq9075-evk-gdsp = "${PN}-conf linux-firmware-qcom-sa8775p-ge
 RDEPENDS:${PN}-qcom-iq9075-evk-gdsp += "${PN}-qcom-sa8775p-ride-gdsp"
 RDEPENDS:${PN}-qcom-hamoa-iot-evk-adsp = "${PN}-conf linux-firmware-qcom-x1e80100-audio (= 1:${PV})"
 RDEPENDS:${PN}-qcom-hamoa-iot-evk-cdsp = "${PN}-conf linux-firmware-qcom-x1e80100-compute (= 1:${PV})"
+RDEPENDS:${PN}-qcom-purwa-iot-evk-adsp = "${PN}-conf linux-firmware-qcom-x1e80100-audio (= 1:${PV})"
+RDEPENDS:${PN}-qcom-purwa-iot-evk-cdsp = "${PN}-conf linux-firmware-qcom-x1e80100-compute (= 1:${PV})"
 RDEPENDS:${PN}-qcom-kaanapali-mtp-adsp = "${PN}-conf linux-firmware-qcom-kaanapali-audio (= 1:${PV})"
 RDEPENDS:${PN}-qcom-kaanapali-mtp-cdsp = "${PN}-conf linux-firmware-qcom-kaanapali-compute (= 1:${PV})"
 RDEPENDS:${PN}-qcom-qcs615-ride-adsp = "${PN}-conf linux-firmware-qcom-qcs615-audio (= 1:${PV})"
@@ -168,6 +174,8 @@ FILES:${PN}-qcom-iq9075-evk-cdsp = "${datadir}/qcom/sa8775p/Qualcomm/IQ9075-EVK/
 FILES:${PN}-qcom-iq9075-evk-gdsp = "${datadir}/qcom/sa8775p/Qualcomm/IQ9075-EVK/dsp/gdsp*"
 FILES:${PN}-qcom-hamoa-iot-evk-adsp = "${datadir}/qcom/x1e80100/Qualcomm/Hamoa-IoT-EVK/dsp/adsp*"
 FILES:${PN}-qcom-hamoa-iot-evk-cdsp = "${datadir}/qcom/x1e80100/Qualcomm/Hamoa-IoT-EVK/dsp/cdsp*"
+FILES:${PN}-qcom-purwa-iot-evk-adsp = "${datadir}/qcom/x1e80100/Qualcomm/Hamoa-IoT-EVK/dsp/adsp*"
+FILES:${PN}-qcom-purwa-iot-evk-cdsp = "${datadir}/qcom/x1e80100/Qualcomm/Hamoa-IoT-EVK/dsp/cdsp*"
 FILES:${PN}-qcom-kaanapali-mtp-adsp = "${datadir}/qcom/kaanapali/Qualcomm/Kaanapali-MTP/dsp/adsp*"
 FILES:${PN}-qcom-kaanapali-mtp-cdsp = "${datadir}/qcom/kaanapali/Qualcomm/Kaanapali-MTP/dsp/cdsp*"
 FILES:${PN}-qcom-qcs615-ride-adsp = "${datadir}/qcom/qcs615/Qualcomm/QCS615-RIDE/dsp/adsp"
@@ -197,6 +205,8 @@ FILES:${PN}-thundercomm-rb5-sdsp = "${datadir}/qcom/sm8250/Thundercomm/RB5/dsp/s
 INSANE_SKIP:${PN}-qcom-db820c-adsp = "arch libdir file-rdeps textrel"
 INSANE_SKIP:${PN}-qcom-hamoa-iot-evk-adsp = "arch libdir file-rdeps textrel"
 INSANE_SKIP:${PN}-qcom-hamoa-iot-evk-cdsp = "arch libdir file-rdeps textrel"
+INSANE_SKIP:${PN}-qcom-purwa-iot-evk-adsp = "arch libdir file-rdeps textrel"
+INSANE_SKIP:${PN}-qcom-purwa-iot-evk-cdsp = "arch libdir file-rdeps textrel"
 INSANE_SKIP:${PN}-qcom-kaanapali-mtp-adsp = "arch libdir file-rdeps textrel"
 INSANE_SKIP:${PN}-qcom-kaanapali-mtp-cdsp = "arch libdir file-rdeps textrel"
 INSANE_SKIP:${PN}-qcom-qcs615-ride-adsp = "arch libdir file-rdeps textrel"
