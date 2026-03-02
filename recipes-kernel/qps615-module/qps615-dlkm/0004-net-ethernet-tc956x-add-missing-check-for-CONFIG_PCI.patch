@@ -1,0 +1,37 @@
+From dcc88fc2eaec2e02e1a51d0cb85826cb15dd3f77 Mon Sep 17 00:00:00 2001
+From: Mohd Ayaan Anwar <mohd.anwar@oss.qualcomm.com>
+Date: Tue, 10 Mar 2026 13:33:04 +0530
+Subject: [PATCH 4/4] net: ethernet: tc956x: add missing check for
+ CONFIG_PCI_IOV
+
+Resolve the following compilation error for configs where PCI_IOV is
+disabled:
+- | tc956xmac_main.c: In function 'tc956xmac_dvr_probe':
+- | tc956xmac_main.c:15472:15: error: 'struct tc956xmac_priv' has no
+member named 'sriov_enabled'; did you mean 'rxp_enabled'?
+- | 15472 |         priv->sriov_enabled = res->sriov_enabled;
+
+Upstream-Status: Pending [follow up with Toshiba]
+Signed-off-by: Mohd Ayaan Anwar <mohd.anwar@oss.qualcomm.com>
+---
+ drivers/net/ethernet/toshiba/tc956x/tc956xmac_main.c | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/drivers/net/ethernet/toshiba/tc956x/tc956xmac_main.c b/drivers/net/ethernet/toshiba/tc956x/tc956xmac_main.c
+index 0bcc0a9..aea82b7 100644
+--- a/drivers/net/ethernet/toshiba/tc956x/tc956xmac_main.c
++++ b/drivers/net/ethernet/toshiba/tc956x/tc956xmac_main.c
+@@ -15469,8 +15469,10 @@ int tc956xmac_vf_dvr_probe(struct device *device,
+ 	priv->pause = pause;
+ 	priv->plat = plat_dat;
+ #ifdef TC956X_SRIOV_PF
++#ifdef CONFIG_PCI_IOV
+ 	priv->sriov_enabled = res->sriov_enabled;
+ #endif
++#endif
+ #ifdef TC956X
+ 	priv->tc956x_SFR_pci_base_addr = res->tc956x_SFR_pci_base_addr;
+ 	priv->tc956x_SRAM_pci_base_addr = res->tc956x_SRAM_pci_base_addr;
+-- 
+2.34.1
+
