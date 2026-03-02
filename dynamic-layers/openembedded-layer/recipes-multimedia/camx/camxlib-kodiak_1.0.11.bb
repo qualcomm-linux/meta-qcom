@@ -20,7 +20,8 @@ SRC_URI[chicdk.sha256sum] = "f76beb5658f0778db2199c9809ed18e9b4f46dd36e67d5839b7
 
 S = "${UNPACKDIR}"
 
-DEPENDS += "glib-2.0 fastrpc protobuf-camx libxml2 virtual/egl virtual/libgles2 virtual/libopencl1"
+DEPENDS += "glib-2.0 fastrpc protobuf-camx libxml2 virtual/egl virtual/libgles2"
+DEPENDS:append = "${@bb.utils.contains('DISTRO_FEATURES', 'opencl', ' qcom-adreno virtual/libopencl1', '', d)}"
 
 # This package is currently only used and tested on ARMv8 (aarch64) machines.
 # Therefore, builds for other architectures are not necessary and are explicitly excluded.
@@ -60,6 +61,7 @@ do_install() {
 PACKAGE_BEFORE_PN += "camx-kodiak chicdk-kodiak"
 RDEPENDS:${PN} += "chicdk-kodiak"
 RDEPENDS:${PN}-dev += "camxcommon-headers-dev"
+RRECOMMENDS:${PN}:append = "${@bb.utils.contains('DISTRO_FEATURES', 'opencl', ' virtual-opencl-icd', '', d)}"
 
 FILES:camx-kodiak = "\
     ${libdir}/libcamera_hardware_kodiak*${SOLIBS} \
