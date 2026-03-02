@@ -28,13 +28,13 @@ jobs:
           - qcom-armv7a
           - rb1-core-kit
         distro:
-          - name: poky-altcfg
+          - name: nodistro
           - name: qcom-distro
         kernel:
           - ""
           - +linux-qcom-6.18
         exclude:
-          - distro: poky-altcfg
+          - distro: nodistro
             kernel: +linux-qcom-6.18
           - machine: qcom-armv7a
             kernel: +linux-qcom-6.18
@@ -148,13 +148,13 @@ jobs:
           - qcs9100-ride-sx
           - rb1-core-kit
         distro:
-          - name: poky-altcfg
+          - name: nodistro
           - name: qcom-distro
         kernel:
           - ""
           - +linux-qcom-6.18
         exclude:
-          - distro: poky-altcfg
+          - distro: nodistro
             kernel: +linux-qcom-6.18
     steps:
       - id: print-condition
