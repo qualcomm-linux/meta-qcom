@@ -8,6 +8,8 @@ SRC_URI[camx.sha256sum]        = "f871cca822e76e9b39bec65726038af0a45384c83404ff
 SRC_URI[chicdk.sha256sum]      = "a7eb5b2161ccfc091fac513f40966a3ca13cb952eb206c08035607a7c1a2035f"
 SRC_URI[camxcommon.sha256sum]  = "2a78ffe1a6d475d77640d0e70ed730e6a88ea19337cb8e31f6dc9c7e8083385a"
 
+DEPENDS:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'opencl', 'qcom-adreno virtual/libopencl1', '', d)}"
+
 do_install:append() {
     # Copy json only when /etc folder exists in ${S}
     if [ -d "${S}/etc" ]; then
@@ -18,6 +20,7 @@ do_install:append() {
 
 RPROVIDES:${PN} = "camxlib-monaco"
 PACKAGE_BEFORE_PN += "camx-nhx"
+RRECOMMENDS:${PN}:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'opencl', 'virtual-opencl-icd', '', d)}"
 
 FILES:camx-nhx = "\
     ${bindir}/nhx.sh \
