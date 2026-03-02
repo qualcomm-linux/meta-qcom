@@ -1,0 +1,28 @@
+# Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
+#
+# SPDX-License-Identifier: BSD-3-Clause-Clear
+
+[Unit]
+Description=Create ext4 filesystem on persist partition if missing
+Requires=dev-disk-by\x2dpartlabel-persist.device
+After=dev-disk-by\x2dpartlabel-persist.device
+ConditionPathExists=/dev/disk/by-partlabel/persist
+Before=var-lib-tee.mount
+Wants=var-lib-tee.mount
+ConditionPathIsMountPoint=!/var/lib/tee
+
+[Service]
+Type=oneshot
+ExecStart=/bin/sh -c '\
+  DEV=/dev/disk/by-partlabel/persist; \
+  if [ -n "$(/sbin/blkid -o value -s TYPE "$DEV" 2>/dev/null || true)" ]; then \
+    echo "$DEV already has a filesystem, skipping mkfs"; \
+    exit 0; \
+  fi; \
+  /sbin/mkfs.ext4 "$DEV" \
+'
+ExecStartPost=/bin/systemctl disable format-tee-partition.service
+RemainAfterExit=yes
+
+[Install]
+WantedBy=local-fs-pre.target
