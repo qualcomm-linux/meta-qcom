@@ -25,9 +25,9 @@ runs:
   steps:
       - uses: actions/checkout@v4
         with:
-          repository: qualcomm-linux/lava-test-plans
+          repository: quaresmajose/lava-test-plans
           path: lava-test-plans
-          ref: 1ab5e2f1d6cc3559ca4685941cc9fd17ab132c2d
+          ref: 777161ba894324c43a422e9f8c7747379567e646
 
       - uses: actions/setup-python@v6
         with:
