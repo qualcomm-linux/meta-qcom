@@ -28,8 +28,3 @@ FILES:camx-nhx = "\
 "
 
 FILES:${PN} += "${@bb.utils.contains('DISTRO_FEATURES', 'opencl', '${libdir}/camx/${PLATFORM}/*.cl ${libdir}/camx/${PLATFORM}/libmctf_cl_program.bin', '', d)}"
-
-# Algo librarires are pre-compiled, pre-stripped.
-# Skipping QA checks: 'already-stripped' because:
-# - Library files are Pre-stripped  (already-stripped)
-INSANE_SKIP:${PN} = "already-stripped"
