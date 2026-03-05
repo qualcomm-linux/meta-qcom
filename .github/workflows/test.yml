@@ -101,7 +101,7 @@ jobs:
           save_result_as_artifact: true
           save_job_details: true
           result_file_name: "${{ matrix.target.result_file }}"
-      - uses: mwasilew/github-action-matrix-outputs-write@v2
+      - uses: mwasilew/github-action-matrix-outputs-write@f7202d2224ebed937f287a2e2813e47fddd12bc8 # v2
         if: always()
         id: out
         with:
@@ -118,7 +118,7 @@ jobs:
     outputs:
       boot_result: "${{ steps.print-boot-result.outputs.boot_result }}"
     steps:
-      - uses: cloudposse/github-action-matrix-outputs-read@v1
+      - uses: cloudposse/github-action-matrix-outputs-read@33cac12fa9282a7230a418d859b93fdbc4f27b5a # v1
         id: read
         with:
           matrix-step-name: "submit-boot-job"
