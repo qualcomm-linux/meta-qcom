@@ -6,12 +6,12 @@ LIC_FILES_CHKSUM = "file://LICENSE.txt;md5=2998c54c288b081076c9af987bdf4838"
 HOMEPAGE = "https://github.com/qualcomm/camera-service"
 
 SRC_URI = "\
-    git://github.com/qualcomm/camera-service.git;branch=main;protocol=https \
+    git://github.com/qualcomm/camera-service.git;protocol=https;nobranch=1;tag=0.1.0 \
 "
 
-SRCREV = "9ac3ead12ee10ae5485f12d01ea89970205b3cf0"
+SRCREV = "f6bb57c06fb1430f398e7f5aaf1a14726777dff9"
 
-PV = "0.0+git"
+PV = "0.1.0"
 
 # Limit this recipe to ARMv8 (aarch64) only, because it depends
 # on camxcommon-headers which is explicitly restricted to ARMv8 (aarch64).
