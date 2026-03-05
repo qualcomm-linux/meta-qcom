@@ -33,6 +33,7 @@ PACKAGECONFIG ??= "sw videoproc"
 
 PACKAGECONFIG[messaging]    = "-DENABLE_GST_MESSAGING_PLUGINS=1, -DENABLE_GST_MESSAGING_PLUGINS=0, librdkafka mosquitto"
 PACKAGECONFIG[ml]           = "-DENABLE_GST_ML_PLUGINS=1, -DENABLE_GST_ML_PLUGINS=0, cairo json-glib opencv qairt-sdk, qairt-sdk"
+PACKAGECONFIG[python-apps]  = "-DENABLE_GST_PYTHON_EXAMPLES=1, -DENABLE_GST_PYTHON_EXAMPLES=0"
 PACKAGECONFIG[qmmfsrc]      = "-DENABLE_GST_PLUGIN_QMMFSRC=1  -DVHDR_MODES_ENABLE=ON, -DENABLE_GST_PLUGIN_QMMFSRC=0 -DVHDR_MODES_ENABLE=OFF, camera-service"
 PACKAGECONFIG[redissink]    = "-DENABLE_GST_PLUGIN_REDISSINK=1, -DENABLE_GST_PLUGIN_REDISSINK=0, hiredis"
 PACKAGECONFIG[sample-apps]  = "-DENABLE_GST_SAMPLE_APPS=1, -DENABLE_GST_SAMPLE_APPS=0, opencv cairo json-glib camera-service"
@@ -45,3 +46,5 @@ RDEPENDS:${PN}-qtimltflite += "tensorflow-lite"
 
 # The Smart Video Encoder plugin loads the libVideoCtrl library at runtime using dlopen(). To ensure runtime availability, added runtime dependency on 'smart-venc-ctrl-algo'.
 RDEPENDS:${PN}-qtismartvencbin += "smart-venc-ctrl-algo"
+
+RDEPENDS:${PN}-apps += "${@bb.utils.contains('PACKAGECONFIG', 'python-apps', 'python3-core gstreamer1.0-python python3-pygobject gtk+3 python3-opencv python3-pip', '', d)}"
