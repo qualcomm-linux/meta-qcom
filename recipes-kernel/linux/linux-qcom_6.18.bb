@@ -21,6 +21,7 @@ SRCBRANCH ?= "nobranch=1"
 SRCBRANCH:class-devupstream ?= "branch=qcom-6.18.y"
 
 SRC_URI = "git://github.com/qualcomm-linux/kernel.git;${SRCBRANCH};protocol=https"
+SRC_URI += "file://0001-arm64-dts-qcom-monaco-evk-ifp-mezzanine-Rebase-to-v3.patch"
 SRC_URI += "file://0001-tools-use-basename-to-identify-file-in-gen-mach-type.patch"
 
 # Additional kernel configs.
