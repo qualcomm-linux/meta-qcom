@@ -90,3 +90,7 @@ RT_KERNEL_CMDLINE = "${RT_ARGS_ISOL} ${RT_ARGS_IRQ} ${RT_ARGS_NOCBS} \
 KERNEL_CMDLINE_EXTRA:append = "${@bb.utils.contains_any('PREFERRED_PROVIDER_virtual/kernel',\
                               'linux-qcom-rt linux-qcom-next-rt', \
                               ' ${RT_KERNEL_CMDLINE}', '', d)}"
+
+# Set default runtime provider for virtual-tftp-server to avoid
+# warnings when both tqftpserv and tftp-server are available
+PREFERRED_RPROVIDER_virtual-tftp-server ?= "tqftpserv"
