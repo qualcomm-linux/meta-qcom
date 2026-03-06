@@ -2,13 +2,15 @@ DESCRIPTION = "QCOM NHLOS Firmware for Qualcomm QCS8300 platform"
 LICENSE = "LICENSE.qcom-2"
 LIC_FILES_CHKSUM = "file://${UNPACKDIR}/LICENSE.${BPN};md5=6e1bae7ef13289c332a27b917fb49764"
 
-FW_ARTIFACTORY = "softwarecenter.qualcomm.com/download/software/chip/qualcomm_linux-spf-1-0/qualcomm-linux-spf-1-0_test_device_public"
-FW_BUILD_ID = "r1.0_${PV}/qcs8300-le-1-0"
+FW_ARTIFACTORY = "softwarecenter.qualcomm.com/nexus/generic/product/chip/software-product-family/Qualcomm_Linux.SPF.2.0/qualcomm_linux.spf.2.0-test-device-public"
+BUILD_ID = "${@(d.getVar('PV')).rsplit('-', 1)[0].replace('-', '_')}"
+SPIN_ID = "${@d.getVar('PV').rsplit('-', 1)[-1]}"
+FW_BUILD_ID = "${BUILD_ID}/QCS8300.LE.2.0"
 FW_BIN_PATH = "common/build/ufs/bin"
 BOOTBINARIES = "QCS8300_bootbinaries"
 
 SRC_URI = " \
-    https://${FW_ARTIFACTORY}/${FW_BUILD_ID}/${FW_BIN_PATH}/${BOOTBINARIES}.zip;downloadfilename=${BOOTBINARIES}_r1.0_${PV}.zip;name=bootbinaries \
+    https://${FW_ARTIFACTORY}/${FW_BUILD_ID}/${FW_BIN_PATH}/${BOOTBINARIES}_${SPIN_ID}.zip;downloadfilename=${BOOTBINARIES}_${PV}.zip;name=bootbinaries \
     https://${FW_ARTIFACTORY}/${FW_BUILD_ID}/LICENSE.txt;downloadfilename=LICENSE.${BPN};name=license \
     https://artifacts.codelinaro.org/artifactory/codelinaro-le/Qualcomm_Linux/QCS8300/cdt/ride-sx.zip;downloadfilename=cdt-qcs8300-ride-sx_${PV}.zip;name=qcs8300-ride-sx \
     https://artifacts.codelinaro.org/artifactory/codelinaro-le/Qualcomm_Linux/QCS8300/cdt/qcs8275-iq-8275-evk-pro-sku.zip;downloadfilename=cdt-iq8275-evk-pro-sku_${PV}.zip;name=cdt-iq8275-evk-pro-sku \
