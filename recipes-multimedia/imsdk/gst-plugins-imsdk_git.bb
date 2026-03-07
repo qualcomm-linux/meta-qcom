@@ -10,14 +10,15 @@ inherit cmake features_check pkgconfig
 
 REQUIRED_DISTRO_FEATURES = "opengl"
 
-SRC_URI = "git://github.com/qualcomm/gst-plugins-imsdk;branch=main;protocol=https"
+SRC_URI = "git://github.com/qualcomm/gst-plugins-imsdk;protocol=https;nobranch=1;tag=0.1.0"
 
-SRCREV = "268dc4daa7fb3813bdfd481ff15e38f8d844105c"
-PV = "0.0+git"
+SRCREV = "538ab4e1ab048e619b08f82f8a737621f60d6d32"
+PV = "0.1.0"
 
 DEPENDS += "\
     gstreamer1.0 \
     gstreamer1.0-plugins-base \
+    json-glib \
     virtual/egl \
     virtual/libgbm \
     virtual/libgles2 \
