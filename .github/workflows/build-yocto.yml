@@ -96,7 +96,7 @@ jobs:
           - rb3gen2-core-kit
           - qcom-armv8a
         distro:
-          - name: poky-altcfg
+          - name: nodistro
             yamlfile: ""
           - name: qcom-distro
             yamlfile: ':ci/qcom-distro-prop-image.yml'
@@ -151,7 +151,7 @@ jobs:
           - rb1-core-kit
           - sm8750-mtp
         distro:
-          - name: poky-altcfg
+          - name: nodistro
             yamlfile: ""
           - name: qcom-distro
             yamlfile: ':ci/qcom-distro-prop-image.yml'
@@ -205,7 +205,7 @@ jobs:
                 yamlfile: ""
           - machine: qcom-armv7a
             distro:
-                name: poky-altcfg
+                name: nodistro
                 yamlfile: ''
             kernel:
                 type: default
@@ -221,7 +221,7 @@ jobs:
                 yamlfile: ""
           - machine: qcs615-ride
             distro:
-                name: poky-altcfg
+                name: nodistro
                 yamlfile: ''
             kernel:
                 type: u-boot-qcom-6.18
@@ -229,7 +229,7 @@ jobs:
                 yamlfile: ":ci/linux-qcom-6.18.yml:ci/u-boot-qcom.yml"
           - machine: rb3gen2-core-kit
             distro:
-                name: poky-altcfg
+                name: nodistro
                 yamlfile: ''
             kernel:
                 type: u-boot-qcom-6.18
