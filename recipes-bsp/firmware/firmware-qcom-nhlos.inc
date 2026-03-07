@@ -1,8 +1,13 @@
 # Handle NON-HLOS.bin unpacking in a generic way
 # Include the file to be able to dissect the image using handle_nonhlos_image()
 # If NHLOS_URI is defined, the image will be dissected automatically
+#
+# Additionally PROPRIETARY_URI can be specified. Its contents will be used to
+# provide additional firmware files (like Adreno or IPA), which are not a part
+# of NON-HLOS.bin.
 
 NHLOS_URI ??= ""
+PROPRIETARY_URI ??= ""
 
 # List all firmware files to be installed
 FW_QCOM_LIST ??= ""
@@ -11,7 +16,7 @@ DEPENDS += "pil-squasher-native mtools-native"
 
 # Conditionally populate SRC_URI. We have to do it here rather than in python
 # script to let base.bbclass to pick up dependencies
-SRC_URI += "${NHLOS_URI}"
+SRC_URI += "${NHLOS_URI} ${PROPRIETARY_URI}${@ ';subdir=proprietary' if d.getVar('PROPRIETARY_URI') != '' else '' }"
 
 unpack_nhlos_image() {
     mkdir -p ${B}/firmware
@@ -48,11 +53,11 @@ do_install:prepend() {
     install -d ${D}${FW_QCOM_PATH}
 
     for fw in ${FW_QCOM_LIST} ; do
-        if [ -r ${B}/$fw ] ; then
+        if [ -r ${S}/proprietary/$fw ] ; then
+            install -m 0644 ${S}/proprietary/$fw ${D}${FW_QCOM_PATH}
+        elif [ -r ${B}/$fw ] ; then
             install -m 0644 ${B}/$fw ${D}${FW_QCOM_PATH}
-        fi
-
-        if [ -r ${B}/firmware/image/$fw ] ; then
+        elif [ -r ${B}/firmware/image/$fw ] ; then
             install -m 0644 ${B}/firmware/image/$fw ${D}${FW_QCOM_PATH}
         fi
     done

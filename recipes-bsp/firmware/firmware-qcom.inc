@@ -29,7 +29,7 @@ FILES:linux-firmware-qcom-${FW_QCOM_NAME}-ipa = "${FW_QCOM_PATH}/ipa_fws.mbn* ${
 FILES:linux-firmware-qcom-${FW_QCOM_NAME}-modem = "${FW_QCOM_PATH}/mba.mbn* ${FW_QCOM_PATH}/modem.mbn* ${FW_QCOM_PATH}/modem*.jsn"
 FILES:linux-firmware-qcom-${FW_QCOM_NAME}-q6 = "${FW_QCOM_PATH}/q6.mbn*"
 FILES:linux-firmware-qcom-${FW_QCOM_NAME}-sensors = "${FW_QCOM_PATH}/slpi.mbn* ${FW_QCOM_PATH}/slpi*.jsn"
-FILES:linux-firmware-qcom-${FW_QCOM_NAME}-venus = "${FW_QCOM_PATH}/venus.mbn* ${FW_QCOM_PATH}/vidc*"
+FILES:linux-firmware-qcom-${FW_QCOM_NAME}-venus = "${FW_QCOM_PATH}/venus.mbn* ${FW_QCOM_PATH}/vidc* ${FW_QCOM_BASE_PATH}/vpu*"
 FILES:linux-firmware-qcom-${FW_QCOM_NAME}-wifi = "${FW_QCOM_PATH}/wcnss.mbn* ${FW_QCOM_PATH}/wlanmdsp.mbn*"
 
 # Possible values are "xz" and "zst".

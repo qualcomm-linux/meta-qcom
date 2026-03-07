@@ -19,7 +19,6 @@ S = "${UNPACKDIR}"
 
 require recipes-bsp/firmware/firmware-qcom.inc
 require recipes-bsp/firmware/firmware-qcom-nhlos.inc
-require recipes-bsp/firmware/firmware-qcom-adreno.inc
 
 SPLIT_FIRMWARE_PACKAGES = "\
     linux-firmware-qcom-${FW_QCOM_NAME}-adreno \
@@ -30,9 +29,9 @@ SPLIT_FIRMWARE_PACKAGES = "\
 "
 
 do_install:prepend() {
-    if [ -n "${ADRENO_URI}" ] ; then
+    if [ -r "${UNPACKDIR}/proprietary/a621_gmu.bin" ] ; then
         install -d ${D}${FW_QCOM_BASE_PATH}
-        install -m 0644 ${UNPACKDIR}/adreno/${ADRENO_PATH}/a621_gmu.bin ${D}${FW_QCOM_BASE_PATH}
+        install -m 0644 ${UNPACKDIR}/proprietary/a621_gmu.bin ${D}${FW_QCOM_BASE_PATH}
     fi
 
     if [ -n "${NHLOS_URI}" ] ; then

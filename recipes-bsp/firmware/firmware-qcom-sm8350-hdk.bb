@@ -27,4 +27,14 @@ SPLIT_FIRMWARE_PACKAGES = "\
     linux-firmware-qcom-${FW_QCOM_NAME}-ipa \
     linux-firmware-qcom-${FW_QCOM_NAME}-modem \
     linux-firmware-qcom-${FW_QCOM_NAME}-sensors \
+    linux-firmware-qcom-${FW_QCOM_NAME}-venus \
 "
+
+# Different vpu20_4v.mbn files are not compatible and support different
+# platforms. Use platform-specific name for the file in generic location.
+do_install:prepend() {
+    if [ -r "${S}/proprietary/vpu20_4v.mbn" ] ; then
+        install -d ${D}${FW_QCOM_BASE_PATH}/vpu
+        install -m 0644 ${S}/proprietary/vpu20_4v.mbn ${D}${FW_QCOM_BASE_PATH}/vpu/vpu20_4v_sm8350.mbn
+    fi
+}
