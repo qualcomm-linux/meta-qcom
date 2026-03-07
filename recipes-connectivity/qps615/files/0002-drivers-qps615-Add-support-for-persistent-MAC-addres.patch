@@ -1,0 +1,77 @@
+From edd56dcbd508057b1a4150afd28488c523c9df1d Mon Sep 17 00:00:00 2001
+From: Mohd Ayaan Anwar <mohd.anwar@oss.qualcomm.com>
+Date: Tue, 24 Feb 2026 01:25:44 +0530
+Subject: [PATCH 2/3] drivers: qps615: Add support for persistent MAC address
+
+Add support for fetching MAC address from either a persistent partition
+or the EEPROM (if present).
+
+Upstream-Status: Pending
+Signed-off-by: Mohd Ayaan Anwar <mohd.anwar@oss.qualcomm.com>
+---
+ .../ethernet/toshiba/tc956x/tc956xmac_main.c  | 21 +++++++++++++------
+ 1 file changed, 15 insertions(+), 6 deletions(-)
+
+diff --git a/drivers/net/ethernet/toshiba/tc956x/tc956xmac_main.c b/drivers/net/ethernet/toshiba/tc956x/tc956xmac_main.c
+index c4ed2e1..2309b38 100644
+--- a/drivers/net/ethernet/toshiba/tc956x/tc956xmac_main.c
++++ b/drivers/net/ethernet/toshiba/tc956x/tc956xmac_main.c
+@@ -195,6 +195,7 @@
+ #include <linux/interrupt.h>
+ #include <linux/iopoll.h>
+ #include <linux/ip.h>
++#include <linux/of_net.h>
+ #include <linux/tcp.h>
+ #include <linux/skbuff.h>
+ #include <linux/ethtool.h>
+@@ -15288,22 +15289,24 @@ static bool lookfor_macid(char *file_buf, uint8_t port_id, uint8_t dev_id)
+  * \return None
+  *
+  */
+-static void parse_config_file(uint8_t port_id, uint8_t dev_id)
++static void parse_config_file(uint8_t port_id, uint8_t dev_id, struct net_device *dev)
+ {
+ 	void *data = NULL;
+ 	char *cdata;
+ 	int ret, i;
+ 
+ #if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 10, 0)
+-	ret = kernel_read_file_from_path("config.ini", 0, &data, INT_MAX, NULL, READING_POLICY);
++	ret = kernel_read_file_from_path("/var/persist/config.ini", 0, &data, INT_MAX, NULL, READING_POLICY);
+ #else
+ 	loff_t size;
+ 
+-	ret = kernel_read_file_from_path("config.ini", &data, &size, 3000, READING_POLICY);
++	ret = kernel_read_file_from_path("/var/persist/config.ini", &data, &size, 1000, READING_POLICY);
+ #endif
+ 	if (ret < 0) {
+ 		KPRINT_ERR("Mac configuration file not found\n");
+-		KPRINT_INFO("Using Default MAC Address\n");
++		eth_random_addr(&dev_addr[tc956xmac_pm_usage_counter][0]);
++		dev->addr_assign_type = NET_ADDR_RANDOM;
++		KPRINT_INFO("tc956xmac_pm_usage_counter=%d\n",tc956xmac_pm_usage_counter);
+ 		return;
+ 	} else {
+ 
+@@ -15692,10 +15695,16 @@ int tc956xmac_vf_dvr_probe(struct device *device,
+ #else
+ #ifdef TC956X_SRIOV_VF
+ 	/* To be enabled for config.ini parsing */
+-	parse_config_file(priv->port_num, priv->plat->vf_id);
++	parse_config_file(priv->port_num, priv->plat->vf_id, priv->dev);
+ #else
++	ret = of_get_mac_address_nvmem(priv->device->of_node, dev_addr[priv->probe_seq_no]);
++	if (ret == -EPROBE_DEFER) {
++		dev_info(priv->device, "Deferring probe for MAC address from NVMEM\n");
++		return ret;
++	} else if (ret) {
+ 	/* To be enabled for config.ini parsing */
+-	parse_config_file(priv->port_num, 0);
++		parse_config_file(priv->port_num, 0, priv->dev);
++	}
+ #endif
+ 
+ #endif /* EEPROM_MAC_ADDR */
+-- 
+2.34.1
+

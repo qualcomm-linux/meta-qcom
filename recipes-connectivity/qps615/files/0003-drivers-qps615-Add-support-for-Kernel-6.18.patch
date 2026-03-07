@@ -1,0 +1,584 @@
+From 47b0caf564338a6c88e8610bd3ff949a85f01750 Mon Sep 17 00:00:00 2001
+From: Mohd Ayaan Anwar <mohd.anwar@oss.qualcomm.com>
+Date: Mon, 2 Mar 2026 15:46:16 +0530
+Subject: [PATCH 3/3] drivers: qps615: Add support for Kernel 6.18
+
+Remove deprecated APIs and fix API design changes.
+
+Upstream-Status: Pending
+Signed-off-by: Mohd Ayaan Anwar <mohd.anwar@oss.qualcomm.com>
+---
+ drivers/net/ethernet/toshiba/tc956x/common.h  |  7 ++
+ .../ethernet/toshiba/tc956x/dwxgmac2_core.c   |  3 +
+ .../net/ethernet/toshiba/tc956x/tc956xmac.h   | 11 +--
+ .../toshiba/tc956x/tc956xmac_ethtool.c        | 71 +++++++++--------
+ .../ethernet/toshiba/tc956x/tc956xmac_inc.h   |  1 +
+ .../ethernet/toshiba/tc956x/tc956xmac_main.c  | 79 +++++++++++++------
+ .../toshiba/tc956x/tc956xmac_selftests.c      |  8 +-
+ 7 files changed, 116 insertions(+), 64 deletions(-)
+
+diff --git a/drivers/net/ethernet/toshiba/tc956x/common.h b/drivers/net/ethernet/toshiba/tc956x/common.h
+index d983381..14ff743 100644
+--- a/drivers/net/ethernet/toshiba/tc956x/common.h
++++ b/drivers/net/ethernet/toshiba/tc956x/common.h
+@@ -1738,6 +1738,10 @@ RXQ1 used for MAC2MAC */
+ 
+ #define NFUNCEN_FUNC0		(0)
+ #define NFUNCEN_FUNC1		(1)
++#define NFUNCEN1_GPIO_35	GENMASK(19, 16)
++#define NFUNCEN1_GPIO_35_SHIFT  (16)
++#define NFUNCEN1_GPIO_36	GENMASK(23,20)
++#define NFUNCEN1_GPIO_36_SHIFT  (20)
+ #define NFUNCEN_FUNC2		(2)
+ #define NFUNCEN4_GPIO_00	GENMASK(3, 0)
+ #define NFUNCEN4_GPIO_00_SHIFT	(0)
+@@ -1778,6 +1782,8 @@ RXQ1 used for MAC2MAC */
+ #define GPIO_12			(12)
+ #define GPIO_13			(13)
+ #define GPIO_32			(32)
++#define GPIO_35			(35)
++#define GPIO_36			(36)
+ 
+ #define TRIG00_SHIFT		4
+ #define TRIG10_SHIFT		12
+@@ -2887,6 +2893,7 @@ extern const struct tc956xmac_hwtimestamp tc956xmac_ptp;
+ extern const struct tc956xmac_mode_ops dwmac4_ring_mode_ops;
+ 
+ struct mac_link {
++	u32 caps;
+ 	u32 speed_mask;
+ 	u32 speed10;
+ 	u32 speed100;
+diff --git a/drivers/net/ethernet/toshiba/tc956x/dwxgmac2_core.c b/drivers/net/ethernet/toshiba/tc956x/dwxgmac2_core.c
+index a6f1956..30bbe24 100644
+--- a/drivers/net/ethernet/toshiba/tc956x/dwxgmac2_core.c
++++ b/drivers/net/ethernet/toshiba/tc956x/dwxgmac2_core.c
+@@ -3285,6 +3285,9 @@ int dwxgmac2_setup(struct tc956xmac_priv *priv)
+ 	mac->link.xgmii.speed5000 = XGMAC_CONFIG_SS_5000;
+ 	mac->link.xgmii.speed10000 = XGMAC_CONFIG_SS_10000;
+ 	mac->link.speed_mask = XGMAC_CONFIG_SS_MASK;
++	mac->link.caps = MAC_ASYM_PAUSE | MAC_SYM_PAUSE |
++			 MAC_10 | MAC_100 | MAC_1000FD |
++			 MAC_2500FD | MAC_5000FD | MAC_10000FD;
+ 
+ 	mac->mii.addr = XGMAC_MDIO_ADDR;
+ 	mac->mii.data = XGMAC_MDIO_DATA;
+diff --git a/drivers/net/ethernet/toshiba/tc956x/tc956xmac.h b/drivers/net/ethernet/toshiba/tc956x/tc956xmac.h
+index 279e36d..63a5ba3 100644
+--- a/drivers/net/ethernet/toshiba/tc956x/tc956xmac.h
++++ b/drivers/net/ethernet/toshiba/tc956x/tc956xmac.h
+@@ -936,7 +936,7 @@ struct tc956xmac_priv {
+ 						appropriate sequence of link down & up */
+ 
+ #endif
+-	struct tc956x_gpio_config saved_gpio_config[GPIO_13 + 1]; /* Only GPIO0- GPIO06, GPI010-GPIO13 are used */
++	struct tc956x_gpio_config saved_gpio_config[GPIO_36 + 1]; /* Only GPIO0- GPIO06, GPI010-GPIO13 are used */
+ 
+ #ifdef TC956X_SRIOV_PF
+ #ifdef CONFIG_DEBUG_FS
+@@ -1331,13 +1331,14 @@ int genphy_c45_read_eee_adv_local(struct phy_device *phydev, unsigned long *adv)
+ int genphy_c45_eee_is_active_local(struct phy_device *phydev, unsigned long *adv,
+ 			     unsigned long *lp, bool *is_enabled);
+ int genphy_c45_ethtool_get_eee_local(struct phy_device *phydev,
+-			       struct ethtool_eee *data);
+-int phy_ethtool_get_eee_local(struct phy_device *phydev, struct ethtool_eee *data);
+-int phylink_ethtool_get_eee_local(struct phy_device *phydev, struct ethtool_eee *eee);
++			       struct ethtool_keee *data);
++int phy_ethtool_get_eee_local(struct phy_device *phydev, struct ethtool_keee *data);
++int phylink_ethtool_get_eee_local(struct phy_device *phydev, struct ethtool_keee *eee);
+ #endif
+ 
+ #ifdef TC956X_5_G_2_5_G_EEE_SUPPORT
+-extern int phy_ethtool_set_eee_2p5(struct phy_device *phydev, struct ethtool_eee *data);
++extern int phy_ethtool_set_eee_2p5(struct phy_device *phydev, struct ethtool_keee *data);
++
+ #endif
+ #endif
+ 
+diff --git a/drivers/net/ethernet/toshiba/tc956x/tc956xmac_ethtool.c b/drivers/net/ethernet/toshiba/tc956x/tc956xmac_ethtool.c
+index 76d0d1b..e7d46ea 100644
+--- a/drivers/net/ethernet/toshiba/tc956x/tc956xmac_ethtool.c
++++ b/drivers/net/ethernet/toshiba/tc956x/tc956xmac_ethtool.c
+@@ -94,7 +94,7 @@ extern void tc956x_filter_debug(struct tc956xmac_priv *priv);
+ #endif
+ #ifndef TC956X_SRIOV_VF
+ void tc956xmac_get_pauseparam(struct net_device *netdev, struct ethtool_pauseparam *pause);
+-int tc956xmac_ethtool_op_get_eee(struct net_device *dev, struct ethtool_eee *edata);
++int tc956xmac_ethtool_op_get_eee(struct net_device *dev, struct ethtool_keee *edata);
+ #endif
+ #ifdef TC956X_5_G_2_5_G_EEE_SUPPORT
+ #define TC956X_ADVERTISED_2500baseT_Full ETHTOOL_LINK_MODE_2500baseT_Full_BIT
+@@ -941,18 +941,18 @@ static void tc956xmac_ethtool_getdrvinfo(struct net_device *dev,
+ 								fw_version->major, fw_version->minor,
+ 								fw_version->sub_minor);
+ 
+-	strlcpy(info->fw_version, fw_version_str, sizeof(info->fw_version));
++	strscpy(info->fw_version, fw_version_str, sizeof(info->fw_version));
+ 
+ 	if (priv->plat->has_gmac || priv->plat->has_gmac4)
+-		strlcpy(info->driver, GMAC_ETHTOOL_NAME, sizeof(info->driver));
++		strscpy(info->driver, GMAC_ETHTOOL_NAME, sizeof(info->driver));
+ 	else if (priv->plat->has_xgmac)
+-		strlcpy(info->driver, XGMAC_ETHTOOL_NAME, sizeof(info->driver));
++		strscpy(info->driver, XGMAC_ETHTOOL_NAME, sizeof(info->driver));
+ 	else
+-		strlcpy(info->driver, MAC100_ETHTOOL_NAME,
++		strscpy(info->driver, MAC100_ETHTOOL_NAME,
+ 			sizeof(info->driver));
+ 
+-	strlcpy(info->version, DRV_MODULE_VERSION, sizeof(info->version));
+-	strlcpy(info->bus_info, pci_name(pdev), sizeof(info->bus_info));
++	strscpy(info->version, DRV_MODULE_VERSION, sizeof(info->version));
++	strscpy(info->bus_info, pci_name(pdev), sizeof(info->bus_info));
+ 
+ 	info->n_priv_flags = TC956X_PRIV_FLAGS_STR_LEN;
+ }
+@@ -1732,11 +1732,11 @@ int genphy_c45_eee_is_active_local(struct phy_device *phydev, unsigned long *adv
+  * capabilities.
+  */
+ int genphy_c45_ethtool_get_eee_local(struct phy_device *phydev,
+-			       struct ethtool_eee *data)
++			       struct ethtool_keee *data)
+ {
+ 	__ETHTOOL_DECLARE_LINK_MODE_MASK(adv) = {};
+ 	__ETHTOOL_DECLARE_LINK_MODE_MASK(lp) = {};
+-	bool overflow = false, is_enabled;
++	bool is_enabled;
+ 	int ret;
+ 
+ 	ret = genphy_c45_eee_is_active_local(phydev, adv, lp, &is_enabled);
+@@ -1746,16 +1746,9 @@ int genphy_c45_ethtool_get_eee_local(struct phy_device *phydev,
+ 	data->eee_enabled = is_enabled;
+ 	data->eee_active = ret;
+ 
+-	if (!ethtool_convert_link_mode_to_legacy_u32(&data->supported,
+-						     phydev->supported_eee))
+-		overflow = true;
+-	if (!ethtool_convert_link_mode_to_legacy_u32(&data->advertised, adv))
+-		overflow = true;
+-	if (!ethtool_convert_link_mode_to_legacy_u32(&data->lp_advertised, lp))
+-		overflow = true;
+-
+-	if (overflow)
+-		phydev_warn(phydev, "Not all supported or advertised EEE link modes were passed to the user space\n");
++	linkmode_copy(data->supported, phydev->supported_eee);
++	linkmode_copy(data->advertised, adv);
++	linkmode_copy(data->lp_advertised, lp);
+ 
+ 	return 0;
+ }
+@@ -1768,7 +1761,7 @@ int genphy_c45_ethtool_get_eee_local(struct phy_device *phydev,
+  * Description: it reportes the Supported/Advertisement/LP Advertisement
+  * capabilities.
+  */
+-int phy_ethtool_get_eee_local(struct phy_device *phydev, struct ethtool_eee *data)
++int phy_ethtool_get_eee_local(struct phy_device *phydev, struct ethtool_keee *data)
+ {
+ 	int ret;
+ 
+@@ -1787,7 +1780,7 @@ int phy_ethtool_get_eee_local(struct phy_device *phydev, struct ethtool_eee *dat
+  * @pl: a pointer to a &struct phylink returned from phylink_create()
+  * @eee: a pointer to a &struct ethtool_eee for the read parameters
+  */
+-int phylink_ethtool_get_eee_local(struct phy_device *phydev, struct ethtool_eee *eee)
++int phylink_ethtool_get_eee_local(struct phy_device *phydev, struct ethtool_keee *eee)
+ {
+ 	int ret = -EOPNOTSUPP;
+ 
+@@ -1800,7 +1793,7 @@ int phylink_ethtool_get_eee_local(struct phy_device *phydev, struct ethtool_eee
+ }
+ #endif
+ #ifdef DEBUG_EEE
+-int phy_ethtool_get_eee_local(struct phy_device *phydev, struct ethtool_eee *data)
++int phy_ethtool_get_eee_local(struct phy_device *phydev, struct ethtool_keee *data)
+ {
+ 	int val;
+ 
+@@ -1849,6 +1842,8 @@ int phy_ethtool_set_eee_local(struct phy_device *phydev, struct ethtool_eee *dat
+ #ifdef TC956X_5_G_2_5_G_EEE_SUPPORT
+ 	int cap2p5, old_adv_2p5, adv_2p5 = 0;
+ #endif
++	int tmp;
++
+ 	if (!phydev->drv)
+ 		return -EIO;
+ 
+@@ -1869,7 +1864,8 @@ int phy_ethtool_set_eee_local(struct phy_device *phydev, struct ethtool_eee *dat
+ 		adv = !data->advertised ? cap :
+ 		      ethtool_adv_to_mmd_eee_adv_t(data->advertised) & cap;
+ 		/* Mask prohibited EEE modes */
+-		adv &= ~phydev->eee_broken_modes;
++		ethtool_convert_link_mode_to_legacy_u32(&tmp, phydev->eee_disabled_modes);
++		adv &= ~tmp;
+ 	}
+ 	KPRINT_INFO("%s --- adv:0x%x\n", __func__, adv);
+ 
+@@ -1908,7 +1904,8 @@ int phy_ethtool_set_eee_local(struct phy_device *phydev, struct ethtool_eee *dat
+ 		adv_2p5 = !data->advertised ? cap2p5 :
+ 		      ethtool_adv_to_mmd_eee_adv_t(data->advertised) & cap2p5;
+ 		/* Mask prohibited EEE modes */
+-		adv_2p5 &= ~phydev->eee_broken_modes;
++		ethtool_convert_link_mode_to_legacy_u32(&tmp, phydev->eee_disabled_modes);
++		adv_2p5 &= ~tmp;
+ 	}
+ 	KPRINT_INFO("%s --- adv_2p5:0x%x\n", __func__, adv_2p5);
+ 
+@@ -1946,10 +1943,15 @@ static inline u16 tc956x_ethtool_adv_to_mmd_eee_adv2_t(u32 adv)
+ 	return reg;
+ }
+ 
+-int phy_ethtool_set_eee_2p5(struct phy_device *phydev, struct ethtool_eee *data)
++int phy_ethtool_set_eee_2p5(struct phy_device *phydev, struct ethtool_keee *data)
+ {
+ 	int ret;
++	int tmp;
+ 	int cap2p5, old_adv_2p5, adv_2p5 = 0;
++	struct ethtool_eee *eee = kzalloc(sizeof(struct ethtool_eee), GFP_KERNEL);
++
++        if (!eee)
++                return -ENOMEM;
+ 
+ 	if (!phydev->drv)
+ 		return -EIO;
+@@ -1964,11 +1966,15 @@ int phy_ethtool_set_eee_2p5(struct phy_device *phydev, struct ethtool_eee *data)
+ 	if (old_adv_2p5 < 0)
+ 		return old_adv_2p5;
+ 	/* EEE advertise checking API corrected for 2.5G and 5G speeds. */
++        if (!ethtool_convert_link_mode_to_legacy_u32(&eee->advertised,
++							data->advertised))
++		 phydev_warn(phydev, "Overflow while converting advertised EEE link modes\n");
+ 	if (data->eee_enabled) {
+-		adv_2p5 = !data->advertised ? cap2p5 :
+-		      tc956x_ethtool_adv_to_mmd_eee_adv2_t(data->advertised) & cap2p5;
++		adv_2p5 = !eee->advertised ? cap2p5 :
++		      tc956x_ethtool_adv_to_mmd_eee_adv2_t(eee->advertised) & cap2p5;
+ 		/* Mask prohibited EEE modes */
+-		adv_2p5 &= ~phydev->eee_broken_modes;
++		ethtool_convert_link_mode_to_legacy_u32(&tmp, phydev->eee_disabled_modes);
++		adv_2p5 &= ~tmp;
+ 	}
+ 	KPRINT_INFO("%s --- adv_2p5:0x%x\n", __func__, adv_2p5);
+ 
+@@ -1991,7 +1997,7 @@ int phy_ethtool_set_eee_2p5(struct phy_device *phydev, struct ethtool_eee *data)
+ #endif
+ 
+ int tc956xmac_ethtool_op_get_eee(struct net_device *dev,
+-				     struct ethtool_eee *edata)
++				     struct ethtool_keee *edata)
+ {
+ 	struct tc956xmac_priv *priv = netdev_priv(dev);
+ 	int ret;
+@@ -2028,7 +2034,7 @@ int tc956xmac_ethtool_op_get_eee(struct net_device *dev,
+ #endif
+ #ifdef TC956X_SRIOV_VF
+ static int tc956xmac_ethtool_op_get_eee(struct net_device *dev,
+-				     struct ethtool_eee *edata)
++				     struct ethtool_keee *edata)
+ {
+ 	struct tc956xmac_priv *priv = netdev_priv(dev);
+ 
+@@ -2037,8 +2043,9 @@ static int tc956xmac_ethtool_op_get_eee(struct net_device *dev,
+ 	return 0;
+ }
+ #endif
++
+ static int tc956xmac_ethtool_op_set_eee(struct net_device *dev,
+-				     struct ethtool_eee *edata)
++				     struct ethtool_keee *edata)
+ {
+ 	struct tc956xmac_priv *priv = netdev_priv(dev);
+ #ifndef TC956X_SRIOV_VF
+@@ -2402,7 +2409,7 @@ static int tc956xmac_set_rxfh(struct net_device *dev, const u32 *indir,
+ #endif
+ 
+ static int tc956xmac_get_ts_info(struct net_device *dev,
+-			      struct ethtool_ts_info *info)
++			      struct kernel_ethtool_ts_info *info)
+ {
+ 	struct tc956xmac_priv *priv = netdev_priv(dev);
+ 
+diff --git a/drivers/net/ethernet/toshiba/tc956x/tc956xmac_inc.h b/drivers/net/ethernet/toshiba/tc956x/tc956xmac_inc.h
+index f900b91..fd81c46 100644
+--- a/drivers/net/ethernet/toshiba/tc956x/tc956xmac_inc.h
++++ b/drivers/net/ethernet/toshiba/tc956x/tc956xmac_inc.h
+@@ -104,6 +104,7 @@
+ 
+ #define MTL_MAX_RX_QUEUES	8
+ #define MTL_MAX_TX_QUEUES	8
++#define MAX_QUEUES ((MTL_MAX_TX_QUEUES > MTL_MAX_RX_QUEUES) ? MTL_MAX_TX_QUEUES : MTL_MAX_RX_QUEUES)
+ #define MTL_MAX_TX_TC		5
+ #define TC956XMAC_CH_MAX		8
+ 
+diff --git a/drivers/net/ethernet/toshiba/tc956x/tc956xmac_main.c b/drivers/net/ethernet/toshiba/tc956x/tc956xmac_main.c
+index 2309b38..0bcc0a9 100644
+--- a/drivers/net/ethernet/toshiba/tc956x/tc956xmac_main.c
++++ b/drivers/net/ethernet/toshiba/tc956x/tc956xmac_main.c
+@@ -350,7 +350,7 @@ static void tc956xmac_exit_fs(struct net_device *dev);
+ #endif
+ #endif /* TC956X_SRIOV_PF */
+ #ifdef TC956X_5_G_2_5_G_EEE_SUPPORT
+-extern int phy_ethtool_set_eee_2p5(struct phy_device *phydev, struct ethtool_eee *data);
++extern int phy_ethtool_set_eee_2p5(struct phy_device *phydev, struct ethtool_keee *data);
+ #endif
+ #ifdef TC956X_SRIOV_PF
+ extern struct tx956x_shrd_mem tx956x_pci_shrd_mem[TC956X_TOT_CASCADE_DEV];
+@@ -712,14 +712,14 @@ int tc956x_dump_regs(struct net_device *net_device, struct tc956x_regs *regs)
+ 	}
+ 
+ 	/* Driver & FW Information */
+-	strlcpy(regs->info.driver, TC956X_RESOURCE_NAME, sizeof(regs->info.driver));
+-	strlcpy(regs->info.version, DRV_MODULE_VERSION, sizeof(regs->info.version));
++	strscpy(regs->info.driver, TC956X_RESOURCE_NAME, sizeof(regs->info.driver));
++	strscpy(regs->info.version, DRV_MODULE_VERSION, sizeof(regs->info.version));
+ 
+ 	reg = readl(priv->tc956x_SRAM_pci_base_addr + TC956X_M3_DBG_VER_START);
+ 	fw_version = (struct tc956x_version *)(&reg);
+ 	scnprintf(fw_version_str, sizeof(fw_version_str), "FW Version %s_%d.%d-%d", (fw_version->rel_dbg == 'D')?"DBG":"REL",
+ 					fw_version->major, fw_version->minor, fw_version->sub_minor);
+-	strlcpy(regs->info.fw_version, fw_version_str, sizeof(regs->info.fw_version));
++	strscpy(regs->info.fw_version, fw_version_str, sizeof(regs->info.fw_version));
+ 
+ 	/* Updating statistics */
+ 	tc956xmac_mmc_read(priv, priv->mmcaddr, &priv->mmc);
+@@ -1802,6 +1802,18 @@ int tc956x_GPIO_OutputConfigPin(struct tc956xmac_priv *priv, u32 gpio_pin, u8 ou
+ 		val |= (NFUNCEN_FUNC2 << NFUNCEN7_GPIO_13_SHIFT);
+ 		writel(val, priv->ioaddr + NFUNCEN7_OFFSET);
+ 		break;
++	case GPIO_35:
++		val = readl(priv->ioaddr + NFUNCEN1_OFFSET);
++		val &= ~NFUNCEN1_GPIO_35;
++		val |= (NFUNCEN_FUNC0 << NFUNCEN1_GPIO_35_SHIFT);
++		writel(val, priv->ioaddr + NFUNCEN1_OFFSET);
++		break;
++	case GPIO_36:
++		val = readl(priv->ioaddr + NFUNCEN1_OFFSET);
++		val &= ~NFUNCEN1_GPIO_36;
++		val |= (NFUNCEN_FUNC0 << NFUNCEN1_GPIO_36_SHIFT);
++		writel(val, priv->ioaddr + NFUNCEN1_OFFSET);
++		break;
+ 	default:
+ 		netdev_err(priv->dev, "Invalid GPIO pin - %d\n", gpio_pin);
+ 		return -EPERM;
+@@ -2997,6 +3009,7 @@ static void tc956xmac_mac_flow_ctrl(struct tc956xmac_priv *priv, u32 duplex)
+ 			priv->pause, tx_cnt);
+ }
+ 
++#if LINUX_VERSION_CODE < KERNEL_VERSION(6, 7, 0)
+ static void tc956xmac_validate(struct phylink_config *config,
+ 			    unsigned long *supported,
+ 			    struct phylink_link_state *state)
+@@ -3099,6 +3112,23 @@ static void tc956xmac_validate(struct phylink_config *config,
+ 	bitmap_andnot(state->advertising, state->advertising, mask,
+ 			__ETHTOOL_LINK_MODE_MASK_NBITS);
+ }
++#else
++static unsigned long tc956xmac_mac_get_caps(struct phylink_config *config,
++							 phy_interface_t interface)
++{
++	struct tc956xmac_priv *priv = netdev_priv(to_net_dev(config->dev));
++
++	priv->hw->link.caps &= ~(MAC_10HD | MAC_100HD | MAC_1000HD);
++	config->mac_capabilities = priv->hw->link.caps;
++
++	pr_info("vv: mac_get_caps = %lu\n", config->mac_capabilities);
++	if (priv->plat->max_speed)
++		phylink_limit_mac_speed(config, priv->plat->max_speed);
++
++	return config->mac_capabilities;
++}
++
++#endif /* KERNEL_VERSION(6,7,0) */
+ #endif  /* TC956X_SRIOV_VF */
+ 
+ #ifndef TC956X_SRIOV_VF
+@@ -3904,12 +3934,6 @@ static void tc956xmac_mac_link_down(struct phylink_config *config,
+ }
+ 
+ #ifdef TC956X_5_G_2_5_G_EEE_SUPPORT
+-static inline bool tc956x_phy_check_valid(int speed, int duplex,
+-				   unsigned long *features)
+-{
+-	return !!phy_lookup_setting(speed, duplex, features, true);
+-}
+-
+ static void tc956x_mmd_eee_adv_to_linkmode_5G_2_5G(unsigned long *advertising, u16 eee_adv)
+ {
+ 	linkmode_zero(advertising);
+@@ -3922,6 +3946,11 @@ static void tc956x_mmd_eee_adv_to_linkmode_5G_2_5G(unsigned long *advertising, u
+ 				 advertising);
+ }
+ 
++struct link_capabilities;
++const struct link_capabilities *
++phy_caps_lookup(int speed, unsigned int duplex, const unsigned long *supported,
++		bool exact);
++
+ static int tc956x_phy_init_eee(struct phy_device *phydev, bool clk_stop_enable)
+ {
+ 	if (!phydev->drv)
+@@ -3978,7 +4007,7 @@ static int tc956x_phy_init_eee(struct phy_device *phydev, bool clk_stop_enable)
+ 		tc956x_mmd_eee_adv_to_linkmode_5G_2_5G(lp, eee_lp);
+ 		linkmode_and(common, adv, lp);
+ 
+-		if (!tc956x_phy_check_valid(phydev->speed, phydev->duplex, common)) {
++		if (!phy_caps_lookup(phydev->speed, phydev->duplex, common, true)) {
+ 			KPRINT_ERR("Error 6\n");
+ 			goto eee_exit_err;
+ 		}
+@@ -4086,7 +4115,7 @@ int phy_init_eee_local(struct phy_device *phydev, bool clk_stop_enable)
+ 
+ 		KPRINT_INFO("%s common: 0x%x\n", __func__, common);
+ 
+-		if (!tc956x_phy_check_valid(phydev->speed, phydev->duplex, common)) {
++		if (!phy_caps_lookup(phydev->speed, phydev->duplex, common, true)) {
+ 			KPRINT_ERR("Error 5\n");
+ 			goto eee_exit_err;
+ 		}
+@@ -4456,7 +4485,11 @@ static void tc956xmac_mac_link_up(struct phylink_config *config,
+ }
+ 
+ static const struct phylink_mac_ops tc956xmac_phylink_mac_ops = {
++#if LINUX_VERSION_CODE < KERNEL_VERSION(6, 7, 0)
+ 	.validate = tc956xmac_validate,
++#else
++	.mac_get_caps = tc956xmac_mac_get_caps,
++#endif
+ #if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 5, 0)
+ #if LINUX_VERSION_CODE < KERNEL_VERSION(6, 6, 0)
+ 	.mac_pcs_get_state = tc956xmac_mac_pcs_get_state,
+@@ -4592,7 +4625,7 @@ static int tc956xmac_init_phy(struct net_device *dev)
+ 	int ret;
+ 	struct phy_device *phydev = NULL;
+ 	int addr = priv->plat->phy_addr;
+-	struct ethtool_eee edata;
++	struct ethtool_keee edata;
+ 
+ 	node = priv->plat->phylink_node;
+ 
+@@ -4654,6 +4687,7 @@ static int tc956xmac_init_phy(struct net_device *dev)
+ 		phy_attached_info(phydev);
+ 	}
+ 
++
+ 	if (phydev->drv != NULL) {
+ 		if (true == priv->plat->phy_interrupt_mode && (phydev->drv->config_intr))
+ 			phydev->interrupts =  PHY_INTERRUPT_ENABLED;
+@@ -4669,7 +4703,7 @@ static int tc956xmac_init_phy(struct net_device *dev)
+ 	}
+ 	/* Enable or disable EEE Advertisement based on eee_enabled settings which might be set using module param */
+ 	edata.eee_enabled = priv->eee_enabled;
+-	edata.advertised = 0;
++	bitmap_zero(edata.advertised, __ETHTOOL_LINK_MODE_MASK_NBITS);
+ 
+ 	if (priv->phylink) {
+ 		if ((priv->plat->interface != PHY_INTERFACE_MODE_RGMII) &&
+@@ -6235,7 +6269,7 @@ static void tc956xmac_dma_interrupt(struct tc956xmac_priv *priv)
+ 	u32 channels_to_check = tx_channel_count > rx_channel_count ?
+ 				tx_channel_count : rx_channel_count;
+ 	u32 chan;
+-	int status[max_t(u32, MTL_MAX_TX_QUEUES, MTL_MAX_RX_QUEUES)];
++	int status[MAX_QUEUES];
+ 
+ 	/* Make sure we never check beyond our status buffer. */
+ 	if (WARN_ON_ONCE(channels_to_check > ARRAY_SIZE(status)))
+@@ -6623,8 +6657,7 @@ static void tc956xmac_init_coalesce(struct tc956xmac_priv *priv)
+ 			continue;
+ #endif
+ #if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 11, 0)
+-		hrtimer_init(&tx_q->txtimer, CLOCK_MONOTONIC, HRTIMER_MODE_REL);
+-		tx_q->txtimer.function = tc956xmac_tx_timer;
++		hrtimer_setup(&tx_q->txtimer, tc956xmac_tx_timer, CLOCK_MONOTONIC, HRTIMER_MODE_REL);
+ #else
+ 		timer_setup(&tx_q->txtimer, tc956xmac_tx_timer, 0);
+ #endif
+@@ -7698,7 +7731,7 @@ static int tc956xmac_open(struct net_device *dev)
+ 		/* Do not re-request WOL irq resources during resume sequence. */
+ 		if (priv->tc956x_port_pm_suspend == false) {
+ 			/* Request the Wake IRQ in case of another line is used for WoL */
+-			if (priv->wol_irq != dev->irq) {
++			if (priv->wol_irq && priv->wol_irq != dev->irq) {
+ 				pwol_dev_name = priv->int_name_wol;
+ 				snprintf(pwol_dev_name, sizeof(priv->int_name_wol), "%s_wol", dev->name);
+ 				ret = request_irq(priv->wol_irq, tc956xmac_wol_interrupt,
+@@ -7999,7 +8032,7 @@ static int tc956xmac_release(struct net_device *dev)
+ 
+ 		/* Do not Free Host Irq resources during suspend sequence */
+ 		if (priv->tc956x_port_pm_suspend == false) {
+-			if (priv->wol_irq != dev->irq)
++			if (priv->wol_irq && priv->wol_irq != dev->irq)
+ 				free_irq(priv->wol_irq, dev);
+ 	#ifndef TC956X
+ 			if (priv->lpi_irq > 0)
+@@ -10255,7 +10288,7 @@ static void tc956xmac_poll_controller(struct net_device *dev)
+ int tc956xmac_rx_parser_configuration(struct tc956xmac_priv *priv)
+ {
+ 	int ret = -EINVAL, re_init_eee = 0, dly_cnt = 0, ret_val;
+-	struct ethtool_eee edata;
++	struct ethtool_keee edata;
+ 
+ #ifndef TC956X_SRIOV_VF
+ 	/* Disable EEE before configuring FRP */
+@@ -11139,9 +11172,9 @@ static int tc956xmac_ioctl_set_phy_loopback(struct tc956xmac_priv *priv, void __
+ 
+ #ifdef TC956X
+ 	if (priv->phy_loopback_mode)
+-		ret = phy_loopback(priv->dev->phydev, true);
++		ret = phy_loopback(priv->dev->phydev, true, 0);
+ 	else
+-		ret = phy_loopback(priv->dev->phydev, false);
++		ret = phy_loopback(priv->dev->phydev, false, 0);
+ 
+ 	if (ret)
+ 		return ret;
+@@ -15324,7 +15357,7 @@ static void parse_config_file(uint8_t port_id, uint8_t dev_id, struct net_device
+ 		}
+ 	}
+ 
+-	vfree(data);
++	kvfree(data);
+ 	KPRINT_INFO("<--%s", __func__);
+ }
+ #endif
+diff --git a/drivers/net/ethernet/toshiba/tc956x/tc956xmac_selftests.c b/drivers/net/ethernet/toshiba/tc956x/tc956xmac_selftests.c
+index 98fc1b5..f8732a7 100644
+--- a/drivers/net/ethernet/toshiba/tc956x/tc956xmac_selftests.c
++++ b/drivers/net/ethernet/toshiba/tc956x/tc956xmac_selftests.c
+@@ -410,7 +410,7 @@ static int tc956xmac_test_phy_loopback(struct tc956xmac_priv *priv)
+ 
+ 	if (!priv->dev->phydev)
+ 		return -EBUSY;
+-	ret = phy_loopback(priv->dev->phydev, true);
++	ret = phy_loopback(priv->dev->phydev, true, 0);
+ 	if (ret)
+ 		return ret;
+ 
+@@ -418,7 +418,7 @@ static int tc956xmac_test_phy_loopback(struct tc956xmac_priv *priv)
+ 	attr.dst = priv->dev->dev_addr;
+ 	ret = __tc956xmac_test_loopback(priv, &attr);
+ 
+-	phy_loopback(priv->dev->phydev, false);
++	phy_loopback(priv->dev->phydev, false, 0);
+ 	msleep(7000);
+ 
+ 	return ret;
+@@ -1627,7 +1627,7 @@ void tc956xmac_selftest_run(struct net_device *dev,
+ 		case TC956XMAC_LOOPBACK_PHY:
+ 			ret = -EOPNOTSUPP;
+ 			if ((dev->phydev) && !(phy_loopback_enabled)) {
+-				ret = phy_loopback(dev->phydev, true);
++				ret = phy_loopback(dev->phydev, true, 0);
+ 				msleep(7000);
+ 				phy_loopback_enabled = 1;
+ 			} else {
+@@ -1673,7 +1673,7 @@ void tc956xmac_selftest_run(struct net_device *dev,
+ 	}
+ 
+ 	if (dev->phydev) {
+-		ret = phy_loopback(dev->phydev, false);
++		ret = phy_loopback(dev->phydev, false, 0);
+ 		msleep(7000);
+ 	}
+ }
+-- 
+2.34.1
+
