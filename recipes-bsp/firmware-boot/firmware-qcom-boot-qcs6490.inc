@@ -2,8 +2,8 @@ DESCRIPTION = "QCOM NHLOS Firmware for Qualcomm Robotics RB3Gen2 platform"
 LICENSE = "LICENSE.qcom-2"
 LIC_FILES_CHKSUM = "file://${UNPACKDIR}/LICENSE.${BPN};md5=6e1bae7ef13289c332a27b917fb49764"
 
-FW_ARTIFACTORY = "softwarecenter.qualcomm.com/download/software/chip/qualcomm_linux-spf-1-0/qualcomm-linux-spf-1-0_test_device_public"
-FW_BUILD_ID = "r1.0_${PV}/qcm6490-le-1-0"
+FW_ARTIFACTORY = "softwarecenter.qualcomm.com/nexus/generic/product/chip/software-product-family/Qualcomm_Linux.SPF.1.0/qualcomm_linux.spf.1.0-test-device-public"
+FW_BUILD_ID = "r1.0_${PV}/QCM6490.LE.1.0"
 FW_BIN_PATH = "common/build/ufs/bin"
 BOOTBINARIES = "QCM6490_bootbinaries"
 

@@ -59,4 +59,6 @@ python set_imsdk_oss_metapkg_rdepends () {
     d.setVar('DESCRIPTION:' + metapkg, pn + ' meta package')
 }
 
-PACKAGES += "${PN}-oss-meta"
+PACKAGES += "${PN}-oss-meta ${PN}-configs"
+
+FILES:${PN}-configs = "${sysconfdir}/configs/"
