@@ -13,8 +13,8 @@ LIC_FILES_CHKSUM = "file://LICENSE.txt;md5=2b1366ebba1ebd9ae25ad19626bbca93"
 
 inherit cmake systemd pkgconfig
 
-SRC_URI = "git://github.com/qualcomm/minkipc.git;branch=main;protocol=https;tag=v${PV}"
-SRCREV = "307a2f368051d0436d450a9d1f5fa14ff0f94580"
+SRC_URI = "gitsm://github.com/qualcomm/minkipc.git;branch=main;protocol=https;tag=v${PV}"
+SRCREV = "cca7562ccec486c4e7626f862424af0391641ca6"
 
 DEPENDS += "qcbor qcomtee mink-idl-compiler-native glib-2.0"
 
