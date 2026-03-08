@@ -96,6 +96,7 @@ create_qcomflash_pkg() {
         for bfw in `find ${DEPLOY_DIR_IMAGE}/${QCOM_BOOT_FILES_SUBDIR} -maxdepth 1 -type f \
                 \( -name '*.elf' ! -name 'abl2esp*.elf' ! -name 'xbl_config*.elf' ! -name 'uefi.elf' \) -o \
                 -name '*.mbn*' -o \
+                -name '*.melf*' -o \
                 -name '*.fv' -o \
                 -name 'cdt_*.bin' -o \
                 -name 'logfs_*.bin' -o \
