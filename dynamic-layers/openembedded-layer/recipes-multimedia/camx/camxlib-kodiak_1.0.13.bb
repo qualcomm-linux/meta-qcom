@@ -8,19 +8,20 @@ LICENSE = "LICENSE.qcom-2"
 LIC_FILES_CHKSUM = "file://usr/share/doc/${BPN}/LICENSE.QCOM-2.txt;md5=165287851294f2fb8ac8cbc5e24b02b0 \
                     file://usr/share/doc/${BPN}/NOTICE;md5=04facc2e07e3d41171a931477be0c690"
 
-PBT_BUILD_DATE = "260211"
+PBT_BUILD_DATE = "260302.1"
 SRC_URI = " \
    https://qartifactory-edge.qualcomm.com/artifactory/qsc_releases/software/chip/component/camx.qclinux.0.0/${PBT_BUILD_DATE}/prebuilt_yocto/${BPN}_${PV}_armv8-2a.tar.gz;name=camxlib \
    https://qartifactory-edge.qualcomm.com/artifactory/qsc_releases/software/chip/component/camx.qclinux.0.0/${PBT_BUILD_DATE}/prebuilt_yocto/camx-kodiak_${PV}_armv8-2a.tar.gz;name=camx \
    https://qartifactory-edge.qualcomm.com/artifactory/qsc_releases/software/chip/component/camx.qclinux.0.0/${PBT_BUILD_DATE}/prebuilt_yocto/chicdk-kodiak_${PV}_armv8-2a.tar.gz;name=chicdk \
    "
-SRC_URI[camxlib.sha256sum] = "abe341eaee99e05ccfacf37238380660630a0b671348a559d6ea918b50ab8634"
-SRC_URI[camx.sha256sum] = "7311b3d3c05a8899c2289e00682fd16e23fdf4ca00205ed6bd4ea2f63f35c371"
-SRC_URI[chicdk.sha256sum] = "f76beb5658f0778db2199c9809ed18e9b4f46dd36e67d5839b7d36561298be1a"
+SRC_URI[camxlib.sha256sum] = "d94914103e1dda452f90f380c7e450000d73b153544072b01e6bcb21775b2d7d"
+SRC_URI[camx.sha256sum] = "1c3c2cb5fe248983fe3e9f343f61342f5bd12a3ab463d317c448ad79a4f996b1"
+SRC_URI[chicdk.sha256sum] = "04eab8a9283126a36ea56571cfc6e7fcfacfd4a00011412ab59d4e37940dfdb0"
 
 S = "${UNPACKDIR}"
 
-DEPENDS += "glib-2.0 fastrpc protobuf-camx libxml2 virtual/egl virtual/libgles2 virtual/libopencl1"
+DEPENDS += "glib-2.0 fastrpc protobuf-camx libxml2 virtual/egl virtual/libgles2 qmi-framework sensinghub qcom-sensors-binaries"
+DEPENDS:append = "${@bb.utils.contains('DISTRO_FEATURES', 'opencl', ' qcom-adreno virtual/libopencl1', '', d)}"
 
 # This package is currently only used and tested on ARMv8 (aarch64) machines.
 # Therefore, builds for other architectures are not necessary and are explicitly excluded.
@@ -60,6 +61,7 @@ do_install() {
 PACKAGE_BEFORE_PN += "camx-kodiak chicdk-kodiak"
 RDEPENDS:${PN} += "chicdk-kodiak"
 RDEPENDS:${PN}-dev += "camxcommon-headers-dev"
+RRECOMMENDS:${PN}:append = "${@bb.utils.contains('DISTRO_FEATURES', 'opencl', ' virtual-opencl-icd', '', d)} sensinghub qcom-sensors-binaries"
 
 FILES:camx-kodiak = "\
     ${libdir}/libcamera_hardware_kodiak*${SOLIBS} \
@@ -96,9 +98,17 @@ FILES:${PN} = "\
     ${libdir}/camx/kodiak/*${SOLIBS} \
     ${libdir}/camx/kodiak/hw/*${SOLIBS} \
     ${libdir}/camx/kodiak/camera/components/*${SOLIBS} \
+    ${@bb.utils.contains('DISTRO_FEATURES', 'opencl', '${libdir}/camx/kodiak/*.cl', '', d)} \
     "
 FILES:${PN}-dev = "\
     ${libdir}/*${SOLIBSDEV} \
     "
+FILES:${PN}-staticdev = "${libdir}/camx/kodiak/*.a"
+
 # Preserve ${PN} naming to avoid ambiguity in package identification.
 DEBIAN_NOAUTONAME:${PN} = "1"
+
+# Algo librarires are pre-compiled, pre-stripped.
+# Skipping QA checks: 'already-stripped' because:
+# - Library files are Pre-stripped  (already-stripped)
+INSANE_SKIP:${PN} = "already-stripped"
