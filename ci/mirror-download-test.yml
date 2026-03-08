@@ -1,0 +1,9 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/siemens/kas/master/kas/schema-kas.json
+
+header:
+  version: 14
+
+local_conf_header:
+  download_mirror_test: |
+    BB_FETCH_PREMIRRORONLY = "1"
+    PREMIRRORS += "${QCOM_MIRRORS}"
