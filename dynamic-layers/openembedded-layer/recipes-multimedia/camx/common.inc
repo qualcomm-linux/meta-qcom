@@ -114,3 +114,8 @@ FILES:${PN}-staticdev = "${libdir}/camx/${PLATFORM}/*.a"
 
 # Preserve ${PN} naming to avoid ambiguity in package identification.
 DEBIAN_NOAUTONAME:${PN} = "1"
+
+# Algo librarires are pre-compiled, pre-stripped.
+# Skipping QA checks: 'already-stripped' because:
+# - Library files are Pre-stripped  (already-stripped)
+INSANE_SKIP:${PN} = "already-stripped"
