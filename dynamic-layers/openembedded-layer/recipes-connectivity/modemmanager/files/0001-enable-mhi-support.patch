@@ -71,7 +71,7 @@ index fa19bd4d..8da9176e 100644
  
 -    if (g_strcmp0 (net_port_driver, "ipa") == 0)
 +    if (g_strcmp0 (net_port_driver, "ipa") == 0 ||
-+        g_strcmp0 (net_port_driver, "mhi_net" == 0)
++        g_strcmp0 (net_port_driver, "mhi_net") == 0)
          return peek_port_qmi_for_data_ipa (self, data, out_endpoint, error);
  
      if (g_strcmp0 (net_port_driver, "bam-dmux") == 0)
