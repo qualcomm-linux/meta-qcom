@@ -9,7 +9,7 @@ ARTIFACTORY_URL = "https://qartifactory-edge.qualcomm.com/artifactory/qsc_releas
 PBT_ARCH = "armv8a"
 
 SRC_URI = "${ARTIFACTORY_URL}/${BPN}_${PV}_${PBT_ARCH}.tar.gz"
-SRC_URI[sha256sum] = "61522651088c8fd210febe2911bd979784f08ad207013fe76e96851ac7c666b3"
+SRC_URI[sha256sum] = "61522651088c8fd210febe2911bd979784f08ad207013fe76e96851ac7c666b3" 
 S = "${UNPACKDIR}"
 
 DEPENDS += "glib-2.0 fastrpc"
