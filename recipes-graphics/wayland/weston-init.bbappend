@@ -5,6 +5,7 @@ DEFAULTBACKEND:qcom ?= "drm"
 SRC_URI:append:qcom = " \
     file://additional-devices.conf \
     file://weston-start.sh \
+    file://weston-qdemo-launcher.ini \
 "
 
 do_compile:append:qcom() {
@@ -20,6 +21,10 @@ do_install:append:qcom() {
     install -d ${D}${bindir}
     install -m 0755 ${WORKDIR}/sources/weston-start.sh \
         ${D}${bindir}/weston-start.sh
+   
+    install -d ${D}${sysconfdir}/xdg/weston
+    echo "" >> ${D}${sysconfdir}/xdg/weston/weston.ini
+    cat ${WORKDIR}/sources/weston-qdemo-launcher.ini >> ${D}${sysconfdir}/xdg/weston/weston.ini
 }
 
 FILES:${PN} += "${systemd_system_unitdir}/weston.service.d/additional-devices.conf"
