@@ -8,6 +8,7 @@ jobs:
   sstate-cache-cleanup:
     if: github.repository_owner == 'qualcomm-linux'
     runs-on: [self-hosted, gen-qlnx-prd-u2404-x64-sm-od-ephe]
+    timeout-minutes: 720
     steps:
       - name: Clean up the persistant sstate-cache dir
         run: |
