@@ -16,6 +16,8 @@ inputs:
   prefix:
     description: "Prefix for the compressed file that is uploaded as workflow artifact"
     default: testjobs
+  project:
+    description: "Project in lava-test-plans to be used for tests"
   testplan:
     description: "Name of the test plan to use in job generation"
     default: boot
@@ -52,8 +54,12 @@ runs:
           echo "JOBS_OUT_PATH=${JOBS_OUT_PATH}" >> $GITHUB_ENV
           mkdir -p "${VARS_OUT_PATH}"
           mkdir -p "${JOBS_OUT_PATH}"
-          echo "PROJECT_NAME=${GITHUB_REPOSITORY#*/}" >> "${VARS_OUT_PATH}/gh-variables.ini"
-          echo "PROJECT=projects/${GITHUB_REPOSITORY#*/}/" >> "${VARS_OUT_PATH}/gh-variables.ini"
+          PROJECT_NAME="${GITHUB_REPOSITORY#*/}"
+          if [ -n "${{ inputs.project }}" ]; then
+            PROJECT_NAME="${{ inputs.project }}"
+          fi
+          echo "PROJECT_NAME=${PROJECT_NAME}" >> "${VARS_OUT_PATH}/gh-variables.ini"
+          echo "PROJECT=projects/${PROJECT_NAME}/" >> "${VARS_OUT_PATH}/gh-variables.ini"
           echo "LAVA_JOB_PRIORITY=50" >> "${VARS_OUT_PATH}/gh-variables.ini"
           echo "OS_INFO=qcom-distro" >> "${VARS_OUT_PATH}/gh-variables.ini"
           echo "AUDIO_CLIPS_BASE_DIR=/home/AudioClips/" >> "${VARS_OUT_PATH}/gh-variables.ini"
@@ -93,20 +99,20 @@ runs:
               #echo "BOOT_IMG_FILE=boot-apq8016-sbc-qcom-armv8a.img" >> dragonboard-410c.ini
               #echo "BUILD_OS=${{ inputs.distro_name }}${{ inputs.kernel }}/" >> dragonboard-410c.ini
               #cat dragonboard-410c.ini
-              #lava-test-plans --dry-run --variables dragonboard-410c.ini --test-plan "${GITHUB_REPOSITORY#*/}/${{ inputs.distro_name }}/${{ inputs.testplan }}" --device-type "projects/${GITHUB_REPOSITORY#*/}/devices/dragonboard-410c" --dry-run-path "${JOBS_OUT_PATH}/dragonboard-410c-${{ inputs.distro_name }}${{ inputs.kernel }}-${{ inputs.testplan }}" || true
+              #lava-test-plans --dry-run --variables dragonboard-410c.ini --test-plan "${PROJECT_NAME}/${{ inputs.distro_name }}/${{ inputs.testplan }}" --device-type "projects/${PROJECT_NAME}/devices/dragonboard-410c" --dry-run-path "${JOBS_OUT_PATH}/dragonboard-410c-${{ inputs.distro_name }}${{ inputs.kernel }}-${{ inputs.testplan }}" || true
 
               cp "${VARS_OUT_PATH}/gh-variables.ini" dragonboard-820c.ini
               echo "BOOT_IMG_FILE=boot-apq8096-db820c-qcom-armv8a.img" >> dragonboard-820c.ini
               echo "DEVICE_TYPE=dragonboard-820c" >> dragonboard-820c.ini
               echo "BUILD_OS=${{ inputs.distro_name }}${{ inputs.kernel }}/" >> dragonboard-820c.ini
               cat dragonboard-820c.ini
-              lava-test-plans --dry-run --variables dragonboard-820c.ini --test-plan "${GITHUB_REPOSITORY#*/}/${{ inputs.distro_name }}/${{ inputs.testplan }}" --device-type "projects/${GITHUB_REPOSITORY#*/}/devices/dragonboard-820c" --dry-run-path "${JOBS_OUT_PATH}/dragonboard-820c-${{ inputs.distro_name }}${{ inputs.kernel }}-${{ inputs.testplan }}" || true
+              lava-test-plans --dry-run --variables dragonboard-820c.ini --test-plan "${PROJECT_NAME}/${{ inputs.distro_name }}/${{ inputs.testplan }}" --device-type "projects/${PROJECT_NAME}/devices/dragonboard-820c" --dry-run-path "${JOBS_OUT_PATH}/dragonboard-820c-${{ inputs.distro_name }}${{ inputs.kernel }}-${{ inputs.testplan }}" || true
               echo "MACHINE=dragonboard" >> $GITHUB_ENV
           else
               echo "DEVICE_TYPE=${{ inputs.machine }}" >> "${VARS_OUT_PATH}/gh-variables.ini"
 
               cat "${VARS_OUT_PATH}/gh-variables.ini"
-              lava-test-plans --dry-run --variables "${VARS_OUT_PATH}/gh-variables.ini" --test-plan "${GITHUB_REPOSITORY#*/}/${{ inputs.distro_name }}/${{ inputs.testplan }}" --device-type "projects/${GITHUB_REPOSITORY#*/}/devices/${{ inputs.machine }}" --dry-run-path "${JOBS_OUT_PATH}/${{ inputs.machine }}-${{ inputs.distro_name }}${{ inputs.kernel }}-${{ inputs.testplan }}" || true
+              lava-test-plans --dry-run --variables "${VARS_OUT_PATH}/gh-variables.ini" --test-plan "${{ inputs.project }}/${{ inputs.distro_name }}/${{ inputs.testplan }}" --device-type "projects/${{ inputs.project }}/devices/${{ inputs.machine }}" --dry-run-path "${JOBS_OUT_PATH}/${{ inputs.machine }}-${{ inputs.distro_name }}${{ inputs.kernel }}-${{ inputs.testplan }}" || true
               echo "MACHINE=${{ inputs.machine }}" >> $GITHUB_ENV
           fi
 
