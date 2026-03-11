@@ -22,7 +22,7 @@ FILES:${PN}-qcom-kaanapali-audio:append:qcom = " \
 
 RDEPENDS:${PN}-qcom-kaanapali-audio-tplg:qcom = "${PN}-linaro-license"
 
-inherit ${ALTERNATIVES_CLASS}
+inherit_defer ${ALTERNATIVES_CLASS}
 
 # firmware-ath6kl provides updated bdata.bin, which can not be accepted into main linux-firmware repo
 ALTERNATIVE:${PN}-ath6k:qcom = "ar6004-hw13-bdata"

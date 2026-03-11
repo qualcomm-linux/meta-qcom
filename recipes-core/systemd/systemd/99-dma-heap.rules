@@ -1,0 +1,2 @@
+# Assign /dev/dma_heap/system to the dmaheap group
+SUBSYSTEM=="dma_heap", KERNEL=="system", GROUP="dmaheap", MODE="0660"
