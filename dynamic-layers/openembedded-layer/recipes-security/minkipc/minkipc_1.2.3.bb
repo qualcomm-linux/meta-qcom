@@ -49,5 +49,5 @@ FILES:${PN}-qteesupplicant = "${bindir}/qtee_supplicant \
                               ${base_bindir}/sfs_config \
 "
 
-RDEPENDS:${PN}-qteesupplicant = "${PN}"
+RDEPENDS:${PN}-qteesupplicant = "${PN} mount-tee-partition"
 
