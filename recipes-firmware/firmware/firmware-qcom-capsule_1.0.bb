@@ -35,6 +35,7 @@ SRC_URI = " \
     git://github.com/quic/cbsp-boot-utilities.git;protocol=https;branch=main;name=cbsp \
 "
 
+
 # ---------------------------------------------------------------------------
 # Custom FvUpdate.xml (optional)
 # ---------------------------------------------------------------------------
@@ -59,8 +60,18 @@ CAPSULE_FV_TYPE    ?= "SYS_FW"
 CAPSULE_GUID       ?= "6F25BFD2-A165-468B-980F-AC51A0A45C52"
 
 # ---------------------------------------------------------------------------
-# OEM PKI material (must be supplied by the integrator - no defaults)
+# OEM PKI material (must be supplied by the integrator - test key as  defaults)
 # ---------------------------------------------------------------------------
+
+# Test PKI material - for development/CI use only.
+# Replace with production keys from a secure location before shipping.
+SRC_URI:append = " \
+    file://test-keys/QcFMPRoot.cer \
+    file://test-keys/QcFMPCert.pem \
+    file://test-keys/QcFMPRoot.pub.pem \
+    file://test-keys/QcFMPSub.pub.pem \
+"
+
 # Paths to the PKI artefacts produced by the OpenSSL cert-generation step
 # in ci.yml.  In a product build these come from a secure location outside
 # the source tree (e.g., a secrets manager, a separate signing recipe, or
@@ -68,17 +79,17 @@ CAPSULE_GUID       ?= "6F25BFD2-A165-468B-980F-AC51A0A45C52"
 #
 # CAPSULE_ROOT_CER - DER-encoded root CA certificate (QcFMPRoot.cer)
 #                    Converted to hex INC format by BinToHex.py before use.
-CAPSULE_ROOT_CER ?= ""
+CAPSULE_ROOT_CER ?= "${UNPACKDIR}/test-keys/QcFMPRoot.cer"
 #
 # CAPSULE_CERT_PEM - Combined signing key + leaf certificate in PEM format
 #                    (QcFMPCert.pem, output of `openssl pkcs12 ... -nodes`)
-CAPSULE_CERT_PEM ?= ""
+CAPSULE_CERT_PEM ?= "${UNPACKDIR}/test-keys/QcFMPCert.pem"
 #
 # CAPSULE_ROOT_PUB - Root CA public key in PEM format (QcFMPRoot.pub.pem)
-CAPSULE_ROOT_PUB ?= ""
+CAPSULE_ROOT_PUB ?= "${UNPACKDIR}/test-keys/QcFMPRoot.pub.pem"
 #
 # CAPSULE_SUB_PUB  - Intermediate CA public key in PEM format (QcFMPSub.pub.pem)
-CAPSULE_SUB_PUB  ?= ""
+CAPSULE_SUB_PUB  ?= "${UNPACKDIR}/test-keys/QcFMPSub.pub.pem"
 
 # ---------------------------------------------------------------------------
 # XBLConfig DTB certificate injection
@@ -179,6 +190,14 @@ do_compile() {
     if [ -z "${CAPSULE_CERT_PEM}" ] || [ -z "${CAPSULE_ROOT_PUB}" ] || [ -z "${CAPSULE_SUB_PUB}" ]; then
         bbfatal "CAPSULE_CERT_PEM, CAPSULE_ROOT_PUB and CAPSULE_SUB_PUB must all be set for capsule signing"
     fi
+
+    case "${CAPSULE_ROOT_CER}" in
+        *test-keys*)
+            bbwarn "firmware-qcom-capsule: using TEST PKI keys for capsule signing." \
+                   " Replace CAPSULE_ROOT_CER/CAPSULE_CERT_PEM/CAPSULE_ROOT_PUB/CAPSULE_SUB_PUB" \
+                   " with production keys before shipping."
+            ;;
+    esac
 
     cd "${CAPSULE_DIR}"
 
