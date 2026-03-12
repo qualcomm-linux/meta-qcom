@@ -6,6 +6,7 @@ inherit image_types
 IMAGE_TYPES += "qcomflash"
 
 QCOM_BOOT_FIRMWARE ?= ""
+QCOM_CAPSULE_FIRMWARE ?= ""
 
 QCOM_ESP_IMAGE ?= "${@bb.utils.contains("MACHINE_FEATURES", "efi", "esp-qcom-image", "", d)}"
 QCOM_ESP_FILE ?= "${@'${DEPLOY_DIR_IMAGE}/${QCOM_ESP_IMAGE}-${MACHINE}${IMAGE_NAME_SUFFIX}.vfat' if d.getVar('QCOM_ESP_IMAGE') else ''}"
@@ -26,6 +27,7 @@ do_image_qcomflash[dirs] = "${QCOMFLASH_DIR}"
 do_image_qcomflash[cleandirs] = "${QCOMFLASH_DIR}"
 do_image_qcomflash[depends] += "${@ ['', '${QCOM_PARTITION_CONF}:do_deploy'][d.getVar('QCOM_PARTITION_CONF') != '']} \
                                 ${@ ['', '${QCOM_BOOT_FIRMWARE}:do_deploy'][d.getVar('QCOM_BOOT_FIRMWARE') != '']} \
+                                ${@ ['', '${QCOM_CAPSULE_FIRMWARE}:do_deploy'][d.getVar('QCOM_CAPSULE_FIRMWARE') != '']} \
                                 pigz-native:do_populate_sysroot virtual/kernel:do_deploy \
 				${@'virtual/bootloader:do_deploy' if d.getVar('PREFERRED_PROVIDER_virtual/bootloader') else  ''} \
 				${@'${QCOM_ESP_IMAGE}:do_image_complete' if d.getVar('QCOM_ESP_IMAGE') != '' else  ''} \
@@ -160,6 +162,12 @@ create_qcomflash_pkg() {
     # abl2esp
     if [ -e "${DEPLOY_DIR_IMAGE}/abl2esp-${ABL_SIGNATURE_VERSION}.elf" ]; then
         install -m 0644 "${DEPLOY_DIR_IMAGE}/abl2esp-${ABL_SIGNATURE_VERSION}.elf" .
+    fi
+
+    # capsule image
+    if [ -n "${QCOM_CAPSULE_FIRMWARE}" ] && \
+            [ -f "${DEPLOY_DIR_IMAGE}/${QCOM_CAPSULE_FIRMWARE}.cap" ]; then
+        install -m 0644 "${DEPLOY_DIR_IMAGE}/${QCOM_CAPSULE_FIRMWARE}.cap" .
     fi
 
     # Create symlink to ${QCOMFLASH_DIR} dir
