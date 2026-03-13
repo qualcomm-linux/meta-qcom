@@ -1,0 +1,77 @@
+From: Mrigank Dembla <mdembla@qti.qualcomm.com>
+Subject: [PATCH] modemmanager: enable MHI support
+
+This patch enables MHI support over ModemManager.
+
+Upstream-Status: Pending
+Signed-off-by: Mrigank Dembla <mdembla@qti.qualcomm.com>
+
+
+diff --git a/src/80-mm-candidate.rules b/src/80-mm-candidate.rules
+index a9c5a6ea..d551307a 100644
+--- a/src/80-mm-candidate.rules
++++ b/src/80-mm-candidate.rules
+@@ -28,6 +28,20 @@ KERNEL=="cdc-wdm*", SUBSYSTEM=="usbmisc", ENV{ID_MM_CANDIDATE}="1"
+ #    the "wwan_dev" device type (full device, not just one port)
+ SUBSYSTEMS=="usb", GOTO="mm_candidate_end"
+ SUBSYSTEM=="wwan", ENV{DEVTYPE}=="wwan_dev", GOTO="mm_candidate_end"
+-SUBSYSTEM=="wwan", ENV{ID_MM_CANDIDATE}="1"
++SUBSYSTEM=="wwan", ENV{ID_MM_CANDIDATE}="0", GOTO="mm_candidate_end"
++
++SUBSYSTEM=="wwan", ATTR{type}=="AT", ENV{ID_MM_PORT_TYPE_AT_PRIMARY}="1"
++SUBSYSTEM=="wwan", ATTR{type}=="MBIM", ENV{ID_MM_PORT_TYPE_MBIM}="1"
++SUBSYSTEM=="wwan", ATTR{type}=="QMI", ENV{ID_MM_PORT_TYPE_QMI}="1"
++SUBSYSTEM=="wwan", ATTR{type}=="QCDM", ENV{ID_MM_PORT_TYPE_QCDM}="1"
++SUBSYSTEM=="wwan", ATTR{type}=="FIREHOSE", ENV{ID_MM_PORT_IGNORE}="1"
++
++# Linux 5.13 does not have "type" attribute yet, match kernel name instead
++SUBSYSTEM=="wwan", KERNEL=="*MBIM", ENV{ID_MM_PORT_TYPE_MBIM}="1"
++SUBSYSTEM=="wwan", KERNEL=="*QMI", ENV{ID_MM_PORT_TYPE_QMI}="1"
++SUBSYSTEM=="wwan", KERNEL=="*AT", ENV{ID_MM_PORT_TYPE_AT_PRIMARY}="1"
++SUBSYSTEM=="wwan", KERNEL=="*QCDM", ENV{ID_MM_PORT_TYPE_QCDM}="1"
++SUBSYSTEM=="wwan", KERNEL=="*FIREHOSE", ENV{ID_MM_PORT_IGNORE}="1"
++
+ 
+ LABEL="mm_candidate_end"
+diff --git a/src/mm-bearer-qmi.c b/src/mm-bearer-qmi.c
+index cf6c1fcf..85ed7185 100644
+--- a/src/mm-bearer-qmi.c
++++ b/src/mm-bearer-qmi.c
+@@ -2442,8 +2442,9 @@ load_settings_from_bearer (MMBearerQmi         *self,
+     if (ctx->multiplex == MM_BEARER_MULTIPLEX_SUPPORT_UNKNOWN) {
+         if (mm_context_get_test_multiplex_requested ())
+             ctx->multiplex = MM_BEARER_MULTIPLEX_SUPPORT_REQUESTED;
+-        else if (!g_strcmp0 (data_port_driver, "ipa"))
+-            ctx->multiplex = MM_BEARER_MULTIPLEX_SUPPORT_REQUIRED;
++	else if (!g_strcmp0 (data_port_driver, "ipa")  || 
++		 !g_strcmp0 (data_port_driver, "mhi_net"))
++	    ctx->multiplex = MM_BEARER_MULTIPLEX_SUPPORT_REQUIRED;	
+         else
+             ctx->multiplex = MM_BEARER_MULTIPLEX_SUPPORT_NONE;
+     }
+diff --git a/src/plugins/qcom-soc/77-mm-qcom-soc.rules b/src/plugins/qcom-soc/77-mm-qcom-soc.rules
+index 9719f96f..d4e50be8 100644
+--- a/src/plugins/qcom-soc/77-mm-qcom-soc.rules
++++ b/src/plugins/qcom-soc/77-mm-qcom-soc.rules
+@@ -5,6 +5,7 @@ ACTION!="add|change|move|bind", GOTO="mm_qcom_soc_end"
+ # Process only known wwan, net and rpmsg ports
+ SUBSYSTEM=="net",   DRIVERS=="bam-dmux",      GOTO="mm_qcom_soc_process"
+ SUBSYSTEM=="net",   DRIVERS=="ipa",           GOTO="mm_qcom_soc_process"
++SUBSYSTEM=="net",   DRIVERS=="mhi_net",       GOTO="mm_qcom_soc_process"
+ SUBSYSTEM=="wwan",  DRIVERS=="qcom-q6v5-mss", GOTO="mm_qcom_soc_process"
+ SUBSYSTEM=="rpmsg", DRIVERS=="qcom-q6v5-mss", GOTO="mm_qcom_soc_process"
+ GOTO="mm_qcom_soc_end"
+diff --git a/src/plugins/qcom-soc/mm-broadband-modem-qmi-qcom-soc.c b/src/plugins/qcom-soc/mm-broadband-modem-qmi-qcom-soc.c
+index fa19bd4d..8da9176e 100644
+--- a/src/plugins/qcom-soc/mm-broadband-modem-qmi-qcom-soc.c
++++ b/src/plugins/qcom-soc/mm-broadband-modem-qmi-qcom-soc.c
+@@ -125,7 +125,8 @@ peek_port_qmi_for_data (MMBroadbandModemQmi  *self,
+     net_port = mm_port_peek_kernel_device (data);
+     net_port_driver = mm_kernel_device_get_driver (net_port);
+ 
+-    if (g_strcmp0 (net_port_driver, "ipa") == 0)
++    if (g_strcmp0 (net_port_driver, "ipa") == 0 ||
++        g_strcmp0 (net_port_driver, "mhi_net") == 0)
+         return peek_port_qmi_for_data_ipa (self, data, out_endpoint, error);
+ 
+     if (g_strcmp0 (net_port_driver, "bam-dmux") == 0)
