@@ -1,0 +1,225 @@
+From 6eb99a23c15f43e84c88b156a575668180e33b2b Mon Sep 17 00:00:00 2001
+From: Rohit Biradar <rohibira@qti.qualcomm.com>
+Date: Wed, 25 Feb 2026 22:01:44 +0530
+Subject: [PATCH] Add SELinux policy for nhx.sh
+
+This adds a new policy module for the nativehaltest camera test application.
+
+Upstream-Status: Inappropriate [Qualcomm specific change]
+
+Signed-off-by: Rohit Biradar <rohibira@qti.qualcomm.com>
+---
+ policy/modules.conf                 |   6 ++
+ policy/modules/services/qcom_nhx.fc |  10 +++
+ policy/modules/services/qcom_nhx.if |  75 +++++++++++++++++
+ policy/modules/services/qcom_nhx.te |  73 +++++++++++++++++++++++++++++
+ 4 files changed, 246 insertions(+)
+ create mode 100644 policy/modules.conf
+ create mode 100644 policy/modules/services/qcom_nhx.fc
+ create mode 100644 policy/modules/services/qcom_nhx.if
+ create mode 100644 policy/modules/services/qcom_nhx.te
+
+diff --git a/policy/modules.conf b/policy/modules.conf
+new file mode 100644
+index 0000000..f2dda81
+--- /dev/null
++++ b/policy/modules.conf
+@@ -0,0 +1,6 @@
++# Layer: services
++# Module: qcom_nhx
++#
++# Qualcomm NHX camera test launcher
++#
++qcom_nhx = module
+diff --git a/policy/modules/services/qcom_nhx.fc b/policy/modules/services/qcom_nhx.fc
+new file mode 100644
+index 0000000..0fa22b0
+--- /dev/null
++++ b/policy/modules/services/qcom_nhx.fc
+@@ -0,0 +1,10 @@
++# File contexts for Qualcomm NHX camera test launcher
++
++# Label the nhx.sh launcher script
++/usr/bin/nhx\.sh    --    gen_context(system_u:object_r:qcom_nhx_launcher_exec_t,s0)
++
++# Label nativehaltest binaries for different SoC families
++/usr/bin/camx/.*/nativehaltest    --    gen_context(system_u:object_r:qcom_nhx_exec_t,s0)
++
++# Label camera cache files
++/var/cache/camera(/.*)?    gen_context(system_u:object_r:qcom_camera_cache_t,s0)
+diff --git a/policy/modules/services/qcom_nhx.if b/policy/modules/services/qcom_nhx.if
+new file mode 100644
+index 0000000..58bfd17
+--- /dev/null
++++ b/policy/modules/services/qcom_nhx.if
+@@ -0,0 +1,75 @@
++## <summary>Qualcomm NHX camera test launcher</summary>
++
++########################################
++## <summary>
++##	Execute nhx launcher in the nhx_launcher domain.
++## </summary>
++## <param name="domain">
++##	<summary>
++##	Domain allowed to transition.
++##	</summary>
++## </param>
++#
++interface(`qcom_nhx_launcher_domtrans',`
++	gen_require(`
++		type qcom_nhx_launcher_t, qcom_nhx_launcher_exec_t;
++	')
++
++	corecmd_search_bin($1)
++	domtrans_pattern($1, qcom_nhx_launcher_exec_t, qcom_nhx_launcher_t)
++')
++
++########################################
++## <summary>
++##	Execute nhx launcher in the nhx_launcher domain, and
++##	allow the specified role the nhx_launcher domain.
++## </summary>
++## <param name="domain">
++##	<summary>
++##	Domain allowed to transition.
++##	</summary>
++## </param>
++## <param name="role">
++##	<summary>
++##	Role allowed access.
++##	</summary>
++## </param>
++#
++interface(`qcom_nhx_launcher_run',`
++	gen_require(`
++		type qcom_nhx_launcher_t;
++	')
++
++	qcom_nhx_launcher_domtrans($1)
++	role $2 types qcom_nhx_launcher_t;
++')
++
++########################################
++## <summary>
++##	Execute nativehaltest in the nhx domain.
++## </summary>
++## <param name="domain">
++##	<summary>
++##	Domain allowed to transition.
++##	</summary>
++## </param>
++#
++interface(`qcom_nhx_domtrans',`
++	gen_require(`
++		type qcom_nhx_t, qcom_nhx_exec_t;
++	')
++
++	corecmd_search_bin($1)
++	domtrans_pattern($1, qcom_nhx_exec_t, qcom_nhx_t)
++')
++
++########################################
++## <summary>
++##	Execute nativehaltest in the nhx domain, and
++##	allow the specified role the nhx domain.
++## </summary>
++## <param name="domain">
++##	<summary>
++##	Domain allowed to transition.
++##	</summary>
++## </param>
++## <param name="role">
++##	<summary>
++##	Role allowed access.
++##	</summary>
++## </param>
++#
++interface(`qcom_nhx_run',`
++	gen_require(`
++		type qcom_nhx_t;
++	')
++
++	qcom_nhx_domtrans($1)
++	role $2 types qcom_nhx_t;
++')
+diff --git a/policy/modules/services/qcom_nhx.te b/policy/modules/services/qcom_nhx.te
+new file mode 100644
+index 0000000..aad78c5
+--- /dev/null
++++ b/policy/modules/services/qcom_nhx.te
+@@ -0,0 +1,73 @@
++policy_module(qcom_nhx, 1.0)
++
++########################################
++#
++# Declarations
++#
++
++type qcom_nhx_launcher_t;
++type qcom_nhx_launcher_exec_t;
++init_daemon_domain(qcom_nhx_launcher_t, qcom_nhx_launcher_exec_t)
++
++type qcom_nhx_t;
++type qcom_nhx_exec_t;
++init_daemon_domain(qcom_nhx_t, qcom_nhx_exec_t)
++
++type qcom_camera_cache_t;
++files_type(qcom_camera_cache_t)
++
++########################################
++#
++# qcom_nhx_launcher local policy (nhx.sh)
++#
++
++gen_require(`
++	type initrc_t;
++')
++
++dev_read_sysfs(qcom_nhx_launcher_t)
++files_read_etc_files(qcom_nhx_launcher_t)
++corecmd_exec_shell(qcom_nhx_launcher_t)
++corecmd_exec_bin(qcom_nhx_launcher_t)
++libs_use_ld_so(qcom_nhx_launcher_t)
++libs_use_shared_libs(qcom_nhx_launcher_t)
++allow qcom_nhx_launcher_t qcom_nhx_launcher_t:fifo_file { read write getattr };
++domtrans_pattern(qcom_nhx_launcher_t, qcom_nhx_exec_t, qcom_nhx_t)
++allow qcom_nhx_launcher_t initrc_t:unix_stream_socket { read write ioctl getattr };
++
++########################################
++#
++# qcom_nhx local policy (nativehaltest)
++#
++
++gen_require(`
++	type dma_device_t, fastrpc_device_t, fastrpc_secure_device_t, v4l_device_t;
++	type var_t, debugfs_t, fs_t, default_t;
++')
++
++dev_read_sysfs(qcom_nhx_t)
++allow qcom_nhx_t qcom_nhx_exec_t:file { execute execute_no_trans };
++files_read_etc_files(qcom_nhx_t)
++corecmd_exec_shell(qcom_nhx_t)
++corecmd_exec_bin(qcom_nhx_t)
++libs_use_ld_so(qcom_nhx_t)
++libs_use_shared_libs(qcom_nhx_t)
++allow qcom_nhx_t qcom_nhx_t:fifo_file { read write getattr };
++allow qcom_nhx_t qcom_camera_cache_t:file { read write open getattr create };
++allow qcom_nhx_t qcom_camera_cache_t:dir { search read write add_name open getattr create };
++filetrans_pattern(qcom_nhx_t, var_t, qcom_camera_cache_t, dir, "camera")
++filetrans_pattern(qcom_nhx_t, qcom_camera_cache_t, qcom_camera_cache_t, file)
++files_search_var(qcom_nhx_t)
++allow qcom_nhx_t qcom_nhx_t:unix_dgram_socket { create connect write };
++logging_send_syslog_msg(qcom_nhx_t)
++allow qcom_nhx_t dma_device_t:chr_file { read write open ioctl getattr };
++allow qcom_nhx_t fastrpc_device_t:chr_file { read write open ioctl getattr };
++allow qcom_nhx_t fastrpc_secure_device_t:chr_file { read write open ioctl getattr };
++allow qcom_nhx_t v4l_device_t:chr_file { read write open ioctl getattr };
++allow qcom_nhx_t qcom_nhx_t:capability sys_nice;
++allow qcom_nhx_t qcom_nhx_t:process signal;
++allow qcom_nhx_t initrc_t:unix_stream_socket { read write ioctl getattr };
++allow qcom_nhx_t fs_t:filesystem getattr;
++allow qcom_nhx_t default_t:dir { search read open };
++allow qcom_nhx_t debugfs_t:dir search;
++allow qcom_nhx_t self:process setsched;
+-- 
+2.34.1
