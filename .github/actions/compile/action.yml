@@ -12,9 +12,6 @@ inputs:
     required: true
   cache_dir:
     required: true
-  sdk:
-    required: false
-    default: "0"
 outputs:
   url:
     description: Location of the published binaries
@@ -74,7 +71,7 @@ runs:
           $KAS_CONTAINER build ci/mirror.yml:ci/${{ inputs.machine }}.yml${{ inputs.distro_yaml }}${{ inputs.kernel_yaml }}:ci/initramfs-test.yml
 
           # SDK only with the default kernel
-          if [ "${{ inputs.sdk }}" = "1" ] && [ "${{ inputs.kernel_yaml }}" = "" ] ; then
+          if [ "${{ inputs.kernel_yaml }}" = "" ] ; then
             $KAS_CONTAINER build ci/mirror.yml:ci/${{ inputs.machine }}.yml${{ inputs.distro_yaml }}${{ inputs.kernel_yaml }} --task populate_sdk
           fi
         fi
