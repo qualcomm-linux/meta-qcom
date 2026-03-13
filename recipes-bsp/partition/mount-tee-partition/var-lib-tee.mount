@@ -4,7 +4,7 @@
 
 [Unit]
 Description=Mount persist partition at /var/lib/tee
-Before=local-fs.target
+Before=local-fs.target sfsconfig.service
 
 [Mount]
 DirectoryMode=0755
