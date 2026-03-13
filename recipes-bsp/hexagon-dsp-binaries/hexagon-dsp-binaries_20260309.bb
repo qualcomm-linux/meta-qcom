@@ -13,8 +13,8 @@ LICENSE = " \
 LIC_FILES_CHKSUM = "\
     file://LICENSE.qcom;md5=56e86b6c508490dadc343f39468b5f5e \
     file://LICENSE.qcom-2;md5=165287851294f2fb8ac8cbc5e24b02b0 \
-    file://WHENCE;md5=51fa6c1d54036eba9135c68dee12325e \
-    file://00-hexagon-dsp-binaries.yaml;endline=4;md5=1e22ea93511ef71fecaca9fc16f1355e \
+    file://WHENCE;md5=0bd9f6b084039733e6eb31a250ccc6fe \
+    file://conf.d/hexagon-dsp-binaries-qualcomm-iq9075-evk.yaml;endline=2;md5=077232564320a8fce4ea446daad3d726 \
 "
 NO_GENERIC_LICENSE[dspso-qcom] = "LICENSE.qcom"
 NO_GENERIC_LICENSE[dspso-qcom-2] = "LICENSE.qcom-2"
@@ -24,7 +24,7 @@ SRC_URI = " \
     git://github.com/linux-msm/dsp-binaries;protocol=https;branch=trunk;tag=${PV} \
 "
 
-SRCREV = "5f5e79f2e1ac79daac1c3739d6f4d5bf9d887b83"
+SRCREV = "251d038e2c2fef7e0f58060177f8ddd669afa012"
 
 inherit allarch
 
@@ -38,6 +38,9 @@ do_install () {
 
 PACKAGE_BEFORE_PN =+ "\
     ${PN}-conf \
+    ${PN}-qcom-arduino-monza-adsp \
+    ${PN}-qcom-arduino-monza-cdsp \
+    ${PN}-qcom-arduino-monza-gdsp \
     ${PN}-qcom-db820c-adsp \
     ${PN}-qcom-glymur-crd-adsp \
     ${PN}-qcom-glymur-crd-cdsp \
@@ -82,6 +85,9 @@ PACKAGE_BEFORE_PN =+ "\
 
 LICENSE:${PN} = "dspso-WHENCE"
 LICENSE:${PN}-conf = "MIT"
+LICENSE:${PN}-qcom-arduino-monza-adsp = "dspso-qcom-2"
+LICENSE:${PN}-qcom-arduino-monza-cdsp = "dspso-qcom-2"
+LICENSE:${PN}-qcom-arduino-monza-gdsp = "dspso-qcom-2"
 LICENSE:${PN}-qcom-db820c-adsp = "dspso-qcom"
 LICENSE:${PN}-qcom-glymur-crd-adsp = "dspso-qcom-2"
 LICENSE:${PN}-qcom-glymur-crd-cdsp = "dspso-qcom-2"
@@ -123,6 +129,12 @@ LICENSE:${PN}-thundercomm-rb5-sdsp = "dspso-qcom"
 LICENSE:${PN}-thundercomm-rubikpi3-adsp = "dspso-qcom"
 LICENSE:${PN}-thundercomm-rubikpi3-cdsp = "dspso-qcom"
 
+RDEPENDS:${PN}-qcom-arduino-monza-adsp = "${PN}-conf linux-firmware-qcom-qcs8300-audio (= 1:${PV})"
+RDEPENDS:${PN}-qcom-arduino-monza-adsp += "${PN}-qcom-qcs8300-ride-adsp"
+RDEPENDS:${PN}-qcom-arduino-monza-cdsp = "${PN}-conf linux-firmware-qcom-qcs8300-compute (= 1:${PV})"
+RDEPENDS:${PN}-qcom-arduino-monza-cdsp += "${PN}-qcom-qcs8300-ride-cdsp"
+RDEPENDS:${PN}-qcom-arduino-monza-gdsp = "${PN}-conf linux-firmware-qcom-qcs8300-generalpurpose (= 1:${PV})"
+RDEPENDS:${PN}-qcom-arduino-monza-gdsp += "${PN}-qcom-qcs8300-ride-gdsp"
 RDEPENDS:${PN}-qcom-db820c-adsp = "${PN}-conf linux-firmware-qcom-apq8096-audio (= 1:${PV})"
 RDEPENDS:${PN}-qcom-glymur-crd-adsp = "${PN}-conf linux-firmware-qcom-glymur-audio (= 1:${PV})"
 RDEPENDS:${PN}-qcom-glymur-crd-cdsp = "${PN}-conf linux-firmware-qcom-glymur-compute (= 1:${PV})"
@@ -174,6 +186,9 @@ ALLOW_EMPTY:${PN} = "1"
 
 FILES:${PN}-conf = "${datadir}/qcom/conf.d"
 
+FILES:${PN}-qcom-arduino-monza-adsp = "${datadir}/qcom/qcs8300/Arduino/Monza/dsp/adsp"
+FILES:${PN}-qcom-arduino-monza-cdsp = "${datadir}/qcom/qcs8300/Arduino/Monza/dsp/cdsp*"
+FILES:${PN}-qcom-arduino-monza-gdsp = "${datadir}/qcom/qcs8300/Arduino/Monza/dsp/gdsp*"
 FILES:${PN}-qcom-db820c-adsp = "${datadir}/qcom/apq8096/Qualcomm/db820c/dsp/adsp"
 FILES:${PN}-qcom-glymur-crd-adsp = "${datadir}/qcom/glymur/Qualcomm/Glymur-CRD/dsp/adsp*"
 FILES:${PN}-qcom-glymur-crd-cdsp = "${datadir}/qcom/glymur/Qualcomm/Glymur-CRD/dsp/cdsp*"
