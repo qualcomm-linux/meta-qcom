@@ -44,52 +44,49 @@ deploy_partition_files() {
     fi
 }
 
-create_qcomflash_pkg() {
+deploy_images() {
+    local dest_dir=$1
+
     # esp image
-    [ -n "${QCOM_ESP_FILE}" ] && install -m 0644 ${QCOM_ESP_FILE} efi.bin
+    [ -n "${QCOM_ESP_FILE}" ] && install -m 0644 ${QCOM_ESP_FILE} ${dest_dir}/efi.bin
 
     # dtb image
     if [ -n "${QCOM_DTB_DEFAULT}" ] && \
                 [ -f "${DEPLOY_DIR_IMAGE}/dtb-${QCOM_DTB_DEFAULT}-image.vfat" ]; then
         # default image
-        install -m 0644 ${DEPLOY_DIR_IMAGE}/dtb-${QCOM_DTB_DEFAULT}-image.vfat ${QCOM_DTB_FILE}
+        install -m 0644 ${DEPLOY_DIR_IMAGE}/dtb-${QCOM_DTB_DEFAULT}-image.vfat ${dest_dir}/${QCOM_DTB_FILE}
         # copy all images so they can be made available via the same tarball
         for dtbimg in ${DEPLOY_DIR_IMAGE}/dtb-*-image.vfat; do
-            install -m 0644 ${dtbimg} .
+            install -m 0644 ${dtbimg} ${dest_dir}
         done
     fi
 
     # vmlinux
     [ -e "${DEPLOY_DIR_IMAGE}/vmlinux" -a \
         ! -e "vmlinux" ] && \
-        install -m 0644 "${DEPLOY_DIR_IMAGE}/vmlinux" vmlinux
+        install -m 0644 "${DEPLOY_DIR_IMAGE}/vmlinux" ${dest_dir}/vmlinux
 
     # Legacy boot images
     if [ -n "${QCOM_DTB_DEFAULT}" ]; then
         [ -e "${DEPLOY_DIR_IMAGE}/boot-initramfs-${QCOM_DTB_DEFAULT}-${MACHINE}.img" -a \
             ! -e "boot.img" ] && \
-            install -m 0644 "${DEPLOY_DIR_IMAGE}/boot-initramfs-${QCOM_DTB_DEFAULT}-${MACHINE}.img" boot.img
+            install -m 0644 "${DEPLOY_DIR_IMAGE}/boot-initramfs-${QCOM_DTB_DEFAULT}-${MACHINE}.img" ${dest_dir}/boot.img
         [ -e "${DEPLOY_DIR_IMAGE}/boot-${QCOM_DTB_DEFAULT}-${MACHINE}.img" -a \
             ! -e "boot.img" ] && \
-            install -m 0644 "${DEPLOY_DIR_IMAGE}/boot-${QCOM_DTB_DEFAULT}-${MACHINE}.img" boot.img
+            install -m 0644 "${DEPLOY_DIR_IMAGE}/boot-${QCOM_DTB_DEFAULT}-${MACHINE}.img" ${dest_dir}/boot.img
     fi
     [ -e "${DEPLOY_DIR_IMAGE}/boot-${MACHINE}.img" -a \
         ! -e "boot.img" ] && \
-        install -m 0644 "${DEPLOY_DIR_IMAGE}/boot-${MACHINE}.img" boot.img
+        install -m 0644 "${DEPLOY_DIR_IMAGE}/boot-${MACHINE}.img" ${dest_dir}/boot.img
 
     # rootfs image
-    install -m 0644 ${IMGDEPLOYDIR}/${IMAGE_LINK_NAME}.${IMAGE_QCOMFLASH_FS_TYPE} rootfs.img
-
-    # partition bins/xml files
-    if [ -n "${QCOM_PARTITION_FILES_SUBDIR}" ]; then
-        deploy_partition_files ${DEPLOY_DIR_IMAGE}/${QCOM_PARTITION_FILES_SUBDIR} .
-    fi
+    install -m 0644 ${IMGDEPLOYDIR}/${IMAGE_LINK_NAME}.${IMAGE_QCOMFLASH_FS_TYPE} ${dest_dir}/rootfs.img
 
     if [ -n "${QCOM_BOOT_FILES_SUBDIR}" ]; then
         # install CDT file if present,for targets with spinor, CDT file
         # will be in spinor subfolder instead of root folder
         if [ -n "${QCOM_CDT_FILE}" ] && [ -e "${DEPLOY_DIR_IMAGE}/${QCOM_BOOT_FILES_SUBDIR}/${QCOM_CDT_FILE}.bin" ]; then
-            install -m 0644 ${DEPLOY_DIR_IMAGE}/${QCOM_BOOT_FILES_SUBDIR}/${QCOM_CDT_FILE}.bin cdt.bin
+            install -m 0644 ${DEPLOY_DIR_IMAGE}/${QCOM_BOOT_FILES_SUBDIR}/${QCOM_CDT_FILE}.bin ${dest_dir}/cdt.bin
         fi
 
         # boot firmware
@@ -101,7 +98,7 @@ create_qcomflash_pkg() {
                 -name 'cdt_*.bin' -o \
                 -name 'logfs_*.bin' -o \
                 -name 'sec.dat'` ; do
-            install -m 0644 ${bfw} .
+            install -m 0644 ${bfw} ${dest_dir}
         done
 
         # xbl_config
@@ -111,7 +108,7 @@ create_qcomflash_pkg() {
         fi
 
         if [ -f "${DEPLOY_DIR_IMAGE}/${QCOM_BOOT_FILES_SUBDIR}/${xbl_config}" ]; then
-            install -m 0644 "${DEPLOY_DIR_IMAGE}/${QCOM_BOOT_FILES_SUBDIR}/${xbl_config}" xbl_config.elf
+            install -m 0644 "${DEPLOY_DIR_IMAGE}/${QCOM_BOOT_FILES_SUBDIR}/${xbl_config}" ${dest_dir}/xbl_config.elf
         fi
 
         # bootloader selection
@@ -123,44 +120,67 @@ create_qcomflash_pkg() {
                 ;;
         esac
         if [ -f "${bootloader_bin}" ]; then
-            install -m 0644 "${bootloader_bin}" uefi.elf
+            install -m 0644 "${bootloader_bin}" ${dest_dir}/uefi.elf
         fi
 
         # sail nor firmware
         if [ -d "${DEPLOY_DIR_IMAGE}/${QCOM_BOOT_FILES_SUBDIR}/sail_nor" ]; then
-            install -d sail_nor
-            find "${DEPLOY_DIR_IMAGE}/${QCOM_BOOT_FILES_SUBDIR}/sail_nor" -maxdepth 1 -type f -exec install -m 0644 {} sail_nor \;
+            install -d ${dest_dir}/sail_nor
+            find "${DEPLOY_DIR_IMAGE}/${QCOM_BOOT_FILES_SUBDIR}/sail_nor" -maxdepth 1 -type f -exec install -m 0644 {} ${dest_dir}/sail_nor \;
         fi
 
         # SPI-NOR firmware, partition bins, CDT etc.
         if [ -d "${DEPLOY_DIR_IMAGE}/${QCOM_BOOT_FILES_SUBDIR}/spinor" ]; then
-            install -d spinor
-            find "${DEPLOY_DIR_IMAGE}/${QCOM_BOOT_FILES_SUBDIR}/spinor" -maxdepth 1 -type f -exec install -m 0644 {} spinor \;
-
-            # partition bins/xml files
-            if [ -n "${QCOM_PARTITION_FILES_SUBDIR_SPINOR}" ]; then
-                deploy_partition_files ${DEPLOY_DIR_IMAGE}/${QCOM_PARTITION_FILES_SUBDIR_SPINOR} spinor
-            fi
-
-            # cdt file
-            if [ -n "${QCOM_CDT_FILE}" ]; then
-                install -m 0644 ${DEPLOY_DIR_IMAGE}/${QCOM_BOOT_FILES_SUBDIR}/spinor/${QCOM_CDT_FILE}.bin spinor/cdt.bin
-            fi
-
-            # dtb image
-            if [ -n "${QCOM_DTB_FILE}" ]; then
-                install -m 0644 ${DEPLOY_DIR_IMAGE}/dtb-${QCOM_DTB_DEFAULT}-image.vfat spinor/${QCOM_DTB_FILE}
-            fi
-
             # copy programer to support flash of HLOS images
-            find "${DEPLOY_DIR_IMAGE}/${QCOM_BOOT_FILES_SUBDIR}/spinor" -maxdepth 1 -type f -name 'xbl_s_devprg_ns.melf' -exec install -m 0644 {} . \;
+            find "${DEPLOY_DIR_IMAGE}/${QCOM_BOOT_FILES_SUBDIR}/spinor" -maxdepth 1 -type f -name 'xbl_s_devprg_ns.melf' -exec install -m 0644 {} ${dest_dir} \;
         fi
+
     fi
 
     # abl2esp
     if [ -e "${DEPLOY_DIR_IMAGE}/abl2esp-${ABL_SIGNATURE_VERSION}.elf" ]; then
-        install -m 0644 "${DEPLOY_DIR_IMAGE}/abl2esp-${ABL_SIGNATURE_VERSION}.elf" .
+        install -m 0644 "${DEPLOY_DIR_IMAGE}/abl2esp-${ABL_SIGNATURE_VERSION}.elf" ${dest_dir}
     fi
+}
+
+create_qcomflash_pkg() {
+    # Iterate all partition subdirectories in QCOM_PARTITION_FILES_SUBDIR
+    for subdir in ${QCOM_PARTITION_FILES_SUBDIR}; do
+        local storage_type=$(basename "${subdir}")
+        case "$storage_type" in
+            spinor)
+                # SPI-NOR firmware, partition bins, CDT etc.
+                if [ -d "${DEPLOY_DIR_IMAGE}/${QCOM_BOOT_FILES_SUBDIR}/spinor" ]; then
+                    install -d spinor
+                    find "${DEPLOY_DIR_IMAGE}/${QCOM_BOOT_FILES_SUBDIR}/spinor" -maxdepth 1 -type f -exec install -m 0644 {} spinor \;
+
+                    # partition bins/xml files
+                    if [ -n "${subdir}" ]; then
+                        deploy_partition_files ${DEPLOY_DIR_IMAGE}/${subdir} spinor
+                    fi
+
+                    # cdt file
+                    if [ -n "${QCOM_CDT_FILE}" ]; then
+                        install -m 0644 ${DEPLOY_DIR_IMAGE}/${QCOM_BOOT_FILES_SUBDIR}/spinor/${QCOM_CDT_FILE}.bin spinor/cdt.bin
+                    fi
+
+                    # dtb image
+                    if [ -n "${QCOM_DTB_FILE}" ]; then
+                        install -m 0644 ${DEPLOY_DIR_IMAGE}/dtb-${QCOM_DTB_DEFAULT}-image.vfat spinor/${QCOM_DTB_FILE}
+                    fi
+                fi
+                ;;
+            *)
+                local dest_dir=${storage_type}
+                install -d ${dest_dir}
+                deploy_images ${dest_dir}
+                # partition bins/xml files
+                if [ -n "${subdir}" ]; then
+                    deploy_partition_files ${DEPLOY_DIR_IMAGE}/${subdir} ${dest_dir}
+                fi
+                ;;
+        esac
+    done
 
     # Create symlink to ${QCOMFLASH_DIR} dir
     ln -rsf ${QCOMFLASH_DIR} ${IMGDEPLOYDIR}/${IMAGE_LINK_NAME}.qcomflash
