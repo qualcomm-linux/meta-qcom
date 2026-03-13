@@ -1,0 +1,31 @@
+From 8adca072ee0f338746b6b0a7ebd956ff2d0e0e32 Mon Sep 17 00:00:00 2001
+From: Gargi Misra <gmisra@qti.qualcomm.com>
+Date: Tue, 10 Mar 2026 16:26:11 +0530
+Subject: [PATCH] Enabled ssh_sysadm_login boolean flag to address ssh login
+ failure
+
+type=AVC msg=audit(107.499:283): avc: denied { transition } for pid=1344 comm="sshd-session" path="/usr/bin/bash.bash" dev="sda2" ino=1196 scontext=system_u:system_r:sshd_t:s0 tcontext=unconfined_u:unconfined_r:unconfined_t:s0-s0:c0.c1023 tclass=process permissive=1
+
+Upstream-Status: Inappropriate [ssh login specific: https://github.com/SELinuxProject/refpolicy/pull/914]
+
+Signed-off-by: Gargi Misra <gmisra@qti.qualcomm.com>
+---
+ policy/modules/services/ssh.te | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/policy/modules/services/ssh.te b/policy/modules/services/ssh.te
+index 6994ea8d3..af4909d9e 100644
+--- a/policy/modules/services/ssh.te
++++ b/policy/modules/services/ssh.te
+@@ -17,7 +17,7 @@ gen_tunable(allow_ssh_keysign, false)
+ ## Allow ssh logins as sysadm_r:sysadm_t
+ ## </p>
+ ## </desc>
+-gen_tunable(ssh_sysadm_login, false)
++gen_tunable(ssh_sysadm_login, true)
+ 
+ ## <desc>
+ ## <p>
+-- 
+2.43.0
+
