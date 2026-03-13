@@ -1,0 +1,37 @@
+From 817d0657f35604a42bba1ca4e75cf7f7cb4d10a8 Mon Sep 17 00:00:00 2001
+From: Sarat Addepalli <sarata@qti.qualcomm.com>
+Date: Wed, 4 Mar 2026 10:18:07 +0530
+Subject: [PATCH] config/arm: Allow generic platform
+
+Upstream-Status: Inappropriate [ SoC Specific  ]
+
+Signed-off-by: Sarat Addepalli <sarata@qti.qualcomm.com>
+---
+ config/arm/meson.build | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/config/arm/meson.build b/config/arm/meson.build
+index 523b0fc0ed..d76c15befd 100644
+--- a/config/arm/meson.build
++++ b/config/arm/meson.build
+@@ -848,7 +848,7 @@ if dpdk_conf.get('RTE_ARCH_32')
+     dpdk_conf.set('RTE_CACHE_LINE_SIZE', 64)
+     if meson.is_cross_build()
+         update_flags = true
+-        soc = meson.get_external_property('platform', '')
++        soc = meson.get_external_property('platform', 'generic')
+         if soc == ''
+             error('Arm SoC must be specified in the cross file.')
+         endif
+@@ -902,7 +902,7 @@ else
+         endif
+     else
+         # cross build
+-        soc = meson.get_external_property('platform', '')
++        soc = meson.get_external_property('platform', 'generic')
+         if soc == ''
+             error('Arm SoC must be specified in the cross file.')
+         endif
+-- 
+2.34.1
+
