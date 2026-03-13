@@ -23,8 +23,9 @@ inputs:
 runs:
   using: "composite"
   steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
+          persist-credentials: false
           repository: qualcomm-linux/lava-test-plans
           path: lava-test-plans
           ref: d5b19bcc4d038a40849fe3de0847d4277d5c1305

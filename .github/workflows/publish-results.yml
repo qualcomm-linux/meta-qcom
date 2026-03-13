@@ -59,7 +59,7 @@ jobs:
           private-key: ${{ secrets.TEST_REPORTING_APP_TOKEN }}
 
       - name: Publish Test Results
-        uses: EnricoMi/publish-unit-test-result-action@v2
+        uses: EnricoMi/publish-unit-test-result-action@c950f6fb443cb5af20a377fd0dfaa78838901040 # v2.23.0
         if: |
           always()
           && contains(steps.listfiles.outcome, 'success')
