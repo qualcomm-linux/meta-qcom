@@ -8,13 +8,14 @@ LICENSE = "BSD-3-Clause-Clear"
 LIC_FILES_CHKSUM = "file://LICENSE.txt;md5=2998c54c288b081076c9af987bdf4838"
 
 SRC_URI = "git://github.com/qualcomm/userspace-resource-manager.git;protocol=https;branch=main;tag=v${PV}"
-SRCREV = "2e4383baad53acbeb93ab63b409b8cb47f996e6d"
+SRCREV = "659e283c60ccd10e7d5320e8673a650cf2d3336f"
 
 inherit cmake pkgconfig systemd
 
 DEPENDS += "libyaml"
 
 PACKAGECONFIG ??= "\
+    classifier \
     ${@bb.utils.contains('DISTRO_FEATURES', 'systemd', 'state-detector systemd', '', d)} \
     tests \
 "
@@ -25,13 +26,14 @@ PACKAGECONFIG[systemd] = ",,systemd"
 PACKAGECONFIG[tests] = "-DBUILD_TESTS=ON,-DBUILD_TESTS=OFF"
 
 SYSTEMD_SERVICE:${PN} = "urm.service"
+FILES:${PN}-dev += "${libdir}/urm/libUrmTestPlugin.so"
 FILES:${PN} += "${sysconfdir}/urm/*"
 
 PACKAGE_BEFORE_PN += "${PN}-tests"
 FILES:${PN}-tests += " \
     ${sysconfdir}/urm/tests/* \
-    ${bindir}/RestuneComponentTests \
-    ${bindir}/RestuneIntegrationTests \
+    ${bindir}/UrmComponentTests \
+    ${bindir}/UrmIntegrationTests \
     ${libdir}/libRestuneTestUtils.so* \
-    ${libdir}/libRestunePlugin.so* \
+    ${libdir}/urm/libUrmTestPlugin.so* \
 "
