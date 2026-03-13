@@ -2,14 +2,14 @@ name: Monthly job
 
 on:
   schedule:
-  - cron: "22 10 2 * *"   # montly job - at "random" time - top of hour can be busy in github
+  - cron: "22 10 5 * *"   # montly job - at "random" time - top of hour can be busy in github
 
 jobs:
   sstate-cache-cleanup:
     if: github.repository_owner == 'qualcomm-linux'
-    runs-on: [self-hosted, qcom-u2404, amd64-ssd]
+    runs-on: [self-hosted, gen-qlnx-prd-u2404-x64-sm-od-ephe]
+    timeout-minutes: 720
     steps:
       - name: Clean up the persistant sstate-cache dir
         run: |
-          # keep current and last month to allow smooth end of month transition
-          rm -rf /efs/qli/meta-qcom/sstate-cache-$(date -d '2 months ago' '+%Y-%m')
+          rm -rf /efs/qli/meta-qcom/sstate-cache-$(date -d '1 month ago' '+%Y-%m')
