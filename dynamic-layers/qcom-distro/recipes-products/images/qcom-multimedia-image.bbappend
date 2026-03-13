@@ -8,11 +8,6 @@ BAD_RECOMMENDATIONS = " \
     libvulkan-adreno1 \
 "
 
-# Make sure that we have open-source Vulkan ICD installed
-CORE_IMAGE_BASE_INSTALL += " \
-    mesa-vulkan-drivers \
-"
-
 # Error out if any of the closed source packages get pulled into the image
 INCOMPATIBLE_LICENSE = "LICENSE.qcom LICENSE.qcom-2"
 
