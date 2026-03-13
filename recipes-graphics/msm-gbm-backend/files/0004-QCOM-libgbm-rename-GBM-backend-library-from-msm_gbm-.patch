@@ -1,0 +1,46 @@
+From 6dc20b5b7c4e37443935107d2b14a0444964a4ac Mon Sep 17 00:00:00 2001
+From: Yash Gupta <quic_ygupt@quicinc.com>
+Date: Wed, 4 Mar 2026 22:39:55 +0530
+Subject: [PATCH] QCOM:libgbm: add support for both 'msm' and 'msm-kms' GBM
+ backend names
+
+The MSM DRM subsystem now exposes two driver names: 'msm' (legacy
+combined GPU+KMS driver) and 'msm-kms' (new KMS-only driver used on
+KGSL-based platforms). Mesa's GBM backend auto-detection looks for
+'<drm_driver_name>_gbm.so', so both names must be resolvable.
+
+Build the library as 'msm-kms_gbm.so' and install a compatibility
+symlink 'msm_gbm.so -> msm-kms_gbm.so' so that both driver names
+resolve to the correct MSM GBM backend without requiring the
+GBM_BACKEND environment variable to be set explicitly.
+
+Signed-off-by: Yash Gupta <quic_ygupt@quicinc.com>
+Upstream-Status: Pending
+---
+ src/meson.build | 6 +++++-
+ 1 file changed, 5 insertions(+), 1 deletion(-)
+
+diff --git a/src/meson.build b/src/meson.build
+index f94d665..ec0d1d1 100644
+--- a/src/meson.build
++++ b/src/meson.build
+@@ -22,7 +22,7 @@ src = [
+     'schema_parser.h',
+ ]
+ 
+-msm_gbm = library('msm_gbm',
++msm_gbm = library('msm-kms_gbm',
+     src,
+     dependencies : [
+         gbm,
+@@ -44,3 +44,7 @@ install_data(
+ )
+ 
+ install_headers('gbm_msm.h')
++
++meson.add_install_script('sh', '-c',
++    'ln -sf msm-kms_gbm.so "$MESON_INSTALL_DESTDIR_PREFIX/lib/gbm/msm_gbm.so"'
++)
+-- 
+2.34.1
+
