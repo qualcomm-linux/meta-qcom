@@ -10,6 +10,7 @@ FIT_DTB_COMPATIBLE[hamoa-iot-evk] = " \
     qcom,hamoa-evk \
     qcom,hamoav2.1-evk \
 "
+FIT_DTB_COMPATIBLE[purwa-iot-evk] = "qcom,purwa-evk"
 FIT_DTB_COMPATIBLE[kaanapali-mtp] = "qcom,kaanapali-mtp"
 FIT_DTB_COMPATIBLE[lemans-evk+lemans-evk-camera-csi1-imx577] = " \
     qcom,qcs9075-iot \
