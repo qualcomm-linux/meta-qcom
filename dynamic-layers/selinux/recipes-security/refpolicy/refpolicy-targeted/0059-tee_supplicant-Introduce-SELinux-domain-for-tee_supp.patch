@@ -1,0 +1,105 @@
+From b2f7220034bd340574d14222e88cb762f56bafa5 Mon Sep 17 00:00:00 2001
+From: Wenjia Zhang <wenjz@qti.qualcomm.com>
+Date: Thu, 5 Feb 2026 13:48:10 +0800
+Subject: [PATCH] tee_supplicant: Introduce SELinux domain for tee_supplicant
+
+Define a dedicated domain (`tee_supplicant_t`)
+to confine tee_supplicant service, ensuring it operates in
+a restricted environment isolated from other init processes.
+
+Define a inferface of /dev/tee[0-9].
+
+Grant the read and write permission to tee_supplicant for resolving
+AVC denials in enforcing mode.
+
+Upstream-Status: Backport [https://github.com/SELinuxProject/refpolicy/pull/1082]
+
+Signed-off-by: Wenjia Zhang <wenjz@qti.qualcomm.com>
+---
+ policy/modules/kernel/devices.if          | 18 ++++++++++++++++++
+ policy/modules/services/tee_supplicant.fc |  1 +
+ policy/modules/services/tee_supplicant.if | 10 ++++++++++
+ policy/modules/services/tee_supplicant.te | 17 +++++++++++++++++
+ 4 files changed, 46 insertions(+)
+ create mode 100644 policy/modules/services/tee_supplicant.fc
+ create mode 100644 policy/modules/services/tee_supplicant.if
+ create mode 100644 policy/modules/services/tee_supplicant.te
+
+diff --git a/policy/modules/kernel/devices.if b/policy/modules/kernel/devices.if
+index dd8072f37..bbdb45b98 100644
+--- a/policy/modules/kernel/devices.if
++++ b/policy/modules/kernel/devices.if
+@@ -5032,6 +5032,24 @@ interface(`dev_setattr_all_sysfs',`
+     allow $1 sysfs_types:lnk_file { read_lnk_file_perms setattr };
+ ')
+ 
++##########################################
++## <summary>
++##	Read and write the tee device.
++## </summary>
++## <param name="domain">
++##      <summary>
++##      Domain allowed access.
++##      </summary>
++## </param>
++#
++interface(`dev_rw_tee',`
++	gen_require(`
++		type device_t, tee_device_t;
++	')
++
++	rw_chr_files_pattern($1, device_t, tee_device_t)
++')
++
+ ########################################
+ ## <summary>
+ ##	Read and write the TPM device.
+diff --git a/policy/modules/services/tee_supplicant.fc b/policy/modules/services/tee_supplicant.fc
+new file mode 100644
+index 000000000..9c6e77836
+--- /dev/null
++++ b/policy/modules/services/tee_supplicant.fc
+@@ -0,0 +1 @@
++/usr/bin/qtee_supplicant      --      gen_context(system_u:object_r:tee_supplicant_exec_t,s0)
+diff --git a/policy/modules/services/tee_supplicant.if b/policy/modules/services/tee_supplicant.if
+new file mode 100644
+index 000000000..e22a531f5
+--- /dev/null
++++ b/policy/modules/services/tee_supplicant.if
+@@ -0,0 +1,10 @@
++## <summary>tee_supplicant</summary>
++#
++## <desc>
++## qtee_supplicant is a userspace supplicant daemon that
++## services callback requests from QTEE via the Linux TEE subsystem.
++## It communicates with QTEE through /dev/tee0 and provides normal-world 
++## services required by trusted applications running in QTEE.
++##
++## https://github.com/qualcomm/minkipc/tree/main/qtee_supplicant
++## </desc>
+diff --git a/policy/modules/services/tee_supplicant.te b/policy/modules/services/tee_supplicant.te
+new file mode 100644
+index 000000000..2d5905318
+--- /dev/null
++++ b/policy/modules/services/tee_supplicant.te
+@@ -0,0 +1,17 @@
++policy_module(tee_supplicant)
++
++########################################
++#
++# Declarations
++#
++
++type tee_supplicant_t;
++type tee_supplicant_exec_t;
++init_daemon_domain(tee_supplicant_t, tee_supplicant_exec_t)
++
++########################################
++#
++# Local policy
++#
++
++dev_rw_tee(tee_supplicant_t)
+-- 
+2.43.0
+
