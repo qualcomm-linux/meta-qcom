@@ -1,12 +1,12 @@
 PLATFORM = "lemans"
-PBT_BUILD_DATE = "260224.1"
+PBT_BUILD_DATE = "260307"
 
 require common.inc
 
-SRC_URI[camxlib.sha256sum]     = "7b513e631acac4e62202f96acf7ca15dfe322094d11234288b89c529634e37f1"
-SRC_URI[camx.sha256sum]        = "64f30d84d8c0b5dfcada0f3bbabc884b3d536b7c91d471404d20e55b3dcf69a1"
-SRC_URI[chicdk.sha256sum]      = "02ad87b0e960364dcb4bb716b2a55f9498df14838ddc249973670fdb2b9e1111"
-SRC_URI[camxcommon.sha256sum]  = "ec8481f6b5360336de9b1092c5a7acd2f90d0890993dc64233eaef1a67ec8866"
+SRC_URI[camxlib.sha256sum]     = "c808f35f43ea25d526192bca83e1aaa6374b27da28d96723b6abd0a1dfc21693"
+SRC_URI[camx.sha256sum]        = "36857e646fe396cafa2460cc1ea32fd0c27fb68f81a24923324479d7d42e6493"
+SRC_URI[chicdk.sha256sum]      = "1f5e4074348e849c17ff22d4c6e82278b7d2f688fedb5422c92900e4565dee84"
+SRC_URI[camxcommon.sha256sum]  = "53063a4563e74fed24667b6073abb95d365c9dd5a4f8e98a0a60a30a1917fa7d"
 
 DEPENDS += "${@bb.utils.contains('DISTRO_FEATURES', 'opencl', 'qcom-adreno virtual/libopencl1', '', d)}"
 
@@ -28,8 +28,3 @@ FILES:camx-nhx = "\
 "
 
 FILES:${PN} += "${@bb.utils.contains('DISTRO_FEATURES', 'opencl', '${libdir}/camx/${PLATFORM}/*.cl ${libdir}/camx/${PLATFORM}/libmctf_cl_program.bin', '', d)}"
-
-# Algo librarires are pre-compiled, pre-stripped.
-# Skipping QA checks: 'already-stripped' because:
-# - Library files are Pre-stripped  (already-stripped)
-INSANE_SKIP:${PN} = "already-stripped"
