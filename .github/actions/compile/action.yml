@@ -55,6 +55,16 @@ runs:
       shell: bash
       run: |
         mkdir $KAS_WORK_DIR
+        $KAS_CONTAINER shell ci/mirror.yml:ci/${INPUTS_MACHINE}.yml${INPUTS_DISTRO_YAML}${INPUTS_KERNEL_YAML} \
+          -c "du -sh \$(bitbake-getvar --value DL_DIR)"
+        $KAS_CONTAINER shell ci/mirror.yml:ci/${INPUTS_MACHINE}.yml${INPUTS_DISTRO_YAML}${INPUTS_KERNEL_YAML} \
+          -c "find \$(bitbake-getvar --value DL_DIR) -type f | wc -l"
+        $KAS_CONTAINER shell ci/mirror.yml:ci/${INPUTS_MACHINE}.yml${INPUTS_DISTRO_YAML}${INPUTS_KERNEL_YAML} \
+          -c "du -sh \$(bitbake-getvar --value SSTATE_DIR)"
+        $KAS_CONTAINER shell ci/mirror.yml:ci/${INPUTS_MACHINE}.yml${INPUTS_DISTRO_YAML}${INPUTS_KERNEL_YAML} \
+          -c "du -sh \$(bitbake-getvar --value SSTATE_DIR)"
+        sleep 5
+        exit 1
         $KAS_CONTAINER dump --resolve-env --resolve-local --resolve-refs \
           ci/mirror.yml:ci/${INPUTS_MACHINE}.yml${INPUTS_DISTRO_YAML}${INPUTS_KERNEL_YAML} > kas-build.yml
       env:
