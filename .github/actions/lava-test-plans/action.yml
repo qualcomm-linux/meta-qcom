@@ -45,7 +45,7 @@ runs:
 
       - name: Run lava-test-plans
         shell: bash
-        run: |
+        run: | # zizmor: ignore[github-env]
           set -euo pipefail
           cd lava-test-plans && pip install .
           lava-test-plans --version

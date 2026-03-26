@@ -36,14 +36,14 @@ runs:
 
     - name: Setting up kas-container
       shell: bash
-      run: |
+      run: | # zizmor: ignore[github-env]
         KAS_CONTAINER=$RUNNER_TEMP/kas-container
         echo "KAS_CONTAINER=$KAS_CONTAINER" >> $GITHUB_ENV
         chmod +x $KAS_CONTAINER
 
     - name: Setup build variables and sstate-cache
       shell: bash
-      run: |
+      run: | # zizmor: ignore[github-env]
         # use a monthly sstate cache folder
         echo "DL_DIR=${INPUTS_CACHE_DIR}/downloads" >> $GITHUB_ENV
         echo "SSTATE_DIR=${INPUTS_CACHE_DIR}/sstate-cache-$(date '+%Y-%m')" >> $GITHUB_ENV
