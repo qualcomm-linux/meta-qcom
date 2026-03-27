@@ -34,7 +34,7 @@ runs:
       id: listjobs
       shell: bash
       run: |
-        JOBFILES=$(find . -name "${{ input.prefix }}*.yaml")
+        JOBFILES=$(find . -name "*.yaml" | grep ${{ inputs.prefix }})
         RESULT_JSON=$(jq -n '{target: []}')
         for J in $JOBFILES
           do
