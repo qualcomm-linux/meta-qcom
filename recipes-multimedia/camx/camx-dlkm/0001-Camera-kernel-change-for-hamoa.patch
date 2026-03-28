@@ -1,0 +1,2358 @@
+From 2c9af83a7198190070d840edd2136df9bc219b5e Mon Sep 17 00:00:00 2001
+From: Chandan Kumar Jha <cjha@qti.qualcomm.com>
+Date: Sat, 28 Mar 2026 13:08:18 +0530
+Subject: [PATCH] Camera kernel change for hamoa
+
+Change-Id: Ied635462602d53012fb0fc30d742e558fcef6b23
+Signed-off-by: Chandan Kumar Jha <cjha@qti.qualcomm.com>
+Upstream-Status: Inappropriate [Yocto specific]
+---
+ Makefile                                      |    2 +-
+ .../cam_cpas/cpas_top/cam_cpastop_hw.c        |   22 +-
+ .../cam_cpas/cpas_top/cpastop_v695_100.h      | 1217 +++++++++++++++++
+ .../drivers/cam_cpas/include/cam_cpas_api.h   |    5 +-
+ .../isp_hw/ife_csid_hw/cam_ife_csid680.h      |    8 +-
+ .../isp_hw/ife_csid_hw/cam_ife_csid695.h      |   90 ++
+ .../isp_hw/ife_csid_hw/cam_ife_csid_lite680.h |    7 +-
+ .../isp_hw/ife_csid_hw/cam_ife_csid_mod.c     |   10 +
+ .../isp_hw_mgr/isp_hw/vfe_hw/vfe17x/cam_vfe.c |    5 +
+ .../isp_hw/vfe_hw/vfe17x/cam_vfe_lite695x.h   |  698 ++++++++++
+ camera/drivers/camera_main.c                  |    3 +
+ config/x1e80100-camera.mk                     |   23 +
+ 12 files changed, 2082 insertions(+), 8 deletions(-)
+ create mode 100644 camera/drivers/cam_cpas/cpas_top/cpastop_v695_100.h
+ create mode 100644 camera/drivers/cam_isp/isp_hw_mgr/isp_hw/ife_csid_hw/cam_ife_csid695.h
+ create mode 100644 camera/drivers/cam_isp/isp_hw_mgr/isp_hw/vfe_hw/vfe17x/cam_vfe_lite695x.h
+ create mode 100644 config/x1e80100-camera.mk
+
+diff --git a/Makefile b/Makefile
+index 710ffb60c..17a295e7e 100644
+--- a/Makefile
++++ b/Makefile
+@@ -1,7 +1,7 @@
+ KBUILD_OPTIONS += CAMERA_KERNEL_ROOT=$(shell pwd)
+ KBUILD_OPTIONS += KERNEL_ROOT=$(ROOT_DIR)/$(KERNEL_DIR)
+ KBUILD_OPTIONS += INSTALL_MOD_DIR=camera
+-SUPPORTED_ARCH = qcm6490 qcs9100 qcs615
++SUPPORTED_ARCH = qcm6490 qcs9100 qcs615 x1e80100
+ 
+ .PHONY: clean all
+ 
+diff --git a/camera/drivers/cam_cpas/cpas_top/cam_cpastop_hw.c b/camera/drivers/cam_cpas/cpas_top/cam_cpastop_hw.c
+index 4561abcf4..44f0f98d6 100644
+--- a/camera/drivers/cam_cpas/cpas_top/cam_cpastop_hw.c
++++ b/camera/drivers/cam_cpas/cpas_top/cam_cpastop_hw.c
+@@ -1,7 +1,7 @@
+ // SPDX-License-Identifier: GPL-2.0-only
+ /*
+  * Copyright (c) 2017-2021, The Linux Foundation. All rights reserved.
+- * Copyright (c) 2022-2024, Qualcomm Innovation Center, Inc. All rights reserved.
++ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
+  */
+ 
+ #include <linux/delay.h>
+@@ -44,6 +44,7 @@
+ #include "cpastop_v665_100.h"
+ #include "cpastop_v690_100.h"
+ #include "cpastop_v692_100.h"
++#include "cpastop_v695_100.h"
+ #include "cam_req_mgr_workq.h"
+ #include "cam_common_util.h"
+ 
+@@ -271,7 +272,17 @@ static const uint32_t cam_cpas_hw_version_map
+ 		0,
+ 		0,
+ 	},
+-};
++	/* for camera_695 */
++	{
++		CAM_CPAS_TITAN_695_V100,
++		0,
++		0,
++		0,
++		0,
++		0,
++		0,
++	},
++	};
+ 
+ static char *cam_cpastop_get_camnoc_name(enum cam_camnoc_hw_type type)
+ {
+@@ -367,6 +378,9 @@ static int cam_cpas_translate_camera_cpas_version_id(
+ 	case CAM_CPAS_CAMERA_VERSION_692:
+ 		*cam_version_id = CAM_CPAS_CAMERA_VERSION_ID_692;
+ 		break;
++	case CAM_CPAS_CAMERA_VERSION_695:
++		*cam_version_id = CAM_CPAS_CAMERA_VERSION_ID_695;
++		break;
+ 	default:
+ 		CAM_ERR(CAM_CPAS, "Invalid cam version %u",
+ 			cam_version);
+@@ -1536,6 +1550,10 @@ static int cam_cpastop_init_hw_version(struct cam_hw_info *cpas_hw,
+ 		alloc_camnoc_info[CAM_CAMNOC_HW_COMBINED] = &cam692_cpas100_camnoc_info;
+ 		cpas_info = &cam692_cpas100_cpas_info;
+ 		break;
++	case CAM_CPAS_TITAN_695_V100:
++		alloc_camnoc_info[CAM_CAMNOC_HW_COMBINED] = &cam695_cpas100_camnoc_info;
++		cpas_info = &cam695_cpas100_cpas_info;
++		break;
+ 	default:
+ 		CAM_ERR(CAM_CPAS, "Camera Version not supported %d.%d.%d",
+ 			hw_caps->camera_version.major,
+diff --git a/camera/drivers/cam_cpas/cpas_top/cpastop_v695_100.h b/camera/drivers/cam_cpas/cpas_top/cpastop_v695_100.h
+new file mode 100644
+index 000000000..fdc0d183f
+--- /dev/null
++++ b/camera/drivers/cam_cpas/cpas_top/cpastop_v695_100.h
+@@ -0,0 +1,1217 @@
++/* SPDX-License-Identifier: GPL-2.0-only */
++/*
++ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
++ */
++
++#ifndef _CPASTOP_V695_100_H_
++#define _CPASTOP_V695_100_H_
++
++#define TEST_IRQ_ENABLE 0
++
++static struct cam_camnoc_irq_sbm cam_cpas_v695_100_irq_sbm = {
++	.sbm_enable = {
++		.access_type = CAM_REG_TYPE_READ_WRITE,
++		.enable = true,
++		.offset = 0x240, /* CAM_NOC_SBM_FAULTINEN0_LOW */
++		.value = 0x2 |    /* SBM_FAULTINEN0_LOW_PORT1_MASK */
++			0x04 |     /* SBM_FAULTINEN0_LOW_PORT2_MASK */
++			0x08 |     /* SBM_FAULTINEN0_LOW_PORT3_MASK */
++			0x10 |    /* SBM_FAULTINEN0_LOW_PORT4_MASK */
++			0x20 |    /* SBM_FAULTINEN0_LOW_PORT5_MASK */
++			(TEST_IRQ_ENABLE ?
++			0x80 :    /* SBM_FAULTINEN0_LOW_PORT7_MASK */
++			0x0),
++	},
++	.sbm_status = {
++		.access_type = CAM_REG_TYPE_READ,
++		.enable = true,
++		.offset = 0x248, /* CAM_NOC_SBM_FAULTINSTATUS0_LOW */
++	},
++	.sbm_clear = {
++		.access_type = CAM_REG_TYPE_WRITE,
++		.enable = true,
++		.offset = 0x280, /* CAM_NOC_SBM_FLAGOUTCLR0_LOW */
++		.value = TEST_IRQ_ENABLE ? 0x5 : 0x1,
++	}
++};
++
++static struct cam_camnoc_irq_err
++	cam_cpas_v695_100_irq_err[] = {
++	{
++		.irq_type = CAM_CAMNOC_HW_IRQ_SLAVE_ERROR,
++		.enable = false,
++		.sbm_port = 0x1, /* SBM_FAULTINSTATUS0_LOW_PORT0_MASK */
++		.err_enable = {
++			.access_type = CAM_REG_TYPE_READ_WRITE,
++			.enable = false,
++			.offset = 0x0008, /* CAM_NOC_ERL_MAINCTL_LOW */
++			.value = 1,
++		},
++		.err_status = {
++			.access_type = CAM_REG_TYPE_READ,
++			.enable = false,
++			.offset = 0x0010, /* CAM_NOC_ERL_ERRVLD_LOW */
++		},
++		.err_clear = {
++			.access_type = CAM_REG_TYPE_WRITE,
++			.enable = true,
++			.offset = 0x0018, /* CAM_NOC_ERL_ERRCLR_LOW */
++			.value = 1,
++		},
++	},
++	{
++		.irq_type = CAM_CAMNOC_HW_IRQ_IFE_UBWC_ENCODE_ERROR,
++		.enable = true,
++		.sbm_port = 0x20, /* SBM_FAULTINSTATUS0_LOW_PORT5_MASK */
++		.err_enable = {
++			.access_type = CAM_REG_TYPE_READ_WRITE,
++			.enable = false,
++			.offset = 0x93A0, /* IFE_UBWC_NIU_ENCERREN_LOW */
++			.value = 0xF,
++		},
++		.err_status = {
++			.access_type = CAM_REG_TYPE_READ,
++			.enable = false,
++			.offset = 0x9390, /* IFE_UBWC_NIU_ENCERRSTATUS_LOW */
++		},
++		.err_clear = {
++			.access_type = CAM_REG_TYPE_WRITE,
++			.enable = true,
++			.offset = 0x9398, /* IFE_UBWC_NIU_ENCERRCLR_LOW */
++			.value = 0x1,
++		},
++	},
++	{
++		.irq_type = CAM_CAMNOC_HW_IRQ_BPS_UBWC_ENCODE_ERROR,
++		.enable = true,
++		.sbm_port = 0x2, /* SBM_FAULTINSTATUS0_LOW_PORT1_MASK */
++		.err_enable = {
++			.access_type = CAM_REG_TYPE_READ_WRITE,
++			.enable = false,
++			.offset = 0xA1A0, /* CAM_NOC_BPS_WR_NIU_ENCERREN_LOW */
++			.value = 0xF,
++		},
++		.err_status = {
++			.access_type = CAM_REG_TYPE_READ,
++			.enable = false,
++			.offset = 0xA190, /* CAM_NOC_BPS_WR_NIU_ENCERRSTATUS_LOW */
++		},
++		.err_clear = {
++			.access_type = CAM_REG_TYPE_WRITE,
++			.enable = true,
++			.offset = 0xA198, /* CAM_NOC_BPS_WR_NIU_ENCERRCLR_LOW */
++			.value = 0x1,
++		},
++	},
++	{
++		.irq_type = CAM_CAMNOC_HW_IRQ_IPE0_UBWC_DECODE_ERROR,
++		.enable = true,
++		.sbm_port = 0x4, /* SBM_FAULTINSTATUS0_LOW_PORT2_MASK */
++		.err_enable = {
++			.access_type = CAM_REG_TYPE_READ_WRITE,
++			.enable = false,
++			.offset = 0x9520, /* CAM_NOC_IPE_0_RD_NIU_DECERREN_LOW */
++			.value = 0xFF,
++		},
++		.err_status = {
++			.access_type = CAM_REG_TYPE_READ,
++			.enable = false,
++			.offset = 0x9510, /* CAM_NOC_IPE_0_RD_NIU_DECERRSTATUS_LOW */
++		},
++		.err_clear = {
++			.access_type = CAM_REG_TYPE_WRITE,
++			.enable = true,
++			.offset = 0x9518, /* CAM_NOC_IPE_0_RD_NIU_DECERRCLR_LOW */
++			.value = 0x1,
++		},
++	},
++	{
++		.irq_type = CAM_CAMNOC_HW_IRQ_IPE1_UBWC_DECODE_ERROR,
++		.enable = true,
++		.sbm_port = 0x8, /* SBM_FAULTINSTATUS0_LOW_PORT3_MASK */
++		.err_enable = {
++			.access_type = CAM_REG_TYPE_READ_WRITE,
++			.enable = false,
++			.offset = 0x9720, /* CAM_NOC_IPE_1_RD_NIU_DECERREN_LOW */
++			.value = 0xFF,
++		},
++		.err_status = {
++			.access_type = CAM_REG_TYPE_READ,
++			.enable = false,
++			.offset = 0x9710, /* CAM_NOC_IPE_1_RD_NIU_DECERRSTATUS_LOW */
++		},
++		.err_clear = {
++			.access_type = CAM_REG_TYPE_WRITE,
++			.enable = true,
++			.offset = 0x9718, /* CAM_NOC_IPE_1_RD_NIU_DECERRCLR_LOW */
++			.value = 0x1,
++		},
++	},
++	{
++		.irq_type = CAM_CAMNOC_HW_IRQ_IPE_UBWC_ENCODE_ERROR,
++		.enable = true,
++		.sbm_port = 0x10, /* SBM_FAULTINSTATUS0_LOW_PORT4_MASK */
++		.err_enable = {
++			.access_type = CAM_REG_TYPE_READ_WRITE,
++			.enable = false,
++			.offset = 0x99A0, /* CAM_NOC_IPE_WR_NIU_ENCERREN_LOW */
++			.value = 0xF,
++		},
++		.err_status = {
++			.access_type = CAM_REG_TYPE_READ,
++			.enable = false,
++			.offset = 0x9990, /* CAM_NOC_IPE_WR_NIU_ENCERRSTATUS_LOW */
++		},
++		.err_clear = {
++			.access_type = CAM_REG_TYPE_WRITE,
++			.enable = true,
++			.offset = 0x9998, /* CAM_NOC_IPE_WR_NIU_ENCERRCLR_LOW */
++			.value = 0x1,
++		},
++	},
++	{
++		.irq_type = CAM_CAMNOC_HW_IRQ_AHB_TIMEOUT,
++		.enable = false,
++		.sbm_port = 0x40, /* SBM_FAULTINSTATUS0_LOW_PORT6_MASK */
++		.err_enable = {
++			.access_type = CAM_REG_TYPE_READ_WRITE,
++			.enable = true,
++			.offset = 0x288, /* CAM_NOC_SBM_FLAGOUTSET0_LOW */
++			.value = 0x1,
++		},
++		.err_status = {
++			.access_type = CAM_REG_TYPE_READ,
++			.enable = true,
++			.offset = 0x290, /* CAM_NOC_SBM_FLAGOUTSTATUS0_LOW */
++		},
++		.err_clear = {
++			.enable = false, /* CAM_NOC_SBM_FLAGOUTCLR0_LOW */
++		},
++	},
++	{
++		.irq_type = CAM_CAMNOC_HW_IRQ_RESERVED1,
++		.enable = false,
++	},
++	{
++		.irq_type = CAM_CAMNOC_HW_IRQ_RESERVED2,
++		.enable = false,
++	},
++};
++
++static struct cam_camnoc_specific
++	cam_cpas_v695_100_camnoc_specific[] = {
++	{
++		.port_type = CAM_CAMNOC_IFE_UBWC,
++		.port_name = "IFE_UBWC",
++		.enable = true,
++		.priority_lut_low = {
++			.enable = true,
++			.access_type = CAM_REG_TYPE_READ_WRITE,
++			.masked_value = 0,
++			.offset = 0x9230, /* IFE_UBWC_NIU_PRIORITYLUT_LOW */
++			.value = 0x66665433,
++		},
++		.priority_lut_high = {
++			.enable = true,
++			.access_type = CAM_REG_TYPE_READ_WRITE,
++			.masked_value = 0,
++			.offset = 0x9234, /* IFE_UBWC_NIU_PRIORITYLUT_HIGH */
++			.value = 0x66666666,
++		},
++		.urgency = {
++			.enable = true,
++			.access_type = CAM_REG_TYPE_READ_WRITE,
++			.masked_value = 0,
++			.offset = 0x9238, /* IFE_UBWC_NIU_URGENCY_LOW */
++			.value = 0x1E30,
++		},
++		.danger_lut = {
++			.enable = true,
++			.access_type = CAM_REG_TYPE_READ_WRITE,
++			.masked_value = 0,
++			.offset = 0x9240, /* IFE_UBWC_NIU_DANGERLUT_LOW */
++			.value = 0xffffff00,
++		},
++		.safe_lut = {
++			.enable = true,
++			.access_type = CAM_REG_TYPE_READ_WRITE,
++			.masked_value = 0,
++			.offset = 0x9248, /* IFE_UBWC_NIU_SAFELUT_LOW */
++			.value = 0x000f,
++		},
++		.ubwc_ctl = {
++			/*
++			 * Do not explicitly set ubwc config register.
++			 * Power on default values are taking care of required
++			 * register settings.
++			 */
++			.enable = false,
++		},
++		.qosgen_mainctl = {
++			.enable = false,
++			.access_type = CAM_REG_TYPE_READ_WRITE,
++			.masked_value = 0,
++			.offset = 0x8108, /* IFE_UBWC_QOSGEN_MAINCTL */
++			.value = 0x0,
++		},
++		.qosgen_shaping_low = {
++			.enable = false,
++			.access_type = CAM_REG_TYPE_READ_WRITE,
++			.masked_value = 0,
++			.offset = 0x8120, /* IFE_UBWC_QOSGEN_SHAPING_LOW */
++			.value = 0x0,
++		},
++		.qosgen_shaping_high = {
++			.enable = false,
++			.access_type = CAM_REG_TYPE_READ_WRITE,
++			.masked_value = 0,
++			.offset = 0x8124, /* IFE_UBWC_QOSGEN_SHAPING_HIGH */
++			.value = 0x0,
++		},
++		.maxwr_low = {
++			.enable = false,
++			.access_type = CAM_REG_TYPE_READ,
++			.masked_value = 0,
++			.offset = 0x9220, /* IFE_UBWC_NIU_MAXWR_LOW */
++			.value = 0x0,
++		},
++	},
++	{
++		.port_type = CAM_CAMNOC_IFE_RDI_WR,
++		.port_name = "IFE_RDI_WR",
++		.enable = true,
++		.priority_lut_low = {
++			.enable = true,
++			.access_type = CAM_REG_TYPE_READ_WRITE,
++			.masked_value = 0,
++			.offset = 0x9030, /* IFE_RDI_NIU_PRIORITYLUT_LOW */
++			.value = 0x66665433,
++		},
++		.priority_lut_high = {
++			.enable = true,
++			.access_type = CAM_REG_TYPE_READ_WRITE,
++			.masked_value = 0,
++			.offset = 0x9034, /* IFE_RDI_NIU_PRIORITYLUT_HIGH */
++			.value = 0x66666666,
++		},
++		.urgency = {
++			.enable = true,
++			.access_type = CAM_REG_TYPE_READ_WRITE,
++			.masked_value = 0,
++			.offset = 0x9038, /* IFE_RDI_NIU_URGENCY_LOW */
++			.value = 0x1E30,
++		},
++		.danger_lut = {
++			.enable = true,
++			.access_type = CAM_REG_TYPE_READ_WRITE,
++			.masked_value = 0,
++			.offset = 0x9040, /* IFE_RDI_NIU_DANGERLUT_LOW */
++			.value = 0xffffff00,
++		},
++		.safe_lut = {
++			.enable = true,
++			.access_type = CAM_REG_TYPE_READ_WRITE,
++			.masked_value = 0,
++			.offset = 0x9048, /* IFE_RDI_NIU_SAFELUT_LOW */
++			.value = 0x000f,
++		},
++		.ubwc_ctl = {
++			/*
++			 * Do not explicitly set ubwc config register.
++			 * Power on default values are taking care of required
++			 * register settings.
++			 */
++			.enable = false,
++		},
++		.qosgen_mainctl = {
++			.enable = false,
++			.access_type = CAM_REG_TYPE_READ_WRITE,
++			.masked_value = 0,
++			.offset = 0x8088, /* IFE_RDI_QOSGEN_MAINCTL */
++			.value = 0x0,
++		},
++		.qosgen_shaping_low = {
++			.enable = false,
++			.access_type = CAM_REG_TYPE_READ_WRITE,
++			.masked_value = 0,
++			.offset = 0x80A0, /* IFE_RDI_QOSGEN_SHAPING_LOW */
++			.value = 0x0,
++		},
++		.qosgen_shaping_high = {
++			.enable = false,
++			.access_type = CAM_REG_TYPE_READ_WRITE,
++			.masked_value = 0,
++			.offset = 0x80A4, /* IFE_RDI_QOSGEN_SHAPING_HIGH */
++			.value = 0x0,
++		},
++		.maxwr_low = {
++			.enable = false,
++			.access_type = CAM_REG_TYPE_READ,
++			.masked_value = 0,
++			.offset = 0x9020, /* IFE_RDI_MAXWR_LOW */
++			.value = 0x0,
++		},
++	},
++	{
++		.port_type = CAM_CAMNOC_IFE_PDAF,
++		.port_name = "IFE_PDAF",
++		.enable = true,
++		.priority_lut_low = {
++			.enable = true,
++			.access_type = CAM_REG_TYPE_READ_WRITE,
++			.masked_value = 0,
++			.offset = 0x8E30, /* IFE_PDAF_NIU_PRIORITYLUT_LOW */
++			.value = 0x66665433,
++		},
++		.priority_lut_high = {
++			.enable = true,
++			.access_type = CAM_REG_TYPE_READ_WRITE,
++			.masked_value = 0,
++			.offset = 0x8E34, /* IFE_PDAF_NIU_PRIORITYLUT_HIGH */
++			.value = 0x66666666,
++		},
++		.urgency = {
++			.enable = true,
++			.access_type = CAM_REG_TYPE_READ_WRITE,
++			.masked_value = 0,
++			.offset = 0x8E38, /* IFE_PDAF_NIU_URGENCY_LOW */
++			.value = 0x1B30,
++		},
++		.danger_lut = {
++			.enable = true,
++			.access_type = CAM_REG_TYPE_READ_WRITE,
++			.masked_value = 0,
++			.offset = 0x8E40, /* IFE_PDAF_NIU_DANGERLUT_LOW */
++			.value = 0xffffff00,
++		},
++		.safe_lut = {
++			.enable = true,
++			.access_type = CAM_REG_TYPE_READ_WRITE,
++			.masked_value = 0,
++			.offset = 0x8E48, /* IFE_PDAF_NIU_SAFELUT_LOW */
++			.value = 0x000f,
++		},
++		.ubwc_ctl = {
++			/*
++			 * Do not explicitly set ubwc config register.
++			 * Power on default values are taking care of required
++			 * register settings.
++			 */
++			.enable = false,
++		},
++		.qosgen_mainctl = {
++			.enable = false,
++			.access_type = CAM_REG_TYPE_READ_WRITE,
++			.masked_value = 0,
++			.offset = 0x8008, /* IFE_PDAF_QOSGEN_MAINCTL */
++			.value = 0x0,
++		},
++		.qosgen_shaping_low = {
++			.enable = false,
++			.access_type = CAM_REG_TYPE_READ_WRITE,
++			.masked_value = 0,
++			.offset = 0x8020, /* IFE_PDAF_QOSGEN_SHAPING_LOW */
++			.value = 0x0,
++		},
++		.qosgen_shaping_high = {
++			.enable = false,
++			.access_type = CAM_REG_TYPE_READ_WRITE,
++			.masked_value = 0,
++			.offset = 0x8024, /* IFE_PDAF_QOSGEN_SHAPING_HIGH */
++			.value = 0x0,
++		},
++		.maxwr_low = {
++			.enable = false,
++			.access_type = CAM_REG_TYPE_READ,
++			.masked_value = 0,
++			.offset = 0x8E20, /* IFE_PDAF_NIU_MAXWR_LOW */
++			.value = 0x0,
++		},
++	},
++	{
++		.port_type = CAM_CAMNOC_IFE_LINEAR_STATS,
++		.port_name = "IFE_LINEAR_STATS",
++		.enable = true,
++		.priority_lut_low = {
++			.enable = true,
++			.access_type = CAM_REG_TYPE_READ_WRITE,
++			.masked_value = 0,
++			.offset = 0xA430, /* IFE_LINEAR_STATS_NIUPRIORITYLUT_LOW */
++			.value = 0x66665433,
++		},
++		.priority_lut_high = {
++			.enable = true,
++			.access_type = CAM_REG_TYPE_READ_WRITE,
++			.masked_value = 0,
++			.offset = 0xA434, /* IFE_LINEAR_STATS_NIU_PRIORITYLUT_HIGH */
++			.value = 0x66666666,
++		},
++		.urgency = {
++			.enable = true,
++			.access_type = CAM_REG_TYPE_READ_WRITE,
++			.masked_value = 0,
++			.offset = 0xA438, /* IFE_LINEAR_STATS_NIU_URGENCY_LOW */
++			.value = 0x1B30,
++		},
++		.danger_lut = {
++			.enable = true,
++			.access_type = CAM_REG_TYPE_READ_WRITE,
++			.masked_value = 0,
++			.offset = 0xA440, /* IFE_LINEAR_STATS_NIU_DANGERLUT_LOW */
++			.value = 0xffffff00,
++		},
++		.safe_lut = {
++			.enable = true,
++			.access_type = CAM_REG_TYPE_READ_WRITE,
++			.masked_value = 0,
++			.offset = 0xA448, /* IFE_LINEAR_STATS_NIU_SAFELUT_LOW */
++			.value = 0x000f,
++		},
++		.ubwc_ctl = {
++			/*
++			 * Do not explicitly set ubwc config register.
++			 * Power on default values are taking care of required
++			 * register settings.
++			 */
++			.enable = false,
++		},
++		.qosgen_mainctl = {
++			.enable = false,
++			.access_type = CAM_REG_TYPE_READ_WRITE,
++			.masked_value = 0,
++			.offset = 0x8608, /* IFE_LINEAR_STATS_QOSGEN_MAINCTL */
++			.value = 0x0,
++		},
++		.qosgen_shaping_low = {
++			.enable = false,
++			.access_type = CAM_REG_TYPE_READ_WRITE,
++			.masked_value = 0,
++			.offset = 0x8620, /* IFE_LINEAR_STATS_QOSGEN_SHAPING_LOW */
++			.value = 0x0,
++		},
++		.qosgen_shaping_high = {
++			.enable = false,
++			.access_type = CAM_REG_TYPE_READ_WRITE,
++			.masked_value = 0,
++			.offset = 0x8624, /* IFE_LINEAR_STATS_QOSGEN_SHAPING_HIGH */
++			.value = 0x0,
++		},
++		.maxwr_low = {
++			.enable = false,
++			.access_type = CAM_REG_TYPE_READ,
++			.masked_value = 0,
++			.offset = 0xA420, /* IFE_LINEAR_STATS_NIU_MAXWR_LOW */
++			.value = 0x0,
++		},
++	},
++	{
++		.port_type = CAM_CAMNOC_IFE_LITE,
++		.port_name = "IFE_LITE",
++		.enable = true,
++		.priority_lut_low = {
++			.enable = true,
++			.access_type = CAM_REG_TYPE_READ_WRITE,
++			.masked_value = 0,
++			.offset = 0xA630, /* IFE_LITE_NIU_PRIORITYLUT_LOW */
++			.value = 0x66665433,
++		},
++		.priority_lut_high = {
++			.enable = true,
++			.access_type = CAM_REG_TYPE_READ_WRITE,
++			.masked_value = 0,
++			.offset = 0xA634, /* IFE_LITE_NIU_PRIORITYLUT_HIGH */
++			.value = 0x66666666,
++		},
++		.urgency = {
++			.enable = true,
++			.access_type = CAM_REG_TYPE_READ_WRITE,
++			.masked_value = 0,
++			.offset = 0xA638, /* IFE_LITE_NIU_URGENCY_LOW */
++			.value = 0x1B30,
++		},
++		.danger_lut = {
++			.enable = true,
++			.access_type = CAM_REG_TYPE_READ_WRITE,
++			.masked_value = 0,
++			.offset = 0xA640, /* IFE_LITE_NIU_DANGERLUT_LOW */
++			.value = 0xffffff00,
++		},
++		.safe_lut = {
++			.enable = true,
++			.access_type = CAM_REG_TYPE_READ_WRITE,
++			.masked_value = 0,
++			.offset = 0xA648, /* IFE_LITE_NIU_SAFELUT_LOW */
++			.value = 0x000f,
++		},
++		.ubwc_ctl = {
++			/*
++			 * Do not explicitly set ubwc config register.
++			 * Power on default values are taking care of required
++			 * register settings.
++			 */
++			.enable = false,
++		},
++		.qosgen_mainctl = {
++			.enable = false,
++			.access_type = CAM_REG_TYPE_READ_WRITE,
++			.masked_value = 0,
++			.offset = 0x8688, /* IFE_LITE_QOSGEN_MAINCTL */
++			.value = 0x0,
++		},
++		.qosgen_shaping_low = {
++			.enable = false,
++			.access_type = CAM_REG_TYPE_READ_WRITE,
++			.masked_value = 0,
++			.offset = 0x86A0, /* IFE_LITE_QOSGEN_SHAPING_LOW */
++			.value = 0x0,
++		},
++		.qosgen_shaping_high = {
++			.enable = false,
++			.access_type = CAM_REG_TYPE_READ_WRITE,
++			.masked_value = 0,
++			.offset = 0x86A4, /* IFE_LITE_QOSGEN_SHAPING_HIGH */
++			.value = 0x0,
++		},
++		.maxwr_low = {
++			.enable = false,
++			.access_type = CAM_REG_TYPE_READ,
++			.masked_value = 0,
++			.offset = 0xA620, /* IFE_LITE_NIU_MAXWR_LOW */
++			.value = 0x0,
++		},
++	},
++	{
++		.port_type = CAM_CAMNOC_SFE_RD,
++		.port_name = "SFE_RD",
++		.enable = true,
++		.priority_lut_low = {
++			.enable = false,
++			.access_type = CAM_REG_TYPE_READ_WRITE,
++			.masked_value = 0,
++			.offset = 0x9C30, /* SFE_RD_PRIORITYLUT_LOW */
++			.value = 0x0,
++		},
++		.priority_lut_high = {
++			.enable = false,
++			.access_type = CAM_REG_TYPE_READ_WRITE,
++			.masked_value = 0,
++			.offset = 0x9C34, /* SFE_RD_PRIORITYLUT_HIGH */
++			.value = 0x0,
++		},
++		.urgency = {
++			.enable = true,
++			.access_type = CAM_REG_TYPE_READ_WRITE,
++			.masked_value = 0,
++			.offset = 0x9C38, /* SFE_RD_URGENCY_LOW */
++			.value = 0x1004,
++		},
++		.danger_lut = {
++			.enable = false,
++			.access_type = CAM_REG_TYPE_READ_WRITE,
++			.masked_value = 0,
++			.offset = 0x9C40, /* SFE_RD_DANGERLUT_LOW */
++			.value = 0x0,
++		},
++		.safe_lut = {
++			.enable = false,
++			.access_type = CAM_REG_TYPE_READ_WRITE,
++			.masked_value = 0,
++			.offset = 0x9C48, /* SFE_RD_SAFELUT_LOW */
++			.value = 0xFFFF,
++		},
++		.ubwc_ctl = {
++			/*
++			 * Do not explicitly set ubwc config register.
++			 * Power on default values are taking care of required
++			 * register settings.
++			 */
++			.enable = false,
++		},
++		.qosgen_mainctl = {
++			.enable = false,
++			.access_type = CAM_REG_TYPE_READ_WRITE,
++			.masked_value = 0,
++			.offset = 0x8388, /* SFE_RD_QOSGEN_MAINCTL */
++			.value = 0x0,
++		},
++		.qosgen_shaping_low = {
++			.enable = false,
++			.access_type = CAM_REG_TYPE_READ_WRITE,
++			.masked_value = 0,
++			.offset = 0x83A0, /* SFE_RD_QOSGEN_SHAPING_LOW */
++			.value = 0x0,
++		},
++		.qosgen_shaping_high = {
++			.enable = false,
++			.access_type = CAM_REG_TYPE_READ_WRITE,
++			.masked_value = 0,
++			.offset = 0x83A4, /* SFE_RD_QOSGEN_SHAPING_HIGH */
++			.value = 0x0,
++		},
++	},
++	{
++		.port_type = CAM_CAMNOC_IPE_WR,
++		.port_name = "IPE_WR",
++		.enable = true,
++		.priority_lut_low = {
++			.enable = true,
++			.access_type = CAM_REG_TYPE_READ_WRITE,
++			.masked_value = 0,
++			.offset = 0x9830, /* IPE_WR_NIU_PRIORITYLUT_LOW */
++			.value = 0x33333333,
++		},
++		.priority_lut_high = {
++			.enable = true,
++			.access_type = CAM_REG_TYPE_READ_WRITE,
++			.masked_value = 0,
++			.offset = 0x9834, /* IPE_WR_NIU_PRIORITYLUT_HIGH */
++			.value = 0x33333333,
++		},
++		.urgency = {
++			.enable = true,
++			.access_type = CAM_REG_TYPE_READ_WRITE,
++			.masked_value = 0,
++			.offset = 0x9838, /* IPE_WR_NIU_URGENCY_LOW */
++			.value = 0x30,
++		},
++		.danger_lut = {
++			.enable = false,
++			.access_type = CAM_REG_TYPE_READ_WRITE,
++			.masked_value = 0,
++			.offset = 0x9840, /* IPE_WR_NIU_DANGERLUT_LOW */
++			.value = 0x0,
++		},
++		.safe_lut = {
++			.enable = false,
++			.access_type = CAM_REG_TYPE_READ_WRITE,
++			.masked_value = 0,
++			.offset = 0x9848, /* IPE_WR_NIU_SAFELUT_LOW */
++			.value = 0xffff,
++		},
++		.ubwc_ctl = {
++			.enable = false,
++		},
++		.qosgen_mainctl = {
++			.enable = false,
++			.access_type = CAM_REG_TYPE_READ_WRITE,
++			.masked_value = 0,
++			.offset = 0x8288, /* IPE_WR_QOSGEN_MAINCTL */
++			.value = 0x0,
++		},
++		.qosgen_shaping_low = {
++			.enable = false,
++			.access_type = CAM_REG_TYPE_READ_WRITE,
++			.masked_value = 0,
++			.offset = 0x82A0, /* IPE_WR_QOSGEN_SHAPING_LOW */
++			.value = 0x0,
++		},
++		.qosgen_shaping_high = {
++			.enable = false,
++			.access_type = CAM_REG_TYPE_READ_WRITE,
++			.masked_value = 0,
++			.offset = 0x82A4, /* IPE_WR_QOSGEN_SHAPING_HIGH */
++			.value = 0x0,
++		},
++		.maxwr_low = {
++			.enable = false,
++			.access_type = CAM_REG_TYPE_READ,
++			.masked_value = 0,
++			.offset = 0x9820, /* IPE_WR_NIU_MAXWR_LOW */
++			.value = 0x0,
++		},
++	},
++	{
++		.port_type = CAM_CAMNOC_BPS_WR,
++		.port_name = "BPS_WR",
++		.enable = true,
++		.priority_lut_low = {
++			.enable = true,
++			.access_type = CAM_REG_TYPE_READ_WRITE,
++			.masked_value = 0,
++			.offset = 0xA030, /* BPS_WR_NIU_PRIORITYLUT_LOW */
++			.value = 0x33333333,
++		},
++		.priority_lut_high = {
++			.enable = true,
++			.access_type = CAM_REG_TYPE_READ_WRITE,
++			.masked_value = 0,
++			.offset = 0xA034, /* BPS_WR_PRIORITYLUT_HIGH */
++			.value = 0x33333333,
++		},
++		.urgency = {
++			.enable = true,
++			.access_type = CAM_REG_TYPE_READ_WRITE,
++			.masked_value = 0,
++			.offset = 0xA038, /* BPS_WR_URGENCY_LOW */
++			.value = 0x30,
++		},
++		.danger_lut = {
++			.enable = false,
++			.access_type = CAM_REG_TYPE_READ_WRITE,
++			.masked_value = 0,
++			.offset = 0xA040, /* BPS_WR_DANGERLUT_LOW */
++			.value = 0x0,
++		},
++		.safe_lut = {
++			.enable = false,
++			.access_type = CAM_REG_TYPE_READ_WRITE,
++			.masked_value = 0,
++			.offset = 0xA048, /* BPS_WR_SAFELUT_LOW */
++			.value = 0xffff,
++		},
++		.ubwc_ctl = {
++			.enable = false,
++		},
++		.qosgen_mainctl = {
++			.enable = false,
++			.access_type = CAM_REG_TYPE_READ_WRITE,
++			.masked_value = 0,
++			.offset = 0x8508, /* BPS_WR_QOSGEN_MAINCTL */
++			.value = 0x0,
++		},
++		.qosgen_shaping_low = {
++			.enable = false,
++			.access_type = CAM_REG_TYPE_READ_WRITE,
++			.masked_value = 0,
++			.offset = 0x8520, /* BPS_WR_QOSGEN_SHAPING_LOW */
++			.value = 0x0,
++		},
++		.qosgen_shaping_high = {
++			.enable = false,
++			.access_type = CAM_REG_TYPE_READ_WRITE,
++			.masked_value = 0,
++			.offset = 0x8524, /* BPS_WR_QOSGEN_SHAPING_HIGH */
++			.value = 0x0,
++		},
++		.maxwr_low = {
++			.enable = false,
++			.access_type = CAM_REG_TYPE_READ,
++			.masked_value = 0,
++			.offset = 0xA020, /* BPS_WR_MAXWR_LOW */
++			.value = 0x0,
++		},
++	},
++	{
++		.port_type = CAM_CAMNOC_BPS_RD,
++		.port_name = "BPS_RD",
++		.enable = true,
++		.priority_lut_low = {
++			.enable = false,
++			.access_type = CAM_REG_TYPE_READ_WRITE,
++			.masked_value = 0,
++			.offset = 0x9E30, /* BPS_RD_PRIORITYLUT_LOW */
++			.value = 0x0,
++		},
++		.priority_lut_high = {
++			.enable = false,
++			.access_type = CAM_REG_TYPE_READ_WRITE,
++			.masked_value = 0,
++			.offset = 0x9E34, /* BPS_RD_PRIORITYLUT_HIGH */
++			.value = 0x0,
++		},
++		.urgency = {
++			.enable = true,
++			.access_type = CAM_REG_TYPE_READ_WRITE,
++			.masked_value = 0,
++			.offset = 0x9E38, /* BPS_RD_URGENCY_LOW */
++			.value = 0x3,
++		},
++		.danger_lut = {
++			.enable = false,
++			.access_type = CAM_REG_TYPE_READ_WRITE,
++			.masked_value = 0,
++			.offset = 0x9E40, /* BPS_RD_DANGERLUT_LOW */
++			.value = 0x0,
++		},
++		.safe_lut = {
++			.enable = false,
++			.access_type = CAM_REG_TYPE_READ_WRITE,
++			.masked_value = 0,
++			.offset = 0x9E48, /* BPS_RD_SAFELUT_LOW */
++			.value = 0xffff,
++		},
++		.ubwc_ctl = {
++			.enable = false,
++		},
++		.qosgen_mainctl = {
++			.enable = true,
++			.access_type = CAM_REG_TYPE_READ_WRITE,
++			.masked_value = 0,
++			.offset = 0x8488, /* BPS_RD_QOSGEN_MAINCTL */
++			.value = 0x2,
++		},
++		.qosgen_shaping_low = {
++			.enable = true,
++			.access_type = CAM_REG_TYPE_READ_WRITE,
++			.masked_value = 0,
++			.offset = 0x84A0, /* BPS_RD_QOSGEN_SHAPING_LOW */
++			.value = 0x14141414,
++		},
++		.qosgen_shaping_high = {
++			.enable = true,
++			.access_type = CAM_REG_TYPE_READ_WRITE,
++			.masked_value = 0,
++			.offset = 0x84A4, /* BPS_RD_QOSGEN_SHAPING_HIGH */
++			.value = 0x14141414,
++		},
++	},
++	{
++		.port_type = CAM_CAMNOC_JPEG,
++		.port_name = "JPEG",
++		.enable = true,
++		.priority_lut_low = {
++			.enable = true,
++			.access_type = CAM_REG_TYPE_READ_WRITE,
++			.masked_value = 0,
++			.offset = 0x9A30, /* JPEG_PRIORITYLUT_LOW */
++			.value = 0x22222222,
++		},
++		.priority_lut_high = {
++			.enable = true,
++			.access_type = CAM_REG_TYPE_READ_WRITE,
++			.masked_value = 0,
++			.offset = 0x9A34, /* JPEG_PRIORITYLUT_HIGH */
++			.value = 0x22222222,
++		},
++		.urgency = {
++			.enable = true,
++			.access_type = CAM_REG_TYPE_READ_WRITE,
++			.masked_value = 0,
++			.offset = 0x9A38, /* JPEG_URGENCY_LOW */
++			.value = 0x22,
++		},
++		.danger_lut = {
++			.enable = false,
++			.access_type = CAM_REG_TYPE_READ_WRITE,
++			.masked_value = 0,
++			.offset = 0x9A40, /* JPEG_DANGERLUT_LOW */
++			.value = 0x0,
++		},
++		.safe_lut = {
++			.enable = false,
++			.access_type = CAM_REG_TYPE_READ_WRITE,
++			.masked_value = 0,
++			.offset = 0x9A48, /* JPEG_SAFELUT_LOW */
++			.value = 0xffff,
++		},
++		.ubwc_ctl = {
++			.enable = false,
++		},
++		.qosgen_mainctl = {
++			.enable = true,
++			.access_type = CAM_REG_TYPE_READ_WRITE,
++			.masked_value = 0,
++			.offset = 0x8308, /* JPEG_QOSGEN_MAINCTL */
++			.value = 0x2,
++		},
++		.qosgen_shaping_low = {
++			.enable = true,
++			.access_type = CAM_REG_TYPE_READ_WRITE,
++			.masked_value = 0,
++			.offset = 0x8320, /* JPEG_QOSGEN_SHAPING_LOW */
++			.value = 0x10101010,
++		},
++		.qosgen_shaping_high = {
++			.enable = true,
++			.access_type = CAM_REG_TYPE_READ_WRITE,
++			.masked_value = 0,
++			.offset = 0x8324, /* JPEG_QOSGEN_SHAPING_HIGH */
++			.value = 0x10101010,
++		},
++		.maxwr_low = {
++			.enable = false,
++			.access_type = CAM_REG_TYPE_READ,
++			.masked_value = 0,
++			.offset = 0x9A20, /* JPEG_MAXWR_LOW */
++			.value = 0x0,
++		},
++	},
++	{
++		.port_type = CAM_CAMNOC_IPE0_RD,
++		.port_name = "IPE0_RD",
++		.enable = true,
++		.priority_lut_low = {
++			.enable = false,
++			.access_type = CAM_REG_TYPE_READ_WRITE,
++			.masked_value = 0,
++			.offset = 0x9430, /* IPE_0_rd_niu_PRIORITYLUT_LOW */
++			.value = 0x0,
++		},
++		.priority_lut_high = {
++			.enable = false,
++			.access_type = CAM_REG_TYPE_READ_WRITE,
++			.masked_value = 0,
++			.offset = 0x9434, /* IPE_0_rd_niu_PRIORITYLUT_HIGH */
++			.value = 0x0,
++		},
++		.urgency = {
++			.enable = true,
++			.access_type = CAM_REG_TYPE_READ_WRITE,
++			.masked_value = 0,
++			.offset = 0x9438, /* IPE_0_rd_niu_URGENCY_LOW */
++			.value = 0x3,
++		},
++		.danger_lut = {
++			.enable = false,
++			.access_type = CAM_REG_TYPE_READ_WRITE,
++			.masked_value = 0,
++			.offset = 0x9440, /* IPE_0_rd_niu_DANGERLUT_LOW */
++			.value = 0x0,
++		},
++		.safe_lut = {
++			.enable = false,
++			.access_type = CAM_REG_TYPE_READ_WRITE,
++			.masked_value = 0,
++			.offset = 0x9448, /* IPE_0_rd_niu_SAFELUT_LOW */
++			.value = 0xffff,
++		},
++		.ubwc_ctl = {
++			.enable = false,
++			.access_type = CAM_REG_TYPE_READ_WRITE,
++			.masked_value = 0,
++			.offset = 0x9508, /* IPE_0_rd_niu_DECCTL_LOW */
++			.value = 0x1,
++		},
++		.qosgen_mainctl = {
++			.enable = false,
++			.access_type = CAM_REG_TYPE_READ_WRITE,
++			.masked_value = 0,
++			.offset = 0x8188, /* IPE_0_RD_QOSGEN_MAINCTL */
++			.value = 0x0,
++		},
++		.qosgen_shaping_low = {
++			.enable = false,
++			.access_type = CAM_REG_TYPE_READ_WRITE,
++			.masked_value = 0,
++			.offset = 0x81A0, /* IPE_0_RD_QOSGEN_SHAPING_LOW */
++			.value = 0x0,
++		},
++		.qosgen_shaping_high = {
++			.enable = false,
++			.access_type = CAM_REG_TYPE_READ_WRITE,
++			.masked_value = 0,
++			.offset = 0x81A4, /* IPE_0_RD_QOSGEN_SHAPING_HIGH */
++			.value = 0x0,
++		},
++	},
++	{
++		.port_type = CAM_CAMNOC_IPE1_RD,
++		.port_name = "IPE1_RD",
++		.enable = true,
++		.priority_lut_low = {
++			.enable = false,
++			.access_type = CAM_REG_TYPE_READ_WRITE,
++			.masked_value = 0,
++			.offset = 0x9630, /* IPE1_RD_PRIORITYLUT_LOW */
++			.value = 0x0,
++		},
++		.priority_lut_high = {
++			.enable = false,
++			.access_type = CAM_REG_TYPE_READ_WRITE,
++			.masked_value = 0,
++			.offset = 0x9634, /* IPE1_RD_PRIORITYLUT_HIGH */
++			.value = 0x0,
++		},
++		.urgency = {
++			.enable = true,
++			.access_type = CAM_REG_TYPE_READ_WRITE,
++			.masked_value = 0,
++			.offset = 0x9638, /* IPE1_RD_URGENCY_LOW */
++			.value = 0x3,
++		},
++		.danger_lut = {
++			.enable = false,
++			.access_type = CAM_REG_TYPE_READ_WRITE,
++			.masked_value = 0,
++			.offset = 0x9640, /* IPE1_RD_DANGERLUT_LOW */
++			.value = 0x0,
++		},
++		.safe_lut = {
++			.enable = false,
++			.access_type = CAM_REG_TYPE_READ_WRITE,
++			.masked_value = 0,
++			.offset = 0x9648, /* IPE1_RD_SAFELUT_LOW */
++			.value = 0xffff,
++		},
++		.ubwc_ctl = {
++			.enable = false,
++			.access_type = CAM_REG_TYPE_READ_WRITE,
++			.masked_value = 0,
++			.offset = 0x9708, /* IPE_1_rd_niu_DECCTL_LOW */
++			.value = 0x1,
++		},
++		.qosgen_mainctl = {
++			.enable = false,
++			.access_type = CAM_REG_TYPE_READ_WRITE,
++			.masked_value = 0,
++			.offset = 0x8208, /* IPE1_RD_QOSGEN_MAINCTL */
++			.value = 0x0,
++		},
++		.qosgen_shaping_low = {
++			.enable = false,
++			.access_type = CAM_REG_TYPE_READ_WRITE,
++			.masked_value = 0,
++			.offset = 0x8220, /* IPE1_RD_QOSGEN_SHAPING_LOW */
++			.value = 0x0,
++		},
++		.qosgen_shaping_high = {
++			.enable = false,
++			.access_type = CAM_REG_TYPE_READ_WRITE,
++			.masked_value = 0,
++			.offset = 0x8224, /* IPE1_RD_QOSGEN_SHAPING_HIGH */
++			.value = 0x0,
++		},
++	},
++	{
++		.port_type = CAM_CAMNOC_CDM,
++		.port_name = "CDM",
++		.enable = true,
++		.priority_lut_low = {
++			.enable = false,
++			.access_type = CAM_REG_TYPE_READ_WRITE,
++			.masked_value = 0,
++			.offset = 0xA230, /* CDM_NIU_PRIORITYLUT_LOW */
++			.value = 0x0,
++		},
++		.priority_lut_high = {
++			.enable = false,
++			.access_type = CAM_REG_TYPE_READ_WRITE,
++			.masked_value = 0,
++			.offset = 0xA234, /* CDM_NIU_PRIORITYLUT_HIGH */
++			.value = 0x0,
++		},
++		.urgency = {
++			.enable = true,
++			.access_type = CAM_REG_TYPE_READ_WRITE,
++			.masked_value = 0,
++			.offset = 0xA238, /* CDM_NIU_URGENCY_LOW */
++			.value = 0x3,
++		},
++		.danger_lut = {
++			.enable = false,
++			.access_type = CAM_REG_TYPE_READ_WRITE,
++			.masked_value = 0,
++			.offset = 0xA240, /* CDM_NIU_DANGERLUT_LOW */
++			.value = 0x0,
++		},
++		.safe_lut = {
++			.enable = false,
++			.access_type = CAM_REG_TYPE_READ_WRITE,
++			.masked_value = 0,
++			.offset = 0xA248, /* CDM_NIU_SAFELUT_LOW */
++			.value = 0xffff,
++		},
++		.ubwc_ctl = {
++			.enable = false,
++		},
++		.qosgen_mainctl = {
++			.enable = false,
++			.access_type = CAM_REG_TYPE_READ_WRITE,
++			.masked_value = 0,
++			.offset = 0x8588, /* CDM_QOSGEN_MAINCTL */
++			.value = 0x0,
++		},
++		.qosgen_shaping_low = {
++			.enable = false,
++			.access_type = CAM_REG_TYPE_READ_WRITE,
++			.masked_value = 0,
++			.offset = 0x85A0, /* CDM_QOSGEN_SHAPING_LOW */
++			.value = 0x0,
++		},
++		.qosgen_shaping_high = {
++			.enable = false,
++			.access_type = CAM_REG_TYPE_READ_WRITE,
++			.masked_value = 0,
++			.offset = 0x85A4, /* CDM_QOSGEN_SHAPING_HIGH */
++			.value = 0x0,
++		},
++	},
++	{
++		.port_type = CAM_CAMNOC_ICP,
++		.port_name = "ICP",
++		.enable = true,
++		.flag_out_set0_low = {
++			.enable = false,
++			.access_type = CAM_REG_TYPE_WRITE,
++			.masked_value = 0,
++			.offset = 0x288,
++			.value = 0x0,
++		},
++		.qosgen_mainctl = {
++			.enable = false,
++			.access_type = CAM_REG_TYPE_READ_WRITE,
++			.masked_value = 0,
++			.offset = 0x8408, /* ICP_QOSGEN_MAINCTL */
++			.value = 0x0,
++		},
++		.qosgen_shaping_low = {
++			.enable = false,
++			.access_type = CAM_REG_TYPE_READ_WRITE,
++			.masked_value = 0,
++			.offset = 0x8420, /* ICP_QOSGEN_SHAPING_LOW */
++			.value = 0x0,
++		},
++		.qosgen_shaping_high = {
++			.enable = false,
++			.access_type = CAM_REG_TYPE_READ_WRITE,
++			.masked_value = 0,
++			.offset = 0x8424, /* ICP_QOSGEN_SHAPING_HIGH */
++			.value = 0x0,
++		},
++	},
++};
++
++static struct cam_camnoc_err_logger_info cam695_cpas100_err_logger_offsets = {
++	.mainctrl     =  0x0008, /* ERRLOGGER_MAINCTL_LOW */
++	.errvld       =  0x0010, /* ERRLOGGER_ERRVLD_LOW */
++	.errlog0_low  =  0x0020, /* ERRLOGGER_ERRLOG0_LOW */
++	.errlog0_high =  0x0024, /* ERRLOGGER_ERRLOG0_HIGH */
++	.errlog1_low  =  0x0028, /* ERRLOGGER_ERRLOG1_LOW */
++	.errlog1_high =  0x002c, /* ERRLOGGER_ERRLOG1_HIGH */
++	.errlog2_low  =  0x0030, /* ERRLOGGER_ERRLOG2_LOW */
++	.errlog2_high =  0x0034, /* ERRLOGGER_ERRLOG2_HIGH */
++	.errlog3_low  =  0x0038, /* ERRLOGGER_ERRLOG3_LOW */
++	.errlog3_high =  0x003c, /* ERRLOGGER_ERRLOG3_HIGH */
++};
++
++static struct cam_cpas_hw_errata_wa_list cam695_cpas100_errata_wa_list = {
++	.camnoc_flush_slave_pending_trans = {
++		.enable = false,
++		.data.reg_info = {
++			.access_type = CAM_REG_TYPE_READ,
++			.offset = 0x300, /* sbm_SenseIn0_Low */
++			.mask = 0xE0000, /* Bits 17, 18, 19 */
++			.value = 0, /* expected to be 0 */
++		},
++	},
++	.enable_icp_clk_for_qchannel = {
++		.enable = true,
++	},
++};
++
++
++static struct cam_camnoc_info cam695_cpas100_camnoc_info = {
++	.specific = &cam_cpas_v695_100_camnoc_specific[0],
++	.specific_size = ARRAY_SIZE(cam_cpas_v695_100_camnoc_specific),
++	.irq_sbm = &cam_cpas_v695_100_irq_sbm,
++	.irq_err = &cam_cpas_v695_100_irq_err[0],
++	.irq_err_size = ARRAY_SIZE(cam_cpas_v695_100_irq_err),
++	.err_logger = &cam695_cpas100_err_logger_offsets,
++	.errata_wa_list = &cam695_cpas100_errata_wa_list,
++};
++
++static struct cam_cpas_camnoc_qchannel cam695_cpas100_qchannel_info = {
++	.qchannel_ctrl   = 0x5C,
++	.qchannel_status = 0x60,
++};
++
++
++static struct cam_cpas_info cam695_cpas100_cpas_info = {
++	.hw_caps_info = {
++		.num_caps_registers = 1,
++		.hw_caps_offsets = {0x8},
++	},
++	.qchannel_info = {&cam695_cpas100_qchannel_info},
++	.num_qchannel = 1,
++};
++#endif /* _CPASTOP_V695_100_H_ */
+diff --git a/camera/drivers/cam_cpas/include/cam_cpas_api.h b/camera/drivers/cam_cpas/include/cam_cpas_api.h
+index 7f22286a3..882007c69 100644
+--- a/camera/drivers/cam_cpas/include/cam_cpas_api.h
++++ b/camera/drivers/cam_cpas/include/cam_cpas_api.h
+@@ -1,7 +1,7 @@
+ /* SPDX-License-Identifier: GPL-2.0-only */
+ /*
+  * Copyright (c) 2017-2021, The Linux Foundation. All rights reserved.
+- * Copyright (c) 2022-2024, Qualcomm Innovation Center, Inc. All rights reserved.
++ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
+  */
+ 
+ #ifndef _CAM_CPAS_API_H_
+@@ -106,6 +106,7 @@ enum cam_cpas_camera_version {
+ 	CAM_CPAS_CAMERA_VERSION_665  = 0x00060605,
+ 	CAM_CPAS_CAMERA_VERSION_690  = 0x00060900,
+ 	CAM_CPAS_CAMERA_VERSION_692  = 0x00060902,
++	CAM_CPAS_CAMERA_VERSION_695  = 0x00060905,
+ 	CAM_CPAS_CAMERA_VERSION_MAX
+ };
+ 
+@@ -149,6 +150,7 @@ enum cam_cpas_camera_version_map_id {
+ 	CAM_CPAS_CAMERA_VERSION_ID_665  = 0x11,
+ 	CAM_CPAS_CAMERA_VERSION_ID_690  = 0x12,
+ 	CAM_CPAS_CAMERA_VERSION_ID_692  = 0x13,
++	CAM_CPAS_CAMERA_VERSION_ID_695  = 0x14,
+ 	CAM_CPAS_CAMERA_VERSION_ID_MAX
+ };
+ 
+@@ -201,6 +203,7 @@ enum cam_cpas_hw_version {
+ 	CAM_CPAS_TITAN_665_V100 = 0x665100,
+ 	CAM_CPAS_TITAN_690_V100 = 0x690100,
+ 	CAM_CPAS_TITAN_692_V100 = 0x692100,
++	CAM_CPAS_TITAN_695_V100 = 0x695100,
+ 	CAM_CPAS_TITAN_MAX
+ };
+ 
+diff --git a/camera/drivers/cam_isp/isp_hw_mgr/isp_hw/ife_csid_hw/cam_ife_csid680.h b/camera/drivers/cam_isp/isp_hw_mgr/isp_hw/ife_csid_hw/cam_ife_csid680.h
+index baf535f2c..708a89321 100644
+--- a/camera/drivers/cam_isp/isp_hw_mgr/isp_hw/ife_csid_hw/cam_ife_csid680.h
++++ b/camera/drivers/cam_isp/isp_hw_mgr/isp_hw/ife_csid_hw/cam_ife_csid680.h
+@@ -253,7 +253,7 @@ static const struct cam_ife_csid_irq_desc cam_ife_csid_680_path_irq_desc[] = {
+ 	},
+ };
+ 
+-static struct cam_irq_register_set cam_ife_csid_680_irq_reg_set[9] = {
++static struct cam_irq_register_set cam_ife_csid_680_irq_reg_set[10] = {
+ 	/* Top */
+ 	{
+ 		.mask_reg_offset   = 0x00000080,
+@@ -299,6 +299,8 @@ static struct cam_irq_register_set cam_ife_csid_680_irq_reg_set[9] = {
+ 		.clear_reg_offset  = 0x00000134,
+ 		.status_reg_offset = 0x0000012C,
+ 	},
++	/* RDI 5 */
++	{},
+ 	/* IPP */
+ 	{
+ 		.mask_reg_offset   = 0x000000B0,
+@@ -332,7 +334,7 @@ static struct cam_irq_controller_reg_info cam_ife_csid_680_rx_irq_reg_info[] = {
+ 	},
+ };
+ 
+-static struct cam_irq_controller_reg_info cam_ife_csid_680_path_irq_reg_info[7] = {
++static struct cam_irq_controller_reg_info cam_ife_csid_680_path_irq_reg_info[8] = {
+ 	{
+ 		.num_registers = 1,
+ 		.irq_reg_set = &cam_ife_csid_680_irq_reg_set[CAM_IFE_CSID_IRQ_REG_RDI_0],
+@@ -358,6 +360,7 @@ static struct cam_irq_controller_reg_info cam_ife_csid_680_path_irq_reg_info[7]
+ 		.irq_reg_set = &cam_ife_csid_680_irq_reg_set[CAM_IFE_CSID_IRQ_REG_RDI_4],
+ 		.global_irq_cmd_offset = 0, /* intentionally set to zero */
+ 	},
++	{},
+ 	{
+ 		.num_registers = 1,
+ 		.irq_reg_set = &cam_ife_csid_680_irq_reg_set[CAM_IFE_CSID_IRQ_REG_IPP],
+@@ -1297,6 +1300,7 @@ static struct cam_ife_csid_ver2_reg_info cam_ife_csid_680_reg_info = {
+ 		&cam_ife_csid_680_path_irq_reg_info[CAM_IFE_PIX_PATH_RES_RDI_2],
+ 		&cam_ife_csid_680_path_irq_reg_info[CAM_IFE_PIX_PATH_RES_RDI_3],
+ 		&cam_ife_csid_680_path_irq_reg_info[CAM_IFE_PIX_PATH_RES_RDI_4],
++		NULL,
+ 		&cam_ife_csid_680_path_irq_reg_info[CAM_IFE_PIX_PATH_RES_IPP],
+ 		&cam_ife_csid_680_path_irq_reg_info[CAM_IFE_PIX_PATH_RES_PPP],
+ 	},
+diff --git a/camera/drivers/cam_isp/isp_hw_mgr/isp_hw/ife_csid_hw/cam_ife_csid695.h b/camera/drivers/cam_isp/isp_hw_mgr/isp_hw/ife_csid_hw/cam_ife_csid695.h
+new file mode 100644
+index 000000000..9ff031dcd
+--- /dev/null
++++ b/camera/drivers/cam_isp/isp_hw_mgr/isp_hw/ife_csid_hw/cam_ife_csid695.h
+@@ -0,0 +1,90 @@
++/* SPDX-License-Identifier: GPL-2.0-only */
++/*
++ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
++ */
++
++#ifndef _CAM_IFE_CSID_695_H_
++#define _CAM_IFE_CSID_695_H_
++
++#include <linux/module.h>
++#include "cam_ife_csid_hw_ver2.h"
++#include "cam_ife_csid680.h"
++
++#define CAM_CSID_VERSION_V695                 0x60090050
++
++static struct cam_ife_csid_ver2_top_reg_info
++			cam_ife_csid_695_top_reg_info = {
++	.io_path_cfg0_addr = {
++				    0x0,
++				    0x4,
++	},
++	.dual_csid_cfg0_addr =  {
++				    0xC,
++				    0x10,
++	},
++	.input_core_type_shift_val      = 0,
++	.sfe_offline_en_shift_val       = 12,
++	.out_ife_en_shift_val           = 8,
++	.dual_sync_sel_shift_val        = 8,
++	.dual_en_shift_val              = 0,
++	.master_slave_sel_shift_val     = 1,
++	.master_sel_val                 = 0,
++	.slave_sel_val                  = 1,
++	.io_path_cfg_rst_val            = 1,
++	.dual_cfg_rst_val               = 0,
++	.sfe_pipeline_bypassed          = true,
++};
++
++static struct cam_ife_csid_ver2_reg_info cam_ife_csid_695_reg_info = {
++	.top_irq_reg_info      = cam_ife_csid_680_top_irq_reg_info,
++	.rx_irq_reg_info       = cam_ife_csid_680_rx_irq_reg_info,
++	.path_irq_reg_info     = {
++		&cam_ife_csid_680_path_irq_reg_info[CAM_IFE_PIX_PATH_RES_RDI_0],
++		&cam_ife_csid_680_path_irq_reg_info[CAM_IFE_PIX_PATH_RES_RDI_1],
++		&cam_ife_csid_680_path_irq_reg_info[CAM_IFE_PIX_PATH_RES_RDI_2],
++		&cam_ife_csid_680_path_irq_reg_info[CAM_IFE_PIX_PATH_RES_RDI_3],
++		&cam_ife_csid_680_path_irq_reg_info[CAM_IFE_PIX_PATH_RES_RDI_4],
++		NULL,
++		&cam_ife_csid_680_path_irq_reg_info[CAM_IFE_PIX_PATH_RES_IPP],
++		&cam_ife_csid_680_path_irq_reg_info[CAM_IFE_PIX_PATH_RES_PPP],
++	},
++	.buf_done_irq_reg_info = &cam_ife_csid_680_buf_done_irq_reg_info,
++	.cmn_reg                              = &cam_ife_csid_680_cmn_reg_info,
++	.csi2_reg                             = &cam_ife_csid_680_csi2_reg_info,
++	.path_reg[CAM_IFE_PIX_PATH_RES_IPP]   = &cam_ife_csid_680_ipp_reg_info,
++	.path_reg[CAM_IFE_PIX_PATH_RES_PPP]   = &cam_ife_csid_680_ppp_reg_info,
++	.path_reg[CAM_IFE_PIX_PATH_RES_RDI_0] = &cam_ife_csid_680_rdi_0_reg_info,
++	.path_reg[CAM_IFE_PIX_PATH_RES_RDI_1] = &cam_ife_csid_680_rdi_1_reg_info,
++	.path_reg[CAM_IFE_PIX_PATH_RES_RDI_2] = &cam_ife_csid_680_rdi_2_reg_info,
++	.path_reg[CAM_IFE_PIX_PATH_RES_RDI_3] = &cam_ife_csid_680_rdi_3_reg_info,
++	.path_reg[CAM_IFE_PIX_PATH_RES_RDI_4] = &cam_ife_csid_680_rdi_4_reg_info,
++	.top_reg                              = &cam_ife_csid_695_top_reg_info,
++	.input_core_sel = {
++		{
++			0x0,
++			0x1,
++			0x2,
++			-1,
++			-1,
++			-1,
++			-1,
++		},
++		{
++			0x0,
++			0x1,
++			0x2,
++			-1,
++			-1,
++			-1,
++			-1,
++		},
++	},
++	.need_top_cfg = 0x1,
++	.rx_irq_desc        = &cam_ife_csid_680_rx_irq_desc,
++	.path_irq_desc      = cam_ife_csid_680_path_irq_desc,
++	.num_top_err_irqs   = cam_ife_csid_680_num_top_regs,
++	.num_top_regs       = 1,
++	.num_rx_regs        = 1,
++};
++
++#endif /*_CAM_IFE_CSID_695_H_ */
+diff --git a/camera/drivers/cam_isp/isp_hw_mgr/isp_hw/ife_csid_hw/cam_ife_csid_lite680.h b/camera/drivers/cam_isp/isp_hw_mgr/isp_hw/ife_csid_hw/cam_ife_csid_lite680.h
+index be16f8616..8d50dda13 100644
+--- a/camera/drivers/cam_isp/isp_hw_mgr/isp_hw/ife_csid_hw/cam_ife_csid_lite680.h
++++ b/camera/drivers/cam_isp/isp_hw_mgr/isp_hw/ife_csid_hw/cam_ife_csid_lite680.h
+@@ -249,7 +249,7 @@ static const struct cam_ife_csid_irq_desc cam_ife_csid_lite_680_path_irq_desc[]
+ 		.desc = "CCIF_VIOLATION: Bad frame timings",
+ 	},
+ };
+-static struct cam_irq_register_set cam_ife_csid_lite_680_irq_reg_set[9] = {
++static struct cam_irq_register_set cam_ife_csid_lite_680_irq_reg_set[10] = {
+ 	/* Top */
+ 	{
+ 		.mask_reg_offset   = 0x00000080,
+@@ -290,6 +290,7 @@ static struct cam_irq_register_set cam_ife_csid_lite_680_irq_reg_set[9] = {
+ 		.status_reg_offset = 0x0000011C,
+ 	},
+ 	{}, /* no RDI4 */
++	{}, /*no RDI5 */
+ 	/* IPP */
+ 	{
+ 		.mask_reg_offset   = 0x000000B0,
+@@ -314,7 +315,7 @@ static struct cam_irq_controller_reg_info cam_ife_csid_lite_680_rx_irq_reg_info
+ 	.global_irq_cmd_offset = 0,
+ };
+ 
+-static struct cam_irq_controller_reg_info cam_ife_csid_lite_680_path_irq_reg_info[6] = {
++static struct cam_irq_controller_reg_info cam_ife_csid_lite_680_path_irq_reg_info[7] = {
+ 	{
+ 		.num_registers = 1,
+ 		.irq_reg_set = &cam_ife_csid_lite_680_irq_reg_set[CAM_IFE_CSID_IRQ_REG_RDI_0],
+@@ -336,6 +337,7 @@ static struct cam_irq_controller_reg_info cam_ife_csid_lite_680_path_irq_reg_inf
+ 		.global_irq_cmd_offset = 0,
+ 	},
+ 	{}, /* no RDI4 */
++	{}, /* no RDI5 */
+ 	{
+ 		.num_registers = 1,
+ 		.irq_reg_set = &cam_ife_csid_lite_680_irq_reg_set[CAM_IFE_CSID_IRQ_REG_IPP],
+@@ -993,6 +995,7 @@ static struct cam_ife_csid_ver2_reg_info cam_ife_csid_lite_680_reg_info = {
+ 		&cam_ife_csid_lite_680_path_irq_reg_info[CAM_IFE_PIX_PATH_RES_RDI_2],
+ 		&cam_ife_csid_lite_680_path_irq_reg_info[CAM_IFE_PIX_PATH_RES_RDI_3],
+ 		NULL,
++		NULL,
+ 		&cam_ife_csid_lite_680_path_irq_reg_info[CAM_IFE_PIX_PATH_RES_IPP],
+ 		},
+ 	.buf_done_irq_reg_info = &cam_ife_csid_lite_680_buf_done_irq_reg_info,
+diff --git a/camera/drivers/cam_isp/isp_hw_mgr/isp_hw/ife_csid_hw/cam_ife_csid_mod.c b/camera/drivers/cam_isp/isp_hw_mgr/isp_hw/ife_csid_hw/cam_ife_csid_mod.c
+index 30489bb59..b3aacabdc 100644
+--- a/camera/drivers/cam_isp/isp_hw_mgr/isp_hw/ife_csid_hw/cam_ife_csid_mod.c
++++ b/camera/drivers/cam_isp/isp_hw_mgr/isp_hw/ife_csid_hw/cam_ife_csid_mod.c
+@@ -20,6 +20,7 @@
+ #include "cam_ife_csid680.h"
+ #include "cam_ife_csid690.h"
+ #include "cam_ife_csid692.h"
++#include "cam_ife_csid695.h"
+ #include "cam_ife_csid680_110.h"
+ #include "cam_ife_csid780.h"
+ #include "cam_ife_csid860.h"
+@@ -108,6 +109,11 @@ static struct cam_ife_csid_core_info cam_ife_csid692_hw_info = {
+ 	.sw_version = CAM_IFE_CSID_VER_2_0,
+ };
+ 
++static struct cam_ife_csid_core_info cam_ife_csid695_hw_info = {
++	.csid_reg = &cam_ife_csid_695_reg_info,
++	.sw_version = CAM_IFE_CSID_VER_2_0,
++};
++
+ static const struct of_device_id cam_ife_csid_dt_match[] = {
+ 
+ 	{
+@@ -174,6 +180,10 @@ static const struct of_device_id cam_ife_csid_dt_match[] = {
+ 		.compatible = "qcom,csid692",
+ 		.data = &cam_ife_csid692_hw_info,
+ 	},
++	{
++		.compatible = "qcom,csid695",
++		.data = &cam_ife_csid695_hw_info,
++	},
+ 	{},
+ };
+ 
+diff --git a/camera/drivers/cam_isp/isp_hw_mgr/isp_hw/vfe_hw/vfe17x/cam_vfe.c b/camera/drivers/cam_isp/isp_hw_mgr/isp_hw/vfe_hw/vfe17x/cam_vfe.c
+index 8e0a620b7..60ec80b5d 100644
+--- a/camera/drivers/cam_isp/isp_hw_mgr/isp_hw/vfe_hw/vfe17x/cam_vfe.c
++++ b/camera/drivers/cam_isp/isp_hw_mgr/isp_hw/vfe_hw/vfe17x/cam_vfe.c
+@@ -24,6 +24,7 @@
+ #include "cam_vfe_lite48x.h"
+ #include "cam_vfe_lite68x.h"
+ #include "cam_vfe_lite69x.h"
++#include "cam_vfe_lite695x.h"
+ #include "cam_vfe_lite78x.h"
+ #include "cam_vfe_lite86x.h"
+ #include "cam_vfe_lite88x.h"
+@@ -127,6 +128,10 @@ static const struct of_device_id cam_vfe_dt_match[] = {
+ 		.compatible = "qcom,vfe-lite692",
+ 		.data = &cam_vfe_lite69x_hw_info,
+ 	},
++	{
++		.compatible = "qcom,vfe-lite695",
++		.data = &cam_vfe_lite695x_hw_info,
++	},
+ 	{
+ 		.compatible = "qcom,vfe-lite680_110",
+ 		.data = &cam_vfe_lite68x_hw_info,
+diff --git a/camera/drivers/cam_isp/isp_hw_mgr/isp_hw/vfe_hw/vfe17x/cam_vfe_lite695x.h b/camera/drivers/cam_isp/isp_hw_mgr/isp_hw/vfe_hw/vfe17x/cam_vfe_lite695x.h
+new file mode 100644
+index 000000000..2f731f166
+--- /dev/null
++++ b/camera/drivers/cam_isp/isp_hw_mgr/isp_hw/vfe_hw/vfe17x/cam_vfe_lite695x.h
+@@ -0,0 +1,698 @@
++/* SPDX-License-Identifier: GPL-2.0-only */
++/*
++ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
++ */
++
++#ifndef _CAM_VFE_LITE695X_H_
++#define _CAM_VFE_LITE695X_H_
++#include "cam_vfe_camif_ver3.h"
++#include "cam_vfe_top_ver4.h"
++#include "cam_vfe_core.h"
++#include "cam_vfe_bus_ver3.h"
++#include "cam_irq_controller.h"
++
++#define CAM_VFE_695X_NUM_DBG_REG 7
++
++static struct cam_vfe_top_ver4_module_desc vfe695x_ipp_mod_desc[] = {
++	{
++		.id = 0,
++		.desc = "CLC_BLS",
++	},
++	{
++		.id = 1,
++		.desc = "CLC_GLUT",
++	},
++	{
++		.id = 2,
++		.desc = "CLC_STATS_BG",
++	},
++};
++static struct cam_vfe_top_ver4_wr_client_desc vfe695x_wr_client_desc[] = {
++	{
++		.wm_id = 0,
++		.desc = "RDI_0",
++	},
++	{
++		.wm_id = 1,
++		.desc = "RDI_1",
++	},
++	{
++		.wm_id = 2,
++		.desc = "RDI_2",
++	},
++	{
++		.wm_id = 3,
++		.desc = "RDI_3",
++	},
++	{
++		.wm_id = 4,
++		.desc = "GAMMA",
++	},
++	{
++		.wm_id = 5,
++		.desc = "BE",
++	},
++	{
++		.wm_id = 6,
++		.desc = "BHIST",
++	},
++	{
++		.wm_id = 7,
++		.desc = "GAMMA2",
++	},
++	{
++		.wm_id = 8,
++		.desc = "GAMMA3",
++	},
++};
++
++static struct cam_irq_register_set vfe695x_top_irq_reg_set[3] = {
++	{
++		.mask_reg_offset   = 0x00001024,
++		.clear_reg_offset  = 0x0000102C,
++		.status_reg_offset = 0x0000101C,
++		.set_reg_offset    = 0x00001034,
++		.test_set_val      = BIT(0),
++		.test_sub_val      = BIT(0),
++	},
++	{
++		.mask_reg_offset   = 0x00001028,
++		.clear_reg_offset  = 0x00001030,
++		.status_reg_offset = 0x00001020,
++	},
++};
++
++static struct cam_irq_controller_reg_info vfe695x_top_irq_reg_info = {
++	.num_registers = 2,
++	.irq_reg_set = vfe695x_top_irq_reg_set,
++	.global_irq_cmd_offset = 0x00001038,
++	.global_clear_bitmask  = 0x00000001,
++	.global_set_bitmask    = 0x00000010,
++	.clear_all_bitmask     = 0xFFFFFFFF,
++};
++
++static uint32_t vfe695x_top_debug_reg[] = {
++	0x00001064,
++	0x00001068,
++	0x0000106C,
++	0x00001070,
++	0x00001074,
++	0x00001078,
++	0x0000107C,
++};
++
++static struct cam_vfe_top_ver4_reg_offset_common vfe695x_top_common_reg = {
++	.hw_version               = 0x00001000,
++	.hw_capability            = 0x00001004,
++	.core_cgc_ovd_0           = 0x00001014,
++	.ahb_cgc_ovd              = 0x00001018,
++	.core_cfg_0               = 0x0000103C,
++	.core_cfg_1               = 0x00000040,
++	.core_cfg_2               = 0x00000044,
++	.diag_config              = 0x00001048,
++	.diag_sensor_status_0     = 0x0000104C,
++	.diag_sensor_status_1     = 0x00001050,
++	.diag_frm_cnt_status_0    = 0x00001054,
++	.diag_frm_cnt_status_1    = 0x00001058,
++	.ipp_violation_status     = 0x0000105C,
++	.bus_violation_status     = 0x00001264,
++	.bus_overflow_status      = 0x00001268,
++	.top_debug_cfg            = 0x00001080,
++	.num_top_debug_reg        = CAM_VFE_695X_NUM_DBG_REG,
++	.top_debug                = vfe695x_top_debug_reg,
++	.frame_timing_irq_reg_idx = CAM_IFE_IRQ_CAMIF_REG_STATUS1,
++};
++
++static struct cam_vfe_ver4_path_reg_data vfe695x_ipp_reg_data = {
++	.sof_irq_mask                    = 0x1,
++	.eof_irq_mask                    = 0x2,
++	.error_irq_mask                  = 0x2,
++	.enable_diagnostic_hw            = 0x1,
++	.top_debug_cfg_en                = 0x3,
++	.ipp_violation_mask              = 0x2,
++};
++
++static struct cam_vfe_ver4_path_reg_data vfe695x_rdi_reg_data[4] = {
++
++	{
++		.sof_irq_mask                    = 0x4,
++		.eof_irq_mask                    = 0x8,
++		.error_irq_mask                  = 0x0,
++		.enable_diagnostic_hw            = 0x1,
++		.top_debug_cfg_en                = 0x3,
++	},
++	{
++		.sof_irq_mask                    = 0x10,
++		.eof_irq_mask                    = 0x20,
++		.error_irq_mask                  = 0x0,
++		.enable_diagnostic_hw            = 0x1,
++		.top_debug_cfg_en                = 0x3,
++	},
++	{
++		.sof_irq_mask                    = 0x40,
++		.eof_irq_mask                    = 0x80,
++		.error_irq_mask                  = 0x0,
++		.enable_diagnostic_hw            = 0x1,
++		.top_debug_cfg_en                = 0x3,
++	},
++	{
++		.sof_irq_mask                    = 0x100,
++		.eof_irq_mask                    = 0x200,
++		.error_irq_mask                  = 0x0,
++		.enable_diagnostic_hw            = 0x1,
++		.top_debug_cfg_en                = 0x3,
++	},
++};
++
++static struct cam_vfe_ver4_path_hw_info
++	vfe695x_rdi_hw_info[] = {
++	{
++		.common_reg     = &vfe695x_top_common_reg,
++		.reg_data       = &vfe695x_rdi_reg_data[0],
++	},
++	{
++		.common_reg     = &vfe695x_top_common_reg,
++		.reg_data       = &vfe695x_rdi_reg_data[1],
++	},
++	{
++		.common_reg     = &vfe695x_top_common_reg,
++		.reg_data       = &vfe695x_rdi_reg_data[2],
++	},
++	{
++		.common_reg     = &vfe695x_top_common_reg,
++		.reg_data       = &vfe695x_rdi_reg_data[3],
++	},
++};
++
++static struct cam_vfe_top_ver4_debug_reg_info vfe695x_dbg_reg_info[CAM_VFE_695X_NUM_DBG_REG][8] = {
++	VFE_DBG_INFO_ARRAY_4bit(
++		"test_bus_reserved",
++		"test_bus_reserved",
++		"test_bus_reserved",
++		"test_bus_reserved",
++		"test_bus_reserved",
++		"test_bus_reserved",
++		"test_bus_reserved",
++		"test_bus_reserved"
++	),
++	{
++		VFE_DBG_INFO(32, "non-CLC info"),
++		VFE_DBG_INFO(32, "non-CLC info"),
++		VFE_DBG_INFO(32, "non-CLC info"),
++		VFE_DBG_INFO(32, "non-CLC info"),
++		VFE_DBG_INFO(32, "non-CLC info"),
++		VFE_DBG_INFO(32, "non-CLC info"),
++		VFE_DBG_INFO(32, "non-CLC info"),
++		VFE_DBG_INFO(32, "non-CLC info"),
++	},
++	VFE_DBG_INFO_ARRAY_4bit(
++		"PP_THROTTLE",
++		"STATS_BG_THROTTLE",
++		"STATS_BG",
++		"BLS",
++		"GLUT",
++		"unused",
++		"unused",
++		"unused"
++	),
++	VFE_DBG_INFO_ARRAY_4bit(
++		"RDI_0",
++		"RDI_1",
++		"RDI_2",
++		"RDI_3",
++		"PP_STATS_BG",
++		"PP_GLUT",
++		"PP_STATS_BG",
++		"PP_GLUT"
++	),
++	VFE_DBG_INFO_ARRAY_4bit(
++		"PP_STATS_BHIST",
++		"PP_STATS_BHIST",
++		"unused",
++		"unused",
++		"unused",
++		"unused",
++		"unused",
++		"unused"
++	),
++	VFE_DBG_INFO_ARRAY_4bit(
++		"unused",
++		"unused",
++		"unused",
++		"unused",
++		"unused",
++		"unused",
++		"unused",
++		"unused"
++	),
++};
++
++static struct cam_vfe_top_ver4_hw_info vfe695x_top_hw_info = {
++	.common_reg = &vfe695x_top_common_reg,
++	.rdi_hw_info =   vfe695x_rdi_hw_info,
++	.vfe_full_hw_info = {
++		.common_reg     = &vfe695x_top_common_reg,
++		.reg_data       = &vfe695x_ipp_reg_data,
++	},
++	.ipp_module_desc        = vfe695x_ipp_mod_desc,
++	.wr_client_desc         = vfe695x_wr_client_desc,
++	.num_mux = 5,
++	.mux_type = {
++		CAM_VFE_CAMIF_VER_4_0,
++		CAM_VFE_RDI_VER_1_0,
++		CAM_VFE_RDI_VER_1_0,
++		CAM_VFE_RDI_VER_1_0,
++		CAM_VFE_RDI_VER_1_0,
++	},
++	.num_rdi        = ARRAY_SIZE(vfe695x_rdi_hw_info),
++	.debug_reg_info = &vfe695x_dbg_reg_info,
++};
++
++static struct cam_irq_register_set vfe695x_bus_irq_reg[1] = {
++		{
++			.mask_reg_offset   = 0x00001218,
++			.clear_reg_offset  = 0x00001220,
++			.status_reg_offset = 0x00001228,
++		},
++};
++
++static uint32_t vfe695x_out_port_mid[][4] = {
++	{8, 0, 0, 0},
++	{9, 0, 0, 0},
++	{10, 0, 0, 0},
++	{11, 0, 0, 0},
++	{12, 0, 0, 0},
++	{13, 0, 0, 0},
++	{14, 0, 0, 0},
++	{15, 0, 0, 0},
++	{16, 0, 0, 0},
++};
++
++static struct cam_vfe_bus_ver3_hw_info vfe695x_bus_hw_info = {
++	.common_reg = {
++		.hw_version                       = 0x00001200,
++		.cgc_ovd                          = 0x00001208,
++		.if_frameheader_cfg               = {
++			0x00001234,
++			0x00001238,
++			0x0000123C,
++			0x00001240,
++			0x00001244,
++		},
++		.pwr_iso_cfg                      = 0x0000125C,
++		.overflow_status_clear            = 0x00001260,
++		.ccif_violation_status            = 0x00001264,
++		.overflow_status                  = 0x00001268,
++		.image_size_violation_status      = 0x00001270,
++		.debug_status_top_cfg             = 0x000012F0,
++		.debug_status_top                 = 0x000012F4,
++		.test_bus_ctrl                    = 0x000012FC,
++		.irq_reg_info = {
++			.num_registers            = 1,
++			.irq_reg_set              = vfe695x_bus_irq_reg,
++			.global_irq_cmd_offset    = 0x00001230,
++			.global_clear_bitmask     = 0x00000001,
++		},
++	},
++	.num_client = 9,
++	.bus_client_reg = {
++		{
++			.cfg                      = 0x00001400,
++			.image_addr               = 0x00001404,
++			.frame_incr               = 0x00001408,
++			.image_cfg_0              = 0x0000140C,
++			.image_cfg_1              = 0x00001410,
++			.image_cfg_2              = 0x00001414,
++			.packer_cfg               = 0x00001418,
++			.bw_limiter_addr          = 0x0000141C,
++			.frame_header_addr        = 0x00001420,
++			.frame_header_incr        = 0x00001424,
++			.frame_header_cfg         = 0x00001428,
++			.line_done_cfg            = 0x0000142C,
++			.irq_subsample_period     = 0x00001430,
++			.irq_subsample_pattern    = 0x00001434,
++			.mmu_prefetch_cfg         = 0x00001460,
++			.mmu_prefetch_max_offset  = 0x00001464,
++			.system_cache_cfg         = 0x00001468,
++			.addr_status_0            = 0x00001474,
++			.addr_status_1            = 0x00001478,
++			.addr_status_2            = 0x0000147C,
++			.addr_status_3            = 0x00001480,
++			.debug_status_cfg         = 0x00001484,
++			.debug_status_0           = 0x00001488,
++			.debug_status_1           = 0x0000148C,
++			.comp_group               = CAM_VFE_BUS_VER3_COMP_GRP_1,
++			.ubwc_regs                = NULL,
++		},
++		/* BUS Client 1 RDI1 */
++		{
++			.cfg                      = 0x00001500,
++			.image_addr               = 0x00001504,
++			.frame_incr               = 0x00001508,
++			.image_cfg_0              = 0x0000150C,
++			.image_cfg_1              = 0x00001510,
++			.image_cfg_2              = 0x00001514,
++			.packer_cfg               = 0x00001518,
++			.bw_limiter_addr          = 0x0000151C,
++			.frame_header_addr        = 0x00001520,
++			.frame_header_incr        = 0x00001524,
++			.frame_header_cfg         = 0x00001528,
++			.line_done_cfg            = 0x0000152C,
++			.irq_subsample_period     = 0x00001530,
++			.irq_subsample_pattern    = 0x00001534,
++			.mmu_prefetch_cfg         = 0x00001560,
++			.mmu_prefetch_max_offset  = 0x00001564,
++			.system_cache_cfg         = 0x00001568,
++			.addr_status_0            = 0x00001574,
++			.addr_status_1            = 0x00001578,
++			.addr_status_2            = 0x0000157C,
++			.addr_status_3            = 0x00001580,
++			.debug_status_cfg         = 0x00001584,
++			.debug_status_0           = 0x00001588,
++			.debug_status_1           = 0x0000158C,
++			.comp_group               = CAM_VFE_BUS_VER3_COMP_GRP_2,
++			.ubwc_regs                = NULL,
++		},
++		/* BUS Client 2 RDI2 */
++		{
++			.cfg                      = 0x00001600,
++			.image_addr               = 0x00001604,
++			.frame_incr               = 0x00001608,
++			.image_cfg_0              = 0x0000160C,
++			.image_cfg_1              = 0x00001610,
++			.image_cfg_2              = 0x00001614,
++			.packer_cfg               = 0x00001618,
++			.bw_limiter_addr          = 0x0000161C,
++			.frame_header_addr        = 0x00001620,
++			.frame_header_incr        = 0x00001624,
++			.frame_header_cfg         = 0x00001628,
++			.line_done_cfg            = 0x0000162C,
++			.irq_subsample_period     = 0x00001630,
++			.irq_subsample_pattern    = 0x00001634,
++			.mmu_prefetch_cfg         = 0x00001660,
++			.mmu_prefetch_max_offset  = 0x00001664,
++			.system_cache_cfg         = 0x00001668,
++			.addr_status_0            = 0x00001674,
++			.addr_status_1            = 0x00001678,
++			.addr_status_2            = 0x0000167C,
++			.addr_status_3            = 0x00001680,
++			.debug_status_cfg         = 0x00001684,
++			.debug_status_0           = 0x00001688,
++			.debug_status_1           = 0x0000168C,
++			.comp_group               = CAM_VFE_BUS_VER3_COMP_GRP_3,
++			.ubwc_regs                = NULL,
++		},
++		/* BUS Client 3 RDI3 */
++		{
++			.cfg                      = 0x00001700,
++			.image_addr               = 0x00001704,
++			.frame_incr               = 0x00001708,
++			.image_cfg_0              = 0x0000170C,
++			.image_cfg_1              = 0x00001710,
++			.image_cfg_2              = 0x00001714,
++			.packer_cfg               = 0x00001718,
++			.bw_limiter_addr          = 0x0000171C,
++			.frame_header_addr        = 0x00001720,
++			.frame_header_incr        = 0x00001724,
++			.frame_header_cfg         = 0x00001728,
++			.line_done_cfg            = 0x0000172C,
++			.irq_subsample_period     = 0x00001730,
++			.irq_subsample_pattern    = 0x00001734,
++			.mmu_prefetch_cfg         = 0x00001760,
++			.mmu_prefetch_max_offset  = 0x00001764,
++			.system_cache_cfg         = 0x00001768,
++			.addr_status_0            = 0x00001774,
++			.addr_status_1            = 0x00001778,
++			.addr_status_2            = 0x0000177C,
++			.addr_status_3            = 0x00001780,
++			.debug_status_cfg         = 0x00001784,
++			.debug_status_0           = 0x00001788,
++			.debug_status_1           = 0x0000178C,
++			.comp_group               = CAM_VFE_BUS_VER3_COMP_GRP_4,
++			.ubwc_regs                = NULL,
++		},
++		/* BUS Client 4 Gamma */
++		{
++			.cfg                      = 0x00001800,
++			.image_addr               = 0x00001804,
++			.frame_incr               = 0x00001808,
++			.image_cfg_0              = 0x0000180C,
++			.image_cfg_1              = 0x00001810,
++			.image_cfg_2              = 0x00001814,
++			.packer_cfg               = 0x00001818,
++			.bw_limiter_addr          = 0x0000181C,
++			.frame_header_addr        = 0x00001820,
++			.frame_header_incr        = 0x00001824,
++			.frame_header_cfg         = 0x00001828,
++			.irq_subsample_period     = 0x00001830,
++			.irq_subsample_pattern    = 0x00001834,
++			.mmu_prefetch_cfg         = 0x00001860,
++			.mmu_prefetch_max_offset  = 0x00001864,
++			.system_cache_cfg         = 0x00001868,
++			.addr_status_0            = 0x00001874,
++			.addr_status_1            = 0x00001878,
++			.addr_status_2            = 0x0000187C,
++			.addr_status_3            = 0x00001880,
++			.debug_status_cfg         = 0x00001884,
++			.debug_status_0           = 0x00001888,
++			.debug_status_1           = 0x0000188C,
++			.comp_group               = CAM_VFE_BUS_VER3_COMP_GRP_0,
++			.ubwc_regs                = NULL,
++		},
++		/* BUS Client 5 Stats BE */
++		{
++			.cfg                      = 0x00001900,
++			.image_addr               = 0x00001904,
++			.frame_incr               = 0x00001908,
++			.image_cfg_0              = 0x0000190C,
++			.image_cfg_1              = 0x00001910,
++			.image_cfg_2              = 0x00001914,
++			.packer_cfg               = 0x00001918,
++			.bw_limiter_addr          = 0x0000191C,
++			.frame_header_addr        = 0x00001920,
++			.frame_header_incr        = 0x00001924,
++			.frame_header_cfg         = 0x00001928,
++			.irq_subsample_period     = 0x00001930,
++			.irq_subsample_pattern    = 0x00001934,
++			.mmu_prefetch_cfg         = 0x00001960,
++			.mmu_prefetch_max_offset  = 0x00001964,
++			.system_cache_cfg         = 0x00001968,
++			.addr_status_0            = 0x00001974,
++			.addr_status_1            = 0x00001978,
++			.addr_status_2            = 0x0000197C,
++			.addr_status_3            = 0x00001980,
++			.debug_status_cfg         = 0x00001984,
++			.debug_status_0           = 0x00001988,
++			.debug_status_1           = 0x0000198C,
++			.comp_group               = CAM_VFE_BUS_VER3_COMP_GRP_0,
++			.ubwc_regs                = NULL,
++		},
++		/* BUS Client 6 Stats BHIST*/
++		{
++			.cfg                      = 0x00001A00,
++			.image_addr               = 0x00001A04,
++			.frame_incr               = 0x00001A08,
++			.image_cfg_0              = 0x00001A0C,
++			.image_cfg_1              = 0x00001A10,
++			.image_cfg_2              = 0x00001A14,
++			.packer_cfg               = 0x00001A18,
++			.bw_limiter_addr          = 0x00001A1C,
++			.frame_header_addr        = 0x00001A20,
++			.frame_header_incr        = 0x00001A24,
++			.frame_header_cfg         = 0x00001A28,
++			.irq_subsample_period     = 0x00001A30,
++			.irq_subsample_pattern    = 0x00001A34,
++			.mmu_prefetch_cfg         = 0x00001A60,
++			.mmu_prefetch_max_offset  = 0x00001A64,
++			.system_cache_cfg         = 0x00001A68,
++			.addr_status_0            = 0x00001A74,
++			.addr_status_1            = 0x00001A78,
++			.addr_status_2            = 0x00001A7C,
++			.addr_status_3            = 0x00001A80,
++			.debug_status_cfg         = 0x00001A84,
++			.debug_status_0           = 0x00001A88,
++			.debug_status_1           = 0x00001A8C,
++			.comp_group               = CAM_VFE_BUS_VER3_COMP_GRP_0,
++			.ubwc_regs                = NULL,
++		},
++		/* BUS Client 7 GAMMA2 */
++		{
++			.cfg                      = 0x00001B00,
++			.image_addr               = 0x00001B04,
++			.frame_incr               = 0x00001B08,
++			.image_cfg_0              = 0x00001B0C,
++			.image_cfg_1              = 0x00001B10,
++			.image_cfg_2              = 0x00001B14,
++			.packer_cfg               = 0x00001B18,
++			.bw_limiter_addr          = 0x00001B1C,
++			.frame_header_addr        = 0x00001B20,
++			.frame_header_incr        = 0x00001B24,
++			.frame_header_cfg         = 0x00001B28,
++			.irq_subsample_period     = 0x00001B30,
++			.irq_subsample_pattern    = 0x00001B34,
++			.mmu_prefetch_cfg         = 0x00001B60,
++			.mmu_prefetch_max_offset  = 0x00001B64,
++			.system_cache_cfg         = 0x00001B68,
++			.addr_status_0            = 0x00001B74,
++			.addr_status_1            = 0x00001B78,
++			.addr_status_2            = 0x00001B7C,
++			.addr_status_3            = 0x00001B80,
++			.debug_status_cfg         = 0x00001B84,
++			.debug_status_0           = 0x00001B88,
++			.debug_status_1           = 0x00001B8C,
++			.comp_group               = CAM_VFE_BUS_VER3_COMP_GRP_0,
++			.ubwc_regs                = NULL,
++		},
++		/* BUS Client 8 GAMMA3 */
++		{
++			.cfg                      = 0x00001C00,
++			.image_addr               = 0x00001C04,
++			.frame_incr               = 0x00001C08,
++			.image_cfg_0              = 0x00001C0C,
++			.image_cfg_1              = 0x00001C10,
++			.image_cfg_2              = 0x00001C14,
++			.packer_cfg               = 0x00001C18,
++			.bw_limiter_addr          = 0x00001C1C,
++			.frame_header_addr        = 0x00001C20,
++			.frame_header_incr        = 0x00001C24,
++			.frame_header_cfg         = 0x00001C28,
++			.irq_subsample_period     = 0x00001C30,
++			.irq_subsample_pattern    = 0x00001C34,
++			.mmu_prefetch_cfg         = 0x00001C60,
++			.mmu_prefetch_max_offset  = 0x00001C64,
++			.system_cache_cfg         = 0x00001C68,
++			.addr_status_0            = 0x00001C74,
++			.addr_status_1            = 0x00001C78,
++			.addr_status_2            = 0x00001C7C,
++			.addr_status_3            = 0x00001C80,
++			.debug_status_cfg         = 0x00001C84,
++			.debug_status_0           = 0x00001C88,
++			.debug_status_1           = 0x00001C8C,
++			.comp_group               = CAM_VFE_BUS_VER3_COMP_GRP_0,
++			.ubwc_regs                = NULL,
++		},
++	},
++	.num_out = 6,
++	.vfe_out_hw_info = {
++		{
++			.vfe_out_type  = CAM_VFE_BUS_VER3_VFE_OUT_RDI0,
++			.max_width     = -1,
++			.max_height    = -1,
++			.source_group  = CAM_VFE_BUS_VER3_SRC_GRP_1,
++			.num_wm        = 1,
++			.mid           = vfe695x_out_port_mid[0],
++			.num_mid       = 1,
++			.line_based    = 1,
++			.wm_idx        = {
++				0,
++			},
++			.name          = {
++				"RDI_0",
++			},
++		},
++		{
++			.vfe_out_type  = CAM_VFE_BUS_VER3_VFE_OUT_RDI1,
++			.max_width     = -1,
++			.max_height    = -1,
++			.source_group  = CAM_VFE_BUS_VER3_SRC_GRP_2,
++			.num_wm        = 1,
++			.mid           = vfe695x_out_port_mid[1],
++			.num_mid       = 1,
++			.line_based    = 1,
++			.wm_idx        = {
++				1,
++			},
++			.name          = {
++				"RDI_1",
++			},
++		},
++		{
++			.vfe_out_type  = CAM_VFE_BUS_VER3_VFE_OUT_RDI2,
++			.max_width     = -1,
++			.max_height    = -1,
++			.source_group  = CAM_VFE_BUS_VER3_SRC_GRP_3,
++			.num_wm        = 1,
++			.mid           = vfe695x_out_port_mid[2],
++			.num_mid       = 1,
++			.line_based    = 1,
++			.wm_idx        = {
++				2,
++			},
++			.name          = {
++				"RDI_2",
++			},
++		},
++		{
++			.vfe_out_type  = CAM_VFE_BUS_VER3_VFE_OUT_RDI3,
++			.max_width     = -1,
++			.max_height    = -1,
++			.source_group  = CAM_VFE_BUS_VER3_SRC_GRP_4,
++			.num_wm        = 1,
++			.mid           = vfe695x_out_port_mid[3],
++			.num_mid       = 1,
++			.line_based    = 1,
++			.wm_idx        = {
++				3,
++			},
++			.name          = {
++				"RDI_3",
++			},
++		},
++		{
++			.vfe_out_type  =
++				CAM_VFE_BUS_VER3_VFE_OUT_PREPROCESS_RAW,
++			.max_width     = 1920,
++			.max_height    = 1080,
++			.source_group  = CAM_VFE_BUS_VER3_SRC_GRP_0,
++			.num_wm        = 1,
++			.mid           = vfe695x_out_port_mid[4],
++			.num_mid       = 1,
++			.wm_idx        = {
++				4,
++			},
++			.name          = {
++				"PREPROCESS_RAW",
++			},
++		},
++		{
++			.vfe_out_type  = CAM_VFE_BUS_VER3_VFE_OUT_STATS_BG,
++			.max_width     = -1,
++			.max_height    = -1,
++			.source_group  = CAM_VFE_BUS_VER3_SRC_GRP_0,
++			.num_wm        = 1,
++			.mid           = vfe695x_out_port_mid[5],
++			.num_mid       = 1,
++			.wm_idx        = {
++				5,
++			},
++			.name          = {
++				"STATS_BG",
++			},
++		},
++	},
++	.num_comp_grp    = 5,
++	.support_consumed_addr = true,
++	.comp_done_mask = {
++		BIT(0), BIT(1), BIT(2), BIT(3), BIT(4),
++	},
++	.top_irq_shift   = 0,
++	.max_out_res = CAM_ISP_IFE_OUT_RES_BASE + 33,
++};
++
++static struct cam_vfe_irq_hw_info vfe695x_irq_hw_info = {
++	.reset_mask    = 0,
++	.supported_irq = CAM_VFE_HW_IRQ_CAP_LITE_EXT_CSID,
++	.top_irq_reg   = &vfe695x_top_irq_reg_info,
++};
++
++static struct cam_vfe_hw_info cam_vfe_lite695x_hw_info = {
++	.irq_hw_info                   = &vfe695x_irq_hw_info,
++
++	.bus_version                   = CAM_VFE_BUS_VER_3_0,
++	.bus_hw_info                   = &vfe695x_bus_hw_info,
++
++	.top_version                   = CAM_VFE_TOP_VER_4_0,
++	.top_hw_info                   = &vfe695x_top_hw_info,
++};
++
++#endif /* _CAM_VFE_LITE695X_H_ */
+diff --git a/camera/drivers/camera_main.c b/camera/drivers/camera_main.c
+index 476246b7e..1412ffc22 100644
+--- a/camera/drivers/camera_main.c
++++ b/camera/drivers/camera_main.c
+@@ -353,6 +353,9 @@ static const struct of_device_id camera_main_dt_match[] = {
+ #endif
+ #if defined(CONFIG_QCS615)
+ 	{.compatible = "qcom,camera_qcs615"},
++#endif
++#if defined(CONFIG_X1E80100)
++	{.compatible = "qcom,camera_x1e80100"},
+ #endif
+ 	{}
+ };
+diff --git a/config/x1e80100-camera.mk b/config/x1e80100-camera.mk
+new file mode 100644
+index 000000000..5633e7540
+--- /dev/null
++++ b/config/x1e80100-camera.mk
+@@ -0,0 +1,23 @@
++# SPDX-License-Identifier: GPL-2.0-only
++
++CONFIG_SPECTRA_ISP := y
++CONFIG_SPECTRA_SFE := y
++CONFIG_SPECTRA_ICP := y
++CONFIG_SPECTRA_JPEG := y
++CONFIG_SPECTRA_SENSOR := y
++CONFIG_SPECTRA_SENSOR_SYSFS_UTIL := y
++CONFIG_ENABLE_US_API := y
++CONFIG_X1E80100 := y
++
++# Flags to pass into C preprocessor
++ccflags-y += -DCONFIG_SPECTRA_ISP=1
++ccflags-y += -DCONFIG_SPECTRA_ICP=1
++ccflags-y += -DCONFIG_SPECTRA_JPEG=1
++ccflags-y += -DCONFIG_SPECTRA_SENSOR=1
++ccflags-y += -DCONFIG_SPECTRA_SENSOR_SYSFS_UTIL=1
++ccflags-y += -DCONFIG_X1E80100=1
++
++# External Dependencies
++ifeq ($(CONFIG_QCOM_VA_MINIDUMP), y)
++KBUILD_CPPFLAGS += -DCONFIG_QCOM_VA_MINIDUMP=1
++endif
+-- 
+2.34.1
+

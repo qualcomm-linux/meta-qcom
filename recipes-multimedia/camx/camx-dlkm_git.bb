@@ -6,8 +6,11 @@ LIC_FILES_CHKSUM = "file://LICENSE.txt;md5=b234ee4d69f5fce4486a80fdaf4a4263"
 SRC_URI = "git://github.com/qualcomm-linux/camera-driver.git;protocol=https;branch=camera-kernel.qclinux.0.0"
 
 PV = "0.0+git"
-SRCREV = "c62c54bb9c04efe5afb91576be55797aadf635f8"
+SRCREV = "eabb9fb5fa97fc0bb94d5ab93a7b6ce8c7e2ab6b"
 
+SRC_URI:append:qcom = " \
+    file:0001-Camera-kernel-change-for-hamoa.patch \
+"
 inherit module
 
 MAKE_TARGETS = "modules"

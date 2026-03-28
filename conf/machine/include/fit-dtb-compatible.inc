@@ -7,7 +7,7 @@
 FIT_DTB_COMPATIBLE[apq8016-sbc] = "qcom,apq8016-sbc"
 FIT_DTB_COMPATIBLE[apq8096-db820c] = "qcom,apq8096-sbc"
 FIT_DTB_COMPATIBLE[glymur-crd] = "qcom,glymur-crd"
-FIT_DTB_COMPATIBLE[hamoa-iot-evk] = " \
+FIT_DTB_COMPATIBLE[hamoa-iot-evk+hamoa-camera-camx] = " \
     qcom,hamoa-evk \
     qcom,hamoav2.1-evk \
 "

@@ -1,0 +1,2635 @@
+From d858d8b137dc742ec88bfb3d139234b4ff6519aa Mon Sep 17 00:00:00 2001
+From: Ignatius Michael Jihan <mignatiu@qti.qualcomm.com>
+Date: Tue, 24 Mar 2026 12:18:53 +0530
+Subject: [PATCH] hamoa dtsi_changes
+
+Signed-off-by: Ignatius Michael Jihan <mignatiu@qti.qualcomm.com>
+Upstream-Status: Inappropriate [Yocto specific]
+---
+ arch/arm64/boot/dts/qcom/Makefile             |    3 +
+ .../boot/dts/qcom/hamoa-camera-camx.dtso      |   24 +
+ .../boot/dts/qcom/hamoa-camera-sensor.dtsi    |   55 +
+ arch/arm64/boot/dts/qcom/hamoa-camera.dtsi    | 2487 +++++++++++++++++
+ .../dt-bindings/clock/qcom,x1e80100-camcc.h   |    1 +
+ 5 files changed, 2570 insertions(+)
+ create mode 100644 arch/arm64/boot/dts/qcom/hamoa-camera-camx.dtso
+ create mode 100644 arch/arm64/boot/dts/qcom/hamoa-camera-sensor.dtsi
+ create mode 100644 arch/arm64/boot/dts/qcom/hamoa-camera.dtsi
+
+diff --git a/arch/arm64/boot/dts/qcom/Makefile b/arch/arm64/boot/dts/qcom/Makefile
+index 856401e424da..09c2422f5682 100644
+--- a/arch/arm64/boot/dts/qcom/Makefile
++++ b/arch/arm64/boot/dts/qcom/Makefile
+@@ -16,10 +16,13 @@ dtb-$(CONFIG_ARCH_QCOM)	+= apq8096-ifc6640.dtb
+ dtb-$(CONFIG_ARCH_QCOM)	+= glymur-crd.dtb
+ dtb-$(CONFIG_ARCH_QCOM)	+= hamoa-iot-evk.dtb
+ dtb-$(CONFIG_ARCH_QCOM)	+= hamoa-iot-evk-camera-imx577.dtbo
++dtb-$(CONFIG_ARCH_QCOM)	+= hamoa-camera.dtbo
++hamoa-camera-dtbs:= hamoa-iot-evk.dtb hamoa-camera-camx.dtbo
+ 
+ hamoa-iot-evk-camera-imx577-dtbs	:= hamoa-iot-evk.dtb hamoa-iot-evk-camera-imx577.dtbo
+ 
+ dtb-$(CONFIG_ARCH_QCOM)	+= hamoa-iot-evk-camera-imx577.dtb
++dtb-$(CONFIG_ARCH_QCOM)	+= hamoa-camera-camx.dtb
+ dtb-$(CONFIG_ARCH_QCOM)	+= ipq5018-rdp432-c2.dtb
+ dtb-$(CONFIG_ARCH_QCOM)	+= ipq5018-tplink-archer-ax55-v1.dtb
+ dtb-$(CONFIG_ARCH_QCOM)	+= ipq5332-rdp441.dtb
+diff --git a/arch/arm64/boot/dts/qcom/hamoa-camera-camx.dtso b/arch/arm64/boot/dts/qcom/hamoa-camera-camx.dtso
+new file mode 100644
+index 000000000000..909c51d18fb6
+--- /dev/null
++++ b/arch/arm64/boot/dts/qcom/hamoa-camera-camx.dtso
+@@ -0,0 +1,24 @@
++// SPDX-License-Identifier: BSD-3-Clause
++/*
++ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
++ */
++
++/dts-v1/;
++/plugin/;
++
++#include <dt-bindings/clock/qcom,x1e80100-camcc.h>
++#include <dt-bindings/interrupt-controller/arm-gic.h>
++#include <dt-bindings/power/qcom-rpmpd.h>
++#include <dt-bindings/gpio/gpio.h>
++#include <dt-bindings/phy/phy.h>
++#include <dt-bindings/pinctrl/qcom,pmic-gpio.h>
++
++#include <dt-bindings/interconnect/qcom,x1e80100-rpmh.h>
++#include <dt-bindings/clock/qcom,x1e80100-gcc.h>
++#include <dt-bindings/interrupt-controller/arm-gic.h>
++#include <dt-bindings/power/qcom-rpmpd.h>
++#include <dt-bindings/interconnect/qcom,icc.h>
++
++
++#include "hamoa-camera.dtsi"
++#include "hamoa-camera-sensor.dtsi"
+diff --git a/arch/arm64/boot/dts/qcom/hamoa-camera-sensor.dtsi b/arch/arm64/boot/dts/qcom/hamoa-camera-sensor.dtsi
+new file mode 100644
+index 000000000000..1a4e41e8cd93
+--- /dev/null
++++ b/arch/arm64/boot/dts/qcom/hamoa-camera-sensor.dtsi
+@@ -0,0 +1,55 @@
++// SPDX-License-Identifier: BSD-3-Clause
++/*
++ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
++ */
++
++#include <dt-bindings/camera/msm-camera.h>
++
++&cam_cci1 {
++
++	/*cam0-cmk_imx577*/
++	qcom,cam-sensor0 {
++		compatible = "qcom,cam-sensor";
++		csiphy-sd-index = <1>;
++		sensor-position-roll = <0>;
++		sensor-position-pitch = <0>;
++		sensor-position-yaw = <180>;
++		cam_vio-supply = <&vreg_s4a>;
++		regulator-names = "cam_vio";
++		power-domains = <&camcc CAM_CC_TITAN_TOP_GDSC>;
++		rgltr-cntrl-support;
++		pwm-switch;
++		rgltr-min-voltage = <1800000>;
++		rgltr-max-voltage = <1800000>;
++		rgltr-load-current = <120000>;
++		gpio-no-mux = <0>;
++		pinctrl-names = "cam_default", "cam_suspend";
++		pinctrl-0 = <&cam_sensor_mclk1_active
++			     &cam_sensor_active_rst1>;
++		pinctrl-1 = <&cam_sensor_mclk1_suspend
++			     &cam_sensor_suspend_rst1>;
++		gpios = <&tlmm 97 0>,
++			<&tlmm 110 0>,
++			<&tlmm 19 0>;
++		gpio-reset = <1>;
++		gpio-custom1 = <2>;
++		gpio-req-tbl-num = <0 1 2>;
++		gpio-req-tbl-flags = <1 0 0>;
++		gpio-req-tbl-label = "CAM_MCLK1", "CAMIF_RESET1", "CAM_CUSTOM1";
++		cci-master = <0>;
++		clocks = <&camcc CAM_CC_MCLK1_CLK>;
++		clock-names = "cam_clk";
++		clock-cntl-level = "nominal";
++		clock-rates = <24000000>;
++		cell-index = <0>;
++		status = "ok";
++	};
++
++};
++
++&soc {
++	qcom,cam-res-mgr {
++		compatible = "qcom,cam-res-mgr";
++		status = "ok";
++	};
++};
+diff --git a/arch/arm64/boot/dts/qcom/hamoa-camera.dtsi b/arch/arm64/boot/dts/qcom/hamoa-camera.dtsi
+new file mode 100644
+index 000000000000..26370815acc1
+--- /dev/null
++++ b/arch/arm64/boot/dts/qcom/hamoa-camera.dtsi
+@@ -0,0 +1,2487 @@
++// SPDX-License-Identifier: BSD-3-Clause
++/*
++ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
++ */
++
++#include <dt-bindings/camera/msm-camera.h>
++#include <dt-bindings/clock/qcom,x1e80100-camcc.h>
++
++&soc {
++	cam_icp: qcom,icp@ac01000 {
++		compatible = "qcom,cam-icp_v2";
++		icp-version = <0x0200>;
++		reg = <0x0 0xac01000 0x0 0x400>,
++		      <0x0 0xac01800 0x0 0x400>,
++		      <0x0 0x0ac04000 0x0 0x1000>;
++		reg-names = "icp_csr", "icp_cirq", "icp_wd0";
++		reg-cam-base = <0x1000 0x1800 0x4000>;
++		interrupts = <GIC_SPI 463 IRQ_TYPE_EDGE_RISING>;
++		interrupt-names = "icp";
++		power-domains = <&camcc CAM_CC_TITAN_TOP_GDSC>;
++		memory-region = <&camera_mem>;
++		clocks = <&camcc CAM_CC_ICP_AHB_CLK>,
++			 <&camcc CAM_CC_ICP_CLK_SRC>,
++			 <&camcc CAM_CC_ICP_CLK>;
++		clock-names = "icp_ahb_clk",
++			      "icp_clk_src",
++			      "icp_clk";
++		clock-rates = <0 300000000 0>,
++			      <0 400000000 0>,
++			      <0 480000000 0>,
++			      <0 600000000 0>;
++		clock-cntl-level = "lowsvsd1", "lowsvs", "svs", "nominal";
++		nrt-device;
++		src-clock-name = "icp_clk_src";
++		operating-points-v2 = <&icp_opp_table>;
++		clock-control-debugfs = "true";
++		fw_name = "qcom/x1e80100/CAMERA_ICP";
++		ubwc-ipe-fetch-cfg = <0x707b 0x7083>;
++		ubwc-ipe-write-cfg = <0x161ef 0x1620f>;
++		ubwc-bps-fetch-cfg = <0x707b 0x7083>;
++		ubwc-bps-write-cfg = <0x161ef 0x1620f>;
++		qos-val = <0x00000A0A>;
++		cam_hw_pid = <3>;
++		cell-index = <0>;
++		status = "okay";
++
++		icp_opp_table: opp-table {
++			compatible = "operating-points-v2";
++
++			opp-300000000 {
++				opp-hz = /bits/ 64 <300000000>;
++				required-opps = <&rpmhpd_opp_low_svs_d1>;
++			};
++
++			opp-400000000 {
++				opp-hz = /bits/ 64 <400000000>;
++				required-opps = <&rpmhpd_opp_low_svs>;
++			};
++
++			opp-480000000 {
++				opp-hz = /bits/ 64 <480000000>;
++				required-opps = <&rpmhpd_opp_svs>;
++			};
++
++			opp-600000000 {
++				opp-hz = /bits/ 64 <600000000>;
++				required-opps = <&rpmhpd_opp_nom>;
++			};
++		};
++	};
++
++	cam_cpas: qcom,cam-cpas@ac13000 {
++		compatible = "qcom,cam-cpas";
++		label = "cpas";
++		arch-compat = "cpas_top";
++		reg = <0x0 0xac13000 0x0 0x1000>,
++		      <0x0 0xac19000 0x0 0xC000>,
++		      <0x0 0xbbf0000 0x0 0x1F00>;
++		reg-names = "cam_cpas_top", "cam_camnoc", "cam_rpmh";
++		reg-cam-base = <0x13000 0x19000 0x0bbf0000>;
++		interrupts = <GIC_SPI 459 IRQ_TYPE_EDGE_RISING>;
++		interrupt-names = "cpas_camnoc";
++		camnoc-axi-min-ib-bw = <3000000000>;
++		power-domains = <&camcc CAM_CC_TITAN_TOP_GDSC>;
++		clocks = <&gcc GCC_CAMERA_AHB_CLK>,
++			 <&gcc GCC_CAMERA_HF_AXI_CLK>,
++			 <&gcc GCC_CAMERA_SF_AXI_CLK>,
++			 <&camcc CAM_CC_SLOW_AHB_CLK_SRC>,
++			 <&camcc CAM_CC_CPAS_AHB_CLK>,
++			 <&camcc CAM_CC_CORE_AHB_CLK>,
++			 <&camcc CAM_CC_FAST_AHB_CLK_SRC>,
++			 <&camcc CAM_CC_CPAS_FAST_AHB_CLK>,
++			 <&camcc CAM_CC_CAMNOC_AXI_RT_CLK_SRC>,
++			 <&camcc CAM_CC_CAMNOC_AXI_RT_CLK>,
++			 <&camcc CAM_CC_CAMNOC_AXI_NRT_CLK>;
++		clock-names = "gcc_ahb_clk",
++			      "gcc_axi_hf_clk",
++			      "gcc_axi_sf_clk",
++			      "cam_cc_slow_ahb_clk_src",
++			      "cpas_ahb_clk",
++			      "cpas_core_ahb_clk",
++			      "cam_cc_fast_ahb_clk_src",
++			      "cam_cc_cpas_fast_ahb_clk",
++			      "camnoc_axi_clk_src",
++			      "camnoc_axi_clk",
++			      "camnoc_axi_nrt_clk";
++		clock-rates = < 0 0 0 0 0 0 0 0 0 0 0 >,
++			      < 0 0 0 64000000 0 0  80000000 0 240000000 0 0 >,
++			      < 0 0 0 80000000 0 0 100000000 0 300000000 0 0 >,
++			      < 0 0 0 80000000 0 0 200000000 0 400000000 0 0 >;
++		clock-cntl-level = "suspend", "lowsvsd1", "lowsvs", "nominal";
++		clock-names-option = "cam_icp_clk";
++		clocks-option = <&camcc CAM_CC_ICP_CLK>;
++		clock-rates-option = <400000000>;
++		src-clock-name = "camnoc_axi_clk_src";
++		operating-points-v2 = <&cpas_opp_table>;
++		control-camnoc-axi-clk;
++		camnoc-bus-width = <32>;
++		cam-icc-path-names = "cam_ahb";
++		camnoc-axi-clk-bw-margin-perc = <20>;
++		interconnects =<&gem_noc MASTER_APPSS_PROC 0 &config_noc SLAVE_CAMERA_CFG 0>,
++			       <&mmss_noc MASTER_CAMNOC_HF 0 &mc_virt SLAVE_EBI1 0>,
++			       <&mmss_noc MASTER_CAMNOC_SF 0 &mc_virt SLAVE_EBI1 0>,
++			       <&mmss_noc MASTER_CAMNOC_ICP 0 &mc_virt SLAVE_EBI1 0>;
++		interconnect-names = "cam_ahb",
++				     "cam_hf_0",
++				     "cam_sf_0",
++				     "cam_sf_icp";
++		rpmh-bcm-info = <12 0x4 0x800 0 4>;
++		cam-ahb-num-cases = <8>;
++		cam-ahb-bw-KBps = <0 0>, <0 76800>, <0 76800>, <0 150000>,
++				  <0 150000>, <0 300000>, <0 300000>, <0 300000>;
++		vdd-corners = <RPMH_REGULATOR_LEVEL_RETENTION
++			       RPMH_REGULATOR_LEVEL_MIN_SVS
++			       RPMH_REGULATOR_LEVEL_LOW_SVS
++			       RPMH_REGULATOR_LEVEL_SVS
++			       RPMH_REGULATOR_LEVEL_SVS_L1
++			       RPMH_REGULATOR_LEVEL_NOM
++			       RPMH_REGULATOR_LEVEL_NOM_L1
++			       RPMH_REGULATOR_LEVEL_NOM_L2
++			       RPMH_REGULATOR_LEVEL_TURBO
++			       RPMH_REGULATOR_LEVEL_TURBO_L1>;
++		vdd-corner-ahb-mapping = "suspend", "lowsvs",
++					 "lowsvs", "svs", "svs_l1",
++					 "nominal", "nominal", "nominal",
++					 "turbo", "turbo";
++		client-id-based;
++		client-names = "csiphy0", "csiphy1", "csiphy2", "csiphy4",
++			       "cci0", "cci1", "csid0", "csid1", "csid2",
++			       "csid3", "ife0", "ife1", "ife2", "ife3", "sfe0",
++			       "ipe0", "rt-cdm0", "rt-cdm1", "rt-cdm2",
++			       "rt-cdm3", "cam-cdm-intf0", "bps0", "icp0",
++			       "jpeg-dma0", "jpeg-enc0", "tpg13", "tpg14",
++			       "tpg15";
++		cell-index = <0>;
++		status = "okay";
++
++		camera-bus-nodes {
++			level0-nodes {
++				level-index = <0>;
++
++				bps0_all_rd: bps0-all-rd {
++					cell-index = <0>;
++					node-name = "bps0-all-rd";
++					client-name = "bps0";
++					traffic-data = <CAM_CPAS_PATH_DATA_ALL>;
++					traffic-transaction-type = <CAM_CPAS_TRANSACTION_READ>;
++					parent-node = <&level2_nrt0_rd>;
++				};
++
++				bps0_all_wr: bps0-all-wr {
++					cell-index = <1>;
++					node-name = "bps0-all-wr";
++					client-name = "bps0";
++					traffic-data = <CAM_CPAS_PATH_DATA_ALL>;
++					traffic-transaction-type = <CAM_CPAS_TRANSACTION_WRITE>;
++					parent-node = <&level2_nrt0_wr>;
++				};
++
++				icp0_all_rd: icp0-all-rd {
++					cell-index = <2>;
++					node-name = "icp0-all-rd";
++					client-name = "icp0";
++					traffic-data = <CAM_CPAS_PATH_DATA_ALL>;
++					traffic-transaction-type = <CAM_CPAS_TRANSACTION_READ>;
++					parent-node = <&level2_nrt1_rd>;
++				};
++
++				ife0_linear_stats_wr: ife0-linear-stats-wr {
++					cell-index = <3>;
++					node-name = "ife0-linear-stats-wr";
++					client-name = "ife0";
++					traffic-data = <CAM_CPAS_PATH_DATA_IFE_LINEAR_STATS>;
++					traffic-transaction-type = <CAM_CPAS_TRANSACTION_WRITE>;
++					constituent-paths = <CAM_CPAS_PATH_DATA_IFE_LINEAR
++							     CAM_CPAS_PATH_DATA_IFE_STATS>;
++					parent-node = <&level1_rt0_wr3>;
++				};
++
++				ife0_pdaf_wr: ife0-pdaf-wr {
++					cell-index = <4>;
++					node-name = "ife0-pdaf-wr";
++					client-name = "ife0";
++					traffic-data = <CAM_CPAS_PATH_DATA_IFE_PDAF>;
++					traffic-transaction-type = <CAM_CPAS_TRANSACTION_WRITE>;
++					parent-node = <&level1_rt0_wr2>;
++				};
++
++				ife0_rdi_pixel_raw_wr: ife0-rdi-pixel-raw-wr {
++					cell-index = <5>;
++					node-name = "ife0-rdi-pixel-raw-wr";
++					client-name = "ife0";
++					traffic-data = <CAM_CPAS_PATH_DATA_IFE_RDI_PIXEL_RAW>;
++					traffic-transaction-type = <CAM_CPAS_TRANSACTION_WRITE>;
++					constituent-paths = <CAM_CPAS_PATH_DATA_IFE_RDI0
++							     CAM_CPAS_PATH_DATA_IFE_RDI1
++							     CAM_CPAS_PATH_DATA_IFE_RDI2
++							     CAM_CPAS_PATH_DATA_IFE_PIXEL_RAW>;
++					parent-node = <&level1_rt0_wr1>;
++				};
++
++				ife0_ubwc_wr: ife0-ubwc-wr {
++					cell-index = <6>;
++					node-name = "ife0-ubwc-wr";
++					client-name = "ife0";
++					traffic-data = <CAM_CPAS_PATH_DATA_IFE_UBWC>;
++					traffic-transaction-type = <CAM_CPAS_TRANSACTION_WRITE>;
++					constituent-paths = <CAM_CPAS_PATH_DATA_IFE_VID
++							     CAM_CPAS_PATH_DATA_IFE_DISP>;
++					parent-node = <&level1_rt0_wr0>;
++				};
++
++				ife1_linear_stats_wr: ife1-linear-stats-wr {
++					cell-index = <7>;
++					node-name = "ife1-linear-stats-wr";
++					client-name = "ife1";
++					traffic-data = <CAM_CPAS_PATH_DATA_IFE_LINEAR_STATS>;
++					traffic-transaction-type = <CAM_CPAS_TRANSACTION_WRITE>;
++					constituent-paths = <CAM_CPAS_PATH_DATA_IFE_LINEAR
++							     CAM_CPAS_PATH_DATA_IFE_STATS>;
++					parent-node = <&level1_rt0_wr3>;
++				};
++
++				ife1_pdaf_wr: ife1-pdaf-wr {
++					cell-index = <8>;
++					node-name = "ife1-pdaf-wr";
++					client-name = "ife1";
++					traffic-data = <CAM_CPAS_PATH_DATA_IFE_PDAF>;
++					traffic-transaction-type = <CAM_CPAS_TRANSACTION_WRITE>;
++					parent-node = <&level1_rt0_wr2>;
++				};
++
++				ife1_rdi_pixel_raw_wr: ife1-rdi-pixel-raw-wr {
++					cell-index = <9>;
++					node-name = "ife1-rdi-pixel-raw-wr";
++					client-name = "ife1";
++					traffic-data = <CAM_CPAS_PATH_DATA_IFE_RDI_PIXEL_RAW>;
++					traffic-transaction-type = <CAM_CPAS_TRANSACTION_WRITE>;
++					constituent-paths = <CAM_CPAS_PATH_DATA_IFE_RDI0
++							     CAM_CPAS_PATH_DATA_IFE_RDI1
++							     CAM_CPAS_PATH_DATA_IFE_RDI2
++							     CAM_CPAS_PATH_DATA_IFE_PIXEL_RAW>;
++					parent-node = <&level1_rt0_wr1>;
++				};
++
++				ife1_ubwc_wr: ife1-ubwc-wr {
++					cell-index = <10>;
++					node-name = "ife1-ubwc-wr";
++					client-name = "ife1";
++					traffic-data = <CAM_CPAS_PATH_DATA_IFE_UBWC>;
++					traffic-transaction-type = <CAM_CPAS_TRANSACTION_WRITE>;
++					constituent-paths = <CAM_CPAS_PATH_DATA_IFE_VID
++							     CAM_CPAS_PATH_DATA_IFE_DISP>;
++					parent-node = <&level1_rt0_wr0>;
++				};
++
++				ife2_rdi_stats_pixel_raw_wr: ife2-rdi-stats-pixel-raw-wr {
++					cell-index = <11>;
++					node-name = "ife2-rdi-stats-pixel-raw-wr";
++					client-name = "ife2";
++					traffic-data = <CAM_CPAS_PATH_DATA_ALL>;
++					traffic-transaction-type = <CAM_CPAS_TRANSACTION_WRITE>;
++					constituent-paths = <CAM_CPAS_PATH_DATA_IFE_RDI0
++							     CAM_CPAS_PATH_DATA_IFE_RDI1
++							     CAM_CPAS_PATH_DATA_IFE_RDI2
++							     CAM_CPAS_PATH_DATA_IFE_RDI3
++							     CAM_CPAS_PATH_DATA_IFE_PIXEL_RAW
++							     CAM_CPAS_PATH_DATA_IFE_STATS>;
++					parent-node = <&level1_rt0_wr4>;
++				};
++
++				ife3_rdi_stats_pixel_raw_wr: ife3-rdi-stats-pixel-raw-wr {
++					cell-index = <12>;
++					node-name = "ife3-rdi-stats-pixel-raw-wr";
++					client-name = "ife3";
++					traffic-data = <CAM_CPAS_PATH_DATA_ALL>;
++					traffic-transaction-type = <CAM_CPAS_TRANSACTION_WRITE>;
++					constituent-paths = <CAM_CPAS_PATH_DATA_IFE_RDI0
++							     CAM_CPAS_PATH_DATA_IFE_RDI1
++							     CAM_CPAS_PATH_DATA_IFE_RDI2
++							     CAM_CPAS_PATH_DATA_IFE_RDI3
++							     CAM_CPAS_PATH_DATA_IFE_PIXEL_RAW
++							     CAM_CPAS_PATH_DATA_IFE_STATS>;
++					parent-node = <&level1_rt0_wr4>;
++				};
++
++				ipe0_all_wr: ipe0-all-wr {
++					cell-index = <13>;
++					node-name = "ipe0-all-wr";
++					client-name = "ipe0";
++					traffic-data = <CAM_CPAS_PATH_DATA_ALL>;
++					traffic-transaction-type = <CAM_CPAS_TRANSACTION_WRITE>;
++					constituent-paths = <CAM_CPAS_PATH_DATA_IPE_WR_VID
++							     CAM_CPAS_PATH_DATA_IPE_WR_DISP
++							     CAM_CPAS_PATH_DATA_IPE_WR_REF>;
++					parent-node = <&level2_nrt0_wr>;
++				};
++
++				ipe0_in_rd: ipe0-in-rd {
++					cell-index = <14>;
++					node-name = "ipe0-in-rd";
++					client-name = "ipe0";
++					traffic-data = <CAM_CPAS_PATH_DATA_IPE_RD_IN>;
++					traffic-transaction-type = <CAM_CPAS_TRANSACTION_READ>;
++					parent-node = <&level2_nrt0_rd>;
++				};
++
++				ipe0_ref_rd: ipe0-ref-rd {
++					cell-index = <15>;
++					node-name = "ipe0-ref-rd";
++					client-name = "ipe0";
++					traffic-data = <CAM_CPAS_PATH_DATA_IPE_RD_REF>;
++					traffic-transaction-type = <CAM_CPAS_TRANSACTION_READ>;
++					parent-node = <&level2_nrt0_rd>;
++				};
++
++				jpeg_dma0_all_rd: jpeg-dma0-all-rd {
++					cell-index = <16>;
++					node-name = "jpeg-dma0-all-rd";
++					client-name = "jpeg-dma0";
++					traffic-data = <CAM_CPAS_PATH_DATA_ALL>;
++					traffic-transaction-type = <CAM_CPAS_TRANSACTION_READ>;
++					parent-node = <&level1_nrt0_rd0>;
++				};
++
++				jpeg_dma0_all_wr: jpeg-dma0-all-wr {
++					cell-index = <17>;
++					node-name = "jpeg-dma0-all-wr";
++					client-name = "jpeg-dma0";
++					traffic-data = <CAM_CPAS_PATH_DATA_ALL>;
++					traffic-transaction-type = <CAM_CPAS_TRANSACTION_WRITE>;
++					parent-node = <&level1_nrt0_wr0>;
++				};
++
++				jpeg_enc0_all_rd: jpeg-enc0-all-rd {
++					cell-index = <18>;
++					node-name = "jpeg-enc0-all-rd";
++					client-name = "jpeg-enc0";
++					traffic-data = <CAM_CPAS_PATH_DATA_ALL>;
++					traffic-transaction-type = <CAM_CPAS_TRANSACTION_READ>;
++					parent-node = <&level1_nrt0_rd0>;
++				};
++
++				jpeg_enc0_all_wr: jpeg-enc0-all-wr {
++					cell-index = <19>;
++					node-name = "jpeg-enc0-all-wr";
++					client-name = "jpeg-enc0";
++					traffic-data = <CAM_CPAS_PATH_DATA_ALL>;
++					traffic-transaction-type = <CAM_CPAS_TRANSACTION_WRITE>;
++					parent-node = <&level1_nrt0_wr0>;
++				};
++
++				rt_cdm0_all_rd: rt-cdm0-all-rd {
++					cell-index = <20>;
++					node-name = "rt-cdm0-all-rd";
++					client-name = "rt-cdm0";
++					traffic-data = <CAM_CPAS_PATH_DATA_ALL>;
++					traffic-transaction-type = <CAM_CPAS_TRANSACTION_READ>;
++					parent-node = <&level1_nrt0_rd1>;
++				};
++
++				rt_cdm1_all_rd: rt-cdm1-all-rd {
++					cell-index = <21>;
++					node-name = "rt-cdm1-all-rd";
++					client-name = "rt-cdm1";
++					traffic-data = <CAM_CPAS_PATH_DATA_ALL>;
++					traffic-transaction-type = <CAM_CPAS_TRANSACTION_READ>;
++					parent-node = <&level1_nrt0_rd1>;
++				};
++
++				/* IFE Lite 0 */
++				rt_cdm2_all_rd: rt-cdm2-all-rd {
++					cell-index = <22>;
++					node-name = "rt-cdm2-all-rd";
++					client-name = "rt-cdm2";
++					traffic-data = <CAM_CPAS_PATH_DATA_ALL>;
++					traffic-transaction-type = <CAM_CPAS_TRANSACTION_READ>;
++					parent-node = <&level1_nrt0_rd1>;
++				};
++
++				/* IFE Lite 1 */
++				rt_cdm3_all_rd: rt-cdm3-all-rd {
++					cell-index = <23>;
++					node-name = "rt-cdm3-all-rd";
++					client-name = "rt-cdm3";
++					traffic-data = <CAM_CPAS_PATH_DATA_ALL>;
++					traffic-transaction-type = <CAM_CPAS_TRANSACTION_READ>;
++					parent-node = <&level1_nrt0_rd1>;
++				};
++
++				sfe0_all_rd: sfe0-all-rd {
++					cell-index = <24>;
++					node-name = "sfe0-all-rd";
++					client-name = "sfe0";
++					traffic-data = <CAM_CPAS_PATH_DATA_ALL>;
++					traffic-transaction-type = <CAM_CPAS_TRANSACTION_READ>;
++					constituent-paths = <CAM_CPAS_PATH_DATA_SFE_NRDI
++							     CAM_CPAS_PATH_DATA_SFE_STATS
++							     CAM_CPAS_PATH_DATA_SFE_RDI0
++							     CAM_CPAS_PATH_DATA_SFE_RDI1
++							     CAM_CPAS_PATH_DATA_SFE_RDI2
++							     CAM_CPAS_PATH_DATA_SFE_RDI3
++							     CAM_CPAS_PATH_DATA_SFE_RDI4>;
++					parent-node = <&level2_rt0_rd>;
++				};
++
++				sfe0_rdi_stats_nrdi_wr: sfe0-rdi-stats-nrdi-wr {
++					cell-index = <25>;
++					node-name = "sfe0-rdi-stats-nrdi-wr";
++					client-name = "sfe0";
++					traffic-data = <CAM_CPAS_PATH_DATA_ALL>;
++					traffic-transaction-type = <CAM_CPAS_TRANSACTION_WRITE>;
++					constituent-paths = <CAM_CPAS_PATH_DATA_SFE_NRDI
++							     CAM_CPAS_PATH_DATA_SFE_STATS
++							     CAM_CPAS_PATH_DATA_SFE_RDI0
++							     CAM_CPAS_PATH_DATA_SFE_RDI1
++							     CAM_CPAS_PATH_DATA_SFE_RDI2
++							     CAM_CPAS_PATH_DATA_SFE_RDI3
++							     CAM_CPAS_PATH_DATA_SFE_RDI4>;
++					parent-node = <&level1_rt0_wr1>;
++				};
++			};
++
++			level1-nodes {
++				level-index = <1>;
++				camnoc-max-needed;
++
++				level1_nrt0_rd0: level1-nrt0-rd0 {
++					cell-index = <26>;
++					node-name = "level1-nrt0-rd0";
++					parent-node = <&level2_nrt0_rd>;
++					traffic-merge-type = <CAM_CPAS_TRAFFIC_MERGE_SUM>;
++				};
++
++				level1_nrt0_rd1: level1-nrt0-rd1 {
++					cell-index = <27>;
++					node-name = "level1-nrt0-rd1";
++					parent-node = <&level2_nrt0_rd>;
++					traffic-merge-type = <CAM_CPAS_TRAFFIC_MERGE_SUM>;
++				};
++
++				level1_nrt0_wr0: level1-nrt0-wr0 {
++					cell-index = <28>;
++					node-name = "level1-nrt0-wr0";
++					parent-node = <&level2_nrt0_wr>;
++					traffic-merge-type = <CAM_CPAS_TRAFFIC_MERGE_SUM>;
++				};
++
++				level1_rt0_rd0: level1-rt0-rd0 {
++					cell-index = <29>;
++					node-name = "level1-sfe-rd";
++					parent-node = <&level2_rt0_rd>;
++					traffic-merge-type = <CAM_CPAS_TRAFFIC_MERGE_SUM>;
++				};
++
++				level1_rt0_wr0: level1-rt0-wr0 {
++					cell-index = <30>;
++					node-name = "level1-ife-ubwc-wr";
++					parent-node = <&level2_rt0_wr>;
++					traffic-merge-type = <CAM_CPAS_TRAFFIC_MERGE_SUM>;
++				};
++
++				level1_rt0_wr1: level1-rt0-wr1 {
++					cell-index = <31>;
++					node-name = "level1-ife-rdi-wr";
++					parent-node = <&level2_rt0_wr>;
++					traffic-merge-type = <CAM_CPAS_TRAFFIC_MERGE_SUM>;
++				};
++
++				level1_rt0_wr2: level1-rt0-wr2 {
++					cell-index = <32>;
++					node-name = "level1-ife-pdaf";
++					parent-node = <&level2_rt0_wr>;
++					traffic-merge-type = <CAM_CPAS_TRAFFIC_MERGE_SUM>;
++				};
++
++				level1_rt0_wr3: level1-rt0-wr3 {
++					cell-index = <33>;
++					node-name = "level1-ife01-linear-stats";
++					parent-node = <&level2_rt0_wr>;
++					traffic-merge-type = <CAM_CPAS_TRAFFIC_MERGE_SUM>;
++				};
++
++				level1_rt0_wr4: level1-rt0-wr4 {
++					cell-index = <34>;
++					node-name = "level1-ifelite";
++					parent-node = <&level2_rt0_wr>;
++					traffic-merge-type = <CAM_CPAS_TRAFFIC_MERGE_SUM>;
++				};
++			};
++
++			level2-nodes {
++				level-index = <2>;
++				camnoc-max-needed;
++
++				level2_nrt0_rd: level2-nrt0-rd {
++					cell-index = <35>;
++					node-name = "level2-nrt0-rd";
++					parent-node = <&level3_nrt0_rd_wr_sum>;
++					traffic-merge-type =
++							<CAM_CPAS_TRAFFIC_MERGE_SUM_INTERLEAVE>;
++				};
++
++				level2_nrt0_wr: level2-nrt0-wr {
++					cell-index = <36>;
++					node-name = "level2-nrt0-wr";
++					parent-node = <&level3_nrt0_rd_wr_sum>;
++					traffic-merge-type =
++							<CAM_CPAS_TRAFFIC_MERGE_SUM_INTERLEAVE>;
++				};
++
++				level2_nrt1_rd: level2-nrt1-rd {
++					cell-index = <37>;
++					node-name = "level2-nrt1-rd";
++					parent-node = <&level3_nrt1_rd_wr_sum>;
++					traffic-merge-type = <CAM_CPAS_TRAFFIC_MERGE_SUM>;
++					bus-width-factor = <4>;
++				};
++
++				level2_rt0_rd: level2-rt0-rd {
++					cell-index = <38>;
++					node-name = "level2-rt0-rd";
++					parent-node = <&level3_rt0_rd_wr_sum>;
++					traffic-merge-type =
++							<CAM_CPAS_TRAFFIC_MERGE_SUM_INTERLEAVE>;
++				};
++
++				level2_rt0_wr: level2-rt0-wr {
++					cell-index = <39>;
++					node-name = "level2-rt0-wr";
++					parent-node = <&level3_rt0_rd_wr_sum>;
++					traffic-merge-type =
++							<CAM_CPAS_TRAFFIC_MERGE_SUM_INTERLEAVE>;
++				};
++
++			};
++
++			level3-nodes {
++				level-index = <3>;
++
++				level3_nrt0_rd_wr_sum: level3-nrt0-rd-wr-sum {
++					cell-index = <40>;
++					node-name = "level3-nrt0-rd-wr-sum";
++					traffic-merge-type = <CAM_CPAS_TRAFFIC_MERGE_SUM>;
++					qcom,axi-port-mnoc {
++						cam-icc-path-names = "cam_sf_0";
++					};
++				};
++
++				level3_nrt1_rd_wr_sum: level3-nrt1-rd-wr-sum {
++					cell-index = <41>;
++					node-name = "level3-nrt1-rd-wr-sum";
++					traffic-merge-type = <CAM_CPAS_TRAFFIC_MERGE_SUM>;
++					qcom,axi-port-mnoc {
++						cam-icc-path-names = "cam_sf_icp";
++					};
++				};
++
++				level3_rt0_rd_wr_sum: level3-rt0-rd-wr-sum {
++					cell-index = <42>;
++					node-name = "level3-rt0-rd-wr-sum";
++					traffic-merge-type = <CAM_CPAS_TRAFFIC_MERGE_SUM>;
++					ib-bw-voting-needed;
++					qcom,axi-port-mnoc {
++						cam-icc-path-names = "cam_hf_0";
++					};
++				};
++			};
++		};
++
++		cpas_opp_table: opp-table {
++			compatible = "operating-points-v2";
++
++			opp-240000000 {
++				opp-hz = /bits/ 64 <240000000>;
++				required-opps = <&rpmhpd_opp_low_svs_d1>;
++			};
++
++			opp-300000000 {
++				opp-hz = /bits/ 64 <300000000>;
++				required-opps = <&rpmhpd_opp_low_svs>;
++			};
++
++			opp-400000000 {
++				opp-hz = /bits/ 64 <400000000>;
++				required-opps = <&rpmhpd_opp_nom>;
++			};
++		};
++	};
++
++	cam_cci0: qcom,cci0@ac15000 {
++		compatible = "qcom,cci", "simple-bus";
++		reg = <0x0 0xac15000 0x0 0x1000>;
++		reg-names = "cci";
++		reg-cam-base = <0x15000>;
++		interrupts = <GIC_SPI 460 IRQ_TYPE_EDGE_RISING>;
++		interrupt-names = "cci0";
++		power-domains = <&camcc CAM_CC_TITAN_TOP_GDSC>;
++		clocks = <&camcc CAM_CC_CCI_0_CLK_SRC>,
++			 <&camcc CAM_CC_CCI_0_CLK>;
++		clock-names = "cci_0_clk_src",
++			      "cci_0_clk";
++		clock-rates = <37500000 0>;
++		clock-cntl-level = "lowsvs";
++		src-clock-name = "cci_0_clk_src";
++		operating-points-v2 = <&cci0_opp_table>;
++		pctrl-idx-mapping = <CCI_MASTER_1>;
++		pctrl-map-names = "m0";
++		pinctrl-names = "m0_active", "m0_suspend";
++		pinctrl-0 = <&cci0_m0_active>;
++		pinctrl-1 = <&cci0_m0_suspend>;
++		cell-index = <0>;
++		status = "okay";
++
++		cci0_opp_table: opp-table {
++			compatible = "operating-points-v2";
++
++			opp-37500000 {
++				opp-hz = /bits/ 64 <37500000>;
++				required-opps = <&rpmhpd_opp_low_svs>;
++			};
++		};
++
++		i2c_freq_custom_cci0: qcom,i2c-custom-mode {
++			hw-thigh = <16>;
++			hw-tlow = <22>;
++			hw-tsu-sto = <17>;
++			hw-tsu-sta = <18>;
++			hw-thd-dat = <16>;
++			hw-thd-sta = <15>;
++			hw-tbuf = <24>;
++			hw-scl-stretch-en = <1>;
++			hw-trdhld = <3>;
++			hw-tsp = <3>;
++			cci-clk-src = <37500000>;
++			status = "okay";
++		};
++
++		i2c_freq_400Khz_cci0: qcom,i2c-fast-mode {
++			hw-thigh = <38>;
++			hw-tlow = <56>;
++			hw-tsu-sto = <40>;
++			hw-tsu-sta = <40>;
++			hw-thd-dat = <22>;
++			hw-thd-sta = <35>;
++			hw-tbuf = <62>;
++			hw-scl-stretch-en = <0>;
++			hw-trdhld = <6>;
++			hw-tsp = <3>;
++			cci-clk-src = <37500000>;
++			status = "okay";
++		};
++
++		i2c_freq_1Mhz_cci0: qcom,i2c-fast-plus-mode {
++			hw-thigh = <16>;
++			hw-tlow = <22>;
++			hw-tsu-sto = <17>;
++			hw-tsu-sta = <18>;
++			hw-thd-dat = <16>;
++			hw-thd-sta = <15>;
++			hw-tbuf = <24>;
++			hw-scl-stretch-en = <0>;
++			hw-trdhld = <3>;
++			hw-tsp = <3>;
++			cci-clk-src = <37500000>;
++			status = "okay";
++		};
++
++		i2c_freq_100Khz_cci0: qcom,i2c-standard-mode {
++			hw-thigh = <201>;
++			hw-tlow = <174>;
++			hw-tsu-sto = <204>;
++			hw-tsu-sta = <231>;
++			hw-thd-dat = <22>;
++			hw-thd-sta = <162>;
++			hw-tbuf = <227>;
++			hw-scl-stretch-en = <0>;
++			hw-trdhld = <6>;
++			hw-tsp = <3>;
++			cci-clk-src = <37500000>;
++			status = "okay";
++		};
++	};
++
++	cam_cci1: qcom,cci1@ac16000 {
++		compatible = "qcom,cci", "simple-bus";
++		reg = <0x0 0xac16000 0x0 0x1000>;
++		reg-names = "cci";
++		reg-cam-base = <0x16000>;
++		interrupts = <GIC_SPI 271 IRQ_TYPE_EDGE_RISING>;
++		interrupt-names = "cci1";
++		power-domains = <&camcc CAM_CC_TITAN_TOP_GDSC>;
++		clocks = <&camcc CAM_CC_CCI_1_CLK_SRC>,
++			 <&camcc CAM_CC_CCI_1_CLK>;
++		clock-names = "cci_1_clk_src",
++			      "cci_1_clk";
++		clock-rates = <37500000 0>;
++		clock-cntl-level = "lowsvs";
++		src-clock-name = "cci_1_clk_src";
++		operating-points-v2 = <&cci1_opp_table>;
++		pctrl-idx-mapping = <CCI_MASTER_1>;
++		pctrl-map-names = "m1";
++		pinctrl-names = "m1_active", "m1_suspend";
++		pinctrl-0 = <&cci1_m1_scl3_active &cci1_m1_sda3_active>;
++		pinctrl-1 = <&cci1_m1_scl3_suspend &cci1_m1_sda3_suspend>;
++		cell-index = <1>;
++		status = "okay";
++
++		cci1_opp_table: opp-table {
++			compatible = "operating-points-v2";
++
++			opp-37500000 {
++				opp-hz = /bits/ 64 <37500000>;
++				required-opps = <&rpmhpd_opp_low_svs>;
++			};
++		};
++
++		i2c_freq_custom_cci1: qcom,i2c-custom-mode {
++			hw-thigh = <16>;
++			hw-tlow = <22>;
++			hw-tsu-sto = <17>;
++			hw-tsu-sta = <18>;
++			hw-thd-dat = <16>;
++			hw-thd-sta = <15>;
++			hw-tbuf = <24>;
++			hw-scl-stretch-en = <1>;
++			hw-trdhld = <3>;
++			hw-tsp = <3>;
++			cci-clk-src = <37500000>;
++			status = "okay";
++		};
++
++		i2c_freq_400Khz_cci1: qcom,i2c-fast-mode {
++			hw-thigh = <38>;
++			hw-tlow = <56>;
++			hw-tsu-sto = <40>;
++			hw-tsu-sta = <40>;
++			hw-thd-dat = <22>;
++			hw-thd-sta = <35>;
++			hw-tbuf = <62>;
++			hw-scl-stretch-en = <0>;
++			hw-trdhld = <6>;
++			hw-tsp = <3>;
++			cci-clk-src = <37500000>;
++			status = "okay";
++		};
++
++		i2c_freq_1Mhz_cci1: qcom,i2c-fast-plus-mode {
++			hw-thigh = <16>;
++			hw-tlow = <22>;
++			hw-tsu-sto = <17>;
++			hw-tsu-sta = <18>;
++			hw-thd-dat = <16>;
++			hw-thd-sta = <15>;
++			hw-tbuf = <24>;
++			hw-scl-stretch-en = <0>;
++			hw-trdhld = <3>;
++			hw-tsp = <3>;
++			cci-clk-src = <37500000>;
++			status = "okay";
++		};
++
++		i2c_freq_100Khz_cci1: qcom,i2c-standard-mode {
++			hw-thigh = <201>;
++			hw-tlow = <174>;
++			hw-tsu-sto = <204>;
++			hw-tsu-sta = <231>;
++			hw-thd-dat = <22>;
++			hw-thd-sta = <162>;
++			hw-tbuf = <227>;
++			hw-scl-stretch-en = <0>;
++			hw-trdhld = <6>;
++			hw-tsp = <3>;
++			cci-clk-src = <37500000>;
++			status = "okay";
++		};
++	};
++
++	qcom,rt-cdm0@ac25000 {
++		compatible = "qcom,cam-rt-cdm2_1";
++		label = "rt-cdm";
++		reg = <0x0 0xac25000 0x0 0x400>;
++		reg-names = "rt-cdm0";
++		reg-cam-base = <0x25000>;
++		interrupts = <GIC_SPI 456 IRQ_TYPE_EDGE_RISING>;
++		interrupt-names = "rt-cdm0";
++		power-domains = <&camcc CAM_CC_TITAN_TOP_GDSC>;
++		clocks = <&camcc CAM_CC_FAST_AHB_CLK_SRC>,
++			 <&camcc CAM_CC_CPAS_AHB_CLK>;
++		clock-names = "cam_cc_fast_ahb_clk_src",
++			      "cam_cc_cpas_ahb_clk";
++		src-clock-name = "cam_cc_fast_ahb_clk_src";
++		clock-rates = <400000000 0>;
++		clock-cntl-level = "nominal";
++		operating-points-v2 = <&cdm_cpas_opp_table0>;
++		nrt-device;
++		cdm-client-names = "ife0", "dualife0";
++		config-fifo;
++		fifo-depths = <64 0 0 0>;
++		cam_hw_pid = <25>;
++		cam-hw-mid = <0>;
++		single-context-cdm;
++		cell-index = <0>;
++		status = "okay";
++
++		cdm_cpas_opp_table0: opp-table {
++			compatible = "operating-points-v2";
++
++			opp-400000000 {
++				opp-hz = /bits/ 64 <400000000>;
++				required-opps = <&rpmhpd_opp_nom>;
++			};
++		};
++	};
++
++	qcom,rt-cdm1@ac26000 {
++		compatible = "qcom,cam-rt-cdm2_1";
++		label = "rt-cdm";
++		reg = <0x0 0xac26000 0x0 0x400>;
++		reg-names = "rt-cdm1";
++		reg-cam-base = <0x26000>;
++		interrupts = <GIC_SPI 287 IRQ_TYPE_EDGE_RISING>;
++		interrupt-names = "rt-cdm1";
++		power-domains = <&camcc CAM_CC_TITAN_TOP_GDSC>;
++		clocks = <&camcc CAM_CC_FAST_AHB_CLK_SRC>,
++			 <&camcc CAM_CC_CPAS_AHB_CLK>;
++		clock-names = "cam_cc_fast_ahb_clk_src",
++			      "cam_cc_cpas_ahb_clk";
++		clock-rates = <400000000 0>;
++		src-clock-name = "cam_cc_fast_ahb_clk_src";
++		clock-cntl-level = "nominal";
++		operating-points-v2 = <&cdm_cpas_opp_table1>;
++		nrt-device;
++		cdm-client-names = "ife1", "dualife1";
++		config-fifo;
++		fifo-depths = <64 0 0 0>;
++		cam_hw_pid = <26>;
++		cam-hw-mid = <0>;
++		single-context-cdm;
++		cell-index = <1>;
++		status = "okay";
++
++		cdm_cpas_opp_table1: opp-table {
++			compatible = "operating-points-v2";
++
++			opp-400000000 {
++				opp-hz = /bits/ 64 <400000000>;
++				required-opps = <&rpmhpd_opp_nom>;
++			};
++		};
++	};
++
++	cam_jpeg_enc: qcom,jpegenc@ac2a000 {
++		compatible = "qcom,cam_jpeg_enc_680";
++		reg = <0x0 0xac2a000 0x0 0x1000>,
++		      <0x0 0x0ac19000 0x0 0xc000>;
++		reg-names = "jpegenc_hw", "cam_camnoc";
++		reg-cam-base = <0x2a000 0x19000>;
++		interrupts = <GIC_SPI 474 IRQ_TYPE_EDGE_RISING>;
++		interrupt-names = "jpeg";
++		power-domains = <&camcc CAM_CC_TITAN_TOP_GDSC>;
++		shared-clks = <1 0>;
++		clocks = <&camcc CAM_CC_JPEG_CLK_SRC>,
++			 <&camcc CAM_CC_JPEG_CLK>;
++		clock-names = "jpegenc_clk_src",
++			      "jpegenc_clk";
++		clock-rates = <160000000 0>,
++			      <200000000 0>,
++			      <400000000 0>,
++			      <480000000 0>,
++			      <600000000 0>;
++		src-clock-name = "jpegenc_clk_src";
++		clock-cntl-level = "lowsvsd1", "lowsvs", "svs", "svs_l1", "nominal";
++		operating-points-v2 = <&jpeg_enc_opp_table>;
++		nrt-device;
++		cam_hw_pid = <12 14>;
++		cam_hw_rd_mid = <0>;
++		cam_hw_wr_mid = <1>;
++		cell-index = <0>;
++		status = "okay";
++
++		jpeg_enc_opp_table: opp-table {
++			compatible = "operating-points-v2";
++
++			opp-160000000 {
++				opp-hz = /bits/ 64 <160000000>;
++				required-opps = <&rpmhpd_opp_low_svs_d1>;
++			};
++
++			opp-200000000 {
++				opp-hz = /bits/ 64 <200000000>;
++				required-opps = <&rpmhpd_opp_low_svs>;
++			};
++
++			opp-400000000 {
++				opp-hz = /bits/ 64 <400000000>;
++				required-opps = <&rpmhpd_opp_svs>;
++			};
++
++			opp-48000000 {
++				opp-hz = /bits/ 64 <480000000>;
++				required-opps = <&rpmhpd_opp_svs_l1>;
++			};
++
++			opp-600000000 {
++				opp-hz = /bits/ 64 <600000000>;
++				required-opps = <&rpmhpd_opp_nom>;
++			};
++		};
++	};
++
++	cam_jpeg_dma: qcom,jpegdma@ac2b000 {
++		compatible = "qcom,cam_jpeg_dma_680";
++		reg = <0x0 0xac2b000 0x0 0x1000>,
++		      <0x0 0x0ac19000 0x0 0xc000>;
++		reg-names = "jpegdma_hw", "cam_camnoc";
++		reg-cam-base = <0x2b000 0x19000>;
++		interrupts = <GIC_SPI 475 IRQ_TYPE_EDGE_RISING>;
++		interrupt-names = "jpegdma";
++		power-domains = <&camcc CAM_CC_TITAN_TOP_GDSC>;
++		shared-clks = <1 0>;
++		clocks = <&camcc CAM_CC_JPEG_CLK_SRC>,
++			 <&camcc CAM_CC_JPEG_CLK>;
++		clock-names = "jpegdma_clk_src",
++			      "jpegdma_clk";
++		clock-rates = <160000000 0>,
++			      <200000000 0>,
++			      <400000000 0>,
++			      <480000000 0>,
++			      <600000000 0>;
++		src-clock-name = "jpegdma_clk_src";
++		clock-cntl-level = "lowsvsd1", "lowsvs", "svs", "svs_l1", "nominal";
++		operating-points-v2 = <&jpeg_dma_opp_table>;
++		nrt-device;
++		cam_hw_pid = <13 15>;
++		cam_hw_rd_mid = <0>;
++		cam_hw_wr_mid = <1>;
++		cell-index = <0>;
++		status = "okay";
++
++		jpeg_dma_opp_table: opp-table {
++			compatible = "operating-points-v2";
++
++			opp-160000000 {
++				opp-hz = /bits/ 64 <160000000>;
++				required-opps = <&rpmhpd_opp_low_svs_d1>;
++			};
++
++			opp-200000000 {
++				opp-hz = /bits/ 64 <200000000>;
++				required-opps = <&rpmhpd_opp_low_svs>;
++			};
++
++			opp-400000000 {
++				opp-hz = /bits/ 64 <400000000>;
++				required-opps = <&rpmhpd_opp_svs>;
++			};
++
++			opp-48000000 {
++				opp-hz = /bits/ 64 <480000000>;
++				required-opps = <&rpmhpd_opp_svs_l1>;
++			};
++
++			opp-600000000 {
++				opp-hz = /bits/ 64 <600000000>;
++				required-opps = <&rpmhpd_opp_nom>;
++			};
++		};
++	};
++
++	cam_bps: qcom,bps@ac2c000 {
++		compatible = "qcom,cam-bps680";
++		reg = <0x0 0xac2c000 0x0 0xb000>;
++		reg-names = "bps_top";
++		reg-cam-base = <0x2c000>;
++		power-domains = <&camcc CAM_CC_BPS_GDSC>;
++		clocks = <&camcc CAM_CC_BPS_AHB_CLK>,
++			 <&camcc CAM_CC_BPS_FAST_AHB_CLK>,
++			 <&camcc CAM_CC_BPS_CLK_SRC>,
++			 <&camcc CAM_CC_BPS_CLK>,
++			 <&camcc CAM_CC_CPAS_BPS_CLK>;
++		clock-names = "bps_ahb_clk",
++			      "bps_fast_ahb_clk",
++			      "bps_clk_src",
++			      "bps_clk",
++			      "cam_cc_cpas_bps_clk";
++		clock-rates = <0 0 160000000 0 0>,
++			      <0 0 200000000 0 0>,
++			      <0 0 400000000 0 0>,
++			      <0 0 600000000 0 0>;
++		clock-cntl-level = "lowsvsd1", "lowsvs", "svs", "nominal";
++		nrt-device;
++		src-clock-name = "bps_clk_src";
++		operating-points-v2 = <&bps_opp_table>;
++		clock-control-debugfs = "true";
++		cam_hw_pid = <6 7>;
++		cell-index = <0>;
++		status = "okay";
++
++		bps_opp_table: opp-table {
++			compatible = "operating-points-v2";
++
++			opp-160000000 {
++				opp-hz = /bits/ 64 <160000000>;
++				required-opps = <&rpmhpd_opp_low_svs_d1>;
++			};
++
++			opp-200000000 {
++				opp-hz = /bits/ 64 <200000000>;
++				required-opps = <&rpmhpd_opp_low_svs>;
++			};
++
++			opp-400000000 {
++				opp-hz = /bits/ 64 <400000000>;
++				required-opps = <&rpmhpd_opp_svs>;
++			};
++
++			opp-600000000 {
++				opp-hz = /bits/ 64 <600000000>;
++				required-opps = <&rpmhpd_opp_nom>;
++			};
++		};
++	};
++
++	cam_ipe0: qcom,ipe0@ac42000 {
++		compatible = "qcom,cam-ipe680";
++		reg = <0x0 0xac42000 0x0 0x18000>;
++		reg-names = "ipe0_top";
++		reg-cam-base = <0x42000>;
++		power-domains = <&camcc CAM_CC_IPE_0_GDSC>;
++		clocks = <&camcc CAM_CC_IPE_NPS_AHB_CLK>,
++			 <&camcc CAM_CC_IPE_NPS_FAST_AHB_CLK>,
++			 <&camcc CAM_CC_IPE_PPS_FAST_AHB_CLK>,
++			 <&camcc CAM_CC_IPE_NPS_CLK_SRC>,
++			 <&camcc CAM_CC_IPE_NPS_CLK>,
++			 <&camcc CAM_CC_IPE_PPS_CLK>,
++			 <&camcc CAM_CC_CPAS_IPE_NPS_CLK>;
++		clock-names = "ipe_nps_ahb_clk",
++			      "ipe_nps_fast_ahb_clk",
++			      "ipe_pps_fast_ahb_clk",
++			      "ipe_nps_clk_src",
++			      "ipe_nps_clk",
++			      "ipe_pps_clk",
++			      "cam_cc_cpas_ipe_nps_clk";
++		clock-rates = <0 0 0 304000000 0 0 0>,
++			      <0 0 0 364000000 0 0 0>,
++			      <0 0 0 500000000 0 0 0>,
++			      <0 0 0 600000000 0 0 0>,
++			      <0 0 0 700000000 0 0 0>;
++		clock-cntl-level = "lowsvsd1", "lowsvs", "svs", "svs_l1", "nominal";
++		nrt-device;
++		src-clock-name = "ipe_nps_clk_src";
++		operating-points-v2 = <&ipe0_opp_table>;
++		clock-control-debugfs = "true";
++		cam_hw_pid = <22 23 30>;
++		cell-index = <0>;
++		status = "okay";
++
++		ipe0_opp_table: opp-table {
++			compatible = "operating-points-v2";
++
++			opp-304000000 {
++				opp-hz = /bits/ 64 <304000000>;
++				required-opps = <&rpmhpd_opp_low_svs_d1>;
++			};
++
++			opp-364000000 {
++				opp-hz = /bits/ 64 <364000000>;
++				required-opps = <&rpmhpd_opp_low_svs>;
++			};
++
++			opp-500000000 {
++				opp-hz = /bits/ 64 <500000000>;
++				required-opps = <&rpmhpd_opp_svs>;
++			};
++
++			opp-600000000 {
++				opp-hz = /bits/ 64 <600000000>;
++				required-opps = <&rpmhpd_opp_svs_l1>;
++			};
++
++			opp-700000000 {
++				opp-hz = /bits/ 64 <700000000>;
++				required-opps = <&rpmhpd_opp_nom>;
++			};
++		};
++	};
++
++	cam_vfe0: qcom,ife0@ac62000 {
++		compatible = "qcom,vfe680";
++		reg = <0x0 0xac62000 0x0 0xf000>,
++		      <0x0 0xac19000 0x0 0xc000>;
++		reg-names = "ife", "cam_camnoc";
++		reg-cam-base = <0x62000 0x19000>;
++		rt-wrapper-base = <0x62000>;
++		interrupts = <GIC_SPI 465 IRQ_TYPE_EDGE_RISING>;
++		interrupt-names = "ife0";
++		power-domains = <&camcc CAM_CC_IFE_0_GDSC>;
++		clocks = <&camcc CAM_CC_IFE_0_FAST_AHB_CLK>,
++			 <&camcc CAM_CC_IFE_0_CLK_SRC>,
++			 <&camcc CAM_CC_IFE_0_CLK>,
++			 <&camcc CAM_CC_CPAS_IFE_0_CLK>;
++		clock-names = "ife_0_fast_ahb",
++			      "ife_0_clk_src",
++			      "ife_0_clk",
++			      "cam_cc_cpas_ife_0_clk";
++		clock-rates = <0 345600000 0 0>,
++			      <0 432000000 0 0>,
++			      <0 594000000 0 0>,
++			      <0 675000000 0 0>,
++			      <0 727000000 0 0>;
++		clock-cntl-level = "lowsvsd1", "lowsvs", "svs", "svs_l1", "nominal";
++		src-clock-name = "ife_0_clk_src";
++		operating-points-v2 = <&vfe0_opp_table>;
++		clock-control-debugfs = "true";
++		clock-names-option =  "ife_dsp_clk";
++		clocks-option = <&camcc CAM_CC_IFE_0_DSP_CLK>;
++		clock-rates-option = <594000000>;
++		ubwc-static-cfg = <0x1026 0x1036>;
++		cam_hw_pid = <16 4 20 8>;
++		cell-index = <0>;
++		status = "okay";
++
++		vfe0_opp_table: opp-table {
++			compatible = "operating-points-v2";
++
++			opp-345600000 {
++				opp-hz = /bits/ 64 <345600000>;
++				required-opps = <&rpmhpd_opp_low_svs_d1>;
++			};
++
++			opp-432000000 {
++				opp-hz = /bits/ 64 <432000000>;
++				required-opps = <&rpmhpd_opp_low_svs>;
++			};
++
++			opp-594000000 {
++				opp-hz = /bits/ 64 <594000000>;
++				required-opps = <&rpmhpd_opp_svs>;
++			};
++
++			opp-675000000 {
++				opp-hz = /bits/ 64 <675000000>;
++				required-opps = <&rpmhpd_opp_svs_l1>;
++			};
++
++			opp-727000000 {
++				opp-hz = /bits/ 64 <727000000>;
++				required-opps = <&rpmhpd_opp_nom>;
++			};
++		};
++	};
++
++	cam_vfe1: qcom,ife1@ac71000 {
++		compatible = "qcom,vfe680";
++		reg = <0x0 0xac71000 0x0 0xf000>,
++		      <0x0 0xac19000 0x0 0xc000>;
++		reg-names = "ife", "cam_camnoc";
++		reg-cam-base = <0x71000 0x19000>;
++		rt-wrapper-base = <0x62000>;
++		interrupts = <GIC_SPI 467 IRQ_TYPE_EDGE_RISING>;
++		interrupt-names = "ife1";
++		power-domains = <&camcc CAM_CC_IFE_1_GDSC>;
++		clocks = <&camcc CAM_CC_IFE_1_FAST_AHB_CLK>,
++			 <&camcc CAM_CC_IFE_1_CLK_SRC>,
++			 <&camcc CAM_CC_IFE_1_CLK>,
++			 <&camcc CAM_CC_CPAS_IFE_1_CLK>;
++		clock-names = "ife_1_fast_ahb",
++			      "ife_1_clk_src",
++			      "ife_1_clk",
++			      "cam_cc_cpas_ife_1_clk";
++		clock-rates = <0 345600000 0 0>,
++			      <0 432000000 0 0>,
++			      <0 594000000 0 0>,
++			      <0 675000000 0 0>,
++			      <0 727000000 0 0>;
++		clock-cntl-level = "lowsvsd1", "lowsvs", "svs", "svs_l1", "nominal";
++		src-clock-name = "ife_1_clk_src";
++		operating-points-v2 = <&vfe1_opp_table>;
++		clock-control-debugfs = "true";
++		clock-names-option =  "ife_dsp_clk";
++		clocks-option = <&camcc CAM_CC_IFE_1_DSP_CLK>;
++		clock-rates-option = <594000000>;
++		ubwc-static-cfg = <0x1026 0x1036>;
++		cam_hw_pid = <17 5 21 9>;
++		cell-index = <1>;
++		status = "okay";
++
++		vfe1_opp_table: opp-table {
++			compatible = "operating-points-v2";
++
++			opp-345600000 {
++				opp-hz = /bits/ 64 <345600000>;
++				required-opps = <&rpmhpd_opp_low_svs_d1>;
++			};
++
++			opp-432000000 {
++				opp-hz = /bits/ 64 <432000000>;
++				required-opps = <&rpmhpd_opp_low_svs>;
++			};
++
++			opp-594000000 {
++				opp-hz = /bits/ 64 <594000000>;
++				required-opps = <&rpmhpd_opp_svs>;
++			};
++
++			opp-675000000 {
++				opp-hz = /bits/ 64 <675000000>;
++				required-opps = <&rpmhpd_opp_svs_l1>;
++			};
++
++			opp-727000000 {
++				opp-hz = /bits/ 64 <727000000>;
++				required-opps = <&rpmhpd_opp_nom>;
++			};
++		};
++	};
++
++	cam_sfe0: qcom,sfe0@ac9e000 {
++		compatible = "qcom,sfe680";
++		reg = <0x0 0xac9e000 0x0 0x8000>;
++		reg-names = "sfe0";
++		reg-cam-base = <0x9e000>;
++		rt-wrapper-base = <0x62000>;
++		interrupts = <GIC_SPI 689 IRQ_TYPE_EDGE_RISING>;
++		interrupt-names = "sfe";
++		power-domains = <&camcc CAM_CC_SFE_0_GDSC>;
++		clocks = <&camcc CAM_CC_SFE_0_FAST_AHB_CLK>,
++			 <&camcc CAM_CC_SFE_0_CLK_SRC>,
++			 <&camcc CAM_CC_SFE_0_CLK>,
++			 <&camcc CAM_CC_CPAS_SFE_0_CLK>;
++		clock-names = "sfe_0_fast_ahb",
++			      "sfe_0_clk_src",
++			      "sfe_0_clk",
++			      "cam_cc_cpas_sfe_0_clk";
++		clock-rates = <0 345600000 0 0>,
++			      <0 432000000 0 0>,
++			      <0 594000000 0 0>,
++			      <0 675000000 0 0>,
++			      <0 727000000 0 0>;
++		clock-cntl-level = "lowsvsd1", "lowsvs", "svs", "svs_l1", "nominal";
++		src-clock-name = "sfe_0_clk_src";
++		operating-points-v2 = <&sfe0_opp_table>;
++		cam_hw_pid = <10 2>;
++		clock-control-debugfs = "true";
++		cell-index = <0>;
++		status = "okay";
++
++		sfe0_opp_table: opp-table {
++			compatible = "operating-points-v2";
++
++			opp-345600000 {
++				opp-hz = /bits/ 64 <345600000>;
++				required-opps = <&rpmhpd_opp_low_svs_d1>;
++			};
++
++			opp-432000000 {
++				opp-hz = /bits/ 64 <432000000>;
++				required-opps = <&rpmhpd_opp_low_svs>;
++			};
++
++			opp-594000000 {
++				opp-hz = /bits/ 64 <594000000>;
++				required-opps = <&rpmhpd_opp_svs>;
++			};
++
++			opp-675000000 {
++				opp-hz = /bits/ 64 <675000000>;
++				required-opps = <&rpmhpd_opp_svs_l1>;
++			};
++
++			opp-727000000 {
++				opp-hz = /bits/ 64 <727000000>;
++				required-opps = <&rpmhpd_opp_nom>;
++			};
++		};
++	};
++
++	cam_csid0: qcom,csid0@acb7000 {
++		compatible = "qcom,csid695";
++		reg = <0x0 0xacb7000 0x0 0xd00>,
++		      <0x0 0xacb6000 0x0 0x1000>;
++		reg-names = "csid", "csid_top";
++		reg-cam-base = <0xb7000 0xb6000>;
++		rt-wrapper-base = <0x62000>;
++		interrupts = <GIC_SPI 464 IRQ_TYPE_EDGE_RISING>;
++		interrupt-names = "csid0";
++		power-domains = <&camcc CAM_CC_TITAN_TOP_GDSC>;
++		shared-clks = <1 0 0>;
++		clocks = <&camcc CAM_CC_CSID_CLK_SRC>,
++			 <&camcc CAM_CC_CSID_CLK>,
++			 <&camcc CAM_CC_CSID_CSIPHY_RX_CLK>;
++		clock-names = "csid_clk_src",
++			      "csid_clk",
++			      "csiphy_rx_clk";
++		clock-rates = <300000000 0 0>,
++			      <400000000 0 0>,
++			      <480000000 0 0>;
++		clock-cntl-level = "lowsvsd1", "lowsvs", "nominal";
++		src-clock-name = "csid_clk_src";
++		operating-points-v2 = <&csid0_opp_table>;
++		clock-control-debugfs = "true";
++		cell-index = <0>;
++		status = "okay";
++
++		csid0_opp_table: opp-table {
++			compatible = "operating-points-v2";
++
++			opp-300000000 {
++				opp-hz = /bits/ 64 <300000000>;
++				required-opps = <&rpmhpd_opp_low_svs_d1>;
++			};
++
++			opp-400000000 {
++				opp-hz = /bits/ 64 <400000000>;
++				required-opps = <&rpmhpd_opp_low_svs>;
++			};
++
++			opp-480000000 {
++				opp-hz = /bits/ 64 <480000000>;
++				required-opps = <&rpmhpd_opp_nom>;
++			};
++		};
++	};
++
++	cam_csid1: qcom,csid1@acb9000 {
++		compatible = "qcom,csid695";
++		reg = <0x0 0xacb9000 0x0 0xd00>,
++		      <0x0 0xacb6000 0x0 0x1000>;
++		reg-names = "csid", "csid_top";
++		reg-cam-base = <0xb9000 0xb6000>;
++		rt-wrapper-base = <0x62000>;
++		interrupts = <GIC_SPI 466 IRQ_TYPE_EDGE_RISING>;
++		interrupt-names = "csid1";
++		power-domains = <&camcc CAM_CC_TITAN_TOP_GDSC>;
++		shared-clks = <1 0 0>;
++		clocks = <&camcc CAM_CC_CSID_CLK_SRC>,
++			 <&camcc CAM_CC_CSID_CLK>,
++			 <&camcc CAM_CC_CSID_CSIPHY_RX_CLK>;
++		clock-names = "csid_clk_src",
++			      "csid_clk",
++			      "csiphy_rx_clk";
++		clock-rates = <300000000 0 0>,
++			      <400000000 0 0>,
++			      <480000000 0 0>;
++		clock-cntl-level = "lowsvsd1", "lowsvs", "nominal";
++		src-clock-name = "csid_clk_src";
++		operating-points-v2 = <&csid1_opp_table>;
++		clock-control-debugfs = "true";
++		cell-index = <1>;
++		status = "okay";
++
++		csid1_opp_table: opp-table {
++			compatible = "operating-points-v2";
++
++			opp-300000000 {
++				opp-hz = /bits/ 64 <300000000>;
++				required-opps = <&rpmhpd_opp_low_svs_d1>;
++			};
++
++			opp-400000000 {
++				opp-hz = /bits/ 64 <400000000>;
++				required-opps = <&rpmhpd_opp_low_svs>;
++			};
++
++			opp-480000000 {
++				opp-hz = /bits/ 64 <480000000>;
++				required-opps = <&rpmhpd_opp_nom>;
++			};
++		};
++	};
++
++	cam_csid_lite0: qcom,csid-lite0@acc6000 {
++		compatible = "qcom,csid-lite680";
++		reg = <0x0 0xacc6000 0x0 0xa00>;
++		reg-names = "csid-lite";
++		rt-wrapper-base = <0xc6000>;
++		reg-cam-base = <0xc6000>;
++		interrupts = <GIC_SPI 468 IRQ_TYPE_EDGE_RISING>;
++		interrupt-names = "csid-lite0";
++		power-domains = <&camcc CAM_CC_TITAN_TOP_GDSC>;
++		shared-clks = <0 1 0 0 0 0>;
++		clocks = <&camcc CAM_CC_IFE_LITE_AHB_CLK>,
++			 <&camcc CAM_CC_IFE_LITE_CSID_CLK_SRC>,
++			 <&camcc CAM_CC_IFE_LITE_CSID_CLK>,
++			 <&camcc CAM_CC_IFE_LITE_CPHY_RX_CLK>,
++			 <&camcc CAM_CC_IFE_LITE_CLK>,
++			 <&camcc CAM_CC_CPAS_IFE_LITE_CLK>;
++		clock-names = "ife_lite_ahb_clk",
++			      "ife_lite_csid_clk_src",
++			      "ife_lite_csid_clk",
++			      "ife_lite_cphy_rx_clk",
++			      "ife_lite_clk",
++			      "cam_cc_cpas_ife_lite_clk";
++		clock-rates = <0 266666667 0 0 0 0>,
++			      <0 400000000 0 0 0 0>,
++			      <0 480000000 0 0 0 0>;
++		clock-cntl-level = "lowsvsd1", "lowsvs", "nominal";
++		src-clock-name = "ife_lite_csid_clk_src";
++		operating-points-v2 = <&csid_lite0_opp_table>;
++		clock-control-debugfs = "true";
++		cell-index = <2>;
++		status = "okay";
++
++		csid_lite0_opp_table: opp-table {
++			compatible = "operating-points-v2";
++
++			opp-266666667 {
++				opp-hz = /bits/ 64 <266666667>;
++				required-opps = <&rpmhpd_opp_low_svs_d1>;
++			};
++
++			opp-400000000 {
++				opp-hz = /bits/ 64 <400000000>;
++				required-opps = <&rpmhpd_opp_low_svs>;
++			};
++
++			opp-480000000 {
++				opp-hz = /bits/ 64 <480000000>;
++				required-opps = <&rpmhpd_opp_nom>;
++			};
++		};
++	};
++
++	cam_vfe_lite0: qcom,ife-lite0@acc6000 {
++		compatible = "qcom,vfe-lite695";
++		reg = <0x0 0xacc6000 0x0 0x4000>;
++		reg-names = "ife-lite";
++		rt-wrapper-base = <0xc6000>;
++		reg-cam-base = <0xc6000>;
++		interrupts = <GIC_SPI 469 IRQ_TYPE_EDGE_RISING>;
++		interrupt-names = "ife-lite0";
++		power-domains = <&camcc CAM_CC_TITAN_TOP_GDSC>;
++		shared-clks = <0 0 0 1 0 0>;
++		clocks = <&camcc CAM_CC_IFE_LITE_AHB_CLK>,
++			 <&camcc CAM_CC_IFE_LITE_CSID_CLK>,
++			 <&camcc CAM_CC_IFE_LITE_CPHY_RX_CLK>,
++			 <&camcc CAM_CC_IFE_LITE_CLK_SRC>,
++			 <&camcc CAM_CC_IFE_LITE_CLK>,
++			 <&camcc CAM_CC_CPAS_IFE_LITE_CLK>;
++		clock-names = "ife_lite_ahb_clk",
++			      "ife_lite_csid_clk",
++			      "ife_lite_cphy_rx_clk",
++			      "ife_lite_clk_src",
++			      "ife_lite_clk",
++			      "cam_cc_cpas_ife_lite_clk";
++		clock-rates = <0 0 0 266666667 0 0>,
++			      <0 0 0 400000000 0 0>,
++			      <0 0 0 480000000 0 0>;
++		clock-cntl-level = "lowsvsd1", "lowsvs", "nominal";
++		src-clock-name = "ife_lite_clk_src";
++		operating-points-v2 = <&vfe_lite0_opp_table>;
++		clock-control-debugfs = "true";
++		cam_hw_pid = <0>;
++		cell-index = <2>;
++		status = "okay";
++
++		vfe_lite0_opp_table: opp-table {
++			compatible = "operating-points-v2";
++
++			opp-266666667 {
++				opp-hz = /bits/ 64 <266666667>;
++				required-opps = <&rpmhpd_opp_low_svs_d1>;
++			};
++
++			opp-400000000 {
++				opp-hz = /bits/ 64 <400000000>;
++				required-opps = <&rpmhpd_opp_low_svs>;
++			};
++
++			opp-480000000 {
++				opp-hz = /bits/ 64 <480000000>;
++				required-opps = <&rpmhpd_opp_nom>;
++			};
++		};
++	};
++
++	cam_csid_lite1: qcom,csid-lite1@acca000 {
++		compatible = "qcom,csid-lite680";
++		reg = <0x0 0xacca000 0x0 0xa00>;
++		reg-names = "csid-lite";
++		rt-wrapper-base = <0xc6000>;
++		reg-cam-base = <0xca000>;
++		interrupts = <GIC_SPI 359 IRQ_TYPE_EDGE_RISING>;
++		interrupt-names = "csid-lite1";
++		power-domains = <&camcc CAM_CC_TITAN_TOP_GDSC>;
++		shared-clks = <0 1 0 0 0 0>;
++		clocks = <&camcc CAM_CC_IFE_LITE_AHB_CLK>,
++			 <&camcc CAM_CC_IFE_LITE_CSID_CLK_SRC>,
++			 <&camcc CAM_CC_IFE_LITE_CSID_CLK>,
++			 <&camcc CAM_CC_IFE_LITE_CPHY_RX_CLK>,
++			 <&camcc CAM_CC_IFE_LITE_CLK>,
++			 <&camcc CAM_CC_CPAS_IFE_LITE_CLK>;
++		clock-names = "ife_lite_ahb_clk",
++			      "ife_lite_csid_clk_src",
++			      "ife_lite_csid_clk",
++			      "ife_lite_cphy_rx_clk",
++			      "ife_lite_clk",
++			      "cam_cc_cpas_ife_lite_clk";
++		clock-rates = <0 266666667 0 0 0 0>,
++			      <0 400000000 0 0 0 0>,
++			      <0 480000000 0 0 0 0>;
++		clock-cntl-level = "lowsvsd1", "lowsvs", "nominal";
++		src-clock-name = "ife_lite_csid_clk_src";
++		operating-points-v2 = <&csid_lite1_opp_table>;
++		clock-control-debugfs = "true";
++		cell-index = <3>;
++		status = "okay";
++
++		csid_lite1_opp_table: opp-table {
++			compatible = "operating-points-v2";
++
++			opp-266666667 {
++				opp-hz = /bits/ 64 <266666667>;
++				required-opps = <&rpmhpd_opp_low_svs_d1>;
++			};
++
++			opp-400000000 {
++				opp-hz = /bits/ 64 <400000000>;
++				required-opps = <&rpmhpd_opp_low_svs>;
++			};
++
++			opp-480000000 {
++				opp-hz = /bits/ 64 <480000000>;
++				required-opps = <&rpmhpd_opp_nom>;
++			};
++		};
++	};
++
++	cam_vfe_lite1: qcom,ife-lite1@acca000 {
++		compatible = "qcom,vfe-lite695";
++		reg = <0x0 0xacca000 0x0 0x4000>;
++		reg-names = "ife-lite";
++		rt-wrapper-base = <0xc6000>;
++		reg-cam-base = <0xca000>;
++		interrupts = <GIC_SPI 360 IRQ_TYPE_EDGE_RISING>;
++		interrupt-names = "ife-lite1";
++		power-domains = <&camcc CAM_CC_TITAN_TOP_GDSC>;
++		shared-clks = <0 0 0 1 0 0>;
++		clocks = <&camcc CAM_CC_IFE_LITE_AHB_CLK>,
++			 <&camcc CAM_CC_IFE_LITE_CSID_CLK>,
++			 <&camcc CAM_CC_IFE_LITE_CPHY_RX_CLK>,
++			 <&camcc CAM_CC_IFE_LITE_CLK_SRC>,
++			 <&camcc CAM_CC_IFE_LITE_CLK>,
++			 <&camcc CAM_CC_CPAS_IFE_LITE_CLK>;
++		clock-names = "ife_lite_ahb",
++			      "ife_lite_csid_clk",
++			      "ife_lite_cphy_rx_clk",
++			      "ife_lite_clk_src",
++			      "ife_lite_clk",
++			      "cam_cc_cpas_ife_lite_clk";
++		clock-rates = <0 0 0 266666667 0 0>,
++			      <0 0 0 400000000 0 0>,
++			      <0 0 0 480000000 0 0>;
++		clock-cntl-level = "lowsvsd1", "lowsvs", "nominal";
++		src-clock-name = "ife_lite_clk_src";
++		operating-points-v2 = <&vfe_lite1_opp_table>;
++		clock-control-debugfs = "true";
++		cam_hw_pid = <1>;
++		cell-index = <3>;
++		status = "okay";
++
++		vfe_lite1_opp_table: opp-table {
++			compatible = "operating-points-v2";
++
++			opp-266666667 {
++				opp-hz = /bits/ 64 <266666667>;
++				required-opps = <&rpmhpd_opp_low_svs_d1>;
++			};
++
++			opp-400000000 {
++				opp-hz = /bits/ 64 <400000000>;
++				required-opps = <&rpmhpd_opp_low_svs>;
++			};
++
++			opp-480000000 {
++				opp-hz = /bits/ 64 <480000000>;
++				required-opps = <&rpmhpd_opp_nom>;
++			};
++		};
++	};
++
++	cam_csiphy0: qcom,csiphy0@ace4000 {
++		compatible = "qcom,csiphy-v2.1.2", "qcom,csiphy";
++		reg = <0x0 0xace4000 0x0 0x2000>;
++		reg-names = "csiphy";
++		reg-cam-base = <0xe4000>;
++		interrupts = <GIC_SPI 477 IRQ_TYPE_EDGE_RISING>;
++		interrupt-names = "CSIPHY0";
++		power-domains = <&camcc CAM_CC_TITAN_TOP_GDSC>;
++		regulator-names = "csi-vdd-1p2", "csi-vdd-0p9";
++		csi-vdd-1p2-supply = <&vreg_l1c_1p2>;
++		csi-vdd-0p9-supply = <&vreg_l2c_0p8>;
++		rgltr-cntrl-support;
++		rgltr-enable-sync = <1>;
++		rgltr-min-voltage = <1200000 880000>;
++		rgltr-max-voltage = <1200000 920000>;
++		rgltr-load-current = <58900 147000>;
++		shared-clks = <1 0 0 0>;
++		clocks = <&camcc CAM_CC_CPHY_RX_CLK_SRC>,
++			 <&camcc CAM_CC_CSIPHY0_CLK>,
++			 <&camcc CAM_CC_CSI0PHYTIMER_CLK_SRC>,
++			 <&camcc CAM_CC_CSI0PHYTIMER_CLK>;
++		clock-names = "cphy_rx_clk_src",
++			      "csiphy0_clk",
++			      "csi0phytimer_clk_src",
++			      "csi0phytimer_clk";
++		src-clock-name = "csi0phytimer_clk_src";
++		clock-cntl-level = "nominal";
++		clock-rates = <480000000 0 400000000 0>;
++		operating-points-v2 = <&csiphy0_opp_table>;
++		cell-index = <0>;
++		status = "okay";
++
++		csiphy0_opp_table: opp-table {
++			compatible = "operating-points-v2";
++
++			opp-400000000 {
++				opp-hz = /bits/ 64 <400000000>;
++				required-opps = <&rpmhpd_opp_nom>;
++			};
++		};
++	};
++
++	cam_csiphy1: qcom,csiphy1@ace6000 {
++		compatible = "qcom,csiphy-v2.1.2", "qcom,csiphy";
++		reg = <0x0 0xace6000 0x0 0x2000>;
++		reg-names = "csiphy";
++		reg-cam-base = <0xe6000>;
++		interrupts = <GIC_SPI 478 IRQ_TYPE_EDGE_RISING>;
++		interrupt-names = "CSIPHY1";
++		power-domains = <&camcc CAM_CC_TITAN_TOP_GDSC>;
++		regulator-names = "csi-vdd-1p2", "csi-vdd-0p9";
++		csi-vdd-1p2-supply = <&vreg_l1c_1p2>;
++		csi-vdd-0p9-supply = <&vreg_l2c_0p8>;
++		rgltr-cntrl-support;
++		rgltr-enable-sync = <1>;
++		rgltr-min-voltage = <1200000 880000>;
++		rgltr-max-voltage = <1200000 920000>;
++		rgltr-load-current = <58900 147000>;
++		shared-clks = <1 0 0 0>;
++		clocks = <&camcc CAM_CC_CPHY_RX_CLK_SRC>,
++			 <&camcc CAM_CC_CSIPHY1_CLK>,
++			 <&camcc CAM_CC_CSI1PHYTIMER_CLK_SRC>,
++			 <&camcc CAM_CC_CSI1PHYTIMER_CLK>;
++		clock-names = "cphy_rx_clk_src",
++			      "csiphy1_clk",
++			      "csi1phytimer_clk_src",
++			      "csi1phytimer_clk";
++		src-clock-name = "csi1phytimer_clk_src";
++		clock-cntl-level = "nominal";
++		clock-rates = <480000000 0 400000000 0>;
++		operating-points-v2 = <&csiphy1_opp_table>;
++		cell-index = <1>;
++		status = "okay";
++
++		csiphy1_opp_table: opp-table {
++			compatible = "operating-points-v2";
++
++			opp-400000000 {
++				opp-hz = /bits/ 64 <400000000>;
++				required-opps = <&rpmhpd_opp_nom>;
++			};
++		};
++	};
++
++	cam_csiphy2: qcom,csiphy2@ace8000 {
++		compatible = "qcom,csiphy-v2.1.2", "qcom,csiphy";
++		reg = <0x0 0xace8000 0x0 0x2000>;
++		reg-names = "csiphy";
++		reg-cam-base = <0xe8000>;
++		interrupts = <GIC_SPI 479 IRQ_TYPE_EDGE_RISING>;
++		interrupt-names = "CSIPHY2";
++		power-domains = <&camcc CAM_CC_TITAN_TOP_GDSC>;
++		regulator-names = "csi-vdd-1p2", "csi-vdd-0p9";
++		csi-vdd-1p2-supply = <&vreg_l1c_1p2>;
++		csi-vdd-0p9-supply = <&vreg_l2c_0p8>;
++		rgltr-cntrl-support;
++		rgltr-enable-sync = <1>;
++		rgltr-min-voltage = <1200000 880000>;
++		rgltr-max-voltage = <1200000 920000>;
++		rgltr-load-current = <58900 147000>;
++		shared-clks = <1 0 0 0>;
++		clocks = <&camcc CAM_CC_CPHY_RX_CLK_SRC>,
++			 <&camcc CAM_CC_CSIPHY2_CLK>,
++			 <&camcc CAM_CC_CSI2PHYTIMER_CLK_SRC>,
++			 <&camcc CAM_CC_CSI2PHYTIMER_CLK>;
++		clock-names = "cphy_rx_clk_src",
++			      "csiphy2_clk",
++			      "csi2phytimer_clk_src",
++			      "csi2phytimer_clk";
++		src-clock-name = "csi2phytimer_clk_src";
++		clock-cntl-level = "nominal";
++		clock-rates = <480000000 0 400000000 0>;
++		operating-points-v2 = <&csiphy2_opp_table>;
++		cell-index = <2>;
++		status = "okay";
++
++		csiphy2_opp_table: opp-table {
++			compatible = "operating-points-v2";
++
++			opp-400000000 {
++				opp-hz = /bits/ 64 <400000000>;
++				required-opps = <&rpmhpd_opp_nom>;
++			};
++		};
++	};
++
++	cam_csiphy4: qcom,csiphy4@acec000 {
++		compatible = "qcom,csiphy-v2.1.2", "qcom,csiphy";
++		reg = <0x0 0xacec000 0x0 0x2000>;
++		reg-names = "csiphy";
++		reg-cam-base = <0xec000>;
++		interrupts = <GIC_SPI 122 IRQ_TYPE_EDGE_RISING>;
++		interrupt-names = "CSIPHY4";
++		power-domains = <&camcc CAM_CC_TITAN_TOP_GDSC>;
++		regulator-names = "csi-vdd-1p2", "csi-vdd-0p9";
++		csi-vdd-1p2-supply = <&vreg_l1c_1p2>;
++		csi-vdd-0p9-supply = <&vreg_l2c_0p8>;
++		rgltr-cntrl-support;
++		rgltr-enable-sync = <1>;
++		rgltr-min-voltage = <1200000 880000>;
++		rgltr-max-voltage = <1200000 920000>;
++		rgltr-load-current = <58900 147000>;
++		shared-clks = <1 0 0 0>;
++		clocks = <&camcc CAM_CC_CPHY_RX_CLK_SRC>,
++			 <&camcc CAM_CC_CSIPHY4_CLK>,
++			 <&camcc CAM_CC_CSI4PHYTIMER_CLK_SRC>,
++			 <&camcc CAM_CC_CSI4PHYTIMER_CLK>;
++		clock-names = "cphy_rx_clk_src",
++			      "csiphy4_clk",
++			      "csi4phytimer_clk_src",
++			      "csi4phytimer_clk";
++		src-clock-name = "csi4phytimer_clk_src";
++		clock-cntl-level = "nominal";
++		clock-rates = <480000000 0 400000000 0>;
++		operating-points-v2 = <&csiphy4_opp_table>;
++		cell-index = <4>;
++		status = "okay";
++
++		csiphy4_opp_table: opp-table {
++			compatible = "operating-points-v2";
++
++			opp-400000000 {
++				opp-hz = /bits/ 64 <400000000>;
++				required-opps = <&rpmhpd_opp_nom>;
++			};
++		};
++	};
++
++	cam_csiphy_tpg13: qcom,tpg13@acf6000 {
++		compatible = "qcom,cam-tpg103";
++		reg = <0x0 0xacf6000 0x0 0x400>,
++		      <0x0 0xac13000 0x0 0x1000>;
++		reg-names = "tpg0", "cam_cpas_top";
++		reg-cam-base = <0xf6000 0x13000>;
++		power-domains = <&camcc CAM_CC_TITAN_TOP_GDSC>;
++		interrupts = <GIC_SPI 413 IRQ_TYPE_EDGE_RISING>;
++		interrupt-names = "tpg0";
++		shared-clks = <1 0>;
++		clocks = <&camcc CAM_CC_CPHY_RX_CLK_SRC>,
++			 <&camcc CAM_CC_CSID_CSIPHY_RX_CLK>;
++		clock-names = "cphy_rx_clk_src",
++			      "csid_csiphy_rx_clk";
++		clock-rates = <400000000 0>,
++			      <480000000 0>;
++		clock-cntl-level = "lowsvs", "nominal";
++		src-clock-name = "cphy_rx_clk_src";
++		operating-points-v2 = <&csiphy_tpg0_opp_table>;
++		cell-index = <13>;
++		phy-id = <0>;
++		status = "okay";
++
++		csiphy_tpg0_opp_table: opp-table {
++			compatible = "operating-points-v2";
++
++			opp-400000000 {
++				opp-hz = /bits/ 64 <400000000>;
++				required-opps = <&rpmhpd_opp_low_svs>;
++			};
++
++			opp-480000000 {
++				opp-hz = /bits/ 64 <480000000>;
++				required-opps = <&rpmhpd_opp_nom>;
++			};
++		};
++	};
++
++	cam_csiphy_tpg14: qcom,tpg14@acf7000 {
++		compatible = "qcom,cam-tpg103";
++		reg = <0x0 0xacf7000 0x0 0x400>,
++		      <0x0 0xac13000 0x0 0x1000>;
++		reg-names = "tpg1", "cam_cpas_top";
++		reg-cam-base = <0xf7000 0x13000>;
++		power-domains = <&camcc CAM_CC_TITAN_TOP_GDSC>;
++		interrupts = <GIC_SPI 414 IRQ_TYPE_EDGE_RISING>;
++		interrupt-names = "tpg1";
++		shared-clks = <1 0>;
++		clocks = <&camcc CAM_CC_CPHY_RX_CLK_SRC>,
++			 <&camcc CAM_CC_CSID_CSIPHY_RX_CLK>;
++		clock-names = "cphy_rx_clk_src",
++			      "csid_csiphy_rx_clk";
++		clock-rates = <400000000 0>,
++			      <480000000 0>;
++		clock-cntl-level = "lowsvs", "nominal";
++		src-clock-name = "cphy_rx_clk_src";
++		operating-points-v2 = <&csiphy_tpg1_opp_table>;
++		cell-index = <14>;
++		phy-id = <1>;
++		status = "okay";
++
++		csiphy_tpg1_opp_table: opp-table {
++			compatible = "operating-points-v2";
++
++			opp-400000000 {
++				opp-hz = /bits/ 64 <400000000>;
++				required-opps = <&rpmhpd_opp_low_svs>;
++			};
++
++			opp-480000000 {
++				opp-hz = /bits/ 64 <480000000>;
++				required-opps = <&rpmhpd_opp_nom>;
++			};
++		};
++	};
++
++	cam_csiphy_tpg15: qcom,tpg15@acf8000 {
++		compatible = "qcom,cam-tpg103";
++		reg = <0x0 0xacf8000 0x0 0x400>,
++		      <0x0 0xac13000 0x0 0x1000>;
++		reg-names = "tpg2", "cam_cpas_top";
++		reg-cam-base = <0xf8000 0x13000>;
++		power-domains = <&camcc CAM_CC_TITAN_TOP_GDSC>;
++		interrupts = <GIC_SPI 415 IRQ_TYPE_EDGE_RISING>;
++		interrupt-names = "tpg2";
++		shared-clks = <1 0>;
++		clocks = <&camcc CAM_CC_CPHY_RX_CLK_SRC>,
++			 <&camcc CAM_CC_CSID_CSIPHY_RX_CLK>;
++		clock-names = "cphy_rx_clk_src",
++			      "csid_csiphy_rx_clk";
++		clock-rates = <400000000 0>,
++			      <480000000 0>;
++		clock-cntl-level = "lowsvs", "nominal";
++		src-clock-name = "cphy_rx_clk_src";
++		operating-points-v2 = <&csiphy_tpg2_opp_table>;
++		cell-index = <15>;
++		phy-id = <2>;
++		status = "okay";
++
++		csiphy_tpg2_opp_table: opp-table {
++			compatible = "operating-points-v2";
++
++			opp-400000000 {
++				opp-hz = /bits/ 64 <400000000>;
++				required-opps = <&rpmhpd_opp_low_svs>;
++			};
++
++			opp-480000000 {
++				opp-hz = /bits/ 64 <480000000>;
++				required-opps = <&rpmhpd_opp_nom>;
++			};
++		};
++	};
++
++	qcom,rt-cdm2@acf9000 {
++		compatible = "qcom,cam-rt-cdm2_1";
++		label = "rt-cdm";
++		reg = <0x0 0xacf9000 0x0 0x400>;
++		reg-names = "rt-cdm2";
++		reg-cam-base = <0xf9000>;
++		interrupts = <GIC_SPI 764 IRQ_TYPE_EDGE_RISING>;
++		interrupt-names = "rt-cdm2";
++		power-domains = <&camcc CAM_CC_TITAN_TOP_GDSC>;
++		clocks = <&camcc CAM_CC_SLOW_AHB_CLK_SRC>,
++			 <&camcc CAM_CC_IFE_LITE_AHB_CLK>;
++		clock-names = "cam_cc_slow_ahb_clk_src",
++			      "cam_cc_ife_lite_ahb";
++		clock-rates = <80000000 0>;
++		src-clock-name = "cam_cc_slow_ahb_clk_src";
++		clock-cntl-level = "nominal";
++		operating-points-v2 = <&cdm_cpas_opp_table2>;
++		nrt-device;
++		cdm-client-names = "ife2";
++		config-fifo;
++		fifo-depths = <64 0 0 0>;
++		cam_hw_pid = <24>;
++		cam-hw-mid = <0>;
++		single-context-cdm;
++		cell-index = <2>;
++		status = "okay";
++
++		cdm_cpas_opp_table2: opp-table {
++			compatible = "operating-points-v2";
++
++			opp-80000000 {
++				opp-hz = /bits/ 64 <80000000>;
++				required-opps = <&rpmhpd_opp_nom>;
++			};
++		};
++	};
++
++	qcom,rt-cdm3@acfa000 {
++		compatible = "qcom,cam-rt-cdm2_1";
++		label = "rt-cdm";
++		reg = <0x0 0xacfa000 0x0 0x400>;
++		reg-names = "rt-cdm3";
++		reg-cam-base = <0xfa000>;
++		interrupts = <GIC_SPI 765 IRQ_TYPE_EDGE_RISING>;
++		interrupt-names = "rt-cdm3";
++		power-domains = <&camcc CAM_CC_TITAN_TOP_GDSC>;
++		clocks = <&camcc CAM_CC_SLOW_AHB_CLK_SRC>,
++			 <&camcc CAM_CC_IFE_LITE_AHB_CLK>;
++		clock-names = "cam_cc_slow_ahb_clk_src",
++			      "cam_cc_ife_lite_ahb";
++		clock-rates = <80000000 0>;
++		src-clock-name = "cam_cc_slow_ahb_clk_src";
++		clock-cntl-level = "nominal";
++		operating-points-v2 = <&cdm_cpas_opp_table3>;
++		nrt-device;
++		cdm-client-names = "ife3";
++		config-fifo;
++		fifo-depths = <64 0 0 0>;
++		cam_hw_pid = <27>;
++		cam-hw-mid = <0>;
++		single-context-cdm;
++		cell-index = <3>;
++		status = "okay";
++
++		cdm_cpas_opp_table3: opp-table {
++			compatible = "operating-points-v2";
++
++			opp-80000000 {
++				opp-hz = /bits/ 64 <80000000>;
++				required-opps = <&rpmhpd_opp_nom>;
++			};
++		};
++	};
++
++	qcom,cam-cdm-intf {
++		compatible = "qcom,cam-cdm-intf";
++		label = "cam-cdm-intf";
++		num-hw-cdm = <1>;
++		cdm-client-names = "vfe",
++				   "jpegdma",
++				   "jpegenc";
++		cell-index = <0>;
++		status = "okay";
++	};
++
++	cam_icp_firmware: qcom,cam-icp {
++		compatible = "qcom,cam-icp";
++		compat-hw-name = "qcom,icp",
++				 "qcom,ipe0",
++				 "qcom,bps";
++		num-icp = <1>;
++		num-ipe = <1>;
++		num-bps = <1>;
++		status = "okay";
++		icp_pc_en;
++		icp_use_pil;
++	};
++
++	qcom,cam-isp {
++		compatible = "qcom,cam-isp";
++		arch-compat = "ife";
++		status = "okay";
++	};
++
++	qcom,cam-jpeg {
++		compatible = "qcom,cam-jpeg";
++		compat-hw-name = "qcom,jpegenc",
++				 "qcom,jpegdma";
++		num-jpeg-enc = <1>;
++		num-jpeg-dma = <1>;
++		status = "okay";
++	};
++
++	qcom,cam-req-mgr {
++		compatible = "qcom,cam-req-mgr";
++		status = "okay";
++	};
++
++	cam_smmu: qcom,cam-smmu {
++		compatible = "qcom,msm-cam-smmu", "simple-bus";
++		status = "okay";
++		force_cache_allocs;
++		need_shared_buffer_padding;
++
++		msm-cam-smmu-cpas-cdm {
++			compatible = "qcom,msm-cam-smmu-cb";
++			iommus = <&apps_smmu 0x18A0 0x0000>;
++			cam-smmu-label = "rt-cdm";
++			dma-coherent;
++			multiple-client-devices;
++
++			cpas_cdm_iova_mem_map: iova-mem-map {
++				iova-mem-region-io {
++					/* IO region is approximately 4.0 GB */
++					iova-region-name = "io";
++					/* 1 MB pad for start */
++					iova-region-start = <0x100000>;
++					/* 1 MB pad for end */
++					iova-region-len = <0xffe00000>;
++					iova-region-id = <0x3>;
++					status = "okay";
++				};
++			};
++		};
++
++		msm-cam-smmu-icp {
++			compatible = "qcom,msm-cam-smmu-cb";
++			iommus = <&apps_smmu 0x1800 0x0060>,
++				 <&apps_smmu 0x1820 0x0060>,
++				 <&apps_smmu 0x1840 0x0060>,
++				 <&apps_smmu 0x1860 0x0060>,
++				 <&apps_smmu 0x1900 0x0000>,
++				 <&apps_smmu 0x1980 0x0020>,
++				 <&apps_smmu 0x19A0 0x0020>;
++			cam-smmu-label = "icp";
++			iova-region-discard = <0xe0000000 0x800000>;
++			dma-coherent;
++
++			icp_iova_mem_map: iova-mem-map {
++				iova-mem-qdss-region {
++					/* QDSS region is appropriate 1MB */
++					iova-region-name = "qdss";
++					iova-region-start = <0x10b00000>;
++					iova-region-len = <0x100000>;
++					iova-region-id = <0x5>;
++					qdss-phy-addr = <0x16790000>;
++					status = "okay";
++				};
++
++				iova-mem-region-fwuncached-region {
++					/* FW uncached region is 7MB long */
++					iova-region-name = "fw_uncached";
++					iova-region-start = <0x10400000>;
++					iova-region-len = <0x700000>;
++					iova-region-id = <0x6>;
++					status = "okay";
++				};
++
++				iova-mem-region-io {
++					/* IO region is approximately 3.8 GB */
++					iova-region-name = "io";
++					iova-region-start = <0x10c00000>;
++					iova-region-len = <0xee300000>;
++					iova-region-id = <0x3>;
++					iova-region-discard = <0xe0000000 0x800000>;
++					status = "okay";
++				};
++
++				iova-mem-region-shared {
++					/* Shared region is ~250MB long */
++					iova-region-name = "shared";
++					iova-region-start = <0x800000>;
++					iova-region-len = <0xFC00000>;
++					iova-region-id = <0x1>;
++					status = "okay";
++				};
++			};
++		};
++
++		msm-cam-smmu-ife {
++			compatible = "qcom,msm-cam-smmu-cb";
++			iommus = <&apps_smmu 0x0800 0x0060>,
++				 <&apps_smmu 0x0820 0x0060>,
++				 <&apps_smmu 0x0840 0x0060>,
++				 <&apps_smmu 0x0860 0x0060>;
++			dma-coherent;
++			cam-smmu-label = "ife", "sfe";
++			multiple-client-devices;
++
++			ife_iova_mem_map: iova-mem-map {
++				/* IO region is approximately 4.0 GB */
++				iova-mem-region-io {
++					iova-region-name = "io";
++					/* 1 MB pad for start */
++					iova-region-start = <0x100000>;
++					/* 1 MB pad for end */
++					iova-region-len = <0xffe00000>;
++					iova-region-id = <0x3>;
++					status = "okay";
++				};
++			};
++		};
++
++		msm-cam-smmu-jpeg {
++			compatible = "qcom,msm-cam-smmu-cb";
++			iommus = <&apps_smmu 0x18E0 0x0000>;
++			cam-smmu-label = "jpeg";
++			dma-coherent;
++
++			jpeg_iova_mem_map: iova-mem-map {
++				/* IO region is approximately 4.0 GB */
++				iova-mem-region-io {
++					iova-region-name = "io";
++					/* 1 MB pad for start */
++					iova-region-start = <0x100000>;
++					/* 1 MB pad for end */
++					iova-region-len = <0xffe00000>;
++					iova-region-id = <0x3>;
++					status = "okay";
++				};
++			};
++		};
++
++		msm-cam-smmu-secure {
++			compatible = "qcom,msm-cam-smmu-cb";
++			cam-smmu-label = "cam-secure";
++			qcom,secure-cb;
++		};
++	};
++
++	qcom,cam-sync {
++		compatible = "qcom,cam-sync";
++		status = "okay";
++	};
++
++	qcom,camera-main {
++		compatible = "qcom,camera_x1e80100";
++		status = "okay";
++	};
++};
++
++&tlmm {
++	cam_sensor_active_rst0: cam-sensor-active-rst0 {
++		/* RESET REAR */
++		config {
++			pins = "gpio109";
++			bias-disable; /* No PULL */
++			drive-strength = <2>; /* 2 MA */
++		};
++
++		mux {
++			pins = "gpio109";
++			function = "gpio";
++		};
++	};
++
++	cam_sensor_active_rst4: cam-sensor-active-rst4 {
++		/* RESET REAR */
++		config {
++			pins = "gpio237";
++			bias-disable; /* No PULL */
++			drive-strength = <12>; /* 12 MA */
++		};
++
++		mux {
++			pins = "gpio237";
++			function = "gpio";
++		};
++	};
++
++	cam_sensor_mclk0_active: cam-sensor-mclk0-active {
++		/* mclk0 */
++		config {
++			pins = "gpio96";
++			bias-disable; /* No PULL */
++			drive-strength = <6>; /* 6 MA */
++		};
++
++		mux {
++			pins = "gpio96";
++			function = "cam_mclk";
++		};
++	};
++
++	cam_sensor_mclk0_suspend: cam-sensor-mclk0-suspend {
++		/* mclk0 */
++		config {
++			pins = "gpio96";
++			bias-pull-down; /* PULL DOWN */
++			drive-strength = <6>; /* 6 MA */
++		};
++
++		mux {
++			pins = "gpio96";
++			function = "cam_mclk";
++		};
++	};
++
++	cam_sensor_mclk4_active: cam-sensor-mclk4-active {
++		/* mclk4 */
++		config {
++			pins = "gpio100";
++			bias-disable; /* No PULL */
++			drive-strength = <12>; /* 12 MA */
++		};
++
++		mux {
++			pins = "gpio100";
++			function = "cam_aon";
++		};
++	};
++
++	cam_sensor_mclk4_suspend: cam-sensor-mclk4-suspend {
++		/* mclk4 */
++		config {
++			pins = "gpio100";
++			bias-pull-down; /* PULL DOWN */
++			drive-strength = <12>; /* 12 MA */
++		};
++
++		mux {
++			pins = "gpio100";
++			function = "cam_aon";
++		};
++	};
++
++	cam_sensor_suspend_rst0: cam-sensor-suspend-rst0 {
++		/* RESET REAR */
++		config {
++			pins = "gpio109";
++			bias-pull-down; /* PULL DOWN */
++			drive-strength = <2>; /* 2 MA */
++			output-low;
++		};
++
++		mux {
++			pins = "gpio109";
++			function = "gpio";
++		};
++	};
++
++	cam_sensor_suspend_rst4: cam-sensor-suspend-rst4 {
++		/* RESET REAR */
++		config {
++			pins = "gpio237";
++			bias-pull-down; /* PULL DOWN */
++			drive-strength = <12>; /* 12 MA */
++			output-low;
++		};
++
++		mux {
++			pins = "gpio237";
++			function = "gpio";
++		};
++	};
++
++	cci0_m0_active: cci0-m0-active {
++		config {
++			pins = "gpio101","gpio102";
++			bias-pull-up; /* PULL UP*/
++			drive-strength = <2>; /* 2 MA */
++		};
++
++		mux {
++			/* CLK, DATA */
++			pins = "gpio101","gpio102"; // Only 2
++			function = "cci_i2c";
++		};
++	};
++
++	cci0_m0_suspend: cci0-m0-suspend {
++		config {
++			pins = "gpio101","gpio102";
++			bias-pull-down; /* PULL DOWN */
++			drive-strength = <2>; /* 2 MA */
++		};
++
++		mux {
++			/* CLK, DATA */
++			pins = "gpio101","gpio102";
++			function = "cci_i2c";
++		};
++	};
++
++	cci1_m1_scl3_active: cci1-m1-scl3-active {
++		config {
++			pins = "gpio236";
++			bias-pull-up; /* PULL UP*/
++			drive-strength = <12>; /* 12 MA */
++		};
++
++		mux {
++			/* CLK, DATA */
++			pins = "gpio236";
++			function = "aon_cci";
++		};
++	};
++
++	cci1_m1_scl3_suspend: cci1-m1-scl3-suspend {
++		config {
++			pins = "gpio236";
++			bias-pull-down; /* PULL DOWN */
++			drive-strength = <12>; /* 12 MA */
++		};
++
++		mux {
++			/* CLK, DATA */
++			pins = "gpio236";
++			function = "aon_cci";
++		};
++	};
++
++	cci1_m1_sda3_active: cci1-m1-sda3-active {
++		config {
++			pins = "gpio235";
++			bias-pull-up; /* PULL UP*/
++			drive-strength = <12>; /* 12 MA */
++		};
++
++		mux {
++			/* CLK, DATA */
++			pins = "gpio235";
++			function = "aon_cci";
++		};
++	};
++
++	cci1_m1_sda3_suspend: cci1-m1-sda3-suspend {
++		config {
++			pins = "gpio235";
++			bias-pull-down; /* PULL DOWN */
++			drive-strength = <12>; /* 12 MA */
++		};
++
++		mux {
++			/* CLK, DATA */
++			pins = "gpio235";
++			function = "aon_cci";
++		};
++	};
++
++		cam_sensor_mclk1_active: cam_sensor_mclk1_active {
++		/* MCLK1 */
++		mux {
++			pins = "gpio97";
++			function = "cam_mclk";
++		};
++
++		config {
++			pins = "gpio97";
++			bias-disable; /* No PULL */
++			drive-strength = <2>; /* 2 MA */
++		};
++	};
++
++	cam_sensor_mclk1_suspend: cam_sensor_mclk1_suspend {
++		/* MCLK1 */
++		mux {
++			pins = "gpio97";
++			function = "cam_mclk";
++		};
++
++		config {
++			pins = "gpio97";
++			bias-pull-down; /* PULL DOWN */
++			drive-strength = <2>; /* 2 MA */
++		};
++	};
++
++	cci_i2c_sda1_active: cci_i2c_sda1_active {
++		mux {
++			/* CLK, DATA */
++			pins = "gpio103";
++			function = "cci_i2c_sda1";
++		};
++
++		config {
++			pins = "gpio103";
++			bias-pull-up; /* PULL UP*/
++			drive-strength = <2>; /* 2 MA */
++			qcom,i2c_pull;
++		};
++	};
++
++	cci_i2c_sda1_suspend: cci_i2c_sda1_suspend {
++		mux {
++			/* CLK, DATA */
++			pins = "gpio103";
++			function = "cci_i2c_sda1";
++		};
++
++		config {
++			pins = "gpio103";
++			bias-pull-down; /* PULL DOWN */
++			drive-strength = <2>; /* 2 MA */
++		};
++	};
++
++	cci_i2c_scl1_active: cci_i2c_scl1_active {
++		mux {
++			/* CLK, DATA */
++			pins = "gpio104";
++			function = "cci_i2c_scl1";
++		};
++
++		config {
++			pins = "gpio104";
++			bias-pull-up; /* PULL UP*/
++			drive-strength = <2>; /* 2 MA */
++			qcom,i2c_pull;
++		};
++	};
++
++	cci_i2c_scl1_suspend: cci_i2c_scl1_suspend {
++		mux {
++			/* CLK, DATA */
++			pins = "gpio104";
++			function = "cci_i2c_scl1";
++		};
++
++		config {
++			pins = "gpio104";
++			bias-pull-down; /* PULL DOWN */
++			drive-strength = <2>; /* 2 MA */
++		};
++	};
++
++	cam_sensor_active_rst1: cam_sensor_active_rst1 {
++		/* RESET */
++		mux {
++			pins = "gpio110";
++			function = "gpio";
++		};
++
++		config {
++			pins = "gpio110";
++			bias-disable; /* No PULL */
++			drive-strength = <2>; /* 2 MA */
++		};
++	};
++
++	cam_sensor_suspend_rst1: cam_sensor_suspend_rst1 {
++		/* RESET */
++		mux {
++			pins = "gpio110";
++			function = "gpio";
++		};
++
++		config {
++			pins = "gpio110";
++			bias-pull-down; /* PULL DOWN */
++			drive-strength = <2>; /* 2 MA */
++			output-low;
++		};
++	};
++
++	cam_sensor_active_int: cam_sensor_active_int {
++		/* CUSTOM */
++		mux {
++			pins = "gpio19";
++			function = "cam_pwe";
++		};
++
++		config {
++			pins = "gpio19";
++			bias-disable; /* No PULL */
++			drive-strength = <2>; /* 2 MA */
++		};
++	};
++
++	cam_sensor_suspend_int: cam_sensor_suspend_int {
++		/* CUSTOM */
++		mux {
++			pins = "gpio19";
++			function = "cam_pwe";
++		};
++
++		config {
++			pins = "gpio19";
++			bias-pull-down; /* PULL DOWN */
++			drive-strength = <2>; /* 2 MA */
++		};
++	};
++};
+diff --git a/include/dt-bindings/clock/qcom,x1e80100-camcc.h b/include/dt-bindings/clock/qcom,x1e80100-camcc.h
+index d72fdfb06a7c..a245ee49d0c5 100644
+--- a/include/dt-bindings/clock/qcom,x1e80100-camcc.h
++++ b/include/dt-bindings/clock/qcom,x1e80100-camcc.h
+@@ -115,6 +115,7 @@
+ #define CAM_CC_SLEEP_CLK_SRC					105
+ #define CAM_CC_SLOW_AHB_CLK_SRC					106
+ #define CAM_CC_XO_CLK_SRC					107
++#define CAM_CC_QDSS_DEBUG_XO_CLK 				108
+ 
+ /* CAM_CC power domains */
+ #define CAM_CC_BPS_GDSC						0
+-- 
+2.34.1
+
