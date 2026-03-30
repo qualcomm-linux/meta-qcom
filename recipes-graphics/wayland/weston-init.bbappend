@@ -10,6 +10,7 @@ SRC_URI:append:qcom = " \
 do_compile:append:qcom() {
     sed -i -e 's:@bindir@:${bindir}:g' ${UNPACKDIR}/additional-devices.conf
     sed -i -e 's:@bindir@:${bindir}:g' ${UNPACKDIR}/weston-start.sh
+    sed -i -e "/^\[core\]/a repaint-window=10" ${UNPACKDIR}/weston.ini
 }
 
 do_install:append:qcom() {
