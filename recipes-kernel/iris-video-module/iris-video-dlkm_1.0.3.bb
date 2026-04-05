@@ -7,6 +7,7 @@ SRC_URI = " \
     git://github.com/qualcomm-linux/video-driver.git;protocol=https;branch=video.qclinux.main;tag=v${PV} \
     file://blacklist-video.conf.venus \
     file://blacklist-video.conf.vidc \
+    file://blacklist.conf \
 "
 SRCREV  = "7461781d270fe3d7a0fbfd909cc3ed6db653e111"
 
@@ -25,11 +26,14 @@ do_install:append() {
             ${D}${sysconfdir}/modprobe.d/blacklist-video.conf.venus
     install -Dm 0644 ${UNPACKDIR}/blacklist-video.conf.vidc \
             ${D}${sysconfdir}/modprobe.d/blacklist-video.conf.vidc
+    install -Dm 0644 ${UNPACKDIR}/blacklist.conf \
+            ${D}${sysconfdir}/modprobe.d/blacklist.conf
 }
 
 PACKAGES += "${PN}-bl-venus ${PN}-bl-vidc"
 RDEPENDS:${PN} += "${PN}-bl-venus ${PN}-bl-vidc"
 
+FILES:${PN} += "${sysconfdir}/modprobe.d/blacklist.conf"
 FILES:${PN}-bl-venus += "${sysconfdir}/modprobe.d/blacklist-video.conf.venus"
 FILES:${PN}-bl-vidc += "${sysconfdir}/modprobe.d/blacklist-video.conf.vidc"
 
