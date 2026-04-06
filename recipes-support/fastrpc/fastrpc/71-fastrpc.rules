@@ -1,0 +1,28 @@
+# udev rules for Qualcomm FastRPC devices
+# These rules set permissions and systemd tags for FastRPC device nodes
+
+# aDSP devices
+ACTION=="add", SUBSYSTEM=="misc", KERNEL=="fastrpc-adsp", GROUP="render", MODE="0660", TAG+="systemd", ENV{SYSTEMD_WANTS}+="adsprpcd.service"
+ACTION=="add", SUBSYSTEM=="misc", KERNEL=="fastrpc-adsp-secure", GROUP="render", MODE="0660", TAG+="systemd", ENV{SYSTEMD_WANTS}+="adsprpcd.service"
+ACTION=="add", SUBSYSTEM=="misc", KERNEL=="fastrpc-adsp", GROUP="render", MODE="0660", TAG+="systemd", ENV{SYSTEMD_WANTS}+="adsprpcd_audiopd.service"
+ACTION=="add", SUBSYSTEM=="misc", KERNEL=="fastrpc-adsp-secure", GROUP="render", MODE="0660", TAG+="systemd", ENV{SYSTEMD_WANTS}+="adsprpcd_audiopd.service"
+
+# cDSP devices
+ACTION=="add", SUBSYSTEM=="misc", KERNEL=="fastrpc-cdsp", GROUP="render", MODE="0660", TAG+="systemd", ENV{SYSTEMD_WANTS}+="cdsprpcd.service"
+ACTION=="add", SUBSYSTEM=="misc", KERNEL=="fastrpc-cdsp-secure", GROUP="render", MODE="0660", TAG+="systemd", ENV{SYSTEMD_WANTS}+="cdsprpcd.service"
+
+# cDSP1 devices
+ACTION=="add", SUBSYSTEM=="misc", KERNEL=="fastrpc-cdsp1", GROUP="render", MODE="0660", TAG+="systemd", ENV{SYSTEMD_WANTS}+="cdsp1rpcd.service"
+ACTION=="add", SUBSYSTEM=="misc", KERNEL=="fastrpc-cdsp1-secure", GROUP="render", MODE="0660", TAG+="systemd", ENV{SYSTEMD_WANTS}+="cdsp1rpcd.service"
+
+# gDSP0 devices
+ACTION=="add", SUBSYSTEM=="misc", KERNEL=="fastrpc-gdsp0", GROUP="render", MODE="0660", TAG+="systemd", ENV{SYSTEMD_WANTS}+="gdsp0rpcd.service"
+ACTION=="add", SUBSYSTEM=="misc", KERNEL=="fastrpc-gdsp0-secure", GROUP="render", MODE="0660", TAG+="systemd", ENV{SYSTEMD_WANTS}+="gdsp0rpcd.service"
+
+# gDSP1 devices
+ACTION=="add", SUBSYSTEM=="misc", KERNEL=="fastrpc-gdsp1", GROUP="render", MODE="0660", TAG+="systemd", ENV{SYSTEMD_WANTS}+="gdsp1rpcd.service"
+ACTION=="add", SUBSYSTEM=="misc", KERNEL=="fastrpc-gdsp1-secure", GROUP="render", MODE="0660", TAG+="systemd", ENV{SYSTEMD_WANTS}+="gdsp1rpcd.service"
+
+# sDSP devices
+ACTION=="add", SUBSYSTEM=="misc", KERNEL=="fastrpc-sdsp", GROUP="render", MODE="0660", TAG+="systemd", ENV{SYSTEMD_WANTS}+="sdsprpcd.service"
+ACTION=="add", SUBSYSTEM=="misc", KERNEL=="fastrpc-sdsp-secure", GROUP="render", MODE="0660", TAG+="systemd", ENV{SYSTEMD_WANTS}+="sdsprpcd.service"

@@ -9,6 +9,7 @@ DEPENDS = "libbsd libyaml"
 SRCREV = "8572ae1c45d38a4dc8853b1b9b6738207ab1ce94"
 SRC_URI = "\
     git://github.com/qualcomm/fastrpc.git;branch=main;protocol=https;tag=v${PV} \
+    file://71-fastrpc.rules \
     file://run-ptest \
     file://0001-apps_mem-fallback-to-legacy-mmap-unmap-when-internal.patch \
 "
@@ -29,9 +30,13 @@ SYSTEMD_SERVICE:${PN} = " \
 
 do_install:append() {
     install -d ${D}${datadir}/qcom/
+    install -d ${D}${nonarch_base_libdir}/udev/rules.d/
 
     sed -i -e 's:/usr/bin/:${bindir}/:g' \
         ${D}${systemd_system_unitdir}/*.service
+
+    install -m 0644 ${UNPACKDIR}/71-fastrpc.rules \
+        ${D}${nonarch_base_libdir}/udev/rules.d/71-fastrpc.rules
 }
 
 FILES:${PN} += " \
@@ -43,6 +48,7 @@ FILES:${PN} += " \
     ${libdir}/libcdsprpc.so \
     ${libdir}/libsdsprpc.so \
     ${datadir}/qcom/ \
+    ${nonarch_base_libdir}/udev/rules.d \
 "
 
 FILES:${PN}-dev:remove = "${FILES_SOLIBSDEV}"
