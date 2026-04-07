@@ -55,6 +55,15 @@ local_conf_header:
     EXTRA_IMAGE_FEATURES = "allow-empty-password empty-root-password allow-root-login"
     IMAGE_ROOTFS_EXTRA_SPACE = "307200"
     WATCHDOG_RUNTIME_SEC:pn-systemd = "30"
+  host: |
+    CPU_COUNT = "${@oe.utils.cpu_count(at_least=2)}"
+    THREAD_COUNT = "${@oe.utils.cpu_count(at_least=2, at_most=20)}"
+    BB_NUMBER_THREADS ?= "${CPU_COUNT}"
+    BB_NUMBER_PARSE_THREADS ?= "${CPU_COUNT}"
+    BB_PRESSURE_MAX_CPU = "900000"
+    BB_PRESSURE_MAX_IO = "900000"
+    BB_PRESSURE_MAX_MEMORY = "900000"
+    PARALLEL_MAKE ?= "-j ${THREAD_COUNT} -l ${THREAD_COUNT}"
 
 machine: unset
 
