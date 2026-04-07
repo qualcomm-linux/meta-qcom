@@ -1,1 +1,1 @@
-PACKAGECONFIG:append = " ml messaging qmmfsrc redissink sample-apps"
+PACKAGECONFIG:append = " camera-base ml messaging qmmfsrc redissink sample-apps"
