@@ -1,1 +1,1 @@
-PACKAGECONFIG:append = " ml messaging redissink"
+PACKAGECONFIG:append = " ml messaging redissink sample-apps"

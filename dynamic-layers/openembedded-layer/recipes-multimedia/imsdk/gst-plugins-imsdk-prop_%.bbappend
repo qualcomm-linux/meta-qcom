@@ -1,1 +1,1 @@
-PACKAGECONFIG:append = " camera-base qmmfsrc sample-apps"
+PACKAGECONFIG:append = " camera-base qmmfsrc sample-apps-overlay"
