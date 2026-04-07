@@ -1,7 +1,6 @@
-require gst-plugins-imsdk-packaging.inc
+# Common configuration for IMSDK GStreamer plugins recipes
+# This file contains shared settings used by base, OSS, and proprietary recipes
 
-SUMMARY = "Qualcomm IMSDK GStreamer Plugins (QTI OSS)"
-DESCRIPTION = "Open-source Qualcomm IMSDK GStreamer multimedia, CV, ML, and messaging plugins"
 SECTION = "multimedia"
 LICENSE = "BSD-3-Clause-Clear"
 LIC_FILES_CHKSUM = "file://LICENSE.txt;md5=2998c54c288b081076c9af987bdf4838"
@@ -20,19 +19,12 @@ SRCREV = "fd9af6b8377da7039ba23423f774287977fa60bc"
 DEPENDS += "\
     gstreamer1.0 \
     gstreamer1.0-plugins-base \
-    json-glib \
-    virtual/egl \
-    virtual/libgbm \
-    virtual/libgles2 \
-    virtual/libgles3 \
 "
 
 # This package is currently only used and tested on ARMv8 (aarch64) machines.
 # Therefore, builds for other architectures are not necessary and are explicitly excluded.
 COMPATIBLE_MACHINE = "^$"
 COMPATIBLE_MACHINE:aarch64 = "(.*)"
-
-PACKAGECONFIG ??= "base qairt smartvencbin sw tools videoproc"
 
 PACKAGECONFIG[base]         = "-DENABLE_GST_PLUGIN_BASE=ON, -DENABLE_GST_PLUGIN_BASE=OFF, json-glib virtual/egl virtual/libgbm virtual/libgles2 virtual/libgles3"
 PACKAGECONFIG[camera-base]  = "-DENABLE_GST_PLUGIN_CAMERA_BASE=ON, -DENABLE_GST_PLUGIN_CAMERA_BASE=OFF, camera-service"
