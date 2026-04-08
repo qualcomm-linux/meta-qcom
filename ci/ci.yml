@@ -8,6 +8,8 @@ header:
 local_conf_header:
   ci: |
     BB_SIGNATURE_HANDLER = "OEBasicHash"
+    EXTRA_IMAGE_FEATURES += "ptest-pkgs"
+    EXTRA_IMAGE_FEATURES:remove:sota = "ptest-pkgs"
     FIRMWARE_COMPRESSION:qcom-armv8a = "zst"
     # Workaround needed due https://bugzilla.yoctoproject.org/show_bug.cgi?id=16010
     PACKAGE_CLASSES = "package_rpm"
