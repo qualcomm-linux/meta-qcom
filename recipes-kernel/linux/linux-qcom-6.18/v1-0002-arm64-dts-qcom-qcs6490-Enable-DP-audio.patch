@@ -1,0 +1,44 @@
+From 6c71a9db523200c4cf5e84ad3d0e61aab8bef4c1 Mon Sep 17 00:00:00 2001
+From: Kumar Anurag <kumar.singh@oss.qualcomm.com>
+Date: Mon, 13 Apr 2026 00:03:16 -0700
+Subject: [PATCH v1 2/4] arm64: dts: qcom: qcs6490: Enable DP audio
+
+Add new dai link to enable DP audio.
+
+Upstream-Status: Submitted [https://lore.kernel.org/all/20260413091937.134469-3-kumar.singh@oss.qualcomm.com/]
+
+Signed-off-by: Kumar Anurag <kumar.singh@oss.qualcomm.com>
+---
+ arch/arm64/boot/dts/qcom/qcs6490-rb3gen2.dts | 16 ++++++++++++++++
+ 1 file changed, 16 insertions(+)
+
+diff --git a/arch/arm64/boot/dts/qcom/qcs6490-rb3gen2.dts b/arch/arm64/boot/dts/qcom/qcs6490-rb3gen2.dts
+index 2e4062052828..90fd8822dabd 100644
+--- a/arch/arm64/boot/dts/qcom/qcs6490-rb3gen2.dts
++++ b/arch/arm64/boot/dts/qcom/qcs6490-rb3gen2.dts
+@@ -1169,6 +1169,22 @@ platform {
+ 			sound-dai = <&q6apm>;
+ 		};
+ 	};
++
++	dp-dai-link {
++		link-name = "DisplayPort0 Playback";
++
++		codec {
++			sound-dai = <&mdss_dp>;
++		};
++
++		cpu {
++			sound-dai = <&q6apmbedai DISPLAY_PORT_RX_0>;
++		};
++
++		platform {
++			sound-dai = <&q6apm>;
++		};
++	};
+ };
+ 
+ &swr2 {
+-- 
+2.34.1
+

@@ -1,0 +1,106 @@
+From 67453e9e586436865e3e0b85c73dfb880d5e73ed Mon Sep 17 00:00:00 2001
+From: Kumar Anurag <kumar.singh@oss.qualcomm.com>
+Date: Sun, 12 Apr 2026 23:59:28 -0700
+Subject: [PATCH v1 1/4] arm64: dts: qcom: Enable secondary mi2s
+
+Enable secondary mi2s to support HDMI audio.
+
+Upstream-Status: Submitted [https://lore.kernel.org/all/20260413091937.134469-2-kumar.singh@oss.qualcomm.com/]
+
+Signed-off-by: Kumar Anurag <kumar.singh@oss.qualcomm.com>
+---
+ arch/arm64/boot/dts/qcom/kodiak.dtsi         |  5 +++
+ arch/arm64/boot/dts/qcom/qcs6490-rb3gen2.dts | 43 ++++++++++++++++++++
+ 2 files changed, 48 insertions(+)
+
+diff --git a/arch/arm64/boot/dts/qcom/kodiak.dtsi b/arch/arm64/boot/dts/qcom/kodiak.dtsi
+index 6079e67ea829..d1009debc12b 100644
+--- a/arch/arm64/boot/dts/qcom/kodiak.dtsi
++++ b/arch/arm64/boot/dts/qcom/kodiak.dtsi
+@@ -5827,6 +5827,11 @@ mi2s1_ws: mi2s1-ws-state {
+ 				function = "mi2s1_ws";
+ 			};
+ 
++			mi2s1_mclk: mi2s1-mclk-state {
++				pins = "gpio105";
++				function = "sec_mi2s";
++			};
++
+ 			pcie0_clkreq_n: pcie0-clkreq-n-state {
+ 				pins = "gpio88";
+ 				function = "pcie0_clkreqn";
+diff --git a/arch/arm64/boot/dts/qcom/qcs6490-rb3gen2.dts b/arch/arm64/boot/dts/qcom/qcs6490-rb3gen2.dts
+index e3d2f01881ae..2e4062052828 100644
+--- a/arch/arm64/boot/dts/qcom/qcs6490-rb3gen2.dts
++++ b/arch/arm64/boot/dts/qcom/qcs6490-rb3gen2.dts
+@@ -672,6 +672,7 @@ &i2c0 {
+ 	lt9611_codec: hdmi-bridge@2b {
+ 		compatible = "lontium,lt9611uxc";
+ 		reg = <0x2b>;
++		#sound-dai-cells = <1>;
+ 
+ 		interrupts-extended = <&tlmm 24 IRQ_TYPE_EDGE_FALLING>;
+ 		reset-gpios = <&pm7250b_gpios 2 GPIO_ACTIVE_HIGH>;
+@@ -1110,6 +1111,9 @@ &sound {
+ 	compatible = "qcom,qcs6490-rb3gen2-sndcard";
+ 	model = "QCS6490-RB3Gen2";
+ 
++	pinctrl-0 = <&mi2s1_data0>, <&mi2s1_mclk>, <&mi2s1_sclk>, <&mi2s1_ws>;
++	pinctrl-names = "default";
++
+ 	audio-routing = "SpkrLeft IN", "WSA_SPK1 OUT",
+ 			"SpkrRight IN", "WSA_SPK2 OUT",
+ 			"VA DMIC0", "vdd-micb",
+@@ -1149,6 +1153,22 @@ platform {
+ 			sound-dai = <&q6apm>;
+ 		};
+ 	};
++
++	mi2s1-playback-dai-link {
++		link-name = "Secondary MI2S Playback";
++
++		codec {
++			sound-dai = <&lt9611_codec 0>;
++		};
++
++		cpu {
++			sound-dai = <&q6apmbedai SECONDARY_MI2S_RX>;
++		};
++
++		platform {
++			sound-dai = <&q6apm>;
++		};
++	};
+ };
+ 
+ &swr2 {
+@@ -1437,3 +1457,26 @@ &lpass_audiocc {
+ 	compatible = "qcom,qcm6490-lpassaudiocc";
+ 	/delete-property/ power-domains;
+ };
++
++&mi2s1_data0 {
++	drive-strength = <8>;
++	bias-disable;
++};
++
++&mi2s1_mclk {
++	drive-strength = <8>;
++	bias-disable;
++	output-high;
++};
++
++&mi2s1_sclk {
++	drive-strength = <8>;
++	bias-disable;
++	output-high;
++};
++
++&mi2s1_ws {
++	drive-strength = <8>;
++	bias-disable;
++	output-high;
++};
+-- 
+2.34.1
+

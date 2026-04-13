@@ -1,0 +1,43 @@
+From 9a0f015752ed079818d4d9e345d17073c0f7497b Mon Sep 17 00:00:00 2001
+From: Kumar Anurag <kumar.singh@oss.qualcomm.com>
+Date: Mon, 13 Apr 2026 00:04:25 -0700
+Subject: [PATCH v1 3/4] ASoC: qcom: q6dsp: Update bit format support for
+ secondary i2s
+
+Add 32bit for playback and capture over secondary mi2s.
+
+Upstream-Status: Submitted [https://lore.kernel.org/all/20260413091937.134469-4-kumar.singh@oss.qualcomm.com/]
+
+Signed-off-by: Kumar Anurag <kumar.singh@oss.qualcomm.com>
+---
+ sound/soc/qcom/qdsp6/q6dsp-lpass-ports.c | 7 +++++--
+ 1 file changed, 5 insertions(+), 2 deletions(-)
+
+diff --git a/sound/soc/qcom/qdsp6/q6dsp-lpass-ports.c b/sound/soc/qcom/qdsp6/q6dsp-lpass-ports.c
+index 4eed54b071a5..0664f18d7a44 100644
+--- a/sound/soc/qcom/qdsp6/q6dsp-lpass-ports.c
++++ b/sound/soc/qcom/qdsp6/q6dsp-lpass-ports.c
+@@ -380,7 +380,9 @@ static struct snd_soc_dai_driver q6dsp_audio_fe_dais[] = {
+ 			.stream_name = "Secondary MI2S Playback",
+ 			.rates = SNDRV_PCM_RATE_48000 | SNDRV_PCM_RATE_8000 |
+ 				 SNDRV_PCM_RATE_16000,
+-			.formats = SNDRV_PCM_FMTBIT_S16_LE,
++			.formats = SNDRV_PCM_FMTBIT_S16_LE |
++				   SNDRV_PCM_FMTBIT_S24_LE |
++				   SNDRV_PCM_FMTBIT_S32_LE,
+ 			.channels_min = 1,
+ 			.channels_max = 8,
+ 			.rate_min =     8000,
+@@ -394,7 +396,8 @@ static struct snd_soc_dai_driver q6dsp_audio_fe_dais[] = {
+ 			.rates = SNDRV_PCM_RATE_48000 | SNDRV_PCM_RATE_8000 |
+ 				 SNDRV_PCM_RATE_16000,
+ 			.formats = SNDRV_PCM_FMTBIT_S16_LE |
+-				   SNDRV_PCM_FMTBIT_S24_LE,
++				   SNDRV_PCM_FMTBIT_S24_LE |
++				   SNDRV_PCM_FMTBIT_S32_LE,
+ 			.channels_min = 1,
+ 			.channels_max = 8,
+ 			.rate_min =     8000,
+-- 
+2.34.1
+

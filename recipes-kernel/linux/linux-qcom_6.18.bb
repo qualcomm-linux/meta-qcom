@@ -23,6 +23,10 @@ SRCBRANCH:class-devupstream ?= "branch=qcom-6.18.y"
 SRC_URI = "git://github.com/qualcomm-linux/kernel.git;${SRCBRANCH};protocol=https"
 SRC_URI += "file://0001-tools-use-basename-to-identify-file-in-gen-mach-type.patch"
 SRC_URI += "file://v1-0001-arm64-dts-qcom-lemans-Enable-DISPLAY-PORT.patch"
+SRC_URI += "file://v1-0001-arm64-dts-qcom-Enable-secondary-mi2s.patch"
+SRC_URI += "file://v1-0002-arm64-dts-qcom-qcs6490-Enable-DP-audio.patch"
+SRC_URI += "file://v1-0003-ASoC-qcom-q6dsp-Update-bit-format-support-for-sec.patch"
+SRC_URI += "file://v1-0004-ASoC-qcom-sc8280xp-don-t-force-S16_LE-in-hw_param.patch"
 
 # Additional kernel configs.
 SRC_URI += " \
