@@ -1,0 +1,45 @@
+From 02743e98b6e54fea6687760b6149d506f4c474cb Mon Sep 17 00:00:00 2001
+From: Kumar Anurag <kumar.singh@oss.qualcomm.com>
+Date: Sun, 12 Apr 2026 21:21:14 -0700
+Subject: [PATCH v1] arm64: dts: qcom: lemans: Enable DISPLAY-PORT
+
+Add dailinks for DISPLAY-PORT to enable audio functionality
+on edp0.
+
+Upstream-Status: Submitted [https://lore.kernel.org/all/20260413043713.1659-1-kumar.singh@oss.qualcomm.com/]
+
+Signed-off-by: Kumar Anurag <kumar.singh@oss.qualcomm.com>
+---
+ arch/arm64/boot/dts/qcom/lemans-evk.dts | 16 ++++++++++++++++
+ 1 file changed, 16 insertions(+)
+
+diff --git a/arch/arm64/boot/dts/qcom/lemans-evk.dts b/arch/arm64/boot/dts/qcom/lemans-evk.dts
+index 90fce947ca7e..daed18b1e6f5 100644
+--- a/arch/arm64/boot/dts/qcom/lemans-evk.dts
++++ b/arch/arm64/boot/dts/qcom/lemans-evk.dts
+@@ -130,6 +130,22 @@ platform {
+ 				sound-dai = <&q6apm>;
+ 			};
+ 		};
++
++		dp0-dai-link {
++			link-name = "DisplayPort0 Playback";
++
++			cpu {
++				sound-dai = <&q6apmbedai DISPLAY_PORT_RX_0>;
++			};
++
++			codec {
++				sound-dai = <&mdss0_dp0>;
++			};
++
++			platform {
++				sound-dai = <&q6apm>;
++			};
++		};
+ 	};
+ 
+ 	vbus_supply_regulator_0: regulator-vbus-supply-0 {
+-- 
+2.34.1
+
