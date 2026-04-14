@@ -13,6 +13,7 @@ PACKAGES = " \
     ${PN}-qcom-qcs615-soc \
     ${PN}-qcom-qcs6490-soc \
     ${PN}-qcom-qcs8300-soc \
+    ${PN}-qcom-qcs8550-soc \
     ${PN}-qcom-qcs9100-soc \
     ${PN}-qcom-shikra-soc \
 "
@@ -233,6 +234,21 @@ RRECOMMENDS:${PN}-qcom-qcs8300-soc += " \
     kernel-module-qcom-refgen-regulator \
     kernel-module-stmmac-platform \
     kernel-module-videocc-sa8775p \
+"
+
+RRECOMMENDS:${PN}-qcom-qcs8550-soc += " \
+    ${PN}-board-generic \
+    ${PN}-qcom-generic \
+    kernel-module-ath12k \
+    kernel-module-camcc-sm8550 \
+    kernel-module-dispcc-sm8550 \
+    kernel-module-gpucc-sm8550 \
+    kernel-module-pinctrl-sm8550-lpass-lpi \
+    kernel-module-pmic-glink \
+    kernel-module-pmic-glink-altmode \
+    kernel-module-pwrseq-qcom-wcn \
+    kernel-module-snd-soc-wsa884x \
+    kernel-module-videocc-sm8550 \
 "
 
 RRECOMMENDS:${PN}-qcom-qcs9100-soc += " \
