@@ -170,6 +170,15 @@ Make sure that ModemManager is not running, disable it if necessary.
    READ64 image: 13 offset: 0x0 length: 0x40
    ```
 
+## Releases
+
+Milestone releases for meta-qcom are managed in a separate repository:
+[meta-qcom-releases](https://github.com/qualcomm-linux/meta-qcom-releases)
+
+The meta-qcom-releases repository contains kas lock files corresponding to each official milestone release.
+These lock files capture the exact revisions of meta-qcom and all dependent meta-layers used during a
+given release, ensuring reproducible and stable builds.
+
 ## Contributing
 
 Please submit any patches against the `meta-qcom` layer (branch **master**)
