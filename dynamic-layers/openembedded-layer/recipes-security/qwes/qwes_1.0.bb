@@ -8,7 +8,7 @@ LIC_FILES_CHKSUM = "file://usr/share/doc/${BPN}/LICENSE.qcom-2;md5=165287851294f
 
 PBT_BUILD_DATE = "260409"
 
-SRC_URI = "https://softwarecenter.qualcomm.com/nexus/generic/software/chip/component/sec-userspace.qclinux.0.0/${PBT_BUILD_DATE}/prebuilt_yocto/qwes_${PV}_armv8a.tar.gz"
+SRC_URI = "https://qartifactory-edge.qualcomm.com/artifactory/qsc_releases/software/chip/component/sec-userspace.qclinux.0.0/${PBT_BUILD_DATE}/prebuilt_yocto/qwes_${PV}_armv8a.tar.gz"
 SRC_URI[sha256sum] = "2fc38e033aa32e59a1749017526d29e9ad71f38f168ff652383eb06a05be3985"
 
 S = "${UNPACKDIR}"
