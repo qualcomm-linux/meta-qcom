@@ -145,6 +145,7 @@ jobs:
         # and "contemporary" - exclude dragonboards
         machine:
           - iq-9075-evk
+          - iq-x7181-evk
           - qcs615-ride
           - rb3gen2-core-kit
           - qcs8300-ride-sx
