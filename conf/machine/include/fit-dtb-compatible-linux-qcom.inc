@@ -24,24 +24,33 @@ FIT_DTB_COMPATIBLE[qcom_hamoa-evk-camx] = "hamoa-iot-evk hamoa-evk-camx"
 FIT_DTB_COMPATIBLE[qcom_purwa-evk-camx] = "purwa-iot-evk purwa-evk-camx"
 
 # ---------- lemans ----------
-FIT_DTB_COMPATIBLE[qcom_qcs9075-iot-el2gh-staging] = \
-    "lemans-evk lemans-evk-camera-csi1-imx577 lemans-staging"
+
+# Add entries for combinations whose overlays are available only in
+# LINUX_QCOM_KERNEL_DEVICETREE. Move these to fit-dtb-compatible.inc once
+# the overlays are available in linux-yocto.
+
 FIT_DTB_COMPATIBLE[qcom_qcs9075-iot] = \
-    "lemans-evk lemans-evk-camera-csi1-imx577 lemans-el2"
+    "lemans-evk lemans-evk-camera-csi1-imx577 lemans-el2 lemans-evk-sd-card"
 FIT_DTB_COMPATIBLE[qcom_qcs9075-iot-staging] = \
-    "lemans-evk lemans-evk-camera-csi1-imx577 lemans-el2 lemans-staging"
-FIT_DTB_COMPATIBLE[qcom_qcs9075-iot-el2gh-camx] = \
-    "lemans-evk lemans-evk-camx"
-FIT_DTB_COMPATIBLE[qcom_qcs9075-iot-el2gh-camx-staging] = \
-    "lemans-evk lemans-evk-camx lemans-staging"
+    "lemans-evk lemans-evk-camera-csi1-imx577 lemans-staging lemans-el2 lemans-evk-sd-card"
+FIT_DTB_COMPATIBLE[qcom_qcs9075-iot-el2gh-staging] = \
+    "lemans-evk lemans-evk-camera-csi1-imx577 lemans-staging lemans-evk-sd-card"
 FIT_DTB_COMPATIBLE[qcom_qcs9075-iot-camx] = \
-    "lemans-evk lemans-evk-camx lemans-el2 lemans-camx-el2"
+    "lemans-evk lemans-evk-camx lemans-el2 lemans-camx-el2 lemans-evk-sd-card"
 FIT_DTB_COMPATIBLE[qcom_qcs9075-iot-camx-staging] = \
-    "lemans-evk lemans-evk-camx lemans-el2 lemans-camx-el2 lemans-staging"
+    "lemans-evk lemans-evk-camx lemans-el2 lemans-camx-el2 lemans-staging lemans-evk-sd-card"
+FIT_DTB_COMPATIBLE[qcom_qcs9075-iot-el2gh-camx] = \
+    "lemans-evk lemans-evk-camx lemans-evk-sd-card"
+FIT_DTB_COMPATIBLE[qcom_qcs9075-iot-el2gh-camx-staging] = \
+    "lemans-evk lemans-evk-camx lemans-staging lemans-evk-sd-card"
 FIT_DTB_COMPATIBLE[qcom_qcs9075-iot-subtype1] = \
-    "lemans-evk lemans-evk-ifp-mezzanine"
+    "lemans-evk lemans-evk-ifp-mezzanine lemans-evk-sd-card"
 FIT_DTB_COMPATIBLE[qcom_qcs9075-iot-subtype1-staging] = \
-    "lemans-evk lemans-evk-ifp-mezzanine lemans-staging lemans-evk-staging"
+    "lemans-evk lemans-evk-ifp-mezzanine lemans-staging lemans-evk-staging lemans-evk-sd-card"
+FIT_DTB_COMPATIBLE[qcom_qcs9075-iot-subtype1-emmc] = \
+    "lemans-evk lemans-evk-ifp-mezzanine lemans-evk-emmc"
+FIT_DTB_COMPATIBLE[qcom_qcs9075-iot-subtype1-staging-emmc] = \
+    "lemans-evk lemans-evk-ifp-mezzanine lemans-staging lemans-evk-staging lemans-evk-emmc"
 
 FIT_DTB_COMPATIBLE[qcom_qcs9100-qam-el2gh-staging] = \
     "qcs9100-ride lemans-staging"
