@@ -9,7 +9,7 @@ DEPENDS = "libbsd libyaml"
 SRCREV = "8572ae1c45d38a4dc8853b1b9b6738207ab1ce94"
 SRC_URI = "\
     git://github.com/qualcomm/fastrpc.git;branch=main;protocol=https;tag=v${PV} \
-    file://run-ptest \
+    file://run-ptest \ 
     file://0001-apps_mem-fallback-to-legacy-mmap-unmap-when-internal.patch \
 "
 
