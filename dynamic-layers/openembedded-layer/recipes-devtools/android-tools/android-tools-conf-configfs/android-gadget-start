@@ -2,7 +2,7 @@
 
 set -e
 
-sleep 10
+sleep 1
 
 # Speed-only selection:
 # 1) Pick UDC with highest maximum_speed
