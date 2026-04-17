@@ -1,0 +1,182 @@
+From 5d1c29343a22aa2a59f2d69279e234f856b6ffd3 Mon Sep 17 00:00:00 2001
+From: Tushar Darote <tdarote@qti.qualcomm.com>
+Date: Thu, 16 Apr 2026 14:10:10 +0530
+Subject: [PATCH] wayland: handle padded buffers in wl_shm buffer creation
+
+Use GstBuffer metadata when constructing wl_shm buffers so stride and
+size reflect the actual buffer layout. This fixes incorrect rendering
+with DMA-backed buffers that include padding or custom strides.
+
+Upstream-Status: Submitted [https://gitlab.freedesktop.org/gstreamer/gstreamer/-/merge_requests/11370]
+
+Signed-off-by: Tushar Darote <tdarote@qti.qualcomm.com>
+---
+ ext/gtk/gstgtkwaylandsink.c              |  4 +-
+ ext/wayland/gstwaylandsink.c             |  4 +-
+ gst-libs/gst/wayland/gstwlshmallocator.c | 62 ++++++++++++++++--------
+ gst-libs/gst/wayland/gstwlshmallocator.h |  2 +-
+ gst-libs/gst/wayland/gstwlwindow.c       |  2 +-
+ 5 files changed, 47 insertions(+), 27 deletions(-)
+
+diff --git a/ext/gtk/gstgtkwaylandsink.c b/ext/gtk/gstgtkwaylandsink.c
+index 0660b30..6d1adce 100644
+--- a/ext/gtk/gstgtkwaylandsink.c
++++ b/ext/gtk/gstgtkwaylandsink.c
+@@ -1302,7 +1302,7 @@ handle_shm:
+   if (!wbuf && gst_wl_display_check_format_for_shm (priv->display,
+           &priv->render_info)) {
+     if (gst_buffer_n_memory (buffer) == 1 && gst_is_fd_memory (mem))
+-      wbuf = gst_wl_shm_memory_construct_wl_buffer (mem, priv->display,
++      wbuf = gst_wl_shm_memory_construct_wl_buffer (buffer, priv->display,
+           &priv->render_info);
+ 
+     /* If nothing worked, copy into our internal pool */
+@@ -1329,7 +1329,7 @@ handle_shm:
+       /* attach a wl_buffer if there isn't one yet */
+       if (G_UNLIKELY (!wlbuffer)) {
+         mem = gst_buffer_peek_memory (to_render, 0);
+-        wbuf = gst_wl_shm_memory_construct_wl_buffer (mem, priv->display,
++        wbuf = gst_wl_shm_memory_construct_wl_buffer (to_render, priv->display,
+             &priv->render_info);
+ 
+         if (G_UNLIKELY (!wbuf))
+diff --git a/ext/wayland/gstwaylandsink.c b/ext/wayland/gstwaylandsink.c
+index 443db24..2490b6e 100644
+--- a/ext/wayland/gstwaylandsink.c
++++ b/ext/wayland/gstwaylandsink.c
+@@ -1148,7 +1148,7 @@ handle_shm:
+   if (!wbuf && gst_wl_display_check_format_for_shm (self->display,
+           &self->render_info)) {
+     if (gst_buffer_n_memory (buffer) == 1 && gst_is_fd_memory (mem))
+-      wbuf = gst_wl_shm_memory_construct_wl_buffer (mem, self->display,
++      wbuf = gst_wl_shm_memory_construct_wl_buffer (buffer, self->display,
+           &self->video_info);
+ 
+     /* If nothing worked, copy into our internal pool */
+@@ -1174,7 +1174,7 @@ handle_shm:
+       /* attach a wl_buffer if there isn't one yet */
+       if (G_UNLIKELY (!wlbuffer)) {
+         mem = gst_buffer_peek_memory (to_render, 0);
+-        wbuf = gst_wl_shm_memory_construct_wl_buffer (mem, self->display,
++        wbuf = gst_wl_shm_memory_construct_wl_buffer (to_render, self->display,
+             &self->video_info);
+ 
+         if (G_UNLIKELY (!wbuf))
+diff --git a/gst-libs/gst/wayland/gstwlshmallocator.c b/gst-libs/gst/wayland/gstwlshmallocator.c
+index 671f2b7..930b836 100644
+--- a/gst-libs/gst/wayland/gstwlshmallocator.c
++++ b/gst-libs/gst/wayland/gstwlshmallocator.c
+@@ -76,7 +76,7 @@ gst_wl_shm_validate_video_info (const GstVideoInfo * vinfo)
+ }
+ 
+ struct wl_buffer *
+-gst_wl_shm_memory_construct_wl_buffer (GstMemory * mem, GstWlDisplay * display,
++gst_wl_shm_memory_construct_wl_buffer (GstBuffer * buf, GstWlDisplay * display,
+     const GstVideoInfo * info)
+ {
+   gint width, height, stride;
+@@ -84,35 +84,55 @@ gst_wl_shm_memory_construct_wl_buffer (GstMemory * mem, GstWlDisplay * display,
+   enum wl_shm_format format;
+   struct wl_shm_pool *wl_pool;
+   struct wl_buffer *wbuffer;
++  GstMemory *mem = NULL;
+ 
+   if (!gst_wl_shm_validate_video_info (info)) {
+     GST_DEBUG_OBJECT (display, "Unsupported strides and offsets.");
+     return NULL;
+   }
+ 
+-  width = GST_VIDEO_INFO_WIDTH (info);
+-  height = GST_VIDEO_INFO_HEIGHT (info);
+-  stride = GST_VIDEO_INFO_PLANE_STRIDE (info, 0);
+-  size = GST_VIDEO_INFO_SIZE (info);
++ /* Try to get video dimensions from buffer meta if available */
++  GstVideoMeta *vmeta = gst_buffer_get_video_meta (buf);
++  if (vmeta) {
++    width = vmeta->width;
++    height = vmeta->height;
++    stride = vmeta->stride[0];
++  } else {
++    width = GST_VIDEO_INFO_WIDTH (info);
++    height = GST_VIDEO_INFO_HEIGHT (info);
++    stride = GST_VIDEO_INFO_PLANE_STRIDE (info, 0);
++  }
++
++  /* Use buffer size if possible, otherwise fall back to video info size */
++  size = gst_buffer_get_size (buf);
++  if (size == 0)
++    size = GST_VIDEO_INFO_SIZE (info);
+   format = gst_video_format_to_wl_shm_format (GST_VIDEO_INFO_FORMAT (info));
+ 
++  /* Retrieve the underlying GstMemory from the buffer */
++  mem = gst_buffer_peek_memory (buf, 0);
++
+   memsize = gst_memory_get_sizes (mem, &offset, &maxsize);
+   offset += GST_VIDEO_INFO_PLANE_OFFSET (info, 0);
+ 
+-  g_return_val_if_fail (gst_is_fd_memory (mem), NULL);
+-  g_return_val_if_fail (size <= memsize, NULL);
+-  g_return_val_if_fail (gst_wl_display_check_format_for_shm (display, info),
+-      NULL);
+-
+-  GST_DEBUG_OBJECT (display, "Creating wl_buffer from SHM of size %"
+-      G_GSSIZE_FORMAT " (%d x %d, stride %d), format %s", size, width, height,
+-      stride, gst_wl_shm_format_to_string (format));
+-
+-  wl_pool = wl_shm_create_pool (gst_wl_display_get_shm (display),
+-      gst_fd_memory_get_fd (mem), memsize);
+-  wbuffer = wl_shm_pool_create_buffer (wl_pool, offset, width, height, stride,
+-      format);
+-  wl_shm_pool_destroy (wl_pool);
+-
+-  return wbuffer;
++  /* If the memory is FD-backed, we can create a wl_shm buffer directly */
++  if (gst_is_fd_memory (mem)) {
++    g_return_val_if_fail (size <= memsize, NULL);
++    g_return_val_if_fail (gst_wl_display_check_format_for_shm (display, info),
++        NULL);
++
++    GST_DEBUG_OBJECT (display, "Creating wl_buffer from SHM of size %"
++        G_GSSIZE_FORMAT " (%d x %d, stride %d), format %s", size, width, height,
++        stride, gst_wl_shm_format_to_string (format));
++
++    wl_pool = wl_shm_create_pool (gst_wl_display_get_shm (display),
++        gst_fd_memory_get_fd (mem), memsize);
++    wbuffer = wl_shm_pool_create_buffer (wl_pool, offset, width, height,
++        stride, format);
++    wl_shm_pool_destroy (wl_pool);
++    return wbuffer;
++  } else {
++    GST_WARNING_OBJECT (display, "Memory is not FD-backed; cannot create wl_shm buffer");
++    return NULL;
++  }
+ }
+diff --git a/gst-libs/gst/wayland/gstwlshmallocator.h b/gst-libs/gst/wayland/gstwlshmallocator.h
+index 4309bd7..38f3ba5 100644
+--- a/gst-libs/gst/wayland/gstwlshmallocator.h
++++ b/gst-libs/gst/wayland/gstwlshmallocator.h
+@@ -33,7 +33,7 @@ GST_WL_API
+ void gst_wl_shm_init_once (void);
+ 
+ GST_WL_API
+-struct wl_buffer * gst_wl_shm_memory_construct_wl_buffer (GstMemory * mem,
++struct wl_buffer * gst_wl_shm_memory_construct_wl_buffer (GstBuffer * buf,
+     GstWlDisplay * display, const GstVideoInfo * info);
+ 
+ G_END_DECLS
+diff --git a/gst-libs/gst/wayland/gstwlwindow.c b/gst-libs/gst/wayland/gstwlwindow.c
+index 3c5c3cc..b055755 100644
+--- a/gst-libs/gst/wayland/gstwlwindow.c
++++ b/gst-libs/gst/wayland/gstwlwindow.c
+@@ -986,7 +986,7 @@ gst_wl_window_update_borders (GstWlWindow * self)
+     gst_buffer_memset (buf, 0, 0, info.size);
+ 
+     wlbuf =
+-        gst_wl_shm_memory_construct_wl_buffer (gst_buffer_peek_memory (buf, 0),
++        gst_wl_shm_memory_construct_wl_buffer (buf,
+         priv->display, &info);
+ 
+     g_object_unref (alloc);
+-- 
+2.34.1
+
