@@ -13,7 +13,7 @@ LICENSE = " \
 LIC_FILES_CHKSUM = "\
     file://LICENSE.qcom;md5=56e86b6c508490dadc343f39468b5f5e \
     file://LICENSE.qcom-2;md5=165287851294f2fb8ac8cbc5e24b02b0 \
-    file://WHENCE;md5=0bd9f6b084039733e6eb31a250ccc6fe \
+    file://WHENCE;md5=84a238ca84b2b4db57cf6f829d317721 \
     file://conf.d/hexagon-dsp-binaries-qualcomm-iq9075-evk.yaml;endline=2;md5=077232564320a8fce4ea446daad3d726 \
 "
 NO_GENERIC_LICENSE[dspso-qcom] = "LICENSE.qcom"
@@ -24,7 +24,7 @@ SRC_URI = " \
     git://github.com/linux-msm/dsp-binaries;protocol=https;branch=trunk;tag=${PV} \
 "
 
-SRCREV = "251d038e2c2fef7e0f58060177f8ddd669afa012"
+SRCREV = "123bddd9cc886b61ece87d7d63b9ceed0654d3a1"
 
 inherit allarch
 
