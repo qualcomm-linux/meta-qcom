@@ -108,6 +108,13 @@ jobs:
           mkdir $KAS_WORK_DIR
           $KAS_CONTAINER dump --resolve-env --resolve-local --resolve-refs ${KAS_YAMLS} > kas-build.yml
 
+      - name: Kas build world (setscene)
+        if:  inputs.world
+        shell: bash
+        run: |
+          $KAS_CONTAINER build ${KAS_YAMLS}:ci/world.yml -- --setscene-only
+          $KAS_CONTAINER shell ${KAS_YAMLS} --command "buildstats-summary --sort duration --highlight 0"
+
       - name: Kas build world
         if:  inputs.world
         shell: bash
@@ -122,6 +129,13 @@ jobs:
           rename.ul -va buildstats buildstats-world $KAS_WORK_DIR/build/buildstats*
           mv $KAS_WORK_DIR/build/buildstats* .
 
+      - name: Kas build images (setscene)
+        if:  inputs.target
+        shell: bash
+        run: |
+          $KAS_CONTAINER build ${KAS_YAMLS} -- --setscene-only
+          $KAS_CONTAINER shell ${KAS_YAMLS} --command "buildstats-summary --sort duration --highlight 0"
+
       - name: Kas build images
         if:  inputs.target
         shell: bash
@@ -134,6 +148,16 @@ jobs:
         run: |
           ci/kas-container-shell-helper.sh ci/yocto-buildstats.sh
           mv $KAS_WORK_DIR/build/buildstats* .
+
+      - name: Kas build SDK (setscene)
+        if:  inputs.sdk
+        shell: bash
+        run: |
+          $KAS_CONTAINER build ${KAS_YAMLS} --task populate_sdk \
+            --target qcom-multimedia-image \
+            --target qcom-multimedia-proprietary-image \
+              -- --setscene-only
+          $KAS_CONTAINER shell ${KAS_YAMLS} --command "buildstats-summary --sort duration --highlight 0"
 
       - name: Kas build SDK
         if:  inputs.sdk
