@@ -1,0 +1,91 @@
+From 2e4420a85874da0d48bd6fd801d949db739d6855 Mon Sep 17 00:00:00 2001
+From: Ekansh Gupta <ekansh.gupta@oss.qualcomm.com>
+Date: Thu, 9 Apr 2026 14:26:15 +0800
+Subject: [PATCH 2/4] misc: fastrpc: Remove buffer from list prior to unmap
+ operation
+
+fastrpc_req_munmap_impl() is called to unmap any buffer. The buffer is
+getting removed from the list after it is unmapped from DSP. This can
+create potential race conditions if any other thread removes the entry
+from list while unmap operation is ongoing. Remove the entry before
+calling unmap operation.
+
+Fixes: 2419e55e532de ("misc: fastrpc: add mmap/unmap support")
+Cc: stable@kernel.org
+Co-developed-by: Ekansh Gupta <ekansh.gupta@oss.qualcomm.com>
+Signed-off-by: Ekansh Gupta <ekansh.gupta@oss.qualcomm.com>
+Signed-off-by: Jianping Li <jianping.li@oss.qualcomm.com>
+
+Upstream-Status: Submitted [linux-arm-msm@vger.kernel.org]
+---
+ drivers/misc/fastrpc.c | 21 +++++++++++++++------
+ 1 file changed, 15 insertions(+), 6 deletions(-)
+
+diff --git a/drivers/misc/fastrpc.c b/drivers/misc/fastrpc.c
+index 7c5bc88b3d12..ee3db5e20098 100644
+--- a/drivers/misc/fastrpc.c
++++ b/drivers/misc/fastrpc.c
+@@ -1958,9 +1958,6 @@ static int fastrpc_req_munmap_impl(struct fastrpc_user *fl, struct fastrpc_buf *
+ 				      &args[0]);
+ 	if (!err) {
+ 		dev_dbg(dev, "unmmap\tpt 0x%09lx OK\n", buf->raddr);
+-		spin_lock(&fl->lock);
+-		list_del(&buf->node);
+-		spin_unlock(&fl->lock);
+ 		fastrpc_buf_free(buf);
+ 	} else {
+ 		dev_err(dev, "unmmap\tpt 0x%09lx ERROR\n", buf->raddr);
+@@ -1974,6 +1971,7 @@ static int fastrpc_req_munmap(struct fastrpc_user *fl, char __user *argp)
+ 	struct fastrpc_buf *buf = NULL, *iter, *b;
+ 	struct fastrpc_req_munmap req;
+ 	struct device *dev = fl->sctx->dev;
++	int err;
+ 
+ 	if (copy_from_user(&req, argp, sizeof(req)))
+ 		return -EFAULT;
+@@ -1981,6 +1979,7 @@ static int fastrpc_req_munmap(struct fastrpc_user *fl, char __user *argp)
+ 	spin_lock(&fl->lock);
+ 	list_for_each_entry_safe(iter, b, &fl->mmaps, node) {
+ 		if ((iter->raddr == req.vaddrout) && (iter->size == req.size)) {
++			list_del(&iter->node);
+ 			buf = iter;
+ 			break;
+ 		}
+@@ -1993,7 +1992,14 @@ static int fastrpc_req_munmap(struct fastrpc_user *fl, char __user *argp)
+ 		return -EINVAL;
+ 	}
+ 
+-	return fastrpc_req_munmap_impl(fl, buf);
++	err = fastrpc_req_munmap_impl(fl, buf);
++	if (err) {
++		spin_lock(&fl->lock);
++		list_add_tail(&buf->node, &fl->mmaps);
++		spin_unlock(&fl->lock);
++	}
++
++	return err;
+ }
+ 
+ static int fastrpc_req_mmap(struct fastrpc_user *fl, char __user *argp)
+@@ -2083,14 +2089,17 @@ static int fastrpc_req_mmap(struct fastrpc_user *fl, char __user *argp)
+ 
+ 	if (copy_to_user((void __user *)argp, &req, sizeof(req))) {
+ 		err = -EFAULT;
+-		goto err_assign;
++		goto err_copy;
+ 	}
+ 
+ 	dev_dbg(dev, "mmap\t\tpt 0x%09lx OK [len 0x%08llx]\n",
+ 		buf->raddr, buf->size);
+ 
+ 	return 0;
+-
++err_copy:
++	spin_lock(&fl->lock);
++	list_del(&buf->node);
++	spin_unlock(&fl->lock);
+ err_assign:
+ 	fastrpc_req_munmap_impl(fl, buf);
+ 
+-- 
+2.34.1

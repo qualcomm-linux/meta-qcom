@@ -22,6 +22,12 @@ SRCBRANCH:class-devupstream ?= "branch=qcom-6.18.y"
 
 SRC_URI = "git://github.com/qualcomm-linux/kernel.git;${SRCBRANCH};protocol=https"
 SRC_URI += "file://0001-tools-use-basename-to-identify-file-in-gen-mach-type.patch"
+SRC_URI += " \
+    file://0001-misc-fastrpc-Fix-initial-memory-allocation-for-Audio.patch \
+    file://0002-misc-fastrpc-Remove-buffer-from-list-prior-to-unmap-.patch \
+    file://0003-misc-fastrpc-Allocate-entire-reserved-memory-for-Aud.patch \
+    file://0004-misc-fastrpc-Allow-fastrpc_buf_free-to-accept-NULL.patch \
+"
 
 # Additional kernel configs.
 SRC_URI += " \

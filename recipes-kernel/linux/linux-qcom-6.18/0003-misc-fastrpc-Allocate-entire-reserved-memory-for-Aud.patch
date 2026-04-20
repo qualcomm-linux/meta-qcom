@@ -1,0 +1,202 @@
+From 9e353f7c3477d7f266146a4d0da575ab26169737 Mon Sep 17 00:00:00 2001
+From: Jianping Li <jianping.li@oss.qualcomm.com>
+Date: Thu, 9 Apr 2026 14:26:16 +0800
+Subject: [PATCH 3/4] misc: fastrpc: Allocate entire reserved memory for Audio
+ PD in probe
+
+Allocating and freeing Audio PD memory from userspace is unsafe because
+the kernel cannot reliably determine when the DSP has finished using the
+memory. Userspace may free buffers while they are still in use by the DSP,
+and remote free requests cannot be safely trusted.
+
+Allocate the entire Audio PD reserved-memory region upfront during rpmsg
+probe and tie its lifetime to the rpmsg channel. This avoids userspace-
+controlled alloc/free and ensures memory is reclaimed only when the DSP
+shuts down.
+
+Signed-off-by: Jianping Li <jianping.li@oss.qualcomm.com>
+
+Upstream-Status: Submitted [linux-arm-msm@vger.kernel.org]
+---
+ drivers/misc/fastrpc.c | 102 +++++++++++++++++++++--------------------
+ 1 file changed, 53 insertions(+), 49 deletions(-)
+
+diff --git a/drivers/misc/fastrpc.c b/drivers/misc/fastrpc.c
+index ee3db5e20098..39677f33a1bf 100644
+--- a/drivers/misc/fastrpc.c
++++ b/drivers/misc/fastrpc.c
+@@ -294,6 +294,8 @@ struct fastrpc_channel_ctx {
+ 	struct kref refcount;
+ 	/* Flag if dsp attributes are cached */
+ 	bool valid_attributes;
++	/* Flag if audio PD init mem was allocated */
++	bool audio_init_mem;
+ 	u32 dsp_attributes[FASTRPC_MAX_DSP_ATTRIBUTES];
+ 	struct fastrpc_device *secure_fdevice;
+ 	struct fastrpc_device *fdevice;
+@@ -1394,15 +1396,16 @@ static int fastrpc_init_create_static_process(struct fastrpc_user *fl,
+ 	struct fastrpc_init_create_static init;
+ 	struct fastrpc_invoke_args *args;
+ 	struct fastrpc_phy_page pages[1];
++	struct fastrpc_channel_ctx *cctx = fl->cctx;
+ 	char *name;
+ 	int err;
+-	bool scm_done = false;
+ 	struct {
+ 		int client_id;
+ 		u32 namelen;
+ 		u32 pageslen;
+ 	} inbuf;
+ 	u32 sc;
++	unsigned long flags;
+ 
+ 	args = kcalloc(FASTRPC_CREATE_STATIC_PROCESS_NARGS, sizeof(*args), GFP_KERNEL);
+ 	if (!args)
+@@ -1426,29 +1429,6 @@ static int fastrpc_init_create_static_process(struct fastrpc_user *fl,
+ 	inbuf.client_id = fl->client_id;
+ 	inbuf.namelen = init.namelen;
+ 	inbuf.pageslen = 0;
+-	if (!fl->cctx->remote_heap) {
+-		err = fastrpc_remote_heap_alloc(fl, fl->sctx->dev, init.memlen,
+-						&fl->cctx->remote_heap);
+-		if (err)
+-			goto err_name;
+-
+-		/* Map if we have any heap VMIDs associated with this ADSP Static Process. */
+-		if (fl->cctx->vmcount) {
+-			u64 src_perms = BIT(QCOM_SCM_VMID_HLOS);
+-
+-			err = qcom_scm_assign_mem(fl->cctx->remote_heap->phys,
+-							(u64)fl->cctx->remote_heap->size,
+-							&src_perms,
+-							fl->cctx->vmperms, fl->cctx->vmcount);
+-			if (err) {
+-				dev_err(fl->sctx->dev, "Failed to assign memory with phys 0x%llx size 0x%llx err %d\n",
+-					fl->cctx->remote_heap->phys, fl->cctx->remote_heap->size, err);
+-				goto err_map;
+-			}
+-			scm_done = true;
+-			inbuf.pageslen = 1;
+-		}
+-	}
+ 
+ 	fl->pd = USER_PD;
+ 
+@@ -1460,8 +1440,25 @@ static int fastrpc_init_create_static_process(struct fastrpc_user *fl,
+ 	args[1].length = inbuf.namelen;
+ 	args[1].fd = -1;
+ 
+-	pages[0].addr = fl->cctx->remote_heap->phys;
+-	pages[0].size = fl->cctx->remote_heap->size;
++	spin_lock_irqsave(&cctx->lock, flags);
++	if (!fl->cctx->audio_init_mem) {
++		if (!fl->cctx->remote_heap ||
++		    !fl->cctx->remote_heap->phys ||
++		    !fl->cctx->remote_heap->size) {
++			spin_unlock_irqrestore(&cctx->lock, flags);
++			err = -ENOMEM;
++			goto err;
++		}
++
++		pages[0].addr = fl->cctx->remote_heap->phys;
++		pages[0].size = fl->cctx->remote_heap->size;
++		fl->cctx->audio_init_mem = true;
++		inbuf.pageslen = 1;
++	} else {
++		pages[0].addr = 0;
++		pages[0].size = 0;
++	}
++	spin_unlock_irqrestore(&cctx->lock, flags);
+ 
+ 	args[2].ptr = (u64)(uintptr_t) pages;
+ 	args[2].length = sizeof(*pages);
+@@ -1479,26 +1476,7 @@ static int fastrpc_init_create_static_process(struct fastrpc_user *fl,
+ 
+ 	return 0;
+ err_invoke:
+-	if (fl->cctx->vmcount && scm_done) {
+-		u64 src_perms = 0;
+-		struct qcom_scm_vmperm dst_perms;
+-		u32 i;
+-
+-		for (i = 0; i < fl->cctx->vmcount; i++)
+-			src_perms |= BIT(fl->cctx->vmperms[i].vmid);
+-
+-		dst_perms.vmid = QCOM_SCM_VMID_HLOS;
+-		dst_perms.perm = QCOM_SCM_PERM_RWX;
+-		err = qcom_scm_assign_mem(fl->cctx->remote_heap->phys,
+-						(u64)fl->cctx->remote_heap->size,
+-						&src_perms, &dst_perms, 1);
+-		if (err)
+-			dev_err(fl->sctx->dev, "Failed to assign memory phys 0x%llx size 0x%llx err %d\n",
+-				fl->cctx->remote_heap->phys, fl->cctx->remote_heap->size, err);
+-	}
+-err_map:
+-	fastrpc_buf_free(fl->cctx->remote_heap);
+-err_name:
++	fl->cctx->audio_init_mem = false;
+ 	kfree(name);
+ err:
+ 	kfree(args);
+@@ -2465,7 +2443,7 @@ static int fastrpc_rpmsg_probe(struct rpmsg_device *rpdev)
+ 		}
+ 	}
+ 
+-	if (domain_id == SDSP_DOMAIN_ID) {
++	if (domain_id == SDSP_DOMAIN_ID || domain_id == ADSP_DOMAIN_ID) {
+ 		struct resource res;
+ 		u64 src_perms;
+ 
+@@ -2477,6 +2455,15 @@ static int fastrpc_rpmsg_probe(struct rpmsg_device *rpdev)
+ 				    data->vmperms, data->vmcount);
+ 		}
+ 
++		if (domain_id == ADSP_DOMAIN_ID) {
++			data->remote_heap =
++				kzalloc(sizeof(*data->remote_heap), GFP_KERNEL);
++			if (!data->remote_heap)
++				return -ENOMEM;
++
++			data->remote_heap->phys = res.start;
++			data->remote_heap->size = resource_size(&res);
++		}
+ 	}
+ 
+ 	secure_dsp = !(of_property_read_bool(rdev->of_node, "qcom,non-secure-domain"));
+@@ -2556,6 +2543,7 @@ static void fastrpc_rpmsg_remove(struct rpmsg_device *rpdev)
+ 	struct fastrpc_buf *buf, *b;
+ 	struct fastrpc_user *user;
+ 	unsigned long flags;
++	int err;
+ 
+ 	/* No invocations past this point */
+ 	spin_lock_irqsave(&cctx->lock, flags);
+@@ -2573,8 +2561,24 @@ static void fastrpc_rpmsg_remove(struct rpmsg_device *rpdev)
+ 	list_for_each_entry_safe(buf, b, &cctx->invoke_interrupted_mmaps, node)
+ 		list_del(&buf->node);
+ 
+-	if (cctx->remote_heap)
+-		fastrpc_buf_free(cctx->remote_heap);
++	if (cctx->remote_heap && cctx->vmcount) {
++		if (cctx->vmcount) {
++			u64 src_perms = 0;
++			struct qcom_scm_vmperm dst_perms;
++
++			for (u32 i = 0; i < cctx->vmcount; i++)
++				src_perms |= BIT(cctx->vmperms[i].vmid);
++
++			dst_perms.vmid = QCOM_SCM_VMID_HLOS;
++			dst_perms.perm = QCOM_SCM_PERM_RWX;
++
++			err = qcom_scm_assign_mem(cctx->remote_heap->phys,
++						  cctx->remote_heap->size,
++						  &src_perms, &dst_perms, 1);
++			if (!err)
++				fastrpc_buf_free(cctx->remote_heap);
++		}
++	}
+ 
+ 	of_platform_depopulate(&rpdev->dev);
+ 
+-- 
+2.34.1
