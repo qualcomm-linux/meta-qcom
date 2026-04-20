@@ -67,6 +67,7 @@ runs:
     - name: Kas qcom world build
       shell: bash
       run: |
+        $KAS_CONTAINER build ${KAS_YAMLS}:ci/world.yml -- --setscene-only
         $KAS_CONTAINER build ${KAS_YAMLS}:ci/world.yml
         $KAS_CONTAINER shell ${KAS_YAMLS}:ci/world.yml \
           -c "buildstats-summary --sort duration --highlight 0 --shortest 300"
@@ -76,6 +77,7 @@ runs:
     - name: Kas build images
       shell: bash
       run: |
+        $KAS_CONTAINER build ${KAS_YAMLS} -- --setscene-only
         $KAS_CONTAINER build ${KAS_YAMLS}
         $KAS_CONTAINER shell ${KAS_YAMLS} \
           -c "buildstats-summary --sort duration --highlight 0 --shortest 300"
@@ -85,6 +87,7 @@ runs:
         if [ "${INPUTS_MACHINE}" = "qcom-armv8a" ]; then
           # SDK only with the default kernel
           if [ "${INPUTS_KERNEL_YAML}" = "" ] ; then
+            $KAS_CONTAINER build ${KAS_YAMLS} --task populate_sdk -- --setscene-only
             $KAS_CONTAINER build ${KAS_YAMLS} --task populate_sdk
             $KAS_CONTAINER shell ${KAS_YAMLS} \
               -c "buildstats-summary --sort duration --highlight 0 --shortest 300"
