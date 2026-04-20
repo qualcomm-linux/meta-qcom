@@ -61,6 +61,7 @@ runs:
     - name: Kas qcom world build
       shell: bash
       run: |
+        $KAS_CONTAINER build ${KAS_YAMLS}:ci/world.yml -- --setscene-only
         $KAS_CONTAINER build ${KAS_YAMLS}:ci/world.yml
         ci/kas-container-shell-helper.sh ci/yocto-buildstats.sh
         rename.ul -va buildstats buildstats-world $KAS_WORK_DIR/build/buildstats*
@@ -69,6 +70,7 @@ runs:
     - name: Kas build images
       shell: bash
       run: |
+        $KAS_CONTAINER build ${KAS_YAMLS} -- --setscene-only
         $KAS_CONTAINER build ${KAS_YAMLS}
         ci/kas-container-shell-helper.sh ci/yocto-buildstats.sh
         mv $KAS_WORK_DIR/build/buildstats* .
@@ -76,6 +78,7 @@ runs:
         if [ "${INPUTS_MACHINE}" = "qcom-armv8a" ]; then
           # SDK only with the default kernel and qcom-distro
           if [ "${INPUTS_KERNEL_YAML}" = "" ] && [ "${INPUTS_DISTRO_YAML}" = ":ci/qcom-distro.yml" ] ; then
+            $KAS_CONTAINER build ${KAS_YAMLS} --task populate_sdk -- --setscene-only \
             $KAS_CONTAINER build ${KAS_YAMLS} --task populate_sdk \
               --target qcom-multimedia-image \
               --target qcom-multimedia-proprietary-image
