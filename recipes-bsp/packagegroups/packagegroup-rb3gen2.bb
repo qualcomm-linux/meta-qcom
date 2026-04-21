@@ -14,7 +14,7 @@ RRECOMMENDS:${PN}-industrial-mezzanine-firmware = " \
 
 RRECOMMENDS:${PN}-firmware = " \
     ${@bb.utils.contains_any('DISTRO_FEATURES', 'opencl opengl vulkan', 'linux-firmware-qcom-adreno-a660 linux-firmware-qcom-qcm6490-adreno', '', d)} \
-    ${@bb.utils.contains('DISTRO_FEATURES', 'wifi', 'linux-firmware-ath11k-wcn6750 linux-firmware-qcom-qcm6490-wifi', '', d)} \
+    ${@bb.utils.contains('DISTRO_FEATURES', 'wifi', 'linux-firmware-ath11k-wcn6750 linux-firmware-qcom-qcm6490-wifi linux-firmware-ath12k-qcc2072', '', d)} \
     ${@bb.utils.contains('DISTRO_FEATURES', 'bluetooth', 'linux-firmware-qca-wcn6750', '', d)} \
     camxfirmware-kodiak \
     linux-firmware-lt9611uxc \
