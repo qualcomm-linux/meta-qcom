@@ -13,12 +13,12 @@ LINUX_VERSION ?= "6.19+7.0-rc6"
 PV = "${LINUX_VERSION}+git"
 
 # tag: qcom-next-7.0-rc6-20260416
-SRCREV ?= "aa085abae3ad03a0b6e379734665e3d7d8266076"
+SRCREV ?= "76af4892bd331117a7af474357dae5b6bd20b5b7"
 
 SRCBRANCH ?= "nobranch=1"
 SRCBRANCH:class-devupstream ?= "branch=qcom-next"
 
-SRC_URI = "git://github.com/qualcomm-linux/kernel.git;${SRCBRANCH};protocol=https"
+SRC_URI = "git://github.com/shawngsc/kernel.git;${SRCBRANCH};protocol=https"
 
 # Additional kernel configs.
 SRC_URI += " \
