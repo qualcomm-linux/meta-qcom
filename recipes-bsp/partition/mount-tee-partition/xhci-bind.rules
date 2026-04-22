@@ -1,0 +1,1 @@
+ACTION=="add", SUBSYSTEM=="pci", ATTR{class}=="0x0c0330", TEST=="/sys/bus/pci/drivers/xhci_hcd/bind", RUN+="/bin/sh -c 'echo %k > /sys/bus/pci/drivers/xhci_hcd/bind'"

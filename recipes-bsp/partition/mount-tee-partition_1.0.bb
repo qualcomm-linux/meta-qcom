@@ -9,6 +9,8 @@ SRC_URI = " \
     file://check-tee-partition-fs.sh \
     file://format-tee-partition.service \
     file://persist.rules \
+    file://var-usbfw.mount \
+    file://xhci-bind.rules \
 "
 
 inherit features_check systemd
@@ -32,6 +34,18 @@ do_install() {
     install -Dm 0644 ${UNPACKDIR}/persist.rules \
             ${D}${nonarch_base_libdir}/udev/rules.d/99-persist.rules
 }
+
+do_install:append:qcm6490 () {
+    install -d ${D}${systemd_unitdir}/system/local-fs.target.wants
+    install -Dm 0644 ${UNPACKDIR}/var-usbfw.mount ${D}${systemd_system_unitdir}/system/var-usbfw.mount
+    install -Dm 0644 ${UNPACKDIR}/xhci-bind.rules ${D}${nonarch_libdir}/udev/rules.d/99-xhci-bind.rules
+    install -d ${D}${nonarch_base_libdir}/firmware/
+    ln -sf ${systemd_unitdir}/system/var-usbfw.mount ${D}${systemd_unitdir}/system/local-fs.target.wants/var-usbfw.mount
+    ln -sf /var/usbfw/renesas_usb_fw.mem ${D}${nonarch_base_libdir}/firmware/renesas_usb_fw.mem
+}
+
+FILES:${PN}:append:qcm6490 = " ${systemd_unitdir}/system/* \
+                               ${nonarch_base_libdir}/firmware/*"
 
 PACKAGES = "${PN}"
 
