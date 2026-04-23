@@ -20,3 +20,5 @@ overrides:
             commit: d713c99a9ddace090c0efc0ed57022185daa6fb2
         meta-security:
             commit: 596b966a0d047c2f48cb768821558e918ae0c477
+        meta-qcom-distro:
+            commit: df48923e77aa9c5f3ddace8e01fa38963bc90c9b
