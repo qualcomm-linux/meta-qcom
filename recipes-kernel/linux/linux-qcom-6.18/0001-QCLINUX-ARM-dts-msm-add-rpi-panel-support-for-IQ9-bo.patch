@@ -1,0 +1,130 @@
+From 816225418ca0baeb79db9ae06f84a5eddece11b4 Mon Sep 17 00:00:00 2001
+From: Shashank Maurya <ssmaurya@qti.qualcomm.com>
+Date: Tue, 28 Apr 2026 21:07:07 +0530
+Subject: [PATCH 1/1] QCLINUX: ARM: dts: msm: add rpi panel support for IQ9
+ board
+
+Add panel and corresponding regulator nodes.
+
+Upstream-Status: Inappropriate [RPI Debug]
+Signed-off-by: Shashank Maurya <ssmaurya@qti.qualcomm.com>
+---
+ arch/arm/configs/qcom_defconfig         |  1 +
+ arch/arm64/boot/dts/qcom/lemans-evk.dts | 61 +++++++++++++++++++++++++
+ 2 files changed, 62 insertions(+)
+
+diff --git a/arch/arm/configs/qcom_defconfig b/arch/arm/configs/qcom_defconfig
+index 29a1dea500f0..12552608d51e 100644
+--- a/arch/arm/configs/qcom_defconfig
++++ b/arch/arm/configs/qcom_defconfig
+@@ -159,6 +159,7 @@ CONFIG_REGULATOR_QCOM_RPM=y
+ CONFIG_REGULATOR_QCOM_RPMH=y
+ CONFIG_REGULATOR_QCOM_SMD_RPM=y
+ CONFIG_REGULATOR_QCOM_SPMI=y
++CONFIG_REGULATOR_RASPBERRYPI_TOUCHSCREEN_V2=m
+ CONFIG_MEDIA_SUPPORT=y
+ CONFIG_DRM=y
+ CONFIG_DRM_MSM=m
+diff --git a/arch/arm64/boot/dts/qcom/lemans-evk.dts b/arch/arm64/boot/dts/qcom/lemans-evk.dts
+index 514632cdd7cc..0928d4552c6c 100644
+--- a/arch/arm64/boot/dts/qcom/lemans-evk.dts
++++ b/arch/arm64/boot/dts/qcom/lemans-evk.dts
+@@ -19,6 +19,7 @@ / {
+ 
+ 	aliases {
+ 		ethernet0 = &ethernet0;
++		i2c1 = &i2c1;
+ 		mmc1 = &sdhc;
+ 		serial0 = &uart10;
+ 		serial1 = &uart17;
+@@ -127,6 +128,12 @@ usb2_con_hs_ep: endpoint {
+ 		};
+ 	};
+ 
++	display_bl: backlight {
++		compatible = "pwm-backlight";
++		power-supply = <&reg_dsi_touch>;
++		pwms = <&reg_backlight 0 255 0>;
++	};
++
+ 	edp0-connector {
+ 		compatible = "dp-connector";
+ 		label = "EDP0";
+@@ -151,6 +158,15 @@ edp1_connector_in: endpoint {
+ 		};
+ 	};
+ 
++	reg_dsi_touch: regulator-touch {
++		compatible = "regulator-fixed";
++		regulator-name = "rpi-dsi-touch";
++		regulator-min-microvolt = <3300000>;
++		regulator-max-microvolt = <3300000>;
++		gpio = <&expander3 1 GPIO_ACTIVE_HIGH>;
++		enable-active-high;
++	};
++
+ 	sound {
+ 		compatible = "qcom,qcs9100-sndcard";
+ 		model = "LEMANS-EVK";
+@@ -602,6 +618,21 @@ &gpu_zap_shader {
+ 	firmware-name = "qcom/sa8775p/a663_zap.mbn";
+ };
+ 
++&i2c1 {
++	qcom,load-firmware;
++	qcom,xfer-mode = <1>;
++
++	status = "okay";
++
++	reg_backlight: reg_backlight@45 {
++		compatible = "raspberrypi,touchscreen-panel-regulator-v2";
++		reg = <0x45>;
++		gpio-controller;
++		#gpio-cells = <2>;
++		#pwm-cells = <3>;
++	};
++};
++
+ &i2c11 {
+ 	status = "okay";
+ 
+@@ -808,6 +839,36 @@ &mdss0_dp1_phy {
+ 	status = "okay";
+ };
+ 
++&mdss0_dsi0 {
++	vdda-supply = <&vreg_l1c>;
++	status = "okay";
++
++	panel:panel@0 {
++		compatible = "raspberrypi,dsi-7inch";
++		reg = <0>;
++
++		reset-gpios = <&reg_backlight 0 GPIO_ACTIVE_LOW>;
++		power-supply = <&reg_dsi_touch>;
++		backlight = <&display_bl>;
++
++		port {
++			panel0_in: endpoint {
++				remote-endpoint = <&mdss0_dsi0_out>;
++			};
++		};
++	};
++};
++
++&mdss0_dsi0_out {
++	remote-endpoint = <&panel0_in>;
++	data-lanes = <0 1>;
++};
++
++&mdss0_dsi0_phy {
++	vdds-supply = <&vreg_l4a>;
++	status = "okay";
++};
++
+ &pcie0 {
+ 	perst-gpios = <&tlmm 2 GPIO_ACTIVE_LOW>;
+ 	wake-gpios = <&tlmm 0 GPIO_ACTIVE_HIGH>;
+-- 
+2.34.1
+
