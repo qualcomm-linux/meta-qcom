@@ -1,0 +1,109 @@
+From d7d1226ec896d6c856284e55fcc4afd7f09f63b2 Mon Sep 17 00:00:00 2001
+From: Shashank Maurya <ssmaurya@qti.qualcomm.com>
+Date: Tue, 28 Apr 2026 21:07:07 +0530
+Subject: [PATCH 1/1] QCLINUX: ARM: dts: msm: add rpi panel support for IQ9
+ board
+
+Add panel and corresponding regulator nodes.
+
+Upstream-Status: Inappropriate [RPI Debug]
+Signed-off-by: Shashank Maurya <ssmaurya@qti.qualcomm.com>
+---
+ arch/arm64/boot/dts/qcom/lemans-evk.dts | 60 +++++++++++++++++++++++++
+ 1 file changed, 60 insertions(+)
+
+diff --git a/arch/arm64/boot/dts/qcom/lemans-evk.dts b/arch/arm64/boot/dts/qcom/lemans-evk.dts
+index 514632cdd7cc..56f87608d16d 100644
+--- a/arch/arm64/boot/dts/qcom/lemans-evk.dts
++++ b/arch/arm64/boot/dts/qcom/lemans-evk.dts
+@@ -127,6 +127,12 @@ usb2_con_hs_ep: endpoint {
+ 		};
+ 	};
+ 
++	display_bl: backlight {
++		compatible = "pwm-backlight";
++		power-supply = <&reg_dsi_touch>;
++		pwms = <&reg_backlight 0 255 0>;
++	};
++
+ 	edp0-connector {
+ 		compatible = "dp-connector";
+ 		label = "EDP0";
+@@ -151,6 +157,15 @@ edp1_connector_in: endpoint {
+ 		};
+ 	};
+ 
++	reg_dsi_touch: regulator-touch {
++		compatible = "regulator-fixed";
++		regulator-name = "rpi-dsi-touch";
++		regulator-min-microvolt = <3300000>;
++		regulator-max-microvolt = <3300000>;
++		gpio = <&expander3 1 GPIO_ACTIVE_HIGH>;
++		enable-active-high;
++	};
++
+ 	sound {
+ 		compatible = "qcom,qcs9100-sndcard";
+ 		model = "LEMANS-EVK";
+@@ -602,6 +617,21 @@ &gpu_zap_shader {
+ 	firmware-name = "qcom/sa8775p/a663_zap.mbn";
+ };
+ 
++&i2c1 {
++	qcom,load-firmware;
++	qcom,xfer-mode = <1>;
++
++	status = "okay";
++
++	reg_backlight: reg_backlight@45 {
++		compatible = "raspberrypi,touchscreen-panel-regulator-v2";
++		reg = <0x45>;
++		gpio-controller;
++		#gpio-cells = <2>;
++		#pwm-cells = <3>;
++	};
++};
++
+ &i2c11 {
+ 	status = "okay";
+ 
+@@ -808,6 +838,36 @@ &mdss0_dp1_phy {
+ 	status = "okay";
+ };
+ 
++&mdss0_dsi0 {
++	vdda-supply = <&vreg_l1c>;
++	status = "okay";
++
++	panel:panel@0 {
++		compatible = "raspberrypi,dsi-7inch";
++		reg = <0>;
++
++		reset-gpios = <&reg_backlight 0 GPIO_ACTIVE_LOW>;
++		power-supply = <&reg_dsi_touch>;
++		backlight = <&display_bl>;
++
++		port {
++			panel0_in: endpoint {
++				remote-endpoint = <&mdss0_dsi0_out>;
++			};
++		};
++	};
++};
++
++&mdss0_dsi0_out {
++	remote-endpoint = <&panel0_in>;
++	data-lanes = <0 1>;
++};
++
++&mdss0_dsi0_phy {
++	vdds-supply = <&vreg_l4a>;
++	status = "okay";
++};
++
+ &pcie0 {
+ 	perst-gpios = <&tlmm 2 GPIO_ACTIVE_LOW>;
+ 	wake-gpios = <&tlmm 0 GPIO_ACTIVE_HIGH>;
+-- 
+2.34.1
+
