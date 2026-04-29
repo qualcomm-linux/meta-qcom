@@ -25,6 +25,7 @@ SRC_URI = " \
     file://0001-tools-use-basename-to-identify-file-in-gen-mach-type.patch \
     file://0001-misc-fastrpc-possible-double-free-of-cctx-remote_hea.patch \
     file://0001-QCLINUX-ARM-dts-msm-add-rpi-panel-support-for-IQ9-bo.patch \
+    file://0001-QCLINUX-ARM-dts-msm-add-rpi-panel-support-for-Monacc.patch \
 "
 
 # Additional kernel configs.

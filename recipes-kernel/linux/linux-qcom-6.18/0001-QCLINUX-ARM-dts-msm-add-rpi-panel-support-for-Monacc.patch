@@ -1,0 +1,109 @@
+From 6a7d63a69937d48b47e8203224c9ccac4ec3f3ce Mon Sep 17 00:00:00 2001
+From: Shashank Maurya <ssmaurya@qti.qualcomm.com>
+Date: Wed, 29 Apr 2026 09:17:05 +0530
+Subject: [PATCH 1/1] QCLINUX: ARM: dts: msm: add rpi panel support for Monacco
+ RB4 board
+
+Upstream-Status: Inappropriate [RPI Debug]
+Signed-off-by: Shashank Maurya <ssmaurya@qti.qualcomm.com>
+---
+ arch/arm64/boot/dts/qcom/monaco-evk.dts | 64 +++++++++++++++++++++++++
+ 1 file changed, 64 insertions(+)
+
+diff --git a/arch/arm64/boot/dts/qcom/monaco-evk.dts b/arch/arm64/boot/dts/qcom/monaco-evk.dts
+index 895f9557e39e..87d52f53caad 100644
+--- a/arch/arm64/boot/dts/qcom/monaco-evk.dts
++++ b/arch/arm64/boot/dts/qcom/monaco-evk.dts
+@@ -20,6 +20,7 @@ / {
+ 	aliases {
+ 		ethernet0 = &ethernet0;
+ 		i2c1 = &i2c1;
++		i2c8 = &i2c8;
+ 		serial0 = &uart7;
+ 		serial1 = &uart2;
+ 		serial2 = &uart6;
+@@ -87,6 +88,13 @@ usb2_con_hs_ep: endpoint {
+ 		};
+ 	};
+ 
++	 display_bl: backlight {
++		compatible = "pwm-backlight";
++		power-supply = <&reg_dsi_touch>;
++		pwms = <&reg_backlight 0 50000 0>;
++	};
++
++
+ 	dp-connector0 {
+ 		compatible = "dp-connector";
+ 		label = "DP";
+@@ -117,11 +125,67 @@ dmic: audio-codec-0 {
+ 		num-channels = <1>;
+ 	};
+ 
++	&i2c8 {
++		qcom,load-firmware;
++		qcom,xfer-mode = <1>;
++
++		status = "okay";
++
++		reg_backlight: reg_backlight@45 {
++			compatible = "raspberrypi,touchscreen-panel-regulator-v2";
++			reg = <0x45>;
++			gpio-controller;
++			#gpio-cells = <2>;
++			#pwm-cells = <3>;
++		};
++	};
++
+ 	max98357a: audio-codec-1 {
+ 		compatible = "maxim,max98357a";
+ 		#sound-dai-cells = <0>;
+ 	};
+ 
++	&mdss_dsi0 {
++		vdda-supply = <&vreg_l1c>;
++		status = "okay";
++
++		panel:panel@0 {
++			compatible = "raspberrypi,dsi-7inch";
++			reg = <0>;
++			reset-gpios = <&reg_backlight 0 GPIO_ACTIVE_LOW>;
++			power-supply = <&reg_dsi_touch>;
++			backlight = <&display_bl>;
++
++
++			port {
++				panel0_in: endpoint {
++					remote-endpoint = <&mdss_dsi0_out>;
++				};
++			};
++		};
++	};
++
++	&mdss_dsi0_out {
++		remote-endpoint = <&panel0_in>;
++		data-lanes = <0 1>;
++	};
++
++	&mdss_dsi0_phy {
++		vdds-supply = <&vreg_l4a>;
++		status = "okay";
++	};
++
++
++	reg_dsi_touch: regulator-touch {
++		compatible = "regulator-fixed";
++		regulator-min-microvolt = <5500000>;
++		regulator-max-microvolt = <5500000>;
++		regulator-name = "rpi-touch";
++		gpio = <&expander3 5 GPIO_ACTIVE_HIGH>;
++		enable-active-high;
++	};
++
++
+ 	sound {
+ 		compatible = "qcom,qcs8275-sndcard";
+ 		model = "MONACO-EVK";
+-- 
+2.34.1
+
