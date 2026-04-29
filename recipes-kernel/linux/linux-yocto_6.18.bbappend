@@ -16,5 +16,4 @@ SRC_URI:append:qcom = " \
     file://generic-drivers/remoteproc/0010-remoteproc-pas-Extend-parse_fw-callback-to-fetch-res.patch \
     file://generic-drivers/remoteproc/0011-remoteproc-qcom-pas-Enable-Secure-PAS-support-with-I.patch \
     file://generic-drivers/remoteproc/0012-FROMLIST-remoteproc-qcom-pas-Map-unmap-subsystem-reg.patch \
-    file://0001-misc-fastrpc-possible-double-free-of-cctx-remote_hea.patch \
 "
