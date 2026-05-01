@@ -52,6 +52,7 @@ create_qcomflash_pkg() {
     [ -n "${QCOM_ESP_FILE}" ] && install -m 0644 ${QCOM_ESP_FILE} efi.bin
 
     # dtb image
+    bootloader_provider='${PREFERRED_PROVIDER_virtual/bootloader}'
     if [ -n "${QCOM_DTB_DEFAULT}" ] && \
                 [ -f "${DEPLOY_DIR_IMAGE}/dtb-${QCOM_DTB_DEFAULT}-image.vfat" ]; then
         # default image
@@ -61,6 +62,11 @@ create_qcomflash_pkg() {
             install -m 0644 ${dtbimg} .
         done
     fi
+    case "$bootloader_provider" in
+        u-boot*)
+            install -m 0644 ${DEPLOY_DIR_IMAGE}/qclinuxfitImage ${QCOM_DTB_FILE}
+            ;;
+    esac
 
     # vmlinux
     [ -e "${DEPLOY_DIR_IMAGE}/vmlinux" -a \
@@ -127,7 +133,6 @@ create_qcomflash_pkg() {
 
         # bootloader selection
         bootloader_bin="${DEPLOY_DIR_IMAGE}/${QCOM_BOOT_FILES_SUBDIR}/uefi.elf"
-        bootloader_provider='${PREFERRED_PROVIDER_virtual/bootloader}'
         case "$bootloader_provider" in
             u-boot*)
                 bootloader_bin="${DEPLOY_DIR_IMAGE}/u-boot-${UBOOT_CONFIG_DEFAULT}.mbn"
