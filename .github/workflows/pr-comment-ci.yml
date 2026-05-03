@@ -1,0 +1,76 @@
+name: Run PR CI on /run-ci comment
+
+# A committer (write/admin) can comment `/run-ci` on a pull request to
+# (re-)run pr.yml against the PR head. Intended for PRs created by the
+# backport workflow, which github does not auto-CI because they are opened
+# with GITHUB_TOKEN.
+
+on:
+  issue_comment:
+    types: [created]
+
+permissions:
+  contents: read
+  pull-requests: read
+  actions: write   # required to dispatch pr.yml
+
+jobs:
+  dispatch:
+    if: >
+      github.event.issue.pull_request != null &&
+      startsWith(github.event.comment.body, '/run-ci')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Verify commenter has write access
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          PERM=$(gh api \
+            "repos/${{ github.repository }}/collaborators/${{ github.event.comment.user.login }}/permission" \
+            --jq '.permission')
+          case "$PERM" in
+            admin|write) ;;
+            *)
+              echo "error: User ${{ github.event.comment.user.login }} lacks write access (has: $PERM)"
+              exit 1
+              ;;
+          esac
+
+      - name: Re-run pr.yml against the PR head
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          PR_NUMBER: ${{ github.event.issue.number }}
+        run: |
+          set -euo pipefail
+
+          PR_JSON=$(gh api "repos/${REPO}/pulls/${PR_NUMBER}")
+          HEAD_SHA=$(echo "$PR_JSON"  | jq -r '.head.sha')
+          HEAD_REPO=$(echo "$PR_JSON" | jq -r '.head.repo.full_name')
+          HEAD_REF=$(echo "$PR_JSON"  | jq -r '.head.ref')
+
+          # Prefer rerunning the existing pr.yml run for this head SHA (failed runs).
+          # This works for both same-repo and fork PRs because rerun preserves
+          # the original pull_request event context, so checks land on the
+          # PR head commit.
+          RUN_ID=$(gh api \
+            "repos/${REPO}/actions/workflows/pr.yml/runs?head_sha=${HEAD_SHA}&per_page=1" \
+            --jq '.workflow_runs[0].id // empty')
+
+          if [ -n "$RUN_ID" ]; then
+            echo "Re-running failed checks for existing pr.yml run $RUN_ID for $HEAD_SHA"
+            gh run rerun "$RUN_ID" --failed -R "$REPO"
+            exit 0
+          fi
+
+          # No prior run exists (typical for backport-action PRs, which
+          # github does not auto-CI). Dispatch pr.yml against the PR head
+          # branch. workflow_dispatch can only target refs in this repo,
+          # which backport PRs always satisfy.
+          if [ "$HEAD_REPO" != "$REPO" ]; then
+            echo "error: no prior pr.yml run for fork PR ${HEAD_REPO}#${PR_NUMBER}; nothing to rerun."
+            exit 1
+          fi
+          echo "No prior run; dispatching pr.yml on ref $HEAD_REF"
+          gh workflow run pr.yml --ref "$HEAD_REF"

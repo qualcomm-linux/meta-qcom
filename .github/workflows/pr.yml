@@ -9,6 +9,11 @@ on:
     paths-ignore:
       - '**/*.md'
       - '.github/.markdownlint.yaml'
+  # Allows pr-comment-ci.yml to (re-)run these checks against a PR head ref
+  # for PRs that GitHub did not auto-trigger (e.g. backport-action PRs
+  # created with GITHUB_TOKEN). Dispatched with `--ref <pr-head-branch>`
+  # so the resulting check runs attach to the PR head commit.
+  workflow_dispatch:
 
 permissions:
   checks: write
@@ -20,6 +25,8 @@ permissions:
 jobs:
   event-file:
     name: "Upload event file"
+    # Skip when event is not 'pull_request' as that means backport
+    if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     steps:
     - name: Upload
@@ -30,6 +37,8 @@ jobs:
         
   pr-to-workflow-dependency:
     name: "PR To Workflow Dependency"
+    # Skip when event is not 'pull_request' as that means backport
+    if: github.event_name == 'pull_request'
     uses: qualcomm/qcom-reusable-workflows/.github/workflows/qswat-reusable-pr-to-workflow-dependency.yml@qswat-release-v1
     with:
       workflow_id: ${{ github.run_id }}
