@@ -24,6 +24,10 @@ _is_dir "$WORK_DIR"
 # latest buildstats folder
 BUILDSTATS="$WORK_DIR/build/tmp/buildstats"
 BUILDSTATS="$BUILDSTATS/$(ls $BUILDSTATS | tail -1)"
+if [ "$(find $BUILDSTATS -maxdepth 1 -type d | wc -l)" -eq 1 ]; then
+    echo "Skipping buildstats, '$BUILDSTATS' does not contain valid data"
+    exit 0
+fi
 
 # pybootchartgui tool
 CMD="$CMD $WORK_DIR/oe-core/scripts/pybootchartgui/pybootchartgui.py"

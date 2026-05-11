@@ -71,7 +71,8 @@ runs:
         $KAS_CONTAINER shell ${KAS_YAMLS}:ci/world.yml \
           -c "buildstats-summary --sort duration --highlight 0 --shortest 300"
         ci/kas-container-shell-helper.sh ci/yocto-pybootchartgui.sh
-        mv $KAS_WORK_DIR/build/buildchart.svg buildchart-world.svg
+        [ ! -f $KAS_WORK_DIR/build/buildchart.svg ] || \
+          mv $KAS_WORK_DIR/build/buildchart.svg buildchart-world.svg
 
     - name: Kas build images
       shell: bash
