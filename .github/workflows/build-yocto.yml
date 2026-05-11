@@ -159,6 +159,42 @@ jobs:
         run: |
           ci/kas-container-shell-helper.sh ci/oe-selftest.sh
 
+  testimage:
+    needs: [kas-setup, github-cache-check]
+    if: |
+      github.repository_owner == 'qualcomm-linux' &&
+      (inputs.skip_if_github_cached != true || needs.github-cache-check.outputs.cache_hit != 'true')
+    runs-on: [self-hosted, qcom-u2404, amd64]
+    strategy:
+      fail-fast: false
+      matrix:
+        machine:
+          - testimage
+        distro:
+          - name: nodistro
+            yamlfile: ""
+          - name: qcom-distro
+            yamlfile: ':ci/qcom-distro.yml'
+        kernel:
+          - type: default
+            dirname: ""
+            yamlfile: ""
+    name: ${{ matrix.machine }}/${{ matrix.distro.name }}${{ matrix.kernel.dirname }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - name: Run kas build
+        uses: ./.github/actions/compile
+        with:
+          machine: ${{matrix.machine}}
+          distro_yaml: ${{matrix.distro.yamlfile}}
+          distro_name: ${{matrix.distro.name}}
+          kernel_yaml: ${{matrix.kernel.yamlfile}}
+          kernel_dirname: ${{matrix.kernel.dirname}}
+          cache_dir: ${{env.CACHE_DIR}}
+
   compile_warm_up:
     needs: [kas-setup, github-cache-check]
     if: |
