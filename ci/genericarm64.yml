@@ -1,0 +1,22 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/siemens/kas/master/kas/schema-kas.json
+
+header:
+  version: 14
+  includes:
+  - ci/base.yml
+
+local_conf_header:
+  cmdline: |
+  qcomflash: |
+  qemu: |
+    # runqemu snapshot slirp nographic
+    EXTRA_IMAGEDEPENDS = "u-boot"
+
+repos:
+  meta-yocto:
+    url: https://git.yoctoproject.org/meta-yocto
+    branch: master
+    layers:
+      meta-yocto-bsp:
+
+machine: genericarm64
