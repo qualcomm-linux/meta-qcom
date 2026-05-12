@@ -116,11 +116,13 @@ runs:
         deploy_dir=../kas/build/tmp/deploy/images/${INPUTS_MACHINE}
         uploads_dir=./uploads/${INPUTS_DISTRO_NAME}${INPUTS_KERNEL_DIRNAME}/${INPUTS_MACHINE}
         mkdir -p $uploads_dir
-        # Publish everything that is linked by bitbake at the end of the build (avoid timestamp and duplication)
-        find $deploy_dir/ -maxdepth 1 -type l -exec cp --dereference {} $uploads_dir/ \;
-        # Files without links: *.vfat, *.elf, *.efi, efi.stub, fit *.its, qcom-metadata.dtb and qclinuxfitImage
-        # Copy *.efi, *.efi and *.vfat as they are useful for debugging
-        find $deploy_dir/ -maxdepth 1 -type f \( -name \*.efi -o -name \*.elf -o -name dtb-\*.vfat \) -exec cp {} $uploads_dir/ \;
+        if [ -d $deploy_dir ]; then
+          # Publish everything that is linked by bitbake at the end of the build (avoid timestamp and duplication)
+          find $deploy_dir/ -maxdepth 1 -type l -exec cp --dereference {} $uploads_dir/ \;
+          # Files without links: *.vfat, *.elf, *.efi, efi.stub, fit *.its, qcom-metadata.dtb and qclinuxfitImage
+          # Copy *.efi, *.efi and *.vfat as they are useful for debugging
+          find $deploy_dir/ -maxdepth 1 -type f \( -name \*.efi -o -name \*.elf -o -name dtb-\*.vfat \) -exec cp {} $uploads_dir/ \;
+        fi
         cp buildchart.svg kas-build.yml $uploads_dir/
         if [ -d $deploy_dir/../../sdk ]; then
           cp $deploy_dir/../../sdk/* $uploads_dir/
