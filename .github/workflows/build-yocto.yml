@@ -156,8 +156,6 @@ jobs:
         distro:
           - name: nodistro
             yamlfile: ""
-          - name: qcom-distro
-            yamlfile: ':ci/qcom-distro.yml'
         kernel:
           - type: default
             dirname: ""
