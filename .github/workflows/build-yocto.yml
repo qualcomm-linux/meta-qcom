@@ -147,7 +147,7 @@ jobs:
     if: |
       github.repository_owner == 'qualcomm-linux' &&
       (inputs.skip_if_github_cached != true || needs.github-cache-check.outputs.cache_hit != 'true')
-    runs-on: [self-hosted, qcom-u2404, amd64]
+    runs-on: [self-hosted, qcom-u2404, arm64]
     strategy:
       fail-fast: false
       matrix:
