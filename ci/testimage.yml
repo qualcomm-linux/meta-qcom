@@ -32,7 +32,7 @@ local_conf_header:
     # ptests are expected to fail
     PTEST_EXPECT_FAILURE = '1'
     # RESULTS - ptest.PtestRunnerTest.test_ptestrunner_expectfail: EXPECTEDFAIL (9633.62s)
-    TEST_SUITES:remove = "ptest"
+    #TEST_SUITES:remove = "ptest"
     # RESULTS - systemd.SystemdBasicTests.test_systemd_failed: FAILED (3.17s)
     #TEST_SUITES:remove = "systemd"
     # minimal test suite
