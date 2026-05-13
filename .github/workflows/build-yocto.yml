@@ -448,9 +448,9 @@ jobs:
   build_successful:
     if: |
       always() && github.repository_owner == 'qualcomm-linux' &&
-      (needs.compile.result == 'success' ||
+      ((needs.compile.result == 'success' && needs.compile_warm_up.result == 'success') ||
        (inputs.skip_if_github_cached == true && needs.github-cache-check.outputs.cache_hit == 'true'))
-    needs: [github-cache-check, compile]
+    needs: [github-cache-check, compile_warm_up, compile]
     runs-on: ubuntu-latest
     steps:
       - name: Build completed successfully
