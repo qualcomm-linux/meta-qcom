@@ -1,0 +1,55 @@
+From 05210d2142086e419e67fc6c44e7a01b477b275f Mon Sep 17 00:00:00 2001
+From: Shawn Guo <shengchao.guo@oss.qualcomm.com>
+Date: Sun, 19 Apr 2026 17:39:34 +0800
+Subject: [PATCH] PCI: qcom: Disable ASPM L0s for SA8775P
+
+Commit f5cd8a929c82 ("PCI: dwc: Remove MSI/MSIX capability for Root Port
+if iMSI-RX is used as MSI controller") removed MSI/MSI-X capabilities
+from the Root Port on platforms using iMSI-RX (including SA8775P, which
+has no msi-parent/msi-map in DT).  This causes PME and AER service
+drivers to fall back from MSI to INTx.
+
+With INTx-based PME active, the QCN9100 modem endpoint sends PME messages
+during D-state transitions early in boot.  The level-triggered INTx
+assertion coincides with ASPM L0s exit sequencing on SA8775P hardware,
+causing Data Link Layer Replay Timer Timeout errors on both sides of the
+link.
+
+[   13.069528] pcieport 0000:00:00.0: PME: Signaling with IRQ 332
+[   13.082436] pcieport 0000:00:00.0: AER: enabled with IRQ 332
+[   13.082447] pcieport 0000:00:00.0: AER: Correctable error message received from 0000:01:00.0
+[   13.101347] pci 0000:01:00.0: PCIe Bus Error: severity=Correctable, type=Data Link Layer, (Transmitter ID)
+[   13.111281] pci 0000:01:00.0:   device [17cb:1103] error status/mask=00001000/0000e000
+[   13.111284] pci 0000:01:00.0:    [12] Timeout
+[   13.111313] pcieport 0000:00:00.0: AER: Multiple Correctable error message received from 0000:01:00.0
+[   13.130512] pcieport 0000:00:00.0: PCIe Bus Error: severity=Correctable, type=Data Link Layer, (Transmitter ID)
+[   13.130514] pcieport 0000:00:00.0:   device [17cb:0115] error status/mask=00001000/0000e000
+[   13.130516] pcieport 0000:00:00.0:    [12] Timeout
+
+Fix the PCIe regression on SA8775P/Lemans platform by adding no_l0s = true
+to cfg_1_34_0 for SA8775P, so that PCI_EXP_LNKCAP_ASPM_L0S is cleared from
+the Root Port and ASPM L0s is prevented from being negotiated.
+
+Fixes: f5cd8a929c82 ("PCI: dwc: Remove MSI/MSIX capability for Root Port if iMSI-RX is used as MSI controller")
+Assisted-by: Claude:claude-4-6-sonnet
+Signed-off-by: Shawn Guo <shengchao.guo@oss.qualcomm.com>
+Upstream-Status: Submitted [https://lore.kernel.org/all/20260419093934.1223027-1-shengchao.guo@oss.qualcomm.com/]
+---
+ drivers/pci/controller/dwc/pcie-qcom.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/drivers/pci/controller/dwc/pcie-qcom.c b/drivers/pci/controller/dwc/pcie-qcom.c
+index 67a16af69ddc..48c62a37835c 100644
+--- a/drivers/pci/controller/dwc/pcie-qcom.c
++++ b/drivers/pci/controller/dwc/pcie-qcom.c
+@@ -1468,6 +1468,7 @@ static const struct qcom_pcie_cfg cfg_1_9_0 = {
+ static const struct qcom_pcie_cfg cfg_1_34_0 = {
+ 	.ops = &ops_1_9_0,
+ 	.override_no_snoop = true,
++	.no_l0s = true,
+ };
+ 
+ static const struct qcom_pcie_cfg cfg_2_1_0 = {
+-- 
+2.34.1
+
