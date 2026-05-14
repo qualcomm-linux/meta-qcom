@@ -13,7 +13,7 @@ PACKAGES = " \
 RDEPENDS:${PN}-boot-essential = " \
     qrtr \
     rmtfs \
-    tqftpserv \
+    virtual-tftp-server \
 "
 
 RDEPENDS:${PN}-boot-additional:append:aarch64 = " \
