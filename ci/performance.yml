@@ -3,4 +3,4 @@ header:
 
 local_conf_header:
   cmdline: |
-    KERNEL_CMDLINE_EXTRA:append = " quiet"
+    KERNEL_CMDLINE_EXTRA:append = " quiet systemd.tty.term.console=linux"
