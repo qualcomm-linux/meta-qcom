@@ -20,6 +20,9 @@ on:
         required: true
         type: string
 
+env:
+  KAS_CLONE_DEPTH: 1
+
 jobs:
   reusable_compile_job:
     runs-on: [self-hosted, qcom-u2404, amd64]
