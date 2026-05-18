@@ -16,6 +16,7 @@ repos:
 
   meta-openembedded:
     url: https://github.com/openembedded/meta-openembedded
+    branch: master-next
     layers:
       meta-filesystems:
       meta-gnome:
