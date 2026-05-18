@@ -159,6 +159,17 @@ jobs:
         run: |
           ci/kas-container-shell-helper.sh ci/oe-selftest.sh
 
+  compile-env:
+    if: github.repository_owner == 'qualcomm-linux'
+    runs-on: ubuntu-latest
+    outputs:
+      CACHE_DIR: ${{ steps.compile_env.outputs.CACHE_DIR }}
+    steps:
+      - name: Setup compile variables
+        id: compile_env
+        run: |
+          echo "CACHE_DIR=${{env.CACHE_DIR}}" >> $GITHUB_OUTPUT
+
   compile_warm_up:
     needs: [kas-setup, github-cache-check]
     if: |
