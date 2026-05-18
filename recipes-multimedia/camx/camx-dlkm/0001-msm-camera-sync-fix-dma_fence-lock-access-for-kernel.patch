@@ -1,0 +1,88 @@
+From 7e4bf13d776df027bea4315d72d7cb646e843237 Mon Sep 17 00:00:00 2001
+From: Chandan Kumar Jha <cjha@qti.qualcomm.com>
+Date: Sat, 9 May 2026 00:00:00 +0530
+Subject: [PATCH 1/2] msm: camera: sync: fix dma_fence lock access for kernel
+ 7.1-rc2
+
+Linux 7.1-rc2 replaced struct dma_fence's spinlock_t *lock field
+ with a union of extern_lock/inline_lock, and introduced
+dma_fence_spinlock() as the canonical accessor.
+Direct fence->lock access in cam_sync_dma_fence.c now fails
+to compile.
+
+Backport dma_fence_spinlock() into cam_compat.h for kernels < 7.1
+(returns fence->lock). Replace all direct fence->lock accesses in
+cam_sync_dma_fence.c with dma_fence_spinlock(fence).
+
+No changes needed to __cam_dma_fence_get_fd() as dma_fence_init()
+signature is unchanged. kfree(dma_fence_spinlock(fence)) remains
+correct since camera always passes a non-NULL heap-allocated lock.
+
+Change-Id: I4f9ae11d478e59e7f137698dc3ef31d04986347d
+Signed-off-by: Chandan Kumar Jha <cjha@qti.qualcomm.com>
+
+Upstream-Status: Inappropriate [Yocto specific]
+
+---
+ camera/drivers/cam_sync/cam_sync_dma_fence.c |  6 +++---
+ common/cam_compat.h                          | 13 +++++++++++++
+ 2 files changed, 16 insertions(+), 3 deletions(-)
+
+diff --git a/camera/drivers/cam_sync/cam_sync_dma_fence.c b/camera/drivers/cam_sync/cam_sync_dma_fence.c
+index dea7878b5..85d2d2fa2 100644
+--- a/camera/drivers/cam_sync/cam_sync_dma_fence.c
++++ b/camera/drivers/cam_sync/cam_sync_dma_fence.c
+@@ -57,7 +57,7 @@ static void __cam_dma_fence_free(struct dma_fence *fence)
+ 	CAM_DBG(CAM_DMA_FENCE,
+ 		"Free memory for dma fence context: %llu seqno: %llu",
+ 		fence->context, fence->seqno);
+-	kfree(fence->lock);
++	kfree(dma_fence_spinlock(fence));
+ 	kfree(fence);
+ }
+
+@@ -458,7 +458,7 @@ static int __cam_dma_fence_signal_fence(
+ 	int rc;
+ 	bool fence_signaled = false;
+
+-	spin_lock_bh(dma_fence->lock);
++	spin_lock_bh(dma_fence_spinlock(dma_fence));
+ 	fence_signaled = dma_fence_is_signaled_locked(dma_fence);
+ 	if (fence_signaled) {
+ 		rc = -EPERM;
+@@ -474,7 +474,7 @@ static int __cam_dma_fence_signal_fence(
+ 	rc = cam_dma_fence_signal_locked(dma_fence);
+
+ end:
+-	spin_unlock_bh(dma_fence->lock);
++	spin_unlock_bh(dma_fence_spinlock(dma_fence));
+ 	return rc;
+ }
+
+diff --git a/common/cam_compat.h b/common/cam_compat.h
+index 6723f358d..000ed2fb5 100644
+--- a/common/cam_compat.h
++++ b/common/cam_compat.h
+@@ -92,6 +92,19 @@ static inline void cam_timer_delete_sync_compat(struct timer_list *timer)
+
+ int cam_dma_fence_signal_locked(struct dma_fence *fence);
+ int cam_reserve_icp_fw(struct cam_fw_alloc_info *icp_fw, size_t fw_length);
++/*
++ * dma_fence_spinlock() was introduced in kernel 7.1-rc2 alongside the
++ * struct dma_fence lock field refactor (spinlock_t *lock -> union of
++ * extern_lock / inline_lock).  Provide the same helper for older kernels
++ * so call sites can use dma_fence_spinlock(fence) unconditionally.
++ */
++#if LINUX_VERSION_CODE < KERNEL_VERSION(7, 1, 0)
++static inline spinlock_t *dma_fence_spinlock(struct dma_fence *fence)
++{
++	return fence->lock;
++}
++#endif
++
+ void cam_unreserve_icp_fw(struct cam_fw_alloc_info *icp_fw, size_t fw_length);
+ int camera_component_match_add_drivers(struct device *master_dev,
+ 	struct component_match **match_list);
+--
+2.34.1
+

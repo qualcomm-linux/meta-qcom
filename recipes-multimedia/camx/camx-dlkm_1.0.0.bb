@@ -9,6 +9,11 @@ SRC_URI = " \
 
 SRCREV = "3dac889d25682686d5d6990b0a62e4cd699c8cd9"
 
+SRC_URI += " \
+    file://0001-msm-camera-sync-fix-dma_fence-lock-access-for-kernel.patch \
+    file://0002-msm-camera-common-wrap-of_get_named_gpio-for-kernel-.patch \
+"
+
 inherit module
 
 MAKE_TARGETS = "modules"

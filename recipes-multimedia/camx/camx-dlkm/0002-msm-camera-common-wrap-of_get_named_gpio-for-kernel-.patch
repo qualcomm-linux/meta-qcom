@@ -1,0 +1,418 @@
+From 538e8586f408caa8e7ca84f72b80d170a686166f Mon Sep 17 00:00:00 2001
+From: Chandan Kumar Jha <cjha@qti.qualcomm.com>
+Date: Sat, 9 May 2026 00:00:00 +0530
+Subject: [PATCH 2/2] msm: camera: common: wrap of_get_named_gpio for kernel
+ 7.1-rc2
+
+Linux 7.1-rc2 removed <linux/of_gpio.h> and of_get_named_gpio() as part
+of the GPIO descriptor API migration.
+
+Add cam_of_get_named_gpio(dev, np, propname, index) to cam_compat.h:
+  - kernel < 7.1: thin wrapper around of_get_named_gpio().
+  - kernel >= 7.1: reconstructs the integer GPIO number via
+    of_parse_phandle_with_args(), gpio_device_find_by_fwnode(),
+    and gpio_device_get_base(). <linux/of_gpio.h> is version-guarded.
+
+Replace all of_get_named_gpio() call sites in cam_soc_util.c,
+cam_hdmi_bdg_dev.c, and cam_dp_bdg_dev.c with the new wrapper.
+Remove the bare <linux/of_gpio.h> include from the 17 files that
+included it without using any of its symbols.
+
+Change-Id: I4c33dda260e35b14b97eefb4645cae3090349e37
+Signed-off-by: Chandan Kumar Jha <cjha@qti.qualcomm.com>
+
+Upstream-Status: Inappropriate [Yocto specific]
+
+---
+ .../cam_actuator/cam_actuator_soc.c           |  1 -
+ .../cam_sensor_module/cam_cci/cam_cci_dev.h   |  1 -
+ .../cam_eeprom/cam_eeprom_soc.c               |  1 -
+ .../cam_flash/cam_flash_soc.c                 |  1 -
+ .../cam_sensor_module/cam_ois/cam_ois_soc.c   |  1 -
+ .../cam_sensor/cam_sensor_soc.c               |  1 -
+ .../cam_sensor_utils/cam_sensor_util.h        |  1 -
+ camera/drivers/cam_utils/cam_cx_ipeak.c       |  1 -
+ camera/drivers/cam_utils/cam_soc_util.c       |  3 +-
+ .../cam_actuator/cam_actuator_soc.c           |  1 -
+ .../cam_sensor_module/cam_cci/cam_cci_dev.h   |  1 -
+ .../cam_dp_bdg/cam_dp_bdg_dev.c               |  4 +-
+ .../cam_eeprom/cam_eeprom_soc.c               |  1 -
+ .../cam_flash/cam_flash_soc.c                 |  1 -
+ .../cam_hdmi_bdg/cam_hdmi_bdg_dev.c           |  4 +-
+ .../cam_ir_led/cam_ir_led_soc.c               |  1 -
+ .../cam_sensor_module/cam_ois/cam_ois_soc.c   |  1 -
+ .../cam_sensor/cam_sensor_soc.c               |  1 -
+ .../cam_sensor_utils/cam_sensor_util.h        |  1 -
+ camera_kt/drivers/cam_utils/cam_cx_ipeak.c    |  1 -
+ camera_kt/drivers/cam_utils/cam_soc_util.c    |  3 +-
+ common/cam_compat.h                           | 56 +++++++++++++++++++
+ 22 files changed, 62 insertions(+), 25 deletions(-)
+
+diff --git a/camera/drivers/cam_sensor_module/cam_actuator/cam_actuator_soc.c b/camera/drivers/cam_sensor_module/cam_actuator/cam_actuator_soc.c
+index 4022e9243..091735ef3 100644
+--- a/camera/drivers/cam_sensor_module/cam_actuator/cam_actuator_soc.c
++++ b/camera/drivers/cam_sensor_module/cam_actuator/cam_actuator_soc.c
+@@ -5,7 +5,6 @@
+  */
+
+ #include <linux/of.h>
+-#include <linux/of_gpio.h>
+ #include <cam_sensor_cmn_header.h>
+ #include <cam_sensor_util.h>
+ #include <cam_sensor_io.h>
+diff --git a/camera/drivers/cam_sensor_module/cam_cci/cam_cci_dev.h b/camera/drivers/cam_sensor_module/cam_cci/cam_cci_dev.h
+index 34b2911ff..c585e6dfe 100644
+--- a/camera/drivers/cam_sensor_module/cam_cci/cam_cci_dev.h
++++ b/camera/drivers/cam_sensor_module/cam_cci/cam_cci_dev.h
+@@ -10,7 +10,6 @@
+ #include <linux/delay.h>
+ #include <linux/io.h>
+ #include <linux/of.h>
+-#include <linux/of_gpio.h>
+ #include <linux/of_platform.h>
+ #include <linux/module.h>
+ #include <linux/irqreturn.h>
+diff --git a/camera/drivers/cam_sensor_module/cam_eeprom/cam_eeprom_soc.c b/camera/drivers/cam_sensor_module/cam_eeprom/cam_eeprom_soc.c
+index 8258a05fe..7834ca5ff 100644
+--- a/camera/drivers/cam_sensor_module/cam_eeprom/cam_eeprom_soc.c
++++ b/camera/drivers/cam_sensor_module/cam_eeprom/cam_eeprom_soc.c
+@@ -5,7 +5,6 @@
+  */
+
+ #include <linux/of.h>
+-#include <linux/of_gpio.h>
+ #include <cam_sensor_cmn_header.h>
+ #include <cam_sensor_util.h>
+ #include <cam_sensor_io.h>
+diff --git a/camera/drivers/cam_sensor_module/cam_flash/cam_flash_soc.c b/camera/drivers/cam_sensor_module/cam_flash/cam_flash_soc.c
+index 3943cdd4a..e28c895e8 100644
+--- a/camera/drivers/cam_sensor_module/cam_flash/cam_flash_soc.c
++++ b/camera/drivers/cam_sensor_module/cam_flash/cam_flash_soc.c
+@@ -5,7 +5,6 @@
+  */
+
+ #include <linux/of.h>
+-#include <linux/of_gpio.h>
+ #include "cam_flash_soc.h"
+ #include "cam_res_mgr_api.h"
+ #include <dt-bindings/msm-camera.h>
+diff --git a/camera/drivers/cam_sensor_module/cam_ois/cam_ois_soc.c b/camera/drivers/cam_sensor_module/cam_ois/cam_ois_soc.c
+index 64bb18614..93cfe4146 100644
+--- a/camera/drivers/cam_sensor_module/cam_ois/cam_ois_soc.c
++++ b/camera/drivers/cam_sensor_module/cam_ois/cam_ois_soc.c
+@@ -5,7 +5,6 @@
+  */
+
+ #include <linux/of.h>
+-#include <linux/of_gpio.h>
+ #include <cam_sensor_cmn_header.h>
+ #include <cam_sensor_util.h>
+ #include <cam_sensor_io.h>
+diff --git a/camera/drivers/cam_sensor_module/cam_sensor/cam_sensor_soc.c b/camera/drivers/cam_sensor_module/cam_sensor/cam_sensor_soc.c
+index f73a84ae0..a7c1c3abb 100644
+--- a/camera/drivers/cam_sensor_module/cam_sensor/cam_sensor_soc.c
++++ b/camera/drivers/cam_sensor_module/cam_sensor/cam_sensor_soc.c
+@@ -5,7 +5,6 @@
+  */
+
+ #include <linux/of.h>
+-#include <linux/of_gpio.h>
+ #include <cam_sensor_cmn_header.h>
+ #include <cam_sensor_util.h>
+ #include <cam_sensor_io.h>
+diff --git a/camera/drivers/cam_sensor_module/cam_sensor_utils/cam_sensor_util.h b/camera/drivers/cam_sensor_module/cam_sensor_utils/cam_sensor_util.h
+index 5ef59ee9a..88e441c9a 100644
+--- a/camera/drivers/cam_sensor_module/cam_sensor_utils/cam_sensor_util.h
++++ b/camera/drivers/cam_sensor_module/cam_sensor_utils/cam_sensor_util.h
+@@ -10,7 +10,6 @@
+ #include <linux/kernel.h>
+ #include <linux/regulator/consumer.h>
+ #include <linux/gpio.h>
+-#include <linux/of_gpio.h>
+ #include <linux/of.h>
+ #include "cam_sensor_cmn_header.h"
+ #include "cam_req_mgr_util.h"
+diff --git a/camera/drivers/cam_utils/cam_cx_ipeak.c b/camera/drivers/cam_utils/cam_cx_ipeak.c
+index b0f93ba04..537189fcc 100644
+--- a/camera/drivers/cam_utils/cam_cx_ipeak.c
++++ b/camera/drivers/cam_utils/cam_cx_ipeak.c
+@@ -6,7 +6,6 @@
+ #include <linux/of.h>
+ #include <linux/slab.h>
+ #include <linux/gpio.h>
+-#include <linux/of_gpio.h>
+ #include <soc/qcom/cx_ipeak.h>
+
+ #include "cam_soc_util.h"
+diff --git a/camera/drivers/cam_utils/cam_soc_util.c b/camera/drivers/cam_utils/cam_soc_util.c
+index 6c8eb347d..f1226adaf 100644
+--- a/camera/drivers/cam_utils/cam_soc_util.c
++++ b/camera/drivers/cam_utils/cam_soc_util.c
+@@ -8,7 +8,6 @@
+ #include <linux/clk.h>
+ #include <linux/slab.h>
+ #include <linux/gpio.h>
+-#include <linux/of_gpio.h>
+ #include <linux/pm_domain.h>
+ #include <linux/pm_runtime.h>
+ #include <linux/pinctrl/consumer.h>
+@@ -2550,7 +2549,7 @@ static int cam_soc_util_get_gpio_info(struct cam_hw_soc_info *soc_info)
+ 	}
+
+ 	for (i = 0; i < gpio_array_size; i++) {
+-		gpio_array[i] = of_get_named_gpio(of_node, "gpios", i);
++		gpio_array[i] = cam_of_get_named_gpio(soc_info->dev, of_node, "gpios", i);
+ 		CAM_DBG(CAM_UTIL, "gpio_array[%d] = %d", i, gpio_array[i]);
+ 	}
+
+diff --git a/camera_kt/drivers/cam_sensor_module/cam_actuator/cam_actuator_soc.c b/camera_kt/drivers/cam_sensor_module/cam_actuator/cam_actuator_soc.c
+index fce7e9c41..f82406c6f 100644
+--- a/camera_kt/drivers/cam_sensor_module/cam_actuator/cam_actuator_soc.c
++++ b/camera_kt/drivers/cam_sensor_module/cam_actuator/cam_actuator_soc.c
+@@ -4,7 +4,6 @@
+  */
+
+ #include <linux/of.h>
+-#include <linux/of_gpio.h>
+ #include <cam_sensor_cmn_header.h>
+ #include <cam_sensor_util.h>
+ #include <cam_sensor_io.h>
+diff --git a/camera_kt/drivers/cam_sensor_module/cam_cci/cam_cci_dev.h b/camera_kt/drivers/cam_sensor_module/cam_cci/cam_cci_dev.h
+index 5f451707c..8c16fd570 100644
+--- a/camera_kt/drivers/cam_sensor_module/cam_cci/cam_cci_dev.h
++++ b/camera_kt/drivers/cam_sensor_module/cam_cci/cam_cci_dev.h
+@@ -9,7 +9,6 @@
+ #include <linux/delay.h>
+ #include <linux/io.h>
+ #include <linux/of.h>
+-#include <linux/of_gpio.h>
+ #include <linux/of_platform.h>
+ #include <linux/module.h>
+ #include <linux/irqreturn.h>
+diff --git a/camera_kt/drivers/cam_sensor_module/cam_dp_bdg/cam_dp_bdg_dev.c b/camera_kt/drivers/cam_sensor_module/cam_dp_bdg/cam_dp_bdg_dev.c
+index 03a243036..4268ba4c5 100644
+--- a/camera_kt/drivers/cam_sensor_module/cam_dp_bdg/cam_dp_bdg_dev.c
++++ b/camera_kt/drivers/cam_sensor_module/cam_dp_bdg/cam_dp_bdg_dev.c
+@@ -10,11 +10,11 @@
+ #include <linux/platform_device.h>
+ #include <linux/of.h>
+ #include <linux/workqueue.h>
+-#include <linux/of_gpio.h>
+ #include <linux/interrupt.h>
+ #include <linux/delay.h>
+ #include "cam_dp_bdg_core.h"
+ #include "camera_main.h"
++#include "cam_compat.h"
+
+ #define DP_BDG_IRQ_HANDLER_DEVNAME             "dp_bdg_irq_handler"
+ #define DP_BDG_IRQ_HANDLER_MAGIC_NUM           0xff
+@@ -178,7 +178,7 @@ static int dp_bdg_irq_handler_probe(struct platform_device *pdev)
+ {
+ 	int ret = 0;
+
+-	dp_bdg_irq_gpio = of_get_named_gpio(pdev->dev.of_node,
++	dp_bdg_irq_gpio = cam_of_get_named_gpio(&pdev->dev, pdev->dev.of_node,
+ 		"dp_bdg_irq_pin", 0);
+ 	ret = gpio_request(dp_bdg_irq_gpio, "dp_bdg_irq_pin");
+ 	if (ret) {
+diff --git a/camera_kt/drivers/cam_sensor_module/cam_eeprom/cam_eeprom_soc.c b/camera_kt/drivers/cam_sensor_module/cam_eeprom/cam_eeprom_soc.c
+index d75907bc8..ee3dd9e7b 100644
+--- a/camera_kt/drivers/cam_sensor_module/cam_eeprom/cam_eeprom_soc.c
++++ b/camera_kt/drivers/cam_sensor_module/cam_eeprom/cam_eeprom_soc.c
+@@ -5,7 +5,6 @@
+  */
+
+ #include <linux/of.h>
+-#include <linux/of_gpio.h>
+ #include <cam_sensor_cmn_header.h>
+ #include <cam_sensor_util.h>
+ #include <cam_sensor_io.h>
+diff --git a/camera_kt/drivers/cam_sensor_module/cam_flash/cam_flash_soc.c b/camera_kt/drivers/cam_sensor_module/cam_flash/cam_flash_soc.c
+index 5ad3cb00f..6cf7729a8 100644
+--- a/camera_kt/drivers/cam_sensor_module/cam_flash/cam_flash_soc.c
++++ b/camera_kt/drivers/cam_sensor_module/cam_flash/cam_flash_soc.c
+@@ -5,7 +5,6 @@
+  */
+
+ #include <linux/of.h>
+-#include <linux/of_gpio.h>
+ #include "cam_flash_soc.h"
+ #include "cam_res_mgr_api.h"
+ #include <common/cam_dt_bindings.h>
+diff --git a/camera_kt/drivers/cam_sensor_module/cam_hdmi_bdg/cam_hdmi_bdg_dev.c b/camera_kt/drivers/cam_sensor_module/cam_hdmi_bdg/cam_hdmi_bdg_dev.c
+index b3f86bb95..100e2418b 100644
+--- a/camera_kt/drivers/cam_sensor_module/cam_hdmi_bdg/cam_hdmi_bdg_dev.c
++++ b/camera_kt/drivers/cam_sensor_module/cam_hdmi_bdg/cam_hdmi_bdg_dev.c
+@@ -10,11 +10,11 @@
+ #include <linux/platform_device.h>
+ #include <linux/of.h>
+ #include <linux/workqueue.h>
+-#include <linux/of_gpio.h>
+ #include <linux/interrupt.h>
+ #include <linux/delay.h>
+ #include "cam_hdmi_bdg_core.h"
+ #include "camera_main.h"
++#include "cam_compat.h"
+
+ #define HDMI_BDG_IRQ_HANDLER_DEVNAME             "hdmi_bdg_irq_handler"
+ #define HDMI_BDG_IRQ_HANDLER_MAGIC_NUM           0xee
+@@ -178,7 +178,7 @@ static int hdmi_bdg_irq_handler_probe(struct platform_device *pdev)
+ {
+ 	int ret = 0;
+
+-	hdmi_bdg_irq_gpio = of_get_named_gpio(pdev->dev.of_node,
++	hdmi_bdg_irq_gpio = cam_of_get_named_gpio(&pdev->dev, pdev->dev.of_node,
+ 		"hdmi_bdg_irq_pin", 0);
+ 	ret = gpio_request(hdmi_bdg_irq_gpio, "hdmi_bdg_irq_pin");
+ 	if (ret) {
+diff --git a/camera_kt/drivers/cam_sensor_module/cam_ir_led/cam_ir_led_soc.c b/camera_kt/drivers/cam_sensor_module/cam_ir_led/cam_ir_led_soc.c
+index 2fb129716..607274fb5 100644
+--- a/camera_kt/drivers/cam_sensor_module/cam_ir_led/cam_ir_led_soc.c
++++ b/camera_kt/drivers/cam_sensor_module/cam_ir_led/cam_ir_led_soc.c
+@@ -12,7 +12,6 @@
+  */
+
+ #include <linux/of.h>
+-#include <linux/of_gpio.h>
+ #include <linux/pwm.h>
+ #include "cam_ir_led_soc.h"
+ #include "cam_res_mgr_api.h"
+diff --git a/camera_kt/drivers/cam_sensor_module/cam_ois/cam_ois_soc.c b/camera_kt/drivers/cam_sensor_module/cam_ois/cam_ois_soc.c
+index 510c81d9e..f5c8f45b9 100644
+--- a/camera_kt/drivers/cam_sensor_module/cam_ois/cam_ois_soc.c
++++ b/camera_kt/drivers/cam_sensor_module/cam_ois/cam_ois_soc.c
+@@ -4,7 +4,6 @@
+  */
+
+ #include <linux/of.h>
+-#include <linux/of_gpio.h>
+ #include <cam_sensor_cmn_header.h>
+ #include <cam_sensor_util.h>
+ #include <cam_sensor_io.h>
+diff --git a/camera_kt/drivers/cam_sensor_module/cam_sensor/cam_sensor_soc.c b/camera_kt/drivers/cam_sensor_module/cam_sensor/cam_sensor_soc.c
+index 2c870af36..d51910f5e 100644
+--- a/camera_kt/drivers/cam_sensor_module/cam_sensor/cam_sensor_soc.c
++++ b/camera_kt/drivers/cam_sensor_module/cam_sensor/cam_sensor_soc.c
+@@ -5,7 +5,6 @@
+  */
+
+ #include <linux/of.h>
+-#include <linux/of_gpio.h>
+ #include <cam_sensor_cmn_header.h>
+ #include <cam_sensor_util.h>
+ #include <cam_sensor_io.h>
+diff --git a/camera_kt/drivers/cam_sensor_module/cam_sensor_utils/cam_sensor_util.h b/camera_kt/drivers/cam_sensor_module/cam_sensor_utils/cam_sensor_util.h
+index 50cc6317b..9f492265c 100644
+--- a/camera_kt/drivers/cam_sensor_module/cam_sensor_utils/cam_sensor_util.h
++++ b/camera_kt/drivers/cam_sensor_module/cam_sensor_utils/cam_sensor_util.h
+@@ -9,7 +9,6 @@
+ #include <linux/kernel.h>
+ #include <linux/regulator/consumer.h>
+ #include <linux/gpio.h>
+-#include <linux/of_gpio.h>
+ #include <linux/of.h>
+ #include "cam_sensor_cmn_header.h"
+ #include "cam_req_mgr_util.h"
+diff --git a/camera_kt/drivers/cam_utils/cam_cx_ipeak.c b/camera_kt/drivers/cam_utils/cam_cx_ipeak.c
+index b0f93ba04..537189fcc 100644
+--- a/camera_kt/drivers/cam_utils/cam_cx_ipeak.c
++++ b/camera_kt/drivers/cam_utils/cam_cx_ipeak.c
+@@ -6,7 +6,6 @@
+ #include <linux/of.h>
+ #include <linux/slab.h>
+ #include <linux/gpio.h>
+-#include <linux/of_gpio.h>
+ #include <soc/qcom/cx_ipeak.h>
+
+ #include "cam_soc_util.h"
+diff --git a/camera_kt/drivers/cam_utils/cam_soc_util.c b/camera_kt/drivers/cam_utils/cam_soc_util.c
+index 999ad9266..23eb1a0ca 100644
+--- a/camera_kt/drivers/cam_utils/cam_soc_util.c
++++ b/camera_kt/drivers/cam_utils/cam_soc_util.c
+@@ -8,7 +8,6 @@
+ #include <linux/clk.h>
+ #include <linux/slab.h>
+ #include <linux/gpio.h>
+-#include <linux/of_gpio.h>
+ #include <linux/pm_domain.h>
+ #include <linux/pm_runtime.h>
+ #include <linux/pm_opp.h>
+@@ -1168,7 +1167,7 @@ static int cam_soc_util_get_gpio_info(struct cam_hw_soc_info *soc_info)
+ 		goto free_gpio_conf;
+
+ 	for (i = 0; i < gpio_array_size; i++) {
+-		gpio_array[i] = of_get_named_gpio(of_node, "gpios", i);
++		gpio_array[i] = cam_of_get_named_gpio(soc_info->dev, of_node, "gpios", i);
+ 		CAM_DBG(CAM_UTIL, "gpio_array[%d] = %d", i, gpio_array[i]);
+ 	}
+
+diff --git a/common/cam_compat.h b/common/cam_compat.h
+index 000ed2fb5..4f91f0c6c 100644
+--- a/common/cam_compat.h
++++ b/common/cam_compat.h
+@@ -34,6 +34,62 @@ MODULE_IMPORT_NS("DMA_BUF");
+ MODULE_IMPORT_NS(DMA_BUF);
+ #endif
+
++/*
++ * <linux/of_gpio.h> and of_get_named_gpio() were removed in kernel 7.1-rc2.
++ *
++ * Provide cam_of_get_named_gpio(dev, np, propname, index) as a general
++ * drop-in replacement that works on both old and new kernels:
++ *
++ *   kernel < 7.1 : delegates directly to of_get_named_gpio(np, propname, index)
++ *
++ *   kernel >= 7.1: reconstructs the integer GPIO number using only public APIs:
++ *     1. of_parse_phandle_with_args(np, propname, "#gpio-cells", 0, index, &args)
++ *        resolves the exact DT property name (no "-gpios" suffix appended),
++ *        returning the gpio-chip device_node and the hardware pin number.
++ *     2. gpio_device_find_by_fwnode() locates the gpio_device for that node.
++ *     3. gpio_device_get_base() + args.args[0] gives the Linux GPIO number,
++ *        which is identical to what of_get_named_gpio() returned on old kernels.
++ *     4. gpio_device_put() releases the reference from step 2.
++ *
++ * All files that previously included <linux/of_gpio.h> only for the header
++ * (no API calls) simply drop that include; cam_compat.h guards it internally.
++ */
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(7, 1, 0)
++#include <linux/gpio/consumer.h>
++#include <linux/gpio/driver.h>
++static inline int cam_of_get_named_gpio(struct device *dev,
++					const struct device_node *np,
++					const char *propname, int index)
++{
++	struct of_phandle_args args;
++	struct gpio_device *gdev;
++	int base, ret;
++
++	ret = of_parse_phandle_with_args(np, propname, "#gpio-cells",
++					 index, &args);
++	if (ret)
++		return ret;
++
++	gdev = gpio_device_find_by_fwnode(of_fwnode_handle(args.np));
++	of_node_put(args.np);
++	if (!gdev)
++		return -EPROBE_DEFER;
++
++	base = gpio_device_get_base(gdev);
++	gpio_device_put(gdev);
++
++	return base + args.args[0];
++}
++#else
++#include <linux/of_gpio.h>
++static inline int cam_of_get_named_gpio(struct device *dev,
++					const struct device_node *np,
++					const char *propname, int index)
++{
++	return of_get_named_gpio(np, propname, index);
++}
++#endif
++
+ #ifdef CONFIG_DOMAIN_ID_SECURE_CAMERA
+ #include <linux/IClientEnv.h>
+ #include <linux/ITrustedCameraDriver.h>
+--
+2.34.1
+
