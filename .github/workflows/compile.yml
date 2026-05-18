@@ -1,20 +1,34 @@
-  name: Run kas for a specific build configuration
-  inputs:
-    machine:
-      required: true
-    distro_yaml:
-      required: true
-    distro_name:
-      required: true
-    kernel_yaml:
-      required: true
-    kernel_dirname:
-      required: true
-    cache_dir:
-      required: true
-  runs:
-    using: "composite"
+on:
+  workflow_call:
+    inputs:
+      machine:
+        required: true
+        type: string
+      distro_yaml:
+        required: true
+        type: string
+      distro_name:
+        required: true
+        type: string
+      kernel_yaml:
+        required: true
+        type: string
+      kernel_dirname:
+        required: true
+        type: string
+      cache_dir:
+        required: true
+        type: string
+
+jobs:
+  reusable_compile_job:
+    runs-on: [self-hosted, qcom-u2404, amd64]
+    name: ${{ inputs.machine }}/${{ inputs.distro_name }}${{ inputs.kernel_dirname }}
     steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
       - name: Download kas lockfile
         uses: actions/download-artifact@v7
         with:
@@ -58,7 +72,7 @@
           mkdir $KAS_WORK_DIR
           $KAS_CONTAINER dump --resolve-env --resolve-local --resolve-refs ${KAS_YAMLS} > kas-build.yml
 
-      - name: Kas qcom world build
+      - name: Kas build world
         shell: bash
         run: |
           $KAS_CONTAINER build ${KAS_YAMLS}:ci/world.yml
