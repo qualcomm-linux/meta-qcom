@@ -90,6 +90,9 @@ jobs:
           ci/kas-container-shell-helper.sh ci/yocto-pybootchartgui.sh
           mv $KAS_WORK_DIR/build/buildchart.svg .
 
+      - name: Kas build SDK
+        shell: bash
+        run: |
           if [ "${INPUTS_MACHINE}" = "qcom-armv8a" ]; then
             # SDK only with the default kernel and qcom-distro
             if [ "${INPUTS_KERNEL_YAML}" = "" ] && [ "${INPUTS_DISTRO_YAML}" = ":ci/qcom-distro.yml" ] ; then
