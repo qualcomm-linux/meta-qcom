@@ -1,6 +1,10 @@
 on:
   workflow_call:
     inputs:
+      enabled:
+        required: false
+        type: boolean
+        default: true
       machine:
         required: true
         type: string
@@ -25,6 +29,7 @@ env:
 
 jobs:
   reusable_compile_job:
+    if: inputs.enabled
     runs-on: [self-hosted, qcom-u2404, amd64]
     name: ${{ inputs.machine }}/${{ inputs.distro_name }}${{ inputs.kernel_dirname }}
     steps:
