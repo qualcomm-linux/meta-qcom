@@ -142,22 +142,39 @@ jobs:
           echo "KAS_CONTAINER=$KAS_CONTAINER" >> $GITHUB_ENV
           chmod +x $KAS_CONTAINER
 
-      - name: Setup cache variables (used by oe-selftest)
-        run: |
-          echo "DL_DIR=${CACHE_DIR}/downloads" >> $GITHUB_ENV
-          echo "SSTATE_DIR=${CACHE_DIR}/sstate-cache-$(date '+%Y-%m')" >> $GITHUB_ENV
+  testimage:
+    needs: [kas-setup, github-cache-check]
+    if: |
+      github.repository_owner == 'qualcomm-linux' &&
+      (inputs.skip_if_github_cached != true || needs.github-cache-check.outputs.cache_hit != 'true')
+    runs-on: [self-hosted, qcom-u2404, arm64]
+    strategy:
+      fail-fast: false
+      matrix:
+        machine:
+          - testimage
+        distro:
+          - name: nodistro
+            yamlfile: ""
+        kernel:
+          - type: default
+            dirname: ""
+            yamlfile: ""
+    name: ${{ matrix.machine }}/${{ matrix.distro.name }}${{ matrix.kernel.dirname }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
 
-      - name: Run Yocto patchreview
-        run: |
-          ci/kas-container-shell-helper.sh ci/yocto-patchreview.sh
-
-      - name: Run yocto-check-layer
-        run: |
-          ci/kas-container-shell-helper.sh ci/yocto-check-layer.sh
-
-      - name: Run oe-selftest
-        run: |
-          ci/kas-container-shell-helper.sh ci/oe-selftest.sh
+      - name: Run kas build
+        uses: ./.github/actions/compile
+        with:
+          machine: ${{matrix.machine}}
+          distro_yaml: ${{matrix.distro.yamlfile}}
+          distro_name: ${{matrix.distro.name}}
+          kernel_yaml: ${{matrix.kernel.yamlfile}}
+          kernel_dirname: ${{matrix.kernel.dirname}}
+          cache_dir: ${{env.CACHE_DIR}}
 
   compile_warm_up:
     needs: [kas-setup, github-cache-check]
@@ -186,16 +203,6 @@ jobs:
       - uses: actions/checkout@v6
         with:
           persist-credentials: false
-
-      - name: Run kas build
-        uses: ./.github/actions/compile
-        with:
-          machine: ${{matrix.machine}}
-          distro_yaml: ${{matrix.distro.yamlfile}}
-          distro_name: ${{matrix.distro.name}}
-          kernel_yaml: ${{matrix.kernel.yamlfile}}
-          kernel_dirname: ${{matrix.kernel.dirname}}
-          cache_dir: ${{env.CACHE_DIR}}
 
   compile:
     needs: [github-cache-check, compile_warm_up]
@@ -412,18 +419,6 @@ jobs:
         uses: actions/checkout@v6
         with:
           persist-credentials: false
-
-      - name: Run kas build
-        if: inputs.profile != 'pr' || (matrix.distro.name != 'debug' && matrix.distro.name != 'performance')
-        uses: ./.github/actions/compile
-        id: compile_kas
-        with:
-          machine: ${{matrix.machine}}
-          distro_yaml: ${{matrix.distro.yamlfile}}
-          distro_name: ${{matrix.distro.name}}
-          kernel_yaml: ${{matrix.kernel.yamlfile}}
-          kernel_dirname: ${{matrix.kernel.dirname}}
-          cache_dir: ${{env.CACHE_DIR}}
 
   publish_summary:
     needs: [github-cache-check, compile]
