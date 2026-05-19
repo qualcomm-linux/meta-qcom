@@ -5,6 +5,7 @@ DEFAULTBACKEND:qcom ?= "drm"
 SRC_URI:append:qcom = " \
     file://additional-devices.conf \
     file://weston-start.sh \
+    file://0001-weston-init-Enable-early-Weston-startup-using-DRM-de.patch \
 "
 
 do_install:append:qcom() {
