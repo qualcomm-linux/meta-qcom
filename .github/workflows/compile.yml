@@ -1,0 +1,178 @@
+on:
+  workflow_call:
+    inputs:
+      enabled:
+        required: false
+        type: boolean
+        default: true
+      machine:
+        required: true
+        type: string
+      distro_yaml:
+        required: true
+        type: string
+      distro_name:
+        required: true
+        type: string
+      kernel_yaml:
+        required: true
+        type: string
+      kernel_dirname:
+        required: true
+        type: string
+      cache_dir:
+        required: true
+        type: string
+
+env:
+  KAS_CLONE_DEPTH: 1
+
+jobs:
+  reusable_compile_job:
+    if: inputs.enabled
+    runs-on: [self-hosted, qcom-u2404, amd64]
+    name: ${{ inputs.machine }}/${{ inputs.distro_name }}${{ inputs.kernel_dirname }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - name: Download kas lockfile
+        uses: actions/download-artifact@v7
+        with:
+          name: kas-lockfile
+          path: ci/
+
+      - name: Download kas-container
+        uses: actions/download-artifact@v7
+        with:
+          name: kas-container
+          path: ${{runner.temp}}
+
+      - name: Setting up kas-container
+        shell: bash
+        run: |
+          KAS_CONTAINER=$RUNNER_TEMP/kas-container
+          echo "KAS_CONTAINER=$KAS_CONTAINER" >> $GITHUB_ENV
+          chmod +x $KAS_CONTAINER
+
+      - name: Setup build variables
+        shell: bash
+        run: |
+          # use a monthly sstate cache folder
+          echo "DL_DIR=${INPUTS_CACHE_DIR}/downloads" >> $GITHUB_ENV
+          echo "SSTATE_DIR=${INPUTS_CACHE_DIR}/sstate-cache-$(date '+%Y-%m')" >> $GITHUB_ENV
+          echo "KAS_WORK_DIR=${PWD}/../kas" >> $GITHUB_ENV
+          echo "KAS_YAMLS=ci/ci.yml:ci/${INPUTS_MACHINE}.yml${INPUTS_DISTRO_YAML}${INPUTS_KERNEL_YAML}" >> $GITHUB_ENV
+          echo "INPUTS_CACHE_DIR=${INPUTS_CACHE_DIR}" >> $GITHUB_ENV
+          echo "INPUTS_MACHINE=${INPUTS_MACHINE}" >> $GITHUB_ENV
+          echo "INPUTS_DISTRO_YAML=${INPUTS_DISTRO_YAML}" >> $GITHUB_ENV
+          echo "INPUTS_KERNEL_YAML=${INPUTS_KERNEL_YAML}" >> $GITHUB_ENV
+        env:
+          INPUTS_CACHE_DIR: ${{inputs.cache_dir}}
+          INPUTS_MACHINE: ${{ inputs.machine }}
+          INPUTS_DISTRO_YAML: ${{ inputs.distro_yaml }}
+          INPUTS_KERNEL_YAML: ${{ inputs.kernel_yaml }}
+
+      - name: Dump kas-build yaml
+        shell: bash
+        run: |
+          mkdir $KAS_WORK_DIR
+          $KAS_CONTAINER dump --resolve-env --resolve-local --resolve-refs ${KAS_YAMLS} > kas-build.yml
+
+      - name: Kas build world
+        shell: bash
+        run: |
+          $KAS_CONTAINER build ${KAS_YAMLS}:ci/world.yml
+          $KAS_CONTAINER shell ${KAS_YAMLS}:ci/world.yml \
+            -c "buildstats-summary --sort duration --highlight 0 --shortest 300"
+          ci/kas-container-shell-helper.sh ci/yocto-pybootchartgui.sh
+          mv $KAS_WORK_DIR/build/buildchart.svg buildchart-world.svg
+
+      - name: Kas build images
+        shell: bash
+        run: |
+          $KAS_CONTAINER build ${KAS_YAMLS}
+          $KAS_CONTAINER shell ${KAS_YAMLS} \
+            -c "buildstats-summary --sort duration --highlight 0 --shortest 300"
+          ci/kas-container-shell-helper.sh ci/yocto-pybootchartgui.sh
+          mv $KAS_WORK_DIR/build/buildchart.svg .
+
+      - name: Kas build SDK
+        shell: bash
+        run: |
+          if [ "${INPUTS_MACHINE}" = "qcom-armv8a" ]; then
+            # SDK only with the default kernel and qcom-distro
+            if [ "${INPUTS_KERNEL_YAML}" = "" ] && [ "${INPUTS_DISTRO_YAML}" = ":ci/qcom-distro.yml" ] ; then
+              $KAS_CONTAINER build ${KAS_YAMLS} --task populate_sdk \
+                --target qcom-multimedia-image \
+                --target qcom-multimedia-proprietary-image
+              $KAS_CONTAINER shell ${KAS_YAMLS} \
+                -c "buildstats-summary --sort duration --highlight 0 --shortest 300"
+              ci/kas-container-shell-helper.sh ci/yocto-pybootchartgui.sh
+              mv $KAS_WORK_DIR/build/buildchart.svg buildchart-sdk.svg
+            fi
+          fi
+
+      - uses: actions/upload-artifact@v6
+        with:
+          name: buildchart-${{ inputs.distro_name }}${{ inputs.kernel_dirname }}-${{ inputs.machine }}
+          path: |
+            buildchart*
+
+      - uses: actions/upload-artifact@v6
+        with:
+          name: kas-build-${{ inputs.distro_name }}${{ inputs.kernel_dirname }}-${{ inputs.machine }}
+          path: kas-build.yml
+
+      - name: Stage build artifacts for publishing
+        shell: bash
+        run: |
+          # The upload-private-artifact-action runs from a container that
+          # expects file to be relative to our PWD. deploy_dir is outside
+          # that, so we move things around:
+          deploy_dir=../kas/build/tmp/deploy/images/${INPUTS_MACHINE}
+          uploads_dir=./uploads/${INPUTS_DISTRO_NAME}${INPUTS_KERNEL_DIRNAME}/${INPUTS_MACHINE}
+          mkdir -p $uploads_dir
+          # Publish everything that is linked by bitbake at the end of the build (avoid timestamp and duplication)
+          find $deploy_dir/ -maxdepth 1 -type l -exec cp --dereference {} $uploads_dir/ \;
+          # Files without links: *.vfat, *.elf, *.efi, efi.stub, fit *.its, qcom-metadata.dtb and qclinuxfitImage
+          # Copy *.efi, *.efi and *.vfat as they are useful for debugging
+          find $deploy_dir/ -maxdepth 1 -type f \( -name \*.efi -o -name \*.elf -o -name dtb-\*.vfat \) -exec cp {} $uploads_dir/ \;
+          cp buildchart.svg kas-build.yml $uploads_dir/
+          if [ -d $deploy_dir/../../sdk ]; then
+            cp $deploy_dir/../../sdk/* $uploads_dir/
+          fi
+        env:
+          INPUTS_MACHINE: ${{ inputs.machine }}
+          INPUTS_DISTRO_NAME: ${{ inputs.distro_name }}
+          INPUTS_KERNEL_DIRNAME: ${{ inputs.kernel_dirname }}
+
+      - name: Upload artifacts to S3 bucket
+        uses: qualcomm-linux/upload-private-artifact-action@aws-v4
+        id: upload_s3_artifacts
+        with:
+          path: ./uploads
+          destination: ${{ github.repository_owner }}/${{ github.event.repository.name }}/${{ github.run_id }}-${{ github.run_attempt }}/
+          s3_bucket: qcom-prd-gh-artifacts
+
+      - name: "Print output"
+        shell: bash
+        id: print-output
+        run: |
+          KERNEL_DIRNAME="${INPUTS_KERNEL_DIRNAME}"
+          BUILDNAME="${INPUTS_MACHINE}_${INPUTS_DISTRO_NAME}${KERNEL_DIRNAME}"
+          FILENAME="build-url_${BUILDNAME}"
+          echo "${{ steps.upload_s3_artifacts.outputs.url }}" > "${FILENAME}"
+          echo "filename=${FILENAME}" >> $GITHUB_OUTPUT
+        env:
+          INPUTS_KERNEL_DIRNAME: ${{ inputs.kernel_dirname }}
+          INPUTS_MACHINE: ${{ inputs.machine }}
+          INPUTS_DISTRO_NAME: ${{ inputs.distro_name }}
+      - name: Upload build URL
+        uses: actions/upload-artifact@v6
+        with:
+          overwrite: true
+          name: ${{ steps.print-output.outputs.filename }}
+          path: ${{ steps.print-output.outputs.filename }}
+
