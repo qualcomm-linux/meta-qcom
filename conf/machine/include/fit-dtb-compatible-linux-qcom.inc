@@ -210,3 +210,5 @@ FIT_DTB_COMPATIBLE[qcom_qcs6490-iot-camx-staging] = \
     "qcs6490-rb3gen2 qcs6490-rb3gen2-vision-mezzanine-camx kodiak-staging"
 FIT_DTB_COMPATIBLE[qcom_qcs6490-iot-subtype2-camx-staging] = \
     "qcs6490-rb3gen2 qcs6490-rb3gen2-vision-mezzanine-camx kodiak-staging"
+# ---------- glymur ----------
+FIT_DTB_COMPATIBLE[qcom_glymur-crd-staging] = "glymur-crd glymur-staging"
