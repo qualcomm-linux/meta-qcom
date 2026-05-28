@@ -1,0 +1,62 @@
+From bc0719c25871d7849ece317b1455d1016c6e5a74 Mon Sep 17 00:00:00 2001
+From: Stoyan Kushlev <skushlev@qti.qualcomm.com>
+Date: Fri, 29 May 2026 16:33:50 +0300
+Subject: [PATCH 2/2] Fix camera metadata tags for color space profiles maps
+
+Fix camera metadata tags for color space profiles maps
+
+Upstream-Status: Inappropriate [Temporary work around]
+
+Signed-off-by: Stoyan Kushlev <skushlev@qti.qualcomm.com>
+---
+ camera/include/system/camera_metadata_tags.h | 19 ++++++++++++++++++-
+ 1 file changed, 18 insertions(+), 1 deletion(-)
+
+diff --git a/camera/include/system/camera_metadata_tags.h b/camera/include/system/camera_metadata_tags.h
+index c73950e9..e313ebc7 100644
+--- a/camera/include/system/camera_metadata_tags.h
++++ b/camera/include/system/camera_metadata_tags.h
+@@ -786,6 +786,7 @@ typedef enum camera_metadata_enum_android_control_scene_mode {
+     ANDROID_CONTROL_SCENE_MODE_HDR                                  , // HIDL v3.2
+     ANDROID_CONTROL_SCENE_MODE_FACE_PRIORITY_LOW_LIGHT              , // HIDL v3.2
+     ANDROID_CONTROL_SCENE_MODE_DEVICE_CUSTOM_START                   = 100, // HIDL v3.2
++    ANDROID_CONTROL_SCENE_MODE_DEVICE_OBJECT_PRIORITY                = ANDROID_CONTROL_SCENE_MODE_DEVICE_CUSTOM_START,
+     ANDROID_CONTROL_SCENE_MODE_DEVICE_CUSTOM_END                     = 127, // HIDL v3.2
+ } camera_metadata_enum_android_control_scene_mode_t;
+ 
+@@ -1092,8 +1093,23 @@ typedef enum camera_metadata_enum_android_request_available_dynamic_range_profil
+ typedef enum camera_metadata_enum_android_request_available_color_space_profiles_map {
+     ANDROID_REQUEST_AVAILABLE_COLOR_SPACE_PROFILES_MAP_UNSPECIFIED   = -1, // HIDL v3.9
+     ANDROID_REQUEST_AVAILABLE_COLOR_SPACE_PROFILES_MAP_SRGB          = 0, // HIDL v3.9
++    ANDROID_REQUEST_AVAILABLE_COLOR_SPACE_PROFILES_MAP_LINEAR_SRGB   = 1, // HIDL v3.9
++    ANDROID_REQUEST_AVAILABLE_COLOR_SPACE_PROFILES_MAP_EXTENDED_SRGB = 2, // HIDL v3.9
++    ANDROID_REQUEST_AVAILABLE_COLOR_SPACE_PROFILES_MAP_LINEAR_EXTENDED_SRGB
++                                                                      = 3, // HIDL v3.9
++    ANDROID_REQUEST_AVAILABLE_COLOR_SPACE_PROFILES_MAP_BT709         = 4, // HIDL v3.9
++    ANDROID_REQUEST_AVAILABLE_COLOR_SPACE_PROFILES_MAP_BT2020        = 5, // HIDL v3.9
++    ANDROID_REQUEST_AVAILABLE_COLOR_SPACE_PROFILES_MAP_DCI_P3        = 6, // HIDL v3.9
+     ANDROID_REQUEST_AVAILABLE_COLOR_SPACE_PROFILES_MAP_DISPLAY_P3    = 7, // HIDL v3.9
+-    ANDROID_REQUEST_AVAILABLE_COLOR_SPACE_PROFILES_MAP_BT2020_HLG    = 16, // HIDL v3.9
++    ANDROID_REQUEST_AVAILABLE_COLOR_SPACE_PROFILES_MAP_NTSC_1953     = 8, // HIDL v3.9
++    ANDROID_REQUEST_AVAILABLE_COLOR_SPACE_PROFILES_MAP_SMPTE_C       = 9, // HIDL v3.9
++    ANDROID_REQUEST_AVAILABLE_COLOR_SPACE_PROFILES_MAP_ADOBE_RGB     = 10, // HIDL v3.9
++    ANDROID_REQUEST_AVAILABLE_COLOR_SPACE_PROFILES_MAP_PRO_PHOTO_RGB = 11, // HIDL v3.9
++    ANDROID_REQUEST_AVAILABLE_COLOR_SPACE_PROFILES_MAP_ACES          = 12, // HIDL v3.9
++    ANDROID_REQUEST_AVAILABLE_COLOR_SPACE_PROFILES_MAP_ACESCG        = 13, // HIDL v3.9
++    ANDROID_REQUEST_AVAILABLE_COLOR_SPACE_PROFILES_MAP_CIE_XYZ       = 14, // HIDL v3.9
++    ANDROID_REQUEST_AVAILABLE_COLOR_SPACE_PROFILES_MAP_CIE_LAB       = 15, // HIDL v3.9
++    ANDROID_REQUEST_AVAILABLE_COLOR_SPACE_PROFILES_MAP_BT2020_HLG    = 16, // AIDL v2.0
+ } camera_metadata_enum_android_request_available_color_space_profiles_map_t;
+ 
+ 
+@@ -1108,6 +1124,7 @@ typedef enum camera_metadata_enum_android_scaler_available_formats {
+     ANDROID_SCALER_AVAILABLE_FORMATS_BLOB                            = 0x21, // HIDL v3.2
+     ANDROID_SCALER_AVAILABLE_FORMATS_RAW10                           = 0x25, // HIDL v3.4
+     ANDROID_SCALER_AVAILABLE_FORMATS_RAW12                           = 0x26, // HIDL v3.4
++    ANDROID_SCALER_AVAILABLE_FORMATS_YCbCr_420_P010                  = 0x36, // HIDL v3.4
+     ANDROID_SCALER_AVAILABLE_FORMATS_Y8                              = 0x20203859, // HIDL v3.4
+ } camera_metadata_enum_android_scaler_available_formats_t;
+ 
+-- 
+2.34.1
+
