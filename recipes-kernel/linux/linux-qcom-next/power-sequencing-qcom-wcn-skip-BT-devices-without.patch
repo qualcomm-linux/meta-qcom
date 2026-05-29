@@ -1,0 +1,72 @@
+From 1221c8f1459df8005a3221b7e9f950f9c64687da Mon Sep 17 00:00:00 2001
+From: Shuai Zhang <shuai.zhang@oss.qualcomm.com>
+Date: Fri, 29 May 2026 14:09:54 +0800
+Subject: power: sequencing: qcom-wcn: skip BT devices without
+ bt-enable GPIO
+
+Add a bt_gpio_required flag to the per-platform data to indicate that
+a chip's BT enable path requires a dedicated GPIO.  Only skip matching
+the "bluetooth" device node when this flag is set and bt_gpio is absent.
+
+Previously the bt_gpio check was applied unconditionally, which caused
+chips like WCN3990 that have no separate BT/WLAN enable pins by design
+to fail matching even when bt-enable GPIO is legitimately absent from
+the DT.  Set bt_gpio_required for WCN6855 and WCN7850 which do require
+a dedicated BT enable GPIO.
+
+Upstream-Status: Pending
+Signed-off-by: Shuai Zhang <shuai.zhang@oss.qualcomm.com>
+---
+ drivers/power/sequencing/pwrseq-qcom-wcn.c | 11 ++++++++++-
+ 1 file changed, 10 insertions(+), 1 deletion(-)
+
+diff --git a/drivers/power/sequencing/pwrseq-qcom-wcn.c b/drivers/power/sequencing/pwrseq-qcom-wcn.c
+index dc83d3241..a68e6fb34 100644
+--- a/drivers/power/sequencing/pwrseq-qcom-wcn.c
++++ b/drivers/power/sequencing/pwrseq-qcom-wcn.c
+@@ -25,6 +25,7 @@ struct pwrseq_qcom_wcn_pdata {
+ 	unsigned int gpio_enable_delay_ms;
+ 	const struct pwrseq_target_data **targets;
+ 	bool has_vddio; /* separate VDD IO regulator */
++	bool bt_gpio_required; /* BT enable path requires a dedicated GPIO */
+ 	int (*match)(struct pwrseq_device *pwrseq, struct device *dev);
+ };
+ 
+@@ -383,6 +384,7 @@ static const struct pwrseq_qcom_wcn_pdata pwrseq_wcn6855_of_data = {
+ 	.pwup_delay_ms = 50,
+ 	.gpio_enable_delay_ms = 5,
+ 	.targets = pwrseq_qcom_wcn6855_targets,
++	.bt_gpio_required = true,
+ };
+ 
+ static const char *const pwrseq_wcn7850_vregs[] = {
+@@ -400,6 +402,7 @@ static const struct pwrseq_qcom_wcn_pdata pwrseq_wcn7850_of_data = {
+ 	.num_vregs = ARRAY_SIZE(pwrseq_wcn7850_vregs),
+ 	.pwup_delay_ms = 50,
+ 	.targets = pwrseq_qcom_wcn_targets,
++	.bt_gpio_required = true,
+ };
+ 
+ static int pwrseq_qcom_wcn_match_regulator(struct pwrseq_device *pwrseq,
+@@ -439,11 +442,17 @@ static int pwrseq_qcom_wcn_match_regulator(struct pwrseq_device *pwrseq,
+ 	 * The consumer driver will fall back to its legacy power control path
+ 	 * and correctly set power_ctrl_enabled to false.
+ 	 *
++	 * Only apply this check for chips whose BT enable path requires a
++	 * dedicated GPIO (bt_gpio_required).  Chips like WCN3990 have no
++	 * separate BT/WLAN enable pins by design and must always be matched
++	 * even when bt_gpio is NULL.
++	 *
+ 	 * BT device nodes are conventionally named "bluetooth" in the DT,
+ 	 * so use of_node_name_eq() as a generic check rather than enumerating
+ 	 * specific compatible strings.
+ 	 */
+-	if (!ctx->bt_gpio && of_node_name_eq(dev_node, "bluetooth"))
++	if (ctx->pdata->bt_gpio_required && !ctx->bt_gpio &&
++	    of_node_name_eq(dev_node, "bluetooth"))
+ 		return PWRSEQ_NO_MATCH;
+ 
+ 	return PWRSEQ_MATCH_OK;
+-- 
+2.34.1
+

@@ -23,6 +23,7 @@ SRCBRANCH:class-devupstream ?= "branch=qcom-6.18.y"
 SRC_URI = " \
     git://github.com/qualcomm-linux/kernel.git;${SRCBRANCH};protocol=https \
     file://0001-tools-use-basename-to-identify-file-in-gen-mach-type.patch \
+    file://power-sequencing-qcom-wcn-skip-BT-devices-without.patch \
 "
 
 # Additional kernel configs.
