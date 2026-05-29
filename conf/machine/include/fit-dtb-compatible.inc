@@ -13,6 +13,9 @@ FIT_DTB_COMPATIBLE[hamoa-iot-evk+hamoa-iot-evk-camera-imx577] = " \
 FIT_DTB_COMPATIBLE[hamoa-iot-evk+hamoa-evk-camx] = " \
     qcom,hamoa-evk-camx \
 "
+FIT_DTB_COMPATIBLE[hamoa-iot-evk+hamoa-evk-camx+x1-el2+hamoa-camx-el2] = " \
+    qcom,hamoa-evk-camx-el2kvm \
+"
 FIT_DTB_COMPATIBLE[kaanapali-mtp] = "qcom,kaanapali-mtp"
 FIT_DTB_COMPATIBLE[lemans-evk+lemans-evk-camera-csi1-imx577] = " \
     qcom,qcs9075-iot \
