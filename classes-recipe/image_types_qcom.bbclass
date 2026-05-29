@@ -112,18 +112,13 @@ create_qcomflash_pkg() {
         done
 
         # xbl_config
-        xbl_config="xbl_config.elf"
-        if ${@bb.utils.contains('DISTRO_FEATURES', 'kvm', 'true', 'false', d)}; then
-            xbl_config="xbl_config_kvm.elf"
-        fi
-
         # Prefer the OEM-cert-injected xbl_config deployed by the capsule recipe
         # when available.
         if [ -n "${QCOM_CAPSULE_FIRMWARE}" ] && \
                 [ -f "${DEPLOY_DIR_IMAGE}/xbl_config-with-oem-cert.elf" ]; then
             install -m 0644 "${DEPLOY_DIR_IMAGE}/xbl_config-with-oem-cert.elf" xbl_config.elf
-        elif [ -f "${DEPLOY_DIR_IMAGE}/${QCOM_BOOT_FILES_SUBDIR}/${xbl_config}" ]; then
-            install -m 0644 "${DEPLOY_DIR_IMAGE}/${QCOM_BOOT_FILES_SUBDIR}/${xbl_config}" xbl_config.elf
+        elif [ -f "${DEPLOY_DIR_IMAGE}/${QCOM_BOOT_FILES_SUBDIR}/${QCOM_XBL_CONFIG}" ]; then
+            install -m 0644 "${DEPLOY_DIR_IMAGE}/${QCOM_BOOT_FILES_SUBDIR}/${QCOM_XBL_CONFIG}" xbl_config.elf
         fi
 
         # bootloader selection

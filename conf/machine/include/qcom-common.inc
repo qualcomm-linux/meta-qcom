@@ -36,6 +36,9 @@ PREFERRED_PROVIDER_android-tools-conf = "android-tools-conf-configfs"
 IMAGE_FSTYPES ?= "ext4.gz"
 IMAGE_ROOTFS_ALIGNMENT ?= "4096"
 
+# XBL Config selection
+QCOM_XBL_CONFIG ?= "${@bb.utils.contains("COMBINED_FEATURES", "kvm", "xbl_config_kvm.elf", "xbl_config.elf", d)}"
+
 # Android boot image settings
 QCOM_BOOTIMG_KERNEL_BASE ?= "0x80000000"
 QCOM_BOOTIMG_PAGE_SIZE ?= "4096"
