@@ -13,6 +13,9 @@ FIT_DTB_COMPATIBLE[hamoa-iot-evk+hamoa-iot-evk-camera-imx577] = " \
 FIT_DTB_COMPATIBLE[hamoa-iot-evk+hamoa-evk-camx] = " \
     qcom,hamoa-evk-camx \
 "
+FIT_DTB_COMPATIBLE[hamoa-iot-evk+hamoa-evk-camx+x1-el2+hamoa-camx-el2] = " \
+    qcom,hamoa-evk-camx-el2kvm \
+"
 FIT_DTB_COMPATIBLE[kaanapali-mtp] = "qcom,kaanapali-mtp"
 FIT_DTB_COMPATIBLE[lemans-evk+lemans-evk-camera-csi1-imx577] = " \
     qcom,qcs9075-iot \
@@ -55,6 +58,8 @@ FIT_DTB_COMPATIBLE[monaco-evk+monaco-evk-camx+monaco-el2+monaco-camx-el2+monaco-
 FIT_DTB_COMPATIBLE[monaco-evk+monaco-evk-ifp-mezzanine] = "qcom,qcs8275-iot-subtype3"
 FIT_DTB_COMPATIBLE[monaco-evk+monaco-evk-ifp-mezzanine+monaco-staging+monaco-evk-staging] = "qcom,qcs8275-iot-subtype3-staging"
 FIT_DTB_COMPATIBLE[purwa-iot-evk] = "qcom,purwa-evk"
+FIT_DTB_COMPATIBLE[purwa-iot-evk+purwa-evk-camx] = "qcom,purwa-evk-camx"
+FIT_DTB_COMPATIBLE[purwa-iot-evk+purwa-evk-camx+x1-el2+purwa-camx-el2] = "qcom,purwa-evk-camx-el2kvm"
 FIT_DTB_COMPATIBLE[qcm6490-idp] = "qcom,qcm6490-idp"
 FIT_DTB_COMPATIBLE[qcm6490-idp+kodiak-staging] = "qcom,qcm6490-idp-staging"
 FIT_DTB_COMPATIBLE[qcm6490-idp+kodiak-el2] = " \
