@@ -58,6 +58,8 @@ FIT_DTB_COMPATIBLE[monaco-evk+monaco-evk-camx+monaco-el2+monaco-camx-el2+monaco-
 FIT_DTB_COMPATIBLE[monaco-evk+monaco-evk-ifp-mezzanine] = "qcom,qcs8275-iot-subtype3"
 FIT_DTB_COMPATIBLE[monaco-evk+monaco-evk-ifp-mezzanine+monaco-staging+monaco-evk-staging] = "qcom,qcs8275-iot-subtype3-staging"
 FIT_DTB_COMPATIBLE[purwa-iot-evk] = "qcom,purwa-evk"
+FIT_DTB_COMPATIBLE[purwa-iot-evk+purwa-evk-camx] = "qcom,purwa-evk-camx"
+FIT_DTB_COMPATIBLE[purwa-iot-evk+purwa-evk-camx+x1-el2+purwa-camx-el2] = "qcom,purwa-evk-camx-el2kvm"
 FIT_DTB_COMPATIBLE[qcm6490-idp] = "qcom,qcm6490-idp"
 FIT_DTB_COMPATIBLE[qcm6490-idp+kodiak-staging] = "qcom,qcm6490-idp-staging"
 FIT_DTB_COMPATIBLE[qcm6490-idp+kodiak-el2] = " \
