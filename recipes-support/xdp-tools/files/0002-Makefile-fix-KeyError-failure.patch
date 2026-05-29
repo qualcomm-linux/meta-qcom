@@ -1,0 +1,42 @@
+From 8c4842b47ddd31d531b5ec254a86985df437ba96 Mon Sep 17 00:00:00 2001
+From: Rajkumar Patel <rajkpate@qti.qualcomm.com>
+Date: Tue, 19 May 2026 18:23:21 +0530
+Subject: [PATCH 2/2] Makefile: fix KeyError failure
+
+OE runs all install tasks under pseudo: a UID/GID faking layer that
+intercepts filesystem calls so that files can be owned by root in the
+package even though the build runs as a non-root user.
+
+When cp -p copies the library files, it calls lchown() on the
+destination to match the source ownership. Pseudo intercepts this
+lchown() call and internally tries to resolve the UID to a username
+using Python's pwd.getpwuid(). In a container or CI environment the
+build user has a synthetic UID that does not exist in /etc/passwd.
+Python's pwd.getpwuid() raises KeyError, which crashes pseudo and
+fails the install task:
+
+  Exception: KeyError: 'getpwuid(): uid not found: 11857215'
+
+Upstream-Status: Inappropriate
+
+Signed-off-by: Rajkumar Patel <rajkpate@qti.qualcomm.com>
+---
+ lib/libxdp/Makefile | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/lib/libxdp/Makefile b/lib/libxdp/Makefile
+index 7ea7e7e..2b939ce 100644
+--- a/lib/libxdp/Makefile
++++ b/lib/libxdp/Makefile
+@@ -56,7 +56,7 @@ install: all
+ 	$(Q)install -d -m 0755 $(DESTDIR)$(BPF_OBJECT_DIR)
+ 	$(Q)install -m 0644 $(LIB_HEADERS) $(DESTDIR)$(HDRDIR)/
+ 	$(Q)install -m 0644 $(PC_FILE) $(DESTDIR)$(LIBDIR)/pkgconfig/
+-	$(Q)cp -fpR $(SHARED_LIBS) $(STATIC_LIBS) $(DESTDIR)$(LIBDIR)
++	$(Q)cp -fpR --no-preserve=ownership $(SHARED_LIBS) $(STATIC_LIBS) $(DESTDIR)$(LIBDIR)
+ 	$(Q)install -m 0644 $(XDP_OBJS) $(DESTDIR)$(BPF_OBJECT_DIR)
+ 	$(if $(MAN_FILES),$(Q)install -m 0755 -d $(DESTDIR)$(MANDIR)/man3)
+ 	$(if $(MAN_FILES),$(Q)install -m 0644 $(MAN_FILES) $(DESTDIR)$(MANDIR)/man3)
+-- 
+2.34.1
+
