@@ -1,0 +1,78 @@
+From 769f3b1024506599d56792b711fbd5b027df0599 Mon Sep 17 00:00:00 2001
+From: Pratik Pachange <ppachang@qti.qualcomm.com>
+Date: Wed, 22 Jul 2026 18:31:26 +0530
+Subject: [PATCH] cmake: Rename pkg-config output to
+ libonnxruntime_providers_qnn.pc
+
+This repo builds only the QNN execution provider, not the full
+generic ONNX Runtime distribution. Installing a pkg-config file named
+libonnxruntime.pc can collide with a real upstream libonnxruntime.pc
+if both end up installed on the same system.
+
+Rename the top-level CMake project from onnxruntime_qnn to
+onnxruntime_providers_qnn, and derive the pkg-config template's Name
+and Libs fields from @CMAKE_PROJECT_NAME@ instead of a hardcoded
+string, so the two stay in sync going forward.
+
+Rename cmake/libonnxruntime.pc.cmake.in to
+cmake/libonnxruntime_providers_qnn.pc.cmake.in and update the
+configure_file()/install() calls in cmake/CMakeLists.txt to match, so
+the build now emits libonnxruntime_providers_qnn.pc instead of
+libonnxruntime.pc. Also update the template's Description and URL
+fields to reflect the QNN execution provider package.
+
+Signed-off-by: Pratik Pachange <ppachang@qti.qualcomm.com>
+Upstream-Status: Backport [3e0c61b090a8710b43c6694353c43ccf4d9d32d0]
+---
+ cmake/CMakeLists.txt                                       | 8 ++++----
+ ...e.in => libonnxruntime_providers_qnn.pc.cmake.in}        | 8 ++++----
+ 2 files changed, 8 insertions(+), 8 deletions(-)
+ rename cmake/{libonnxruntime.pc.cmake.in => libonnxruntime_providers_qnn.pc.cmake.in} (78%)
+
+diff --git a/cmake/CMakeLists.txt b/cmake/CMakeLists.txt
+index d3118f881e..3ffc018bd9 100644
+--- a/cmake/CMakeLists.txt
++++ b/cmake/CMakeLists.txt
+@@ -8,7 +8,7 @@ cmake_minimum_required(VERSION 3.28)
+ # Don't let cmake set a default value for CMAKE_CUDA_ARCHITECTURES
+ cmake_policy(SET CMP0104 OLD)
+ # Project
+-project(onnxruntime_qnn C CXX ASM)
++project(onnxruntime_providers_qnn C CXX ASM)
+
+ # Disable fast-math for Intel oneAPI compiler
+ if("${CMAKE_CXX_COMPILER_ID}" MATCHES "IntelLLVM")
+@@ -871,9 +871,9 @@ else()
+   option(BUILD_PKGCONFIG_FILES "Build and install pkg-config files" OFF)
+ endif()
+ if (BUILD_PKGCONFIG_FILES)
+-   configure_file(${CMAKE_CURRENT_SOURCE_DIR}/libonnxruntime.pc.cmake.in
+-    ${CMAKE_CURRENT_BINARY_DIR}/libonnxruntime.pc @ONLY)
+-  install( FILES  ${CMAKE_CURRENT_BINARY_DIR}/libonnxruntime.pc DESTINATION
++   configure_file(${CMAKE_CURRENT_SOURCE_DIR}/libonnxruntime_providers_qnn.pc.cmake.in
++    ${CMAKE_CURRENT_BINARY_DIR}/libonnxruntime_providers_qnn.pc @ONLY)
++  install( FILES  ${CMAKE_CURRENT_BINARY_DIR}/libonnxruntime_providers_qnn.pc DESTINATION
+     ${CMAKE_INSTALL_LIBDIR}/pkgconfig )
+ endif()
+
+diff --git a/cmake/libonnxruntime.pc.cmake.in b/cmake/libonnxruntime_providers_qnn.pc.cmake.in
+similarity index 78%
+rename from cmake/libonnxruntime.pc.cmake.in
+rename to cmake/libonnxruntime_providers_qnn.pc.cmake.in
+index 57b79d20a2..9ea70152f8 100644
+--- a/cmake/libonnxruntime.pc.cmake.in
++++ b/cmake/libonnxruntime_providers_qnn.pc.cmake.in
+@@ -6,8 +6,8 @@ libdir=${prefix}/@CMAKE_INSTALL_LIBDIR@
+ includedir=${prefix}/@CMAKE_INSTALL_INCLUDEDIR@/@CMAKE_PROJECT_NAME@
+
+ Name: @CMAKE_PROJECT_NAME@
+-Description: ONNX runtime
+-URL: https://github.com/microsoft/@CMAKE_PROJECT_NAME@
++Description: ONNX runtime QNN execution provider
++URL: https://github.com/onnxruntime/onnxruntime-qnn
+ Version: @ORT_VERSION@
+ Libs: -L${libdir} -l@CMAKE_PROJECT_NAME@
+ Cflags: -I${includedir}
+--
+2.34.1
+
