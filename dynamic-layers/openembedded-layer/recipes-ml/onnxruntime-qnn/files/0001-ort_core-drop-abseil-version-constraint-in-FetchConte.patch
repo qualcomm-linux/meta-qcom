@@ -1,0 +1,36 @@
+From 4d7d1d328ded36759c168d7a213a56e263d66c5b Mon Sep 17 00:00:00 2001
+From: Pratik Pachange <ppachang@qti.qualcomm.com>
+Date: Thu, 11 Jun 2026 09:47:22 +0530
+Subject: [PATCH] ort_core: drop abseil version constraint in FetchContent
+
+The sysroot ships abseil-cpp 20260107 but ort_core's FetchContent call
+requests "FIND_PACKAGE_ARGS 20250814 NAMES absl".  The strict version
+argument causes FetchContent to fall back to building abseil from source
+when the sysroot copy's version string does not match the exact format
+expected.
+
+Fix: remove the version argument so find_package(absl) accepts whatever
+version is present in the sysroot, keeping abseil and re2 from the same
+location.
+
+Upstream-Status: Inappropriate [OE-specific sysroot version mismatch]
+Signed-off-by: Pratik Pachange <ppachang@qti.qualcomm.com>
+---
+ cmake/external/abseil-cpp.cmake | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/cmake/external/abseil-cpp.cmake b/cmake/external/abseil-cpp.cmake
+index 3f7ff2c26f..1740ebb19b 100644
+--- a/cmake/external/abseil-cpp.cmake
++++ b/cmake/external/abseil-cpp.cmake
+@@ -37,7 +37,7 @@ onnxruntime_fetchcontent_declare(
+     URL_HASH SHA1=${DEP_SHA1_abseil_cpp}
+     EXCLUDE_FROM_ALL
+     PATCH_COMMAND ${ABSL_PATCH_COMMAND}
+-    FIND_PACKAGE_ARGS 20250814 NAMES absl
++    FIND_PACKAGE_ARGS NAMES absl
+ )
+
+ onnxruntime_fetchcontent_makeavailable(abseil_cpp)
+--
+2.34.1
