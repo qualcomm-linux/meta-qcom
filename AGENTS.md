@@ -161,10 +161,30 @@ Signed-off-by: $(git config user.name) <$(git config user.email)>
 
 Never fabricate a name or email; always read from `git config`.
 
+The `Signed-off-by` identity must match the commit author, and must be a real,
+routable identity:
+
+- The author email must appear in a `Signed-off-by` trailer on the same commit.
+- Do not author commits through the GitHub web editor: it produces numbered
+  `NNNN+user@users.noreply.github.com` addresses and arbitrary display names,
+  which are rejected. Configure `git config user.name`/`user.email` locally and
+  commit from a checkout.
+- Write the trailer as `Signed-off-by: Name <email>` with a space before `<`.
+- `Signed-off-by`, `Acked-by`, `Reviewed-by` and similar trailers for anyone
+  other than you must reflect approvals that were actually given. This cannot
+  be verified automatically and is left to maintainer review; do not fabricate
+  a review or sign-off trail.
+
 Guidelines:
 
 - Keep subject line short and specific; capture intent, not a file-by-file dump.
 - Use imperative mood (`Add`, `Update`, `Drop`, `Enable`, `Revert`).
+- Prefix scoped changes with `component: summary` (note the space after the
+  colon).
+- Do not use Conventional Commits prefixes (`feat:`, `fix(scope):`, `chore:`);
+  follow the OE commit policy and the `component: summary` style above.
+- Do not use kernel-tree subject prefixes (`FROMLIST:`, `UPSTREAM:`,
+  `BACKPORT:`, `FROMGIT:`).
 - Add a body for non-trivial changes explaining **why** and key design decisions.
 - Wrap body lines for readability (~72 chars).
 - Use consistent recipe bump wording for version updates, e.g.
@@ -174,3 +194,8 @@ Guidelines:
 - Each patch must be logically coherent, self-contained, and independently buildable.
 - The tree must remain in a functional state after every commit.
 - Fixups within the same patch series are not allowed; changes should be corrected in the patch where they are introduced.
+- Rebase your branch on upstream `master`; do not merge `master` into it. Merge
+  commits in a pull request are rejected.
+- Every patch file added under a recipe must carry an `Upstream-Status:` header
+  with a valid value (`Submitted`, `Backport`, `Pending`, `Inappropriate`,
+  `Denied`, `Accepted`).
