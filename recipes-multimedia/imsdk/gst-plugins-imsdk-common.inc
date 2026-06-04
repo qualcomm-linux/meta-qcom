@@ -11,7 +11,7 @@ REQUIRED_DISTRO_FEATURES = "opengl"
 
 SRC_URI = "git://github.com/qualcomm/gst-plugins-imsdk;protocol=https;nobranch=1;tag=${PV}"
 
-SRCREV = "e74836ed49ac5da59de8b495ce0d0d3eb2fb6210"
+SRCREV = "bf7adb22735769b028aff3b94de7a4cc41db57a7"
 
 DEPENDS += "\
     gstreamer1.0 \

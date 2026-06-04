@@ -353,32 +353,32 @@ jobs:
                 yamlfile: ""
           - machine: qcs615-ride
             distro:
-                name: nodistro
-                yamlfile: ''
+                name: qcom-distro
+                yamlfile: ':ci/qcom-distro.yml'
             kernel:
                 type: u-boot-qcom-6.18
                 dirname: "_linux-qcom-6.18_u-boot-qcom"
                 yamlfile: ":ci/linux-qcom-6.18.yml:ci/u-boot-qcom.yml"
           - machine: rb3gen2-core-kit
             distro:
-                name: nodistro
-                yamlfile: ''
+                name: qcom-distro
+                yamlfile: ':ci/qcom-distro.yml'
             kernel:
                 type: u-boot-qcom-6.18
                 dirname: "_linux-qcom-6.18_u-boot-qcom"
                 yamlfile: ":ci/linux-qcom-6.18.yml:ci/u-boot-qcom.yml"
           - machine: iq-9075-evk
             distro:
-                name: nodistro
-                yamlfile: ''
+                name: qcom-distro
+                yamlfile: ':ci/qcom-distro.yml'
             kernel:
                 type: u-boot-qcom-6.18
                 dirname: "_linux-qcom-6.18_u-boot-qcom"
                 yamlfile: ":ci/linux-qcom-6.18.yml:ci/u-boot-qcom.yml"
           - machine: iq-615-evk
             distro:
-                name: nodistro
-                yamlfile: ''
+                name: qcom-distro
+                yamlfile: ':ci/qcom-distro.yml'
             kernel:
                 type: u-boot-qcom-6.18
                 dirname: "_linux-qcom-6.18_u-boot-qcom"

@@ -10,14 +10,14 @@ COMPATIBLE_MACHINE = "(qcom)"
 
 LINUX_QCOM_FIT_DTB_COMPATIBLE = "conf/machine/include/fit-dtb-compatible-linux-qcom.inc"
 
-LINUX_VERSION ?= "6.18.25"
+LINUX_VERSION ?= "6.18.30"
 
 PV = "${LINUX_VERSION}"
 
 FILESEXTRAPATHS:prepend := "${THISDIR}/linux-qcom-6.18:"
 
-# tag:qcom-6.18.y-20260519
-SRCREV ?= "6964936c9bfc3337aa8ba8a0fb25021d06e5ce04"
+# tag:qcom-6.18.y-20260601
+SRCREV ?= "b7cce9a3884a873855693af8591d4c9c469cd17e"
 
 SRCBRANCH ?= "nobranch=1"
 SRCBRANCH:class-devupstream ?= "branch=qcom-6.18.y"
