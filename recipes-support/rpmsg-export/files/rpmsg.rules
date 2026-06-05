@@ -1,0 +1,47 @@
+# SPDX-License-Identifier: BSD-3-Clause-Clear
+# Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
+
+# lpaicp: create qsh_1_0 through qsh_1_8 endpoints
+ACTION=="add", SUBSYSTEM=="rpmsg", \
+    KERNEL=="rpmsg_ctrl[0-9]*", \
+    ATTRS{rpmsg_name}=="lpaicp", \
+    RUN+="/usr/bin/rpmsgexport /dev/$name qsh_1_0" \
+    RUN+="/usr/bin/rpmsgexport /dev/$name qsh_1_1" \
+    RUN+="/usr/bin/rpmsgexport /dev/$name qsh_1_2" \
+    RUN+="/usr/bin/rpmsgexport /dev/$name qsh_1_3" \
+    RUN+="/usr/bin/rpmsgexport /dev/$name qsh_1_4" \
+    RUN+="/usr/bin/rpmsgexport /dev/$name qsh_1_5" \
+    RUN+="/usr/bin/rpmsgexport /dev/$name qsh_1_6" \
+    RUN+="/usr/bin/rpmsgexport /dev/$name qsh_1_7" \
+    RUN+="/usr/bin/rpmsgexport /dev/$name qsh_1_8" \
+    RUN+="/usr/bin/rpmsgexport /dev/$name LOOPBACK_CTL_LMCU" \
+    RUN+="/usr/bin/rpmsgexport /dev/$name LOOPBACK_DATA_LMCU"
+
+# stable ctrl symlinks: /dev/rpmsg/<edge>/ctrl
+SUBSYSTEM=="rpmsg", KERNEL=="rpmsg_ctrl[0-9]*", \
+    ATTRS{rpmsg_name}=="?*", \
+    SYMLINK+="rpmsg/$attr{rpmsg_name}/ctrl"
+
+# stable endpoint symlinks: /dev/rpmsg/<edge>/<channel>
+SUBSYSTEM=="rpmsg", KERNEL=="rpmsg[0-9]*", \
+    ATTR{name}=="?*", \
+    ATTRS{rpmsg_name}=="?*", \
+    SYMLINK+="rpmsg/$attr{rpmsg_name}/$attr{name}"
+
+# lpaicp glink_pkt compat symlinks: /dev/glinkpkt_lpaicp_<channel>
+SUBSYSTEM=="rpmsg", KERNEL=="rpmsg[0-9]*", \
+    ATTRS{rpmsg_name}=="lpaicp", \
+    ATTR{name}=="qsh_*", \
+    SYMLINK+="glinkpkt_lpaicp_$attr{name}"
+
+# lpaicp LMCU ctrl glink_pkt compat symlink: /dev/glink_pkt_ctrl_lmcu
+SUBSYSTEM=="rpmsg", KERNEL=="rpmsg[0-9]*", \
+    ATTRS{rpmsg_name}=="lpaicp", \
+    ATTR{name}=="LOOPBACK_CTL_LMCU", \
+    SYMLINK+="glink_pkt_ctrl_lmcu"
+
+# lpaicp LMCU data glink_pkt compat symlink: /dev/glink_pkt_data_lmcu
+SUBSYSTEM=="rpmsg", KERNEL=="rpmsg[0-9]*", \
+    ATTRS{rpmsg_name}=="lpaicp", \
+    ATTR{name}=="LOOPBACK_DATA_LMCU", \
+    SYMLINK+="glink_pkt_data_lmcu"
