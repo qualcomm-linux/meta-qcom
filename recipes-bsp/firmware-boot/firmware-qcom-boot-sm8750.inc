@@ -9,10 +9,8 @@ BOOTBINARIES = "pakala_bootbinaries"
 SRC_URI = " \
     https://${FW_ARTIFACTORY}/${PV}/${BOOTBINARIES}_${PV}.zip;name=bootbinaries \
     https://${FW_ARTIFACTORY}/${PV}/LICENSE.txt;downloadfilename=LICENSE.${BPN};name=license \
-    https://artifacts.codelinaro.org/artifactory/codelinaro-le/Qualcomm_Linux/SM8750/cdt/sm8750-mtp_wcn7881.zip;downloadfilename=sm8750-mtp_wcn7881_${PV}.zip;name=sm8750-mtp_wcn7881 \
     "
 SRC_URI[license.sha256sum] = "3ad8f1fd82f2918c858cec2d0887b7df6f71a06416beecfdb3efe7d62874d863"
-SRC_URI[sm8750-mtp_wcn7881.sha256sum] = "474c35a6f06948808be118a8b0dac61ca53fd71182c1f03b92ca30d34dbb8a58"
 
 QCOM_BOOT_IMG_SUBDIR = "sm8750"
 

@@ -8,11 +8,7 @@ BOOTBINARIES = "QCS8300_bootbinaries"
 SRC_URI = " \
     https://${FW_ARTIFACTORY}/${PV}/${BOOTBINARIES}_${PV}.zip;name=bootbinaries \
     https://${FW_ARTIFACTORY}/${PV}/LICENSE.txt;downloadfilename=LICENSE.${BPN};name=license \
-    https://artifacts.codelinaro.org/artifactory/codelinaro-le/Qualcomm_Linux/QCS8300/cdt/ride-sx.zip;downloadfilename=cdt-qcs8300-ride-sx_${PV}.zip;name=qcs8300-ride-sx \
-    https://artifacts.codelinaro.org/artifactory/codelinaro-le/Qualcomm_Linux/QCS8300/cdt/qcs8275-iq-8275-evk-pro-sku.zip;downloadfilename=cdt-iq8275-evk-pro-sku_${PV}.zip;name=cdt-iq8275-evk-pro-sku \
     "
-SRC_URI[qcs8300-ride-sx.sha256sum] = "d7fc667372b28383a36d586333097d84b9d9c104f4dd1845d33904e2d6b39f80"
-SRC_URI[cdt-iq8275-evk-pro-sku.sha256sum] = "cbe2009c8ef7dbacd716141bf01b8e1b26788c4a4f3145e60fe3b4a6b3aabc04"
 SRC_URI[license.sha256sum] = "3ad8f1fd82f2918c858cec2d0887b7df6f71a06416beecfdb3efe7d62874d863"
 
 QCOM_BOOT_IMG_SUBDIR = "qcs8300"
