@@ -267,9 +267,9 @@ jobs:
           - type: 6.18
             dirname: "_linux-qcom-6.18"
             yamlfile: ":ci/linux-qcom-6.18.yml"
-          - type: rt-6.18-distro-kvm
-            dirname: "_linux-qcom-rt-6.18_qcom-distro-kvm"
-            yamlfile: ":ci/linux-qcom-rt-6.18.yml:ci/qcom-distro-kvm.yml"
+          - type: rt-6.18
+            dirname: "_linux-qcom-rt-6.18"
+            yamlfile: ":ci/linux-qcom-rt-6.18.yml"
         exclude:
           # Exclude jobs from compile_warm_up
           - machine: glymur-crd
