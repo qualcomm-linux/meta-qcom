@@ -357,8 +357,8 @@ jobs:
                 yamlfile: ""
           - machine: rb3gen2-core-kit
             distro:
-                name: qcom-distro-kvm
-                yamlfile: ':ci/qcom-distro-kvm.yml'
+                name: qcom-distro-gunyah
+                yamlfile: ':ci/qcom-distro.yml:ci/gunyah.yml'
             kernel:
                 type: default
                 dirname: ""
