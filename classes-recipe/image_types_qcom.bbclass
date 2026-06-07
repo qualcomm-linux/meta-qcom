@@ -6,6 +6,7 @@ inherit image_types
 IMAGE_TYPES += "qcomflash"
 
 QCOM_BOOT_FIRMWARE ?= ""
+QCOM_CDT_FIRMWARE ?= ""
 PREFERRED_PROVIDER_virtual/qcom-capsule-firmware ?= ""
 QCOM_CAPSULE_FIRMWARE ?= "${PREFERRED_PROVIDER_virtual/qcom-capsule-firmware}"
 
@@ -28,6 +29,7 @@ do_image_qcomflash[dirs] = "${QCOMFLASH_DIR}"
 do_image_qcomflash[cleandirs] = "${QCOMFLASH_DIR}"
 do_image_qcomflash[depends] += "${@ ['', '${QCOM_PARTITION_CONF}:do_deploy'][d.getVar('QCOM_PARTITION_CONF') != '']} \
                                 ${@ ['', '${QCOM_BOOT_FIRMWARE}:do_deploy'][d.getVar('QCOM_BOOT_FIRMWARE') != '']} \
+                                ${@ ['', '${QCOM_CDT_FIRMWARE}:do_deploy'][d.getVar('QCOM_CDT_FIRMWARE') != '']} \
                                 ${@ ['', '${QCOM_CAPSULE_FIRMWARE}:do_deploy'][d.getVar('QCOM_CAPSULE_FIRMWARE') != '']} \
                                 pigz-native:do_populate_sysroot virtual/kernel:do_deploy \
 				${@'virtual/bootloader:do_deploy' if d.getVar('PREFERRED_PROVIDER_virtual/bootloader') else  ''} \
