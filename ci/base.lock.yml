@@ -17,7 +17,7 @@ overrides:
         meta-selinux:
             commit: f7306d7af4425553684a860df6f6d0ee66efba31
         meta-updater:
-            commit: 7fbd0d7d73d4e252ee31e5260e547cbf17945a82
+            commit: 7f5eef0421e966234230ee8f4e4a93e3fc8e3ac6
         meta-security:
             commit: 596b966a0d047c2f48cb768821558e918ae0c477
         meta-dpdk:
