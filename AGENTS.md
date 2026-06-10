@@ -199,3 +199,20 @@ Guidelines:
 - Every patch file added under a recipe must carry an `Upstream-Status:` header
   with a valid value (`Submitted`, `Backport`, `Pending`, `Inappropriate`,
   `Denied`, `Accepted`).
+
+### Authoring commits
+
+Beyond the rules above, these make a series easier to review:
+
+- Keep each commit atomic: one self-contained logical change, so a regression
+  can be pinned to it with `git bisect` and reverted on its own. If the
+  subject needs an "and also" (`Foo, and while we are at it, bar and baz`), it
+  should have been more than one commit.
+- Start the commit message with the problem or issue being solved, then
+  explain the change and why it is the right fix, not just restate the diff.
+- Keep a valid `Signed-off-by` chain. Sign off with `git commit -s`, which takes
+  the trailer from `git config`.
+- When you pick or apply a commit written by someone else, keep their authorship
+  and add your own sign-off with `-s`.
+- Backport with `git cherry-pick -x` so the message records the upstream commit
+  it came from.
