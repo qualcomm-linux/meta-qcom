@@ -1,0 +1,54 @@
+From 5d4792dc2a2088e7355e19b5fa763159f2a8231d Mon Sep 17 00:00:00 2001
+From: Prathibha Madugonde <prathibha.madugonde@oss.qualcomm.com>
+Date: Thu, 30 Apr 2026 13:11:42 +0530
+Subject: [PATCH] profiles/ranging: Read cs_mode_one_data members
+
+Rearrage reading of cs_mode_one_data struct members as per spec.
+
+Upstream-Status: Backport [5d4792dc2a2088e7355e19b5fa763159f2a8231d]
+Signed-off-by: Prathibha Madugonde <prathibha.madugonde@oss.qualcomm.com>
+---
+ profiles/ranging/rap_hci.c | 25 ++++++++++++++-----------
+ 1 file changed, 14 insertions(+), 11 deletions(-)
+
+diff --git a/profiles/ranging/rap_hci.c b/profiles/ranging/rap_hci.c
+index a3d2df608..08ddc077c 100644
+--- a/profiles/ranging/rap_hci.c
++++ b/profiles/ranging/rap_hci.c
+@@ -632,19 +632,22 @@ static void parse_mode_one_data(struct iovec *iov,
+ 	}
+ 
+ 	DBG("CS Step mode 1");
+-	util_iov_pull_u8(iov, &mode_data->packet_quality);
+-	util_iov_pull_u8(iov, &mode_data->packet_rssi_dbm);
+-	util_iov_pull_u8(iov, &mode_data->packet_ant);
+-	util_iov_pull_u8(iov, &mode_data->packet_nadm);
+-
+-	if (iov->iov_len >= 2) {
+-		util_iov_pull_le16(iov, &time_val);
+-		if (cs_role == CS_REFLECTOR)
+-			mode_data->tod_toa_refl = time_val;
+-		else
+-			mode_data->toa_tod_init = time_val;
++	/* Parse fixed fields in specification order */
++	if (!util_iov_pull_u8(iov, &mode_data->packet_quality) ||
++		!util_iov_pull_u8(iov, &mode_data->packet_nadm) ||
++		!util_iov_pull_u8(iov, &mode_data->packet_rssi_dbm) ||
++		!util_iov_pull_le16(iov, &time_val) ||
++		!util_iov_pull_u8(iov, &mode_data->packet_ant)) {
++		DBG("Mode 1: failed to parse basic fields");
++		memset(mode_data, 0, sizeof(*mode_data));
++		return;
+ 	}
+ 
++	if (cs_role == CS_REFLECTOR)
++		mode_data->tod_toa_refl = time_val;
++	else
++		mode_data->toa_tod_init = time_val;
++
+ 	if ((cs_rtt_type == 0x01 || cs_rtt_type == 0x02) &&
+ 		iov->iov_len >= 6) {
+ 		int16_t i_val, q_val;
+-- 
+2.34.1
+
