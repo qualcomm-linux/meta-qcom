@@ -146,7 +146,7 @@ FIT_DTB_COMPATIBLE[qcom_qcs615-iot-el2gh-staging] = \
 FIT_DTB_COMPATIBLE[qcom_qcs615-iot] = \
     "talos-evk talos-evk-camera-imx577 talos-el2"
 FIT_DTB_COMPATIBLE[qcom_qcs615-iot-staging] = \
-    "talos-evk talos-evk-camera-imx577 talos-el2 talos-staging"
+    "talos-evk talos-evk-camera-imx577 talos-el2 talos-staging talos-evk-staging"
 FIT_DTB_COMPATIBLE[qcom_qcs615-iot-el2gh-camx] = "talos-evk talos-evk-camx"
 FIT_DTB_COMPATIBLE[qcom_qcs615-iot-camx-staging] = \
     "talos-evk talos-evk-camx talos-staging"
