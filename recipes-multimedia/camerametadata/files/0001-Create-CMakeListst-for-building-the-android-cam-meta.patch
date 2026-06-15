@@ -1,0 +1,51 @@
+From f709db5cf3783cb17169e23bbd71d4c2ebaaf037 Mon Sep 17 00:00:00 2001
+From: Stoyan Kushlev <skushlev@qti.qualcomm.com>
+Date: Wed, 10 Jun 2026 17:36:11 +0300
+Subject: [PATCH 1/6] Create CMakeListst for building the android cam metadata
+
+Linux embedded uses CMake to build libraries, but the
+provided code is from android repo. This request creating
+new CMakeLists.txt for building the camera metadata lib.
+
+Upstream-Status: Inappropriate [Qualcomm specific change]
+
+Signed-off-by: Stoyan Kushlev <skushlev@qti.qualcomm.com>
+---
+ CMakeLists.txt | 25 +++++++++++++++++++++++++
+ 1 file changed, 25 insertions(+)
+ create mode 100644 CMakeLists.txt
+
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+new file mode 100644
+index 00000000..0457af9d
+--- /dev/null
++++ b/CMakeLists.txt
+@@ -0,0 +1,25 @@
++cmake_minimum_required(VERSION 3.16)
++
++project(camera_metadata)
++
++add_library(camera_metadata SHARED
++    camera/src/camera_metadata.c
++)
++
++target_include_directories(camera_metadata PRIVATE
++    private/camera/include
++    camera/include
++)
++
++set_target_properties(camera_metadata PROPERTIES
++    VERSION 0.1.0
++    SOVERSION 0
++    OUTPUT_NAME "camera_metadata"
++)
++
++install(TARGETS camera_metadata DESTINATION lib)
++install(DIRECTORY camera/include/system DESTINATION include)
++install(FILES camera/include/system/camera_metadata.h DESTINATION include)
++install(FILES camera/include/system/camera_metadata_tags.h DESTINATION include)
++install(FILES camera/include/system/camera_vendor_tags.h DESTINATION include)
++install(FILES private/camera/include/camera_metadata_hidden.h DESTINATION include)
+-- 
+2.34.1
+
