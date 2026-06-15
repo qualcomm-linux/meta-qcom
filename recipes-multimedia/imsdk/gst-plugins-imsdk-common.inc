@@ -33,7 +33,7 @@ PACKAGECONFIG[ml]           = "-DENABLE_GST_ML_PLUGINS=1, -DENABLE_GST_ML_PLUGIN
 PACKAGECONFIG[python-apps]  = "-DENABLE_GST_PYTHON_EXAMPLES=1, -DENABLE_GST_PYTHON_EXAMPLES=0"
 PACKAGECONFIG[qairt]        = "-DENABLE_GST_QAIRT_PLUGINS=1 -DENABLE_GST_PLUGIN_MLTOOLS=1, -DENABLE_GST_QAIRT_PLUGINS=0 -DENABLE_GST_PLUGIN_MLTOOLS=0, qairt-sdk, qairt-sdk"
 PACKAGECONFIG[redissink]    = "-DENABLE_GST_PLUGIN_REDISSINK=1, -DENABLE_GST_PLUGIN_REDISSINK=0, hiredis"
-PACKAGECONFIG[sample-apps]  = "-DENABLE_GST_SAMPLE_APPS=1, -DENABLE_GST_SAMPLE_APPS=0, opencv cairo json-glib"
+PACKAGECONFIG[sample-apps]  = "-DENABLE_GST_SAMPLE_APPS=1, -DENABLE_GST_SAMPLE_APPS=0, opencv cairo json-glib libsoup gstreamer1.0-plugins-bad"
 PACKAGECONFIG[smartvencbin] = "-DENABLE_GST_PLUGIN_SMARTVENCBIN=1, -DENABLE_GST_PLUGIN_SMARTVENCBIN=0, smart-venc-ctrl-algo"
 PACKAGECONFIG[sw]           = "-DENABLE_GST_SOFTWARE_PLUGINS=1, -DENABLE_GST_SOFTWARE_PLUGINS=0, gstreamer1.0-rtsp-server"
 PACKAGECONFIG[tflite]       = "-DENABLE_GST_PLUGIN_MLTFLITE=1, -DENABLE_GST_PLUGIN_MLTFLITE=0, tensorflow-lite"
@@ -50,4 +50,5 @@ RDEPENDS:${PN}-qtismartvencbin += "smart-venc-ctrl-algo"
 # To ensure runtime availability, added runtime dependency on 'mosquitto'.
 RDEPENDS:libgstqtimqttadaptor += "mosquitto"
 
-RDEPENDS:${PN}-apps += "${@bb.utils.contains('PACKAGECONFIG', 'python-apps', 'python3-core gstreamer1.0-python python3-pygobject gtk+3 python3-opencv', '', d)}"
+RDEPENDS:${PN}-apps += "${@bb.utils.contains('PACKAGECONFIG', 'python-apps', 'python3-core gstreamer1.0-python python3-pygobject gtk+3 python3-opencv', '', d)} \
+                        ${@bb.utils.contains('PACKAGECONFIG', 'webrtc', 'gstreamer1.0-plugins-bad-webrtc', '', d)}"
