@@ -12,6 +12,7 @@ PACKAGES = " \
     ${PN}-qcom-qcs6490-soc \
     ${PN}-qcom-qcs8300-soc \
     ${PN}-qcom-qcs9100-soc \
+    ${PN}-qcom-shikra-soc \
 "
 
 # The list of packages is kept sorted alphabetically which might break
@@ -212,3 +213,10 @@ RRECOMMENDS:${PN}-qcom-qcs9100-soc += " \
     kernel-module-videocc-sa8775p \
 "
 
+RRECOMMENDS:${PN}-qcom-shikra-soc += " \
+    ${PN}-board-generic \
+    ${PN}-qcom-generic \
+    kernel-module-dispcc-shikra \
+    kernel-module-gpucc-shikra \
+    kernel-module-pwrseq-qcom-wcn \
+"
