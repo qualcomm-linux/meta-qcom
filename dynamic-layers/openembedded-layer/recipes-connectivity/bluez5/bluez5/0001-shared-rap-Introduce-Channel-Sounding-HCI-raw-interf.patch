@@ -1,0 +1,381 @@
+From aca0a01c3f5e73e4ab44b186b6a0a00c589be87c Mon Sep 17 00:00:00 2001
+From: Naga Bhavani Akella <naga.akella@oss.qualcomm.com>
+Date: Tue, 21 Apr 2026 17:01:46 +0530
+Subject: [PATCH] shared: rap: Introduce Channel Sounding HCI raw interface
+ support
+
+Implement stub callbacks for Channel Sounding HCI events and add the
+required protocol definitions for CS configuration, procedure control,
+and subevent result parsing
+
+Add data structures to support Channel Sounding Processing
+Add helper function to get hci conn info list and integrate it with RAP
+
+Upstream-Status: Backport [aca0a01c3f5e73e4ab44b186b6a0a00c589be87c]
+Signed-off-by: Naga Bhavani Akella <naga.akella@oss.qualcomm.com>
+Signed-off-by: Prathibha Madugonde <prathibha.madugonde@oss.qualcomm.com>
+---
+ src/shared/hci.c |  62 ++++++++++++-----
+ src/shared/hci.h |   3 +
+ src/shared/rap.c |  50 +++++++++++++-
+ src/shared/rap.h | 172 +++++++++++++++++++++++++++++++++++++++++++++++
+ 4 files changed, 269 insertions(+), 18 deletions(-)
+
+diff --git a/src/shared/hci.c b/src/shared/hci.c
+index 575254c09..0faa6dea5 100644
+--- a/src/shared/hci.c
++++ b/src/shared/hci.c
+@@ -20,9 +20,11 @@
+ #include <sys/un.h>
+ #include <sys/types.h>
+ #include <sys/stat.h>
++#include <sys/ioctl.h>
+ #include <fcntl.h>
+ #include <errno.h>
+ 
++#include "bluetooth/hci.h"
+ #include "monitor/bt.h"
+ #include "src/shared/mainloop.h"
+ #include "src/shared/io.h"
+@@ -30,22 +32,6 @@
+ #include "src/shared/queue.h"
+ #include "src/shared/hci.h"
+ 
+-#define BTPROTO_HCI	1
+-struct sockaddr_hci {
+-	sa_family_t	hci_family;
+-	unsigned short	hci_dev;
+-	unsigned short  hci_channel;
+-};
+-#define HCI_CHANNEL_RAW		0
+-#define HCI_CHANNEL_USER	1
+-
+-#define SOL_HCI		0
+-#define HCI_FILTER	2
+-struct hci_filter {
+-	uint32_t type_mask;
+-	uint32_t event_mask[2];
+-	uint16_t opcode;
+-};
+ 
+ struct bt_hci {
+ 	int ref_count;
+@@ -673,3 +659,47 @@ bool bt_hci_unregister(struct bt_hci *hci, unsigned int id)
+ 
+ 	return true;
+ }
++
++bool bt_hci_get_conn_handle(struct bt_hci *hci, const uint8_t *bdaddr,
++				uint16_t *handle)
++{
++	struct hci_conn_list_req *cl;
++	struct hci_conn_info *ci;
++	int fd, i;
++	bool found = false;
++
++	if (!hci || !bdaddr || !handle)
++		return false;
++
++	fd = io_get_fd(hci->io);
++	if (fd < 0)
++		return false;
++
++	/* Allocate buffer for connection list request */
++	cl = malloc(10 * sizeof(*ci) + sizeof(*cl));
++	if (!cl)
++		return false;
++
++	memset(cl, 0, 10 * sizeof(*ci) + sizeof(*cl));
++	cl->dev_id = 0;  /* Will be filled by ioctl */
++	cl->conn_num = 10;
++
++	/* Get connection list via ioctl */
++	if (ioctl(fd, HCIGETCONNLIST, (void *) cl) < 0) {
++		free(cl);
++		return false;
++	}
++
++	/* Search for the connection with matching bdaddr */
++	ci = cl->conn_info;
++	for (i = 0; i < cl->conn_num; i++, ci++) {
++		if (memcmp(&ci->bdaddr, bdaddr, 6) == 0) {
++			*handle = ci->handle;
++			found = true;
++			break;
++		}
++	}
++
++	free(cl);
++	return found;
++}
+diff --git a/src/shared/hci.h b/src/shared/hci.h
+index 76ee72f54..800dc4946 100644
+--- a/src/shared/hci.h
++++ b/src/shared/hci.h
+@@ -41,3 +41,6 @@ unsigned int bt_hci_register(struct bt_hci *hci, uint8_t event,
+ 				bt_hci_callback_func_t callback,
+ 				void *user_data, bt_hci_destroy_func_t destroy);
+ bool bt_hci_unregister(struct bt_hci *hci, unsigned int id);
++
++bool bt_hci_get_conn_handle(struct bt_hci *hci, const uint8_t *bdaddr,
++				uint16_t *handle);
+diff --git a/src/shared/rap.c b/src/shared/rap.c
+index ccf3e6f33..ac6de04e0 100644
+--- a/src/shared/rap.c
++++ b/src/shared/rap.c
+@@ -25,8 +25,8 @@
+ #include "src/shared/gatt-client.h"
+ #include "src/shared/rap.h"
+ 
+-#define DBG(_rap, fmt, arg...) \
+-	rap_debug(_rap, "%s:%s() " fmt, __FILE__, __func__, ## arg)
++#define DBG(_rap, fmt, ...) \
++	rap_debug(_rap, "%s:%s() " fmt, __FILE__, __func__, ##__VA_ARGS__)
+ 
+ #define RAS_UUID16			0x185B
+ 
+@@ -503,6 +503,52 @@ bool bt_rap_unregister(unsigned int id)
+ 	return true;
+ }
+ 
++void bt_rap_hci_cs_subevent_result_cont_callback(uint16_t length,
++						const void *param,
++						void *user_data)
++{
++	struct bt_rap *rap = user_data;
++
++	DBG(rap, "Received CS subevent CONT: len=%d", length);
++}
++
++void bt_rap_hci_cs_subevent_result_callback(uint16_t length,
++					const void *param,
++					void *user_data)
++{
++	struct bt_rap *rap = user_data;
++
++	DBG(rap, "Received CS subevent: len=%d", length);
++}
++
++void bt_rap_hci_cs_procedure_enable_complete_callback(uint16_t length,
++						const void *param,
++						void *user_data)
++{
++	struct bt_rap *rap = user_data;
++
++	DBG(rap, "Received CS procedure enable complete subevent: len=%d",
++	    length);
++}
++
++void bt_rap_hci_cs_sec_enable_complete_callback(uint16_t length,
++						 const void *param,
++						 void *user_data)
++{
++	struct bt_rap *rap = user_data;
++
++	DBG(rap, "Received CS security enable subevent: len=%d", length);
++}
++
++void bt_rap_hci_cs_config_complete_callback(uint16_t length,
++					const void *param,
++					void *user_data)
++{
++	struct bt_rap *rap = user_data;
++
++	DBG(rap, "Received CS config complete subevent: len=%d", length);
++}
++
+ struct bt_rap *bt_rap_new(struct gatt_db *ldb, struct gatt_db *rdb)
+ {
+ 	struct bt_rap *rap;
+diff --git a/src/shared/rap.h b/src/shared/rap.h
+index a1d1ff2ae..15ddea295 100644
+--- a/src/shared/rap.h
++++ b/src/shared/rap.h
+@@ -9,8 +9,153 @@
+ #include <inttypes.h>
+ 
+ #include "src/shared/io.h"
++#include "bluetooth/mgmt.h"
++#include "src/shared/hci.h"
+ 
+ struct bt_rap;
++struct gatt_db;
++struct bt_gatt_client;
++
++/* Channel Sounding Events */
++struct bt_rap_hci_cs_options {
++	uint8_t role;
++	uint8_t cs_sync_ant_sel;
++	int8_t max_tx_power;
++	int rtt_type;
++};
++
++#define CS_MODE_ZERO				0x00
++#define CS_MODE_ONE				0x01
++#define CS_MODE_TWO				0x02
++#define CS_MODE_THREE				0x03
++
++#define CS_REFLECTOR			0x01
++#define CS_INITIATOR			0x00
++
++#define CS_MAX_ANT_PATHS			0x05
++#define CS_MAX_STEPS			0xA0
++#define CS_MAX_STEP_DATA_LEN		0xFF
++
++struct rap_ev_cs_config_cmplt {
++	uint8_t status;
++	uint16_t conn_hdl;
++	uint8_t config_id;
++	uint8_t action;
++	uint8_t main_mode_type;
++	uint8_t sub_mode_type;
++	uint8_t min_main_mode_steps;
++	uint8_t max_main_mode_steps;
++	uint8_t main_mode_rep;
++	uint8_t mode_0_steps;
++	uint8_t role;
++	uint8_t rtt_type;
++	uint8_t cs_sync_phy;
++	uint8_t channel_map[10];
++	uint8_t channel_map_rep;
++	uint8_t channel_sel_type;
++	uint8_t ch3c_shape;
++	uint8_t ch3c_jump;
++	uint8_t reserved;
++	uint8_t t_ip1_time;
++	uint8_t t_ip2_time;
++	uint8_t t_fcs_time;
++	uint8_t t_pm_time;
++};
++
++struct rap_ev_cs_sec_enable_cmplt {
++	uint8_t status;
++	uint16_t conn_hdl;
++};
++
++struct rap_ev_cs_proc_enable_cmplt {
++	uint8_t status;
++	uint16_t conn_hdl;
++	uint8_t config_id;
++	uint8_t state;
++	uint8_t tone_ant_config_sel;
++	int8_t sel_tx_pwr;
++	uint8_t sub_evt_len[3];
++	uint8_t sub_evts_per_evt;
++	uint16_t sub_evt_intrvl;
++	uint16_t evt_intrvl;
++	uint16_t proc_intrvl;
++	uint16_t proc_counter;
++	uint16_t max_proc_len;
++};
++
++struct pct_iq_sample {
++	int16_t i_sample;
++	int16_t q_sample;
++};
++
++struct cs_mode_zero_data {
++	uint8_t packet_quality;
++	uint8_t packet_rssi_dbm;
++	uint8_t packet_ant;
++	uint32_t init_measured_freq_offset;
++};
++
++struct cs_mode_one_data {
++	uint8_t packet_quality;
++	uint8_t packet_rssi_dbm;
++	uint8_t packet_ant;
++	uint8_t packet_nadm;
++	int16_t toa_tod_init;
++	int16_t tod_toa_refl;
++	struct pct_iq_sample packet_pct1;
++	struct pct_iq_sample packet_pct2;
++};
++
++struct cs_mode_two_data {
++	uint8_t ant_perm_index;
++	struct pct_iq_sample tone_pct[5];
++	uint8_t tone_quality_indicator[5];
++};
++
++struct cs_mode_three_data {
++	struct cs_mode_one_data mode_one_data;
++	struct cs_mode_two_data mode_two_data;
++};
++
++union cs_mode_data {
++	struct cs_mode_zero_data mode_zero_data;
++	struct cs_mode_one_data mode_one_data;
++	struct cs_mode_two_data mode_two_data;
++	struct cs_mode_three_data mode_three_data;
++};
++
++struct cs_step_data {
++	uint8_t step_mode;
++	uint8_t step_chnl;
++	uint8_t step_data_length;
++	union cs_mode_data step_mode_data;
++};
++
++struct rap_ev_cs_subevent_result {
++	uint16_t conn_hdl;
++	uint8_t config_id;
++	uint16_t start_acl_conn_evt_counter;
++	uint16_t proc_counter;
++	uint16_t freq_comp;
++	uint8_t ref_pwr_lvl;
++	uint8_t proc_done_status;
++	uint8_t subevt_done_status;
++	uint8_t abort_reason;
++	uint8_t num_ant_paths;
++	uint8_t num_steps_reported;
++	struct cs_step_data step_data[];
++};
++
++struct rap_ev_cs_subevent_result_cont {
++	uint16_t conn_hdl;
++	uint8_t config_id;
++	uint8_t proc_done_status;
++	uint8_t subevt_done_status;
++	uint8_t abort_reason;
++	uint8_t num_ant_paths;
++	uint8_t num_steps_reported;
++	struct cs_step_data step_data[];
++};
+ 
+ typedef void (*bt_rap_debug_func_t)(const char *str, void *user_data);
+ typedef void (*bt_rap_ready_func_t)(struct bt_rap *rap, void *user_data);
+@@ -43,3 +188,30 @@ bool bt_rap_ready_unregister(struct bt_rap *rap, unsigned int id);
+ bool bt_rap_unregister(unsigned int id);
+ 
+ struct bt_rap *bt_rap_new(struct gatt_db *ldb, struct gatt_db *rdb);
++
++/* HCI Raw Channel Approach */
++void bt_rap_hci_cs_config_complete_callback(uint16_t length,
++					     const void *param,
++					     void *user_data);
++void bt_rap_hci_cs_sec_enable_complete_callback(uint16_t length,
++						 const void *param,
++						 void *user_data);
++void bt_rap_hci_cs_procedure_enable_complete_callback(uint16_t length,
++						      const void *param,
++						      void *user_data);
++void bt_rap_hci_cs_subevent_result_callback(uint16_t length,
++					     const void *param,
++					     void *user_data);
++void bt_rap_hci_cs_subevent_result_cont_callback(uint16_t length,
++						  const void *param,
++						  void *user_data);
++
++void *bt_rap_attach_hci(struct bt_rap *rap, struct bt_hci *hci,
++			uint8_t role, uint8_t cs_sync_ant_sel,
++			int8_t max_tx_power);
++void bt_rap_detach_hci(struct bt_rap *rap, void *hci_sm);
++
++/* Connection handle mapping functions */
++bool bt_rap_set_conn_handle(void *hci_sm, struct bt_rap *rap, uint16_t handle,
++				const uint8_t *bdaddr, uint8_t bdaddr_type);
++void bt_rap_clear_conn_handle(void *hci_sm, uint16_t handle);
+-- 
+2.34.1
+
