@@ -14,6 +14,7 @@ RDEPENDS:${PN}-boot-essential = " \
     qrtr \
     rmtfs \
     tqftpserv \
+    rpmsgexport \
 "
 
 RDEPENDS:${PN}-boot-additional:append:aarch64 = " \
