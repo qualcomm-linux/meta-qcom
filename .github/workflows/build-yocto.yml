@@ -401,6 +401,22 @@ jobs:
                 type: capsule
                 dirname: "_capsule"
                 yamlfile: ""
+          - machine: rb3gen2-core-kit
+            distro:
+                name: qcom-distro
+                yamlfile: ':ci/qcom-distro.yml'
+            kernel:
+                type: u-boot-qcom-fit-6.18
+                dirname: "_linux-qcom-6.18_u-boot-qcom-fit"
+                yamlfile: ":ci/linux-qcom-6.18.yml:ci/u-boot-qcom.yml:ci/kernel-fit-image.yml"
+          - machine: qcs9100-ride-sx
+            distro:
+                name: qcom-distro
+                yamlfile: ':ci/qcom-distro.yml'
+            kernel:
+                type: u-boot-qcom-fit-6.18
+                dirname: "_linux-qcom-6.18_u-boot-qcom-fit"
+                yamlfile: ":ci/linux-qcom-6.18.yml:ci/u-boot-qcom.yml:ci/kernel-fit-image.yml"
     uses: ./.github/workflows/compile.yml
     with:
       name: ${{ matrix.machine }}/${{ matrix.distro.name }}${{ matrix.kernel.dirname }}

@@ -1,0 +1,16 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/siemens/kas/master/kas/schema-kas.json
+#
+# KAS fragment for U-Boot FIT image based kernel configuration
+
+header:
+  version: 14
+
+local_conf_header:
+  kernel_fit_config: |
+    # FIT-based u-boot flow does not require bootimg
+    KERNEL_CLASSES:remove = "linux-qcom-bootimg"
+
+    # Enable FIT image generation
+    KERNEL_CLASSES += "kernel-fit-extra-artifacts"
+    QCOM_ESP_IMAGE = "esp-qcom-fit-image"
+    EFI_PROVIDER = ""

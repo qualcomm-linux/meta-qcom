@@ -1,0 +1,11 @@
+# bootpart set via bootmeth_script
+if test -z "${distro_bootpart}"; then
+    setenv distro_bootpart 1
+fi
+
+# avoid low memory due to potential conflict with the rest of the boot firmware
+setenv fdt_high 0x1ffffffff
+
+setenv bootargs "@KERNEL_CMDLINE@"
+load ${devtype} ${devnum}:${distro_bootpart} ${kernel_addr_r} /fitImage
+bootm ${kernel_addr_r}

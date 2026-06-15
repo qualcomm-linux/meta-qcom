@@ -4,11 +4,9 @@ PACKAGE_INSTALL = " \
     systemd-boot \
 "
 
-KERNELDEPMODDEPEND = ""
-KERNEL_DEPLOY_DEPEND = ""
-
-ESPFOLDER = ""
 inherit image uki uki-esp-image features_check
+
+require esp-qcom-common.inc
 
 UKI_FILENAME = "${EFI_LINUX_IMG}"
 
@@ -21,19 +19,6 @@ KERNEL_DEVICETREE:glymur-crd = "${QCOM_DTB_DEFAULT}.dtb"
 KERNEL_DEVICETREE:kaanapali-mtp = "${QCOM_DTB_DEFAULT}.dtb"
 KERNEL_DEVICETREE:sm8750-mtp = "${QCOM_DTB_DEFAULT}.dtb"
 KERNEL_DEVICETREE:iq-x7181-evk = "${QCOM_DTB_DEFAULT}.dtb"
-
-IMAGE_FSTYPES = "vfat"
-IMAGE_FSTYPES_DEBUGFS = ""
-
-EXTRA_IMAGECMD:vfat += " -S ${QCOM_VFAT_SECTOR_SIZE}"
-
-# Align image size with the expected partition size (512MB)
-IMAGE_ROOTFS_SIZE = "524288"
-IMAGE_ROOTFS_MAXSIZE = "524288"
-IMAGE_ROOTFS_EXTRA_SPACE = "0"
-
-IMAGE_LINGUAS = ""
-IMAGE_FEATURES = ""
 
 setup_efi_folder() {
     # Move EFI content from packages expecting /boot to be the ESP location
