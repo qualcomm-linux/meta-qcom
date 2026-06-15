@@ -1,0 +1,173 @@
+From 6351533484393858a5ab759f82d352bc8d93d014 Mon Sep 17 00:00:00 2001
+From: Josh Hoffer <jhoffer@anduril.com>
+Date: Wed, 3 Jun 2026 17:19:33 -0700
+Subject: [PATCH] boot/stub: honor PE SectionAlignment when loading inner
+ kernel
+
+The stub copies the embedded kernel PE into an xmalloc_pages()
+allocation with AllocateAnyPages, which only guarantees EFI_PAGE_SIZE
+(4 KiB) alignment.
+
+The arm64 kernel declares SectionAlignment = SZ_64K. When _text is not
+64K-aligned the kernel's EFI stub reallocates and copies the image,
+which can fail with EFI_OUT_OF_RESOURCES on memory-constrained firmware
+(e.g. U-Boot, bounded by CONFIG_SYS_MALLOC_LEN rather than full DRAM).
+The failure is non-deterministic since AllocateAnyPages returns whatever
+page the allocator finds first.
+
+Plumb SectionAlignment through pe_kernel_info() and allocate via
+xmalloc_aligned_pages(). For alignment <= EFI_PAGE_SIZE (e.g. x86_64) it
+reduces to a plain AllocatePages(), so the change is free there.
+
+Also harden xmalloc_aligned_pages()'s power-of-2 check from assert() to
+assert_se(): under SD_BOOT with NDEBUG assert() is a no-op, so a bad
+alignment would corrupt the heap instead of trapping. Since
+SectionAlignment is untrusted PE data, linux.c sanitizes it (falling
+back to page alignment, with a warning) before the call.
+
+Co-developed-by: Claude <claude@anthropic.com>
+Signed-off-by: Viswanath Kraleti <viswanath.kraleti@oss.qualcomm.com>
+
+Upstream-Status: Submitted [ https://github.com/systemd/systemd/pull/42463 ]
+---
+ src/boot/boot.c  |  3 ++-
+ src/boot/linux.c | 25 ++++++++++++++++++++-----
+ src/boot/pe.c    | 11 ++++++++++-
+ src/boot/pe.h    |  7 ++++++-
+ src/boot/util.c  |  3 ++-
+ 5 files changed, 40 insertions(+), 9 deletions(-)
+
+diff --git a/src/boot/boot.c b/src/boot/boot.c
+index a1497d66076..e2455ec279a 100644
+--- a/src/boot/boot.c
++++ b/src/boot/boot.c
+@@ -2754,7 +2754,8 @@ static EFI_STATUS call_image_start(
+                 uint32_t compat_address;
+ 
+                 err = pe_kernel_info(loaded_image->ImageBase, /* ret_entry_point= */ NULL, &compat_address,
+-                                     /* ret_size_in_memory= */ NULL);
++                                     /* ret_size_in_memory= */ NULL,
++                                     /* ret_section_alignment= */ NULL);
+                 if (err != EFI_SUCCESS) {
+                         if (err != EFI_UNSUPPORTED)
+                                 return log_error_status(err, "Error finding kernel compat entry address: %m");
+diff --git a/src/boot/linux.c b/src/boot/linux.c
+index 651d27311f4..0b4fc08f875 100644
+--- a/src/boot/linux.c
++++ b/src/boot/linux.c
+@@ -160,14 +160,14 @@ EFI_STATUS linux_exec(
+                 const struct iovec *initrd) {
+ 
+         size_t kernel_size_in_memory = 0;
+-        uint32_t compat_entry_point, entry_point;
++        uint32_t compat_entry_point, entry_point, section_alignment;
+         EFI_STATUS err;
+ 
+         assert(parent_image);
+         assert(iovec_is_set(kernel));
+         assert(iovec_is_valid(initrd));
+ 
+-        err = pe_kernel_info(kernel->iov_base, &entry_point, &compat_entry_point, &kernel_size_in_memory);
++        err = pe_kernel_info(kernel->iov_base, &entry_point, &compat_entry_point, &kernel_size_in_memory, &section_alignment);
+ #if defined(__i386__) || defined(__x86_64__)
+         if (err == EFI_UNSUPPORTED)
+                 /* Kernel is too old to support LINUX_INITRD_MEDIA_GUID, try the deprecated EFI handover
+@@ -264,9 +264,24 @@ EFI_STATUS linux_exec(
+         if (err != EFI_SUCCESS)
+                 return log_error_status(err, "Cannot read sections: %m");
+ 
+-        /* Do we need to ensure under 4gb address on x86? */
+-        _cleanup_pages_ Pages loaded_kernel_pages = xmalloc_pages(
+-                        AllocateAnyPages, EfiLoaderCode, EFI_SIZE_TO_PAGES(kernel_size_in_memory), 0);
++        /* Honor the PE SectionAlignment (SZ_64K on arm64): if _text is not aligned the kernel's EFI stub
++         * reallocates and copies the image, which can fail with EFI_OUT_OF_RESOURCES on memory-constrained
++         * firmware. When alignment <= EFI_PAGE_SIZE (e.g. x86_64) xmalloc_aligned_pages() reduces to a
++         * plain AllocatePages() with no extra over-allocation.
++         *
++         * For a non-conforming SectionAlignment fall back to the page alignment previously assumed, rather
++         * than refuse to boot - warn so the fallback stays diagnosable. */
++        if (!ISPOWEROF2(section_alignment)) {
++                log_warning("Kernel PE SectionAlignment %u is not a power of 2, falling back to page alignment.", section_alignment);
++                section_alignment = EFI_PAGE_SIZE;
++        }
++
++        _cleanup_pages_ Pages loaded_kernel_pages = xmalloc_aligned_pages(
++                        AllocateAnyPages,
++                        EfiLoaderCode,
++                        EFI_SIZE_TO_PAGES(kernel_size_in_memory),
++                        section_alignment,
++                        /* addr= */ 0);
+ 
+         uint8_t* loaded_kernel = PHYSICAL_ADDRESS_TO_POINTER(loaded_kernel_pages.addr);
+         FOREACH_ARRAY(h, headers, n_headers) {
+diff --git a/src/boot/pe.c b/src/boot/pe.c
+index fe4493ee775..990a8be35d0 100644
+--- a/src/boot/pe.c
++++ b/src/boot/pe.c
+@@ -460,7 +460,12 @@ static uint32_t get_compatibility_entry_address(const DosFileHeader *dos, const
+         return 0;
+ }
+ 
+-EFI_STATUS pe_kernel_info(const void *base, uint32_t *ret_entry_point, uint32_t *ret_compat_entry_point, size_t *ret_size_in_memory) {
++EFI_STATUS pe_kernel_info(
++                const void *base,
++                uint32_t *ret_entry_point,
++                uint32_t *ret_compat_entry_point,
++                size_t *ret_size_in_memory,
++                uint32_t *ret_section_alignment) {
+         assert(base);
+ 
+         const DosFileHeader *dos = (const DosFileHeader *) base;
+@@ -486,6 +491,8 @@ EFI_STATUS pe_kernel_info(const void *base, uint32_t *ret_entry_point, uint32_t
+                         *ret_compat_entry_point = 0;
+                 if (ret_size_in_memory)
+                         *ret_size_in_memory = size_in_memory;
++                if (ret_section_alignment)
++                        *ret_section_alignment = pe->OptionalHeader.SectionAlignment;
+                 return EFI_SUCCESS;
+         }
+ 
+@@ -500,6 +507,8 @@ EFI_STATUS pe_kernel_info(const void *base, uint32_t *ret_entry_point, uint32_t
+                 *ret_compat_entry_point = compat_entry_point;
+         if (ret_size_in_memory)
+                 *ret_size_in_memory = size_in_memory;
++        if (ret_section_alignment)
++                *ret_section_alignment = pe->OptionalHeader.SectionAlignment;
+ 
+         return EFI_SUCCESS;
+ }
+diff --git a/src/boot/pe.h b/src/boot/pe.h
+index 7387f3e2fdf..5c8dc86fe93 100644
+--- a/src/boot/pe.h
++++ b/src/boot/pe.h
+@@ -57,7 +57,12 @@ EFI_STATUS pe_memory_locate_sections(
+                 const char *const section_names[],
+                 PeSectionVector sections[]);
+ 
+-EFI_STATUS pe_kernel_info(const void *base, uint32_t *ret_entry_point, uint32_t *ret_compat_entry_point, size_t *ret_size_in_memory);
++EFI_STATUS pe_kernel_info(
++                const void *base,
++                uint32_t *ret_entry_point,
++                uint32_t *ret_compat_entry_point,
++                size_t *ret_size_in_memory,
++                uint32_t *ret_section_alignment);
+ 
+ EFI_STATUS pe_kernel_check_no_relocation(const void *base);
+ 
+diff --git a/src/boot/util.c b/src/boot/util.c
+index 4a4c4e93650..9c8a70b9269 100644
+--- a/src/boot/util.c
++++ b/src/boot/util.c
+@@ -533,7 +533,8 @@ Pages xmalloc_aligned_pages(
+         if (alignment <= 1)
+                 alignment = EFI_PAGE_SIZE;
+ 
+-        assert(ISPOWEROF2(alignment));
++        /* The over-alignment maths needs a power of 2; callers must sanitize untrusted values themselves. */
++        assert_se(ISPOWEROF2(alignment));
+ 
+         if (alignment <= EFI_PAGE_SIZE) {
+                 assert_se(BS->AllocatePages(type, memory_type, n_pages, &aligned) == EFI_SUCCESS);
+-- 
+2.34.1
+
