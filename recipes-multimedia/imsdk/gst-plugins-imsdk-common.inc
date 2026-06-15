@@ -5,9 +5,9 @@ SECTION = "multimedia"
 LICENSE = "BSD-3-Clause-Clear"
 LIC_FILES_CHKSUM = "file://LICENSE.txt;md5=2998c54c288b081076c9af987bdf4838"
 
-inherit cmake features_check pkgconfig
+inherit cmake features_check pkgconfig gobject-introspection
 
-REQUIRED_DISTRO_FEATURES = "opengl"
+REQUIRED_DISTRO_FEATURES = "opengl gobject-introspection-data"
 
 SRC_URI = "git://github.com/qualcomm/gst-plugins-imsdk;protocol=https;nobranch=1;tag=${PV}"
 
@@ -23,11 +23,12 @@ DEPENDS += "\
 COMPATIBLE_MACHINE = "^$"
 COMPATIBLE_MACHINE:aarch64 = "(.*)"
 
-PACKAGECONFIG[base]         = "-DENABLE_GST_PLUGIN_BASE=ON, -DENABLE_GST_PLUGIN_BASE=OFF, json-glib virtual/egl virtual/libgbm virtual/libgles2 virtual/libgles3"
+PACKAGECONFIG[base]         = "-DENABLE_GST_PLUGIN_BASE=ON -DPYTHON_SITEPACKAGES_DIR=${PYTHON_SITEPACKAGES_DIR}, -DENABLE_GST_PLUGIN_BASE=OFF, \
+                               json-glib python3-pygobject virtual/egl virtual/libgbm virtual/libgles2 virtual/libgles3"
 PACKAGECONFIG[camera]       = "-DENABLE_GST_PLUGIN_CAMERA_BASE=ON -DENABLE_GST_PLUGIN_QMMFSRC=1 -DVHDR_MODES_ENABLE=ON -DEIS_MODES_ENABLE=ON \
                                -DFEATURE_OFFLINE_IFE_SUPPORT=ON -DENABLE_GST_PLUGIN_JPEGENC=1, -DENABLE_GST_PLUGIN_CAMERA_BASE=OFF -DENABLE_GST_PLUGIN_QMMFSRC=0 \
                                -DVHDR_MODES_ENABLE=OFF -DEIS_MODES_ENABLE=OFF -DFEATURE_OFFLINE_IFE_SUPPORT=OFF -DENABLE_GST_PLUGIN_JPEGENC=0, camera-service"
-PACKAGECONFIG[camera-apps]  = "-DENABLE_GST_SAMPLE_APPS_CAMERA=1, -DENABLE_GST_SAMPLE_APPS_CAMERA=0, camera-service"                               
+PACKAGECONFIG[camera-apps]  = "-DENABLE_GST_SAMPLE_APPS_CAMERA=1, -DENABLE_GST_SAMPLE_APPS_CAMERA=0, camera-service"
 PACKAGECONFIG[messaging]    = "-DENABLE_GST_MESSAGING_PLUGINS=1, -DENABLE_GST_MESSAGING_PLUGINS=0, librdkafka mosquitto"
 PACKAGECONFIG[ml]           = "-DENABLE_GST_ML_PLUGINS=1, -DENABLE_GST_ML_PLUGINS=0, cairo json-glib libeigen opencv"
 PACKAGECONFIG[python-apps]  = "-DENABLE_GST_PYTHON_EXAMPLES=1, -DENABLE_GST_PYTHON_EXAMPLES=0"
@@ -51,3 +52,7 @@ RDEPENDS:${PN}-qtismartvencbin += "smart-venc-ctrl-algo"
 RDEPENDS:libgstqtimqttadaptor += "mosquitto"
 
 RDEPENDS:${PN}-apps += "${@bb.utils.contains('PACKAGECONFIG', 'python-apps', 'python3-core gstreamer1.0-python python3-pygobject gtk+3 python3-opencv', '', d)}"
+
+# When the 'base' PACKAGECONFIG is enabled, include the Python site-packages directory
+# to ensure GObject introspection Python bindings installed by the IMSDK base are packaged.
+FILES:${PN}:append = " ${@bb.utils.contains('PACKAGECONFIG', 'base', d.getVar('PYTHON_SITEPACKAGES_DIR'), '', d)}"
