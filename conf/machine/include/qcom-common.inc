@@ -98,3 +98,5 @@ RT_KERNEL_CMDLINE = "${RT_ARGS_ISOL} ${RT_ARGS_IRQ} ${RT_ARGS_NOCBS} \
 KERNEL_CMDLINE_EXTRA:append = "${@bb.utils.contains_any('PREFERRED_PROVIDER_virtual/kernel',\
                               'linux-qcom-rt linux-qcom-next-rt', \
                               ' ${RT_KERNEL_CMDLINE}', '', d)}"
+
+KERNEL_CMDLINE_EXTRA:append = " swiotlb=128"
