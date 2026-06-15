@@ -1,0 +1,58 @@
+From 17e451d07c84718be4c48fe5b2b3a7fce4797a17 Mon Sep 17 00:00:00 2001
+From: Igor Opaniuk <igor.opaniuk@oss.qualcomm.com>
+Date: Sun, 14 Jun 2026 20:54:26 +0200
+Subject: [PATCH] controller: make non_hlos_parser import optional
+
+The NON-HLOS.bin parser uses PyFilesystem2 (fs) and pyfatfs to walk a
+FAT-formatted multi-firmware image. This is functionality only
+reachable via the Tk GUI -- specifically the DTGUIController class
+which inherits non_hlos_parser.nhlos_Operator and is only instantiated
+in the GUI branch of run().
+
+When QDTE is used headless (--nogui) for tasks like patching a single
+DTB property inside xbl_config.elf, requiring fs / pyfatfs to be
+installed is unnecessary friction. In environments such as
+OpenEmbedded native sysroots these packages are not always packaged.
+
+Make the top-level import conditional on its availability and provide
+a stub class so the DTGUIController class definition still parses.
+The stub is never instantiated (controller.run only calls
+DTGUIController(...) in the non-nogui branch) so the GUI behaviour is
+unchanged. When fs / pyfatfs are present the real module loads as
+before.
+
+Upstream-Status: Submitted [https://github.com/qualcomm/DTE/pull/N]
+Signed-off-by: Igor Opaniuk <igor.opaniuk@oss.qualcomm.com>
+---
+ controller.py | 15 ++++++++++++++-
+ 1 file changed, 14 insertions(+), 1 deletion(-)
+
+diff --git a/controller.py b/controller.py
+index 6c836b9..add04c3 100644
+--- a/controller.py
++++ b/controller.py
+@@ -66,7 +66,20 @@ from pyfdt import pyfdt
+ import Autocmd as cmd
+ 
+ #nhlos parser lib
+-import non_hlos_parser
++#
++# The NON-HLOS.bin parser is only used by the GUI's FAT image browser
++# (DTGUIController instantiated via the `else` branch in run()).  Its
++# transitive deps (`fs`, `pyfatfs`) are unnecessary for headless
++# --nogui usage such as xbl_config.elf modification, so import lazily
++# and fall back to a stub when those packages are not installed.  The
++# stub satisfies the DTGUIController class-definition contract without
++# ever being instantiated under --nogui.
++try:
++    import non_hlos_parser
++except ImportError:
++    class non_hlos_parser:  # type: ignore
++        class nhlos_Operator:
++            pass
+ 
+ import get_qsahara_files
+ 
+-- 
+2.53.0
+
