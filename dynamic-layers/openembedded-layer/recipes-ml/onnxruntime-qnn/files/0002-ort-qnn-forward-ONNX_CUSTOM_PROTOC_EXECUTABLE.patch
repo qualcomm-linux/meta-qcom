@@ -1,0 +1,38 @@
+From bf60f58809319d70537dabeb1f6e707fdb4d96fa Mon Sep 17 00:00:00 2001
+From: Pratik Pachange <ppachang@qti.qualcomm.com>
+Date: Wed, 10 Jun 2026 20:52:34 +0530
+Subject: [PATCH] ort-qnn: forward ONNX_CUSTOM_PROTOC_EXECUTABLE to inner cmake
+
+The inner ort_core cmake invoked via build.py downloads its own old
+protoc (version 21.12) because ONNX_CUSTOM_PROTOC_EXECUTABLE is not
+forwarded to it.  The generated .pb.h files use legacy API macros
+that were removed in protobuf 33.x, causing compilation failures
+against the sysroot's protobuf 33.6.0 headers.
+
+Fix: when building for Linux aarch64, append --cmake_extra_defines
+ONNX_CUSTOM_PROTOC_EXECUTABLE to the ORT_BUILD_COMMAND so the inner
+cmake uses the native protoc from the sysroot.
+
+Upstream-Status: Inappropriate [OE-specific sysroot protobuf version]
+Signed-off-by: Pratik Pachange <ppachang@qti.qualcomm.com>
+---
+ cmake/external/onnxruntime_prebuilt.cmake | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/cmake/external/onnxruntime_prebuilt.cmake b/cmake/external/onnxruntime_prebuilt.cmake
+index 73140f3bd6..3d84b18d75 100644
+--- a/cmake/external/onnxruntime_prebuilt.cmake
++++ b/cmake/external/onnxruntime_prebuilt.cmake
+@@ -92,6 +92,10 @@ else()
+
+             # Disable SVE for aarch64 builds
+             list(APPEND ORT_BUILD_COMMAND --no_sve)
++           if(ONNX_CUSTOM_PROTOC_EXECUTABLE)
++               list(APPEND ORT_BUILD_COMMAND --cmake_extra_defines)
++               list(APPEND ORT_BUILD_COMMAND "ONNX_CUSTOM_PROTOC_EXECUTABLE:FILEPATH=${ONNX_CUSTOM_PROTOC_EXECUTABLE}")
++           endif()
+         endif()
+     else()
+         # Windows
+--
+2.34.1
