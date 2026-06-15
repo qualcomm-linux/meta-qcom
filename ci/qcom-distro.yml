@@ -24,6 +24,10 @@ repos:
       meta-python:
       meta-xfce:
 
+  meta-ai:
+    url: https://github.com/qualcomm-linux/meta-ai
+    branch: main
+
   meta-virtualization:
     url: https://git.yoctoproject.org/meta-virtualization
 
