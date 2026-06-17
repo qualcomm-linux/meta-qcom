@@ -59,7 +59,7 @@ Please follow the instructions below for a KAS-based build. The KAS tool offers
 an easy way to setup bitbake based projects. For more details, visit the
 [KAS documentation](https://kas.readthedocs.io/en/latest/index.html).
 
-1. Install kas tool
+1. Install the kas tool
 
     ```bash
     sudo pip3 install kas
