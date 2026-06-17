@@ -1,0 +1,161 @@
+From 022aff620dd4d016a588016b64056f66bf6d4836 Mon Sep 17 00:00:00 2001
+From: Lakshman Chandu Kondreddy <lkondred@qti.qualcomm.com>
+Date: Wed, 28 Jan 2026 12:10:56 +0530
+Subject: [PATCH] freedreno/layout, tu: Fix UBWC block sizes for
+ PIPE_FORMAT_R8_G8B8_420_UNORM
+
+The Y and UV planes of PIPE_FORMAT_R8_G8B8_420_UNORM have different
+UBWC block sizes. Add support to use the correct block sizes for
+this format based on the plane.
+
+Upstream-Status: Backport [https://gitlab.freedesktop.org/mesa/mesa/-/commit/fb2646e527e955eedee5353fe290ac55763ae7b3]
+---
+ src/freedreno/fdl/fd6_layout.c                     | 10 +++++++---
+ src/freedreno/fdl/freedreno_layout.h               |  3 +++
+ src/freedreno/vulkan/tu_clear_blit.cc              |  2 ++
+ src/freedreno/vulkan/tu_image.cc                   |  1 +
+ src/gallium/drivers/freedreno/a5xx/fd5_resource.c  |  2 +-
+ src/gallium/drivers/freedreno/a6xx/fd6_resource.cc |  5 +++--
+ src/gallium/drivers/freedreno/freedreno_resource.h |  4 +++-
+ 7 files changed, 20 insertions(+), 7 deletions(-)
+
+diff --git a/src/freedreno/fdl/fd6_layout.c b/src/freedreno/fdl/fd6_layout.c
+index db45dfbac5e..8980a7f831e 100644
+--- a/src/freedreno/fdl/fd6_layout.c
++++ b/src/freedreno/fdl/fd6_layout.c
+@@ -34,14 +34,17 @@ fdl6_get_ubwc_blockwidth(const struct fdl_layout *layout,
+       {  0, 0 }, /* cpp = 128 */
+    };
+ 
+-   /* special case for r8g8: */
+-   if (fdl6_is_r8g8_layout(layout)) {
++   /* special case for r8g8 and plane 1 of r8_g8b8_420_unorm (NV12) */
++   if (fdl6_is_r8g8_layout(layout) ||
++      ((layout->format == PIPE_FORMAT_R8_G8B8_420_UNORM) && (layout->plane == 1))) {
+       *blockwidth = 16;
+       *blockheight = 8;
+       return;
+    }
+ 
+-   if (layout->format == PIPE_FORMAT_Y8_UNORM) {
++   /* special handling for y8_unorm and plane 0 of r8_g8b8_420_unorm (NV12) */
++   if ((layout->format == PIPE_FORMAT_Y8_UNORM) ||
++      ((layout->format == PIPE_FORMAT_R8_G8B8_420_UNORM) && (layout->plane == 0))) {
+       *blockwidth = 32;
+       *blockheight = 8;
+       return;
+@@ -120,6 +123,7 @@ fdl6_layout_image(struct fdl_layout *layout, const struct fd_dev_info *info,
+ 
+    layout->ubwc = params->ubwc;
+    layout->tile_mode = params->tile_mode;
++   layout->plane = params->plane;
+    uint32_t sparse_blocksize = 65536;
+ 
+    if (!util_is_power_of_two_or_zero(layout->cpp)) {
+diff --git a/src/freedreno/fdl/freedreno_layout.h b/src/freedreno/fdl/freedreno_layout.h
+index 01a491b7470..d6a4ee1d2a9 100644
+--- a/src/freedreno/fdl/freedreno_layout.h
++++ b/src/freedreno/fdl/freedreno_layout.h
+@@ -111,6 +111,8 @@ struct fdl_image_params {
+    bool sparse;
+ 
+    bool force_disable_linear_fallback;
++
++   uint32_t plane;
+ };
+ 
+ /**
+@@ -174,6 +176,7 @@ struct fdl_layout {
+    uint64_t size;       /* Size of the whole image, in bytes. */
+    uint32_t base_align; /* Alignment of the base address, in bytes. */
+    uint8_t pitchalign;  /* log2(pitchalign) */
++   uint32_t plane;
+ };
+ 
+ static inline uint32_t
+diff --git a/src/freedreno/vulkan/tu_clear_blit.cc b/src/freedreno/vulkan/tu_clear_blit.cc
+index cd814c52305..070ccdcc7d9 100644
+--- a/src/freedreno/vulkan/tu_clear_blit.cc
++++ b/src/freedreno/vulkan/tu_clear_blit.cc
+@@ -3055,6 +3055,8 @@ tu_copy_image_to_image(struct tu_cmd_buffer *cmd,
+          .array_size = layer_count,
+          .tile_mode = TILE6_LINEAR,
+          .is_3d = extent.depth > 1,
++         .plane = tu6_plane_index(src_image->vk.format,
++                                  info->srcSubresource.aspectMask),
+       };
+ 
+       fdl6_layout_image(&staging_layout, &cmd->device->physical_device->dev_info,
+diff --git a/src/freedreno/vulkan/tu_image.cc b/src/freedreno/vulkan/tu_image.cc
+index d7dcf81367e..166723e8b17 100644
+--- a/src/freedreno/vulkan/tu_image.cc
++++ b/src/freedreno/vulkan/tu_image.cc
+@@ -561,6 +561,7 @@ tu_image_update_layout(struct tu_device *device, struct tu_image *image,
+          .sparse = image->vk.create_flags &
+             VK_IMAGE_CREATE_SPARSE_RESIDENCY_BIT,
+          .force_disable_linear_fallback = image->force_disable_linear_fallback,
++         .plane = i,
+       };
+ 
+       if (!fdl6_layout_image(layout, &device->physical_device->dev_info,
+diff --git a/src/gallium/drivers/freedreno/a5xx/fd5_resource.c b/src/gallium/drivers/freedreno/a5xx/fd5_resource.c
+index 810871eaa93..a972c1f97d5 100644
+--- a/src/gallium/drivers/freedreno/a5xx/fd5_resource.c
++++ b/src/gallium/drivers/freedreno/a5xx/fd5_resource.c
+@@ -34,7 +34,7 @@ fd5_layout_resource(struct fd_resource *rsc, enum fd_layout_type type)
+    if (type == FD_LAYOUT_UBWC)
+       ubwc = true;
+ 
+-   struct fdl_image_params params = fd_image_params(prsc, ubwc, tile_mode);
++   struct fdl_image_params params = fd_image_params(prsc, ubwc, tile_mode, 0);
+ 
+    fdl5_layout_image(&rsc->layout, &params);
+ 
+diff --git a/src/gallium/drivers/freedreno/a6xx/fd6_resource.cc b/src/gallium/drivers/freedreno/a6xx/fd6_resource.cc
+index ba83f746978..787aa3a4078 100644
+--- a/src/gallium/drivers/freedreno/a6xx/fd6_resource.cc
++++ b/src/gallium/drivers/freedreno/a6xx/fd6_resource.cc
+@@ -262,7 +262,7 @@ fd6_layout_resource(struct fd_resource *rsc, enum fd_layout_type type)
+    if (ubwc && !ok_ubwc_format(prsc->screen, prsc->format, prsc->nr_samples))
+       ubwc = false;
+ 
+-   struct fdl_image_params params = fd_image_params(prsc, ubwc, tile_mode);
++   struct fdl_image_params params = fd_image_params(prsc, ubwc, tile_mode, 0);
+ 
+    fdl6_layout_image(&rsc->layout, screen->info, &params, NULL);
+ 
+@@ -289,7 +289,8 @@ layout_resource_for_handle(struct fd_resource *rsc, struct winsys_handle *handle
+       return false;
+    }
+ 
+-   struct fdl_image_params params = fd_image_params(prsc, ubwc, tile_mode);
++   struct fdl_image_params params = fd_image_params(prsc, ubwc,
++					tile_mode, handle->plane);
+ 
+    if (!fdl6_layout_image(&rsc->layout, screen->info, &params, &l)) {
+       if (FD_DBG(LAYOUT))
+diff --git a/src/gallium/drivers/freedreno/freedreno_resource.h b/src/gallium/drivers/freedreno/freedreno_resource.h
+index 6c2ab08da8e..3cb11181687 100644
+--- a/src/gallium/drivers/freedreno/freedreno_resource.h
++++ b/src/gallium/drivers/freedreno/freedreno_resource.h
+@@ -323,7 +323,8 @@ fd_resource_nr_samples(const struct pipe_resource *prsc)
+ }
+ 
+ static inline struct fdl_image_params
+-fd_image_params(const struct pipe_resource *prsc, bool ubwc, unsigned tile_mode)
++fd_image_params(const struct pipe_resource *prsc, bool ubwc,
++		unsigned tile_mode, uint32_t plane)
+ {
+    return (struct fdl_image_params) {
+       .format = prsc->format,
+@@ -336,6 +337,7 @@ fd_image_params(const struct pipe_resource *prsc, bool ubwc, unsigned tile_mode)
+       .tile_mode = tile_mode,
+       .ubwc = ubwc,
+       .is_3d = (prsc->target == PIPE_TEXTURE_3D),
++      .plane = plane,
+    };
+ }
+ 
+-- 
+2.34.1
+
