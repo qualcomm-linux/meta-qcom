@@ -57,7 +57,7 @@ jobs:
     secrets: inherit
     with:
       build_id: "${{ inputs.build_id }}"
-      devices: "glymur-crd,iq-8275-evk,iq-9075-evk,iq-x7181-evk,kaanapali-mtp,qcm6490-idp,qcs615-ride,rb3gen2-core-kit,qcs8300-ride-sx,qcs9100-ride-sx,rb1-core-kit"
+      devices: "glymur-crd,iq-8275-evk,iq-9075-evk,iq-x7181-evk,kaanapali-mtp,qcm6490-idp,qcs615-ride,rb3gen2-core-kit,qcs8300-ride-sx,qcs9100-ride-sx,rb1-core-kit,shikra-evk"
       devices_premerge: "glymur-crd,iq-8275-evk,iq-9075-evk,iq-x7181-evk,kaanapali-mtp,qcm6490-idp,qcs615-ride,rb3gen2-core-kit,qcs8300-ride-sx,qcs9100-ride-sx,rb1-core-kit"
       project_name: "meta-qcom"
       distro_name: "qcom-distro"
