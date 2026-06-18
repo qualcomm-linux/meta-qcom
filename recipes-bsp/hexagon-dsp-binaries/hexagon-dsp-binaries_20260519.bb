@@ -303,3 +303,7 @@ SKIP_FILEDEPS:${PN}-thundercomm-db845c-sdsp = "1"
 SKIP_FILEDEPS:${PN}-thundercomm-rb2-cdsp = "1"
 SKIP_FILEDEPS:${PN}-thundercomm-rb3gen2-cdsp = "1"
 SKIP_FILEDEPS:${PN}-thundercomm-rb5-cdsp = "1"
+
+# This version depends on the linux-firmware package only available in the
+# meta-lts-mixins layer.
+DEFAULT_PREFERENCE = "${@bb.utils.contains("BBFILE_COLLECTIONS", "lts-linux-firmware-mixin", "1", "-1", d)}"
