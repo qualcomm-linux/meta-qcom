@@ -176,6 +176,42 @@ Make sure that ModemManager is not running, disable it if necessary.
    READ64 image: 13 offset: 0x0 length: 0x40
    ```
 
+## Releases
+
+Milestone releases for meta-qcom wrynose branch are managed directly in this
+repository using git tags. Each release tag captures the exact state of the
+layer for that milestone, ensuring reproducible and stable builds. The list of
+available release tags can be found on the
+[meta-qcom tags page](https://github.com/qualcomm-linux/meta-qcom/tags).
+
+To build a specific release, clone the repository at the desired release tag and
+build it with KAS using the configuration for your target machine and distro.
+
+1. Clone meta-qcom at the release tag
+
+    ```bash
+    git clone https://github.com/qualcomm-linux/meta-qcom.git -b <meta-qcom-release-tag>
+    ```
+
+   Replace `<meta-qcom-release-tag>` with the tag of the release you want to
+   build (see the [tags page](https://github.com/qualcomm-linux/meta-qcom/tags)).
+
+2. Build using the KAS configuration for your machine and distro
+
+    ```bash
+    kas build meta-qcom/ci/<machine>.yml:meta-qcom/ci/<distro>.yml
+    ```
+
+   Replace `<machine>` with the target board and `<distro>` with the desired
+   distro configuration. For example:
+
+    ```bash
+    kas build meta-qcom/ci/rb3gen2-core-kit.yml:meta-qcom/ci/qcom-distro.yml
+    ```
+
+   Refer to `meta-qcom/ci/` for the complete list of available machine and
+   distro configurations.
+
 ## Contributing
 
 Please submit any patches against the `meta-qcom` layer (branch **master**)
