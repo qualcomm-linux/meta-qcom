@@ -53,6 +53,30 @@ FIT_DTB_COMPATIBLE[qcom_qcs9075-iot-subtype1-emmc] = \
 FIT_DTB_COMPATIBLE[qcom_qcs9075-iot-subtype1-staging-emmc] = \
     "lemans-evk lemans-evk-ifp-mezzanine lemans-staging lemans-evk-staging lemans-evk-emmc"
 
+# Add RTSS Mailbox variants for each of the above Lemans entries
+FIT_DTB_COMPATIBLE[qcom_qcs9075-iot-rtssmb] = \
+    "lemans-evk lemans-evk-camera-csi1-imx577 lemans-el2 lemans-evk-sd-card lemans-rtss-mb"
+FIT_DTB_COMPATIBLE[qcom_qcs9075-iot-staging-rtssmb] = \
+    "lemans-evk lemans-evk-camera-csi1-imx577 lemans-staging lemans-el2 lemans-evk-sd-card lemans-rtss-mb"
+FIT_DTB_COMPATIBLE[qcom_qcs9075-iot-el2gh-staging-rtssmb] = \
+    "lemans-evk lemans-evk-camera-csi1-imx577 lemans-staging lemans-evk-sd-card lemans-rtss-mb"
+FIT_DTB_COMPATIBLE[qcom_qcs9075-iot-camx-rtssmb] = \
+    "lemans-evk lemans-evk-camx lemans-el2 lemans-camx-el2 lemans-evk-sd-card lemans-rtss-mb"
+FIT_DTB_COMPATIBLE[qcom_qcs9075-iot-camx-staging-rtssmb] = \
+    "lemans-evk lemans-evk-camx lemans-el2 lemans-camx-el2 lemans-staging lemans-evk-sd-card lemans-rtss-mb"
+FIT_DTB_COMPATIBLE[qcom_qcs9075-iot-el2gh-camx-rtssmb] = \
+    "lemans-evk lemans-evk-camx lemans-evk-sd-card lemans-rtss-mb"
+FIT_DTB_COMPATIBLE[qcom_qcs9075-iot-el2gh-camx-staging-rtssmb] = \
+    "lemans-evk lemans-evk-camx lemans-staging lemans-evk-sd-card lemans-rtss-mb"
+FIT_DTB_COMPATIBLE[qcom_qcs9075-iot-subtype1-rtssmb] = \
+    "lemans-evk lemans-evk-ifp-mezzanine lemans-evk-sd-card lemans-rtss-mb"
+FIT_DTB_COMPATIBLE[qcom_qcs9075-iot-subtype1-staging-rtssmb] = \
+    "lemans-evk lemans-evk-ifp-mezzanine lemans-staging lemans-evk-staging lemans-evk-sd-card lemans-rtss-mb"
+FIT_DTB_COMPATIBLE[qcom_qcs9075-iot-subtype1-emmc-rtssmb] = \
+    "lemans-evk lemans-evk-ifp-mezzanine lemans-evk-emmc lemans-rtss-mb"
+FIT_DTB_COMPATIBLE[qcom_qcs9075-iot-subtype1-staging-emmc-rtssmb] = \
+    "lemans-evk lemans-evk-ifp-mezzanine lemans-staging lemans-evk-staging lemans-evk-emmc lemans-rtss-mb"
+
 FIT_DTB_COMPATIBLE[qcom_qcs9100-qam-el2gh-staging] = \
     "qcs9100-ride lemans-staging"
 FIT_DTB_COMPATIBLE[qcom_qcs9100-qam] = \
@@ -122,6 +146,30 @@ FIT_DTB_COMPATIBLE[qcom_qcs8275-iot-subtype1] = "monaco-ac-evk monaco-evk-ifp-me
 FIT_DTB_COMPATIBLE[qcom_qcs8275-iot-subtype3] = "monaco-evk monaco-evk-ifp-mezzanine"
 FIT_DTB_COMPATIBLE[qcom_qcs8275-iot-subtype3-staging] = \
     "monaco-evk monaco-evk-ifp-mezzanine monaco-staging monaco-evk-staging"
+
+# Add RTSS Mailbox variants for each of the above Monaco entries
+FIT_DTB_COMPATIBLE[qcom_qcs8275-iot-el2gh-staging-rtssmb] = \
+    "monaco-evk monaco-evk-camera-imx577 monaco-staging monaco-rtss-mb"
+FIT_DTB_COMPATIBLE[qcom_qcs8275-iot-rtssmb] = \
+    "monaco-evk monaco-evk-camera-imx577 monaco-el2 monaco-rtss-mb"
+FIT_DTB_COMPATIBLE[qcom_qcs8275-iot-staging-rtssmb] = \
+    "monaco-evk monaco-evk-camera-imx577 monaco-el2 monaco-staging monaco-rtss-mb"
+FIT_DTB_COMPATIBLE[qcom_qcs8275-iot-el2gh-camx-rtssmb] = \
+    "monaco-evk monaco-evk-camx monaco-rtss-mb"
+FIT_DTB_COMPATIBLE[qcom_qcs8275-iot-el2gh-camx-staging-rtssmb] = \
+    "monaco-evk monaco-evk-camx monaco-staging monaco-rtss-mb"
+FIT_DTB_COMPATIBLE[qcom_qcs8275-iot-camx-rtssmb] = \
+    "monaco-evk monaco-evk-camx monaco-el2 monaco-camx-el2 monaco-rtss-mb"
+FIT_DTB_COMPATIBLE[qcom_qcs8275-iot-camx-staging-rtssmb] = \
+    "monaco-evk monaco-evk-camx monaco-el2 monaco-camx-el2 monaco-staging monaco-rtss-mb"
+FIT_DTB_COMPATIBLE[qcom_qcs8275-iot-subtype0-rtssmb] = \
+    "monaco-ac-evk monaco-evk-camera-imx577 monaco-rtss-mb"
+FIT_DTB_COMPATIBLE[qcom_qcs8275-iot-subtype1-rtssmb] = \
+    "monaco-ac-evk monaco-evk-ifp-mezzanine monaco-rtss-mb"
+FIT_DTB_COMPATIBLE[qcom_qcs8275-iot-subtype3-rtssmb] = \
+    "monaco-evk monaco-evk-ifp-mezzanine monaco-rtss-mb"
+FIT_DTB_COMPATIBLE[qcom_qcs8275-iot-subtype3-staging-rtssmb] = \
+    "monaco-evk monaco-evk-ifp-mezzanine monaco-staging monaco-evk-staging monaco-rtss-mb"
 
 FIT_DTB_COMPATIBLE[qcom_qcs8300-adp-el2gh-staging] = "qcs8300-ride monaco-staging"
 FIT_DTB_COMPATIBLE[qcom_qcs8300-adp] = "qcs8300-ride monaco-el2"
