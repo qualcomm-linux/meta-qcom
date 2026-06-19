@@ -63,8 +63,6 @@ BUILDDIR="$(mktemp -p "$WORK_DIR" -d -t build-oe-selftest-XXXX)"
 cd "$WORK_DIR/oe-core"
 . ./oe-init-build-env "$BUILDDIR"
 
-# Add the lts-linux-firmware-mixin layer
-bitbake-layers add-layer "$WORK_DIR/meta-lts-mixins"
 # Add the meta-qcom layer
 bitbake-layers add-layer "$REPO_DIR"
 
