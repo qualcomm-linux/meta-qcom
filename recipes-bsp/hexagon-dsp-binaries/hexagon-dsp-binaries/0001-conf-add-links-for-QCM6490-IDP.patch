@@ -1,0 +1,41 @@
+From 9957e017831ae90142ad2be4fc828a7160db7390 Mon Sep 17 00:00:00 2001
+From: Sairamreddy Bojja <sbojja@qti.qualcomm.com>
+Date: Mon, 13 Apr 2026 12:41:13 +0530
+Subject: [PATCH] conf: add links for QCM6490 IDP
+
+Add links for QCM6490 IDP platform based on RB3 Gen2.
+
+Signed-off-by: Sairamreddy Bojja <sbojja@qti.qualcomm.com>
+Upstream-Status: Backport [https://github.com/linux-msm/hexagon-dsp-binaries/commit/9957e017831ae90142ad2be4fc828a7160db7390]
+---
+ conf.d/hexagon-dsp-binaries-qualcomm-qcm6490-idp.yaml | 5 +++++
+ config.txt                                            | 4 ++++
+ 2 files changed, 9 insertions(+)
+ create mode 100644 conf.d/hexagon-dsp-binaries-qualcomm-qcm6490-idp.yaml
+
+diff --git a/conf.d/hexagon-dsp-binaries-qualcomm-qcm6490-idp.yaml b/conf.d/hexagon-dsp-binaries-qualcomm-qcm6490-idp.yaml
+new file mode 100644
+index 000000000000..aa2a4123fe4b
+--- /dev/null
++++ b/conf.d/hexagon-dsp-binaries-qualcomm-qcm6490-idp.yaml
+@@ -0,0 +1,5 @@
++# SPDX-License-Identifier: MIT
++# Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
++machines:
++  Qualcomm Technologies, Inc. QCM6490 IDP:
++    DSP_LIBRARY_PATH: qcm6490/Qualcomm/QCM6490-IDP/dsp
+diff --git a/config.txt b/config.txt
+index a7640e4bf61f..8d3624dfc71c 100644
+--- a/config.txt
++++ b/config.txt
+@@ -94,3 +94,7 @@ Link: sa8775p/Qualcomm/SA8775P-RIDE/dsp/gdsp1	sa8775p/Qualcomm/IQ9075-EVK/dsp/gd
+ Link: sa8775p/Qualcomm/SA8775P-RIDE/dsp/cdsp1	sa8775p/Qualcomm/IQ9075-EVK/dsp/cdsp1
+ Link: sa8775p/Qualcomm/SA8775P-RIDE/dsp/gdsp0	sa8775p/Qualcomm/IQ9075-EVK/dsp/gdsp0
+ Link: sa8775p/Qualcomm/SA8775P-RIDE/dsp/gdsp1	sa8775p/Qualcomm/IQ9075-EVK/dsp/gdsp1
++
++# QCM6490 IDP
++Link: qcm6490/Thundercomm/RB3gen2/dsp/adsp      qcm6490/Qualcomm/QCM6490-IDP/dsp/adsp
++Link: qcm6490/Thundercomm/RB3gen2/dsp/cdsp      qcm6490/Qualcomm/QCM6490-IDP/dsp/cdsp
+-- 
+2.53.0
+

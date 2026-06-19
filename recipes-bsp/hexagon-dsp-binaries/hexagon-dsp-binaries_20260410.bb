@@ -22,6 +22,7 @@ NO_GENERIC_LICENSE[dspso-WHENCE] = "WHENCE"
 
 SRC_URI = " \
     git://github.com/linux-msm/dsp-binaries;protocol=https;branch=trunk;tag=${PV} \
+    file://0001-conf-add-links-for-QCM6490-IDP.patch \
 "
 
 SRCREV = "123bddd9cc886b61ece87d7d63b9ceed0654d3a1"
@@ -54,6 +55,8 @@ PACKAGE_BEFORE_PN =+ "\
     ${PN}-qcom-iq9075-evk-gdsp \
     ${PN}-qcom-kaanapali-mtp-adsp \
     ${PN}-qcom-kaanapali-mtp-cdsp \
+    ${PN}-qcom-qcm6490-idp-adsp \
+    ${PN}-qcom-qcm6490-idp-cdsp \
     ${PN}-qcom-qcs615-ride-adsp \
     ${PN}-qcom-qcs615-ride-cdsp \
     ${PN}-qcom-qcs8300-ride-adsp \
@@ -101,6 +104,8 @@ LICENSE:${PN}-qcom-iq9075-evk-cdsp = "dspso-qcom-2"
 LICENSE:${PN}-qcom-iq9075-evk-gdsp = "dspso-qcom-2"
 LICENSE:${PN}-qcom-kaanapali-mtp-adsp = "dspso-qcom-2"
 LICENSE:${PN}-qcom-kaanapali-mtp-cdsp = "dspso-qcom-2"
+LICENSE:${PN}-qcom-qcm6490-idp-adsp = "dspso-qcom"
+LICENSE:${PN}-qcom-qcm6490-idp-cdsp = "dspso-qcom"
 LICENSE:${PN}-qcom-qcs615-ride-adsp = "dspso-qcom-2"
 LICENSE:${PN}-qcom-qcs615-ride-cdsp = "dspso-qcom-2"
 LICENSE:${PN}-qcom-qcs8300-ride-adsp = "dspso-qcom-2"
@@ -154,6 +159,8 @@ RDEPENDS:${PN}-qcom-iq9075-evk-gdsp = "${PN}-conf linux-firmware-qcom-sa8775p-ge
 RDEPENDS:${PN}-qcom-iq9075-evk-gdsp += "${PN}-qcom-sa8775p-ride-gdsp"
 RDEPENDS:${PN}-qcom-kaanapali-mtp-adsp = "${PN}-conf linux-firmware-qcom-kaanapali-audio (= 1:${PV})"
 RDEPENDS:${PN}-qcom-kaanapali-mtp-cdsp = "${PN}-conf linux-firmware-qcom-kaanapali-compute (= 1:${PV})"
+RDEPENDS:${PN}-qcom-qcm6490-idp-adsp = "${PN}-thundercomm-rb3gen2-adsp"
+RDEPENDS:${PN}-qcom-qcm6490-idp-cdsp = "${PN}-thundercomm-rb3gen2-cdsp"
 RDEPENDS:${PN}-qcom-qcs615-ride-adsp = "${PN}-conf linux-firmware-qcom-qcs615-audio (= 1:${PV})"
 RDEPENDS:${PN}-qcom-qcs615-ride-cdsp = "${PN}-conf linux-firmware-qcom-qcs615-compute (= 1:${PV})"
 RDEPENDS:${PN}-qcom-qcs8300-ride-adsp = "${PN}-conf linux-firmware-qcom-qcs8300-audio (= 1:${PV})"
@@ -202,6 +209,8 @@ FILES:${PN}-qcom-iq9075-evk-cdsp = "${datadir}/qcom/sa8775p/Qualcomm/IQ9075-EVK/
 FILES:${PN}-qcom-iq9075-evk-gdsp = "${datadir}/qcom/sa8775p/Qualcomm/IQ9075-EVK/dsp/gdsp*"
 FILES:${PN}-qcom-kaanapali-mtp-adsp = "${datadir}/qcom/kaanapali/Qualcomm/Kaanapali-MTP/dsp/adsp*"
 FILES:${PN}-qcom-kaanapali-mtp-cdsp = "${datadir}/qcom/kaanapali/Qualcomm/Kaanapali-MTP/dsp/cdsp*"
+FILES:${PN}-qcom-qcm6490-idp-adsp = "${datadir}/qcom/qcm6490/Qualcomm/QCM6490-IDP/dsp/adsp"
+FILES:${PN}-qcom-qcm6490-idp-cdsp = "${datadir}/qcom/qcm6490/Qualcomm/QCM6490-IDP/dsp/cdsp"
 FILES:${PN}-qcom-qcs615-ride-adsp = "${datadir}/qcom/qcs615/Qualcomm/QCS615-RIDE/dsp/adsp"
 FILES:${PN}-qcom-qcs615-ride-cdsp = "${datadir}/qcom/qcs615/Qualcomm/QCS615-RIDE/dsp/cdsp*"
 FILES:${PN}-qcom-qcs8300-ride-adsp = "${datadir}/qcom/qcs8300/Qualcomm/QCS8300-RIDE/dsp/adsp"
