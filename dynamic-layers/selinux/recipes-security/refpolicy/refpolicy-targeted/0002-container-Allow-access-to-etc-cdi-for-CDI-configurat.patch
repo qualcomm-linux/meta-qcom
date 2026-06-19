@@ -1,0 +1,41 @@
+From 9ff44d61ab0e41a9bcdb30bbaf8654e037db85a5 Mon Sep 17 00:00:00 2001
+From: Kemal Rasim Sh <kshakir@qti.qualcomm.com>
+Date: Tue, 16 Jun 2026 17:37:41 +0300
+Subject: [PATCH 2/2] container: Allow access to /etc/cdi for CDI configuration
+
+Containerd requires access to /etc/cdi to load Container Device
+Interface (CDI) configuration files. Without proper permissions,
+containers fail to read the CDI specs, resulting in errors such as:
+
+  CDI: error associated with spec file /etc/cdi:
+  failed to monitor for changes: permission denied
+
+avc:  denied  { watch } for  pid=918 comm="containerd"
+path="/etc/cdi" dev="sda2" ino=1566137 scontext=system_u:system_r:dockerd
+type=SYSCALL msg=audit(83241.927:148): arch=c00000b7 syscall=27
+success=no exit=-13 a0=9 a1=6c64631b2870 a2=fc6 a3=0 items=0 ppid=1
+pid=918 auid=4294967295 uid=0 gtype=PROCTITLE msg=audit(83241.927:148):
+proctitle="/usr/bin/containerd"
+
+Upstream-Status: Backport [https://github.com/SELinuxProject/refpolicy/pull/1163]
+
+Signed-off-by: Kemal Rasim Sh <kshakir@qti.qualcomm.com>
+---
+ policy/modules/services/container.fc | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/policy/modules/services/container.fc b/policy/modules/services/container.fc
+index 010387a3a..812b46cee 100644
+--- a/policy/modules/services/container.fc
++++ b/policy/modules/services/container.fc
+@@ -40,6 +40,7 @@ HOME_DIR/\.docker(/.*)?		gen_context(system_u:object_r:container_conf_home_t,s0)
+ 
+ /etc/containers(/.*)?		gen_context(system_u:object_r:container_config_t,s0)
+ /etc/cni(/.*)?		gen_context(system_u:object_r:container_config_t,s0)
++/etc/cdi(/.*)?		gen_context(system_u:object_r:container_config_t,s0)
+ /etc/docker(/.*)?		gen_context(system_u:object_r:container_config_t,s0)
+ /etc/containerd(/.*)?		gen_context(system_u:object_r:container_config_t,s0)
+ 
+-- 
+2.43.0
+

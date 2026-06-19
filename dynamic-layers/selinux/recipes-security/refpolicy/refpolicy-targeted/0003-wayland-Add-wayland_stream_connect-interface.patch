@@ -1,0 +1,69 @@
+From 3e8e659a6d10595a267393087ec5d0ce225483e1 Mon Sep 17 00:00:00 2001
+From: Kemal Rasim Sh <kshakir@qti.qualcomm.com>
+Date: Fri, 19 Jun 2026 13:30:02 +0300
+Subject: [PATCH 3/3] wayland: Add wayland_stream_connect interface
+
+Add a new interface, wayland_stream_connect(), to allow domains
+to connect to a Wayland compositor via an UNIX stream socket.
+
+This interface grants the necessary permissions to search the
+user runtime directory and establish a stream connection to
+Wayland compositor sockets labeled with wayland_runtime_t.
+
+Typical usage includes enabling confined domains (such as
+container runtimes or applications) to communicate with the
+Wayland display server.
+
+Upstream-Status: Backport [https://github.com/SELinuxProject/refpolicy/pull/1166]
+
+Signed-off-by: Kemal Rasim Sh <kshakir@qti.qualcomm.com>
+---
+ policy/modules/session/wayland.fc |  1 +
+ policy/modules/session/wayland.if | 27 +++++++++++++++++++++++++++
+ 2 files changed, 28 insertions(+)
+
+diff --git a/policy/modules/session/wayland.fc b/policy/modules/session/wayland.fc
+index 73151efba..64b18ca04 100644
+--- a/policy/modules/session/wayland.fc
++++ b/policy/modules/session/wayland.fc
+@@ -1 +1,2 @@
+ /run/user/%{USERID}/wayland-.*	-s	gen_context(system_u:object_r:wayland_runtime_t,s0)
++/run/wayland-[0-9]+		-s	gen_context(system_u:object_r:wayland_runtime_t,s0)
+diff --git a/policy/modules/session/wayland.if b/policy/modules/session/wayland.if
+index 2812dcb30..e2eab0b49 100644
+--- a/policy/modules/session/wayland.if
++++ b/policy/modules/session/wayland.if
+@@ -99,3 +99,30 @@ interface(`wayland_client_sandboxed_domain',`
+ 
+ 	typeattribute $1 wayland_client_sandboxed;
+ ')
++
++#########################################
++## <summary>
++##	Connect to the Wayland compositor
++##	using an UNIX domain stream socket.
++## </summary>
++## <param name="domain">
++##	<summary>
++##	Domain allowed access.
++##	</summary>
++## </param>
++#
++interface(`wayland_stream_connect',`
++	gen_require(`
++		attribute wayland_compositor;
++		type wayland_runtime_t;
++	')
++
++	files_search_runtime($1)
++
++	stream_connect_pattern(
++		$1,
++		wayland_runtime_t,
++		wayland_runtime_t,
++		wayland_compositor
++	)
++')
+-- 
+2.43.0
+

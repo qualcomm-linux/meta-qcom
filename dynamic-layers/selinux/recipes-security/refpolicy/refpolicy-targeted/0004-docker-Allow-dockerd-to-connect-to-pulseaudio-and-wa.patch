@@ -1,0 +1,54 @@
+From 804f69979eacd40f38af15df538a4a22437b355f Mon Sep 17 00:00:00 2001
+From: Kemal Rasim Sh <kshakir@qti.qualcomm.com>
+Date: Fri, 19 Jun 2026 13:43:44 +0300
+Subject: [PATCH 4/4] docker: Allow dockerd to connect to pulseaudio and
+ wayland sockets
+
+Add optional policy support to allow the Docker daemon (dockerd_t)
+to connect to user session services over UNIX stream sockets.
+
+This introduces:
+  - pulseaudio_stream_connect(dockerd_t)
+  - wayland_stream_connect(dockerd_t)
+
+These interfaces enable dockerd to communicate with PulseAudio and
+Wayland compositor sockets located under /run/user/$UID, which is
+required for certain container workloads that need access to the
+host audio or graphical display.
+
+Both permissions are wrapped in optional_policy blocks to ensure
+they are only enabled when the corresponding PulseAudio and Wayland
+policy modules are present.
+
+This change improves compatibility with containerized desktop
+applications while preserving modular policy design.
+
+Upstream-Status: Backport [https://github.com/SELinuxProject/refpolicy/pull/1167]
+
+Signed-off-by: Kemal Rasim Sh <kshakir@qti.qualcomm.com>
+---
+ policy/modules/services/docker.te | 8 ++++++++
+ 1 file changed, 8 insertions(+)
+
+diff --git a/policy/modules/services/docker.te b/policy/modules/services/docker.te
+index f40713d12..5214ee4a0 100644
+--- a/policy/modules/services/docker.te
++++ b/policy/modules/services/docker.te
+@@ -61,6 +61,14 @@ container_stream_connect_system_containers(dockerd_t)
+ # docker manages key.json in /etc/docker
+ container_manage_config_files(dockerd_t)
+ 
++optional_policy(`
++	pulseaudio_stream_connect(dockerd_t)
++')
++
++optional_policy(`
++	wayland_stream_connect(dockerd_t)
++')
++
+ # In btrfs mode, docker creates subvolumes which are unlabeled
+ # in /var/lib/docker/btrfs/subvolumes. The files inside will
+ # become labeled with a file transition, but the subvolume
+-- 
+2.43.0
+
