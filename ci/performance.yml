@@ -4,3 +4,5 @@ header:
 local_conf_header:
   cmdline-perf: |
     KERNEL_CMDLINE_EXTRA:append = " quiet systemd.tty.term.console=linux"
+    # Do not wait for NetworkManager startup-complete in wait-online.
+    NETWORKMANAGER_WAIT_ONLINE_WAIT_FOR_STARTUP = "0"
