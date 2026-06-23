@@ -34,6 +34,7 @@ do_install() {
     install -d ${D}${datadir}/qcom/qcs8300/Qualcomm/QCS8300-RIDE/dsp/cdsp
     install -d ${D}${datadir}/qcom/sa8775p/Qualcomm/SA8775P-RIDE/dsp/cdsp
     install -d ${D}${datadir}/qcom/shikra/Qualcomm/Shikra-CQS-EVK/dsp/cdsp
+    install -d ${D}${datadir}/qcom/sm8550/Qualcomm/RB5gen2/dsp/cdsp
     install -d ${D}${datadir}/qcom/sm8750/Qualcomm/SM8750-MTP/dsp/cdsp
     install -d ${D}${datadir}/qcom/x1e80100/Qualcomm/Hamoa-IoT-EVK/dsp/cdsp
 
@@ -56,6 +57,7 @@ do_install() {
     install -m 0644 ${S}/usr/share/dsp/cdsp/cv/v73/HAMOA/*.so ${D}${datadir}/qcom/x1e80100/Qualcomm/Hamoa-IoT-EVK/dsp/cdsp
     install -m 0644 ${S}/usr/share/dsp/cdsp/cv/v73/LEMANS/*.so ${D}${datadir}/qcom/sa8775p/Qualcomm/SA8775P-RIDE/dsp/cdsp
     install -m 0644 ${S}/usr/share/dsp/cdsp/cv/v75/MONACO/*.so ${D}${datadir}/qcom/qcs8300/Qualcomm/QCS8300-RIDE/dsp/cdsp
+    install -m 0644 ${S}/usr/share/dsp/cdsp/cv/v69/KAILUA/*.so ${D}${datadir}/qcom/sm8550/Qualcomm/RB5gen2/dsp/cdsp
     install -m 0644 ${S}/usr/share/dsp/cdsp/cv/v79/PAKALA/*.so ${D}${datadir}/qcom/sm8750/Qualcomm/SM8750-MTP/dsp/cdsp
     install -m 0644 ${S}/usr/share/dsp/cdsp/cv/v81/KAANAPALI/*.so ${D}${datadir}/qcom/kaanapali/Qualcomm/Kaanapali-MTP/dsp/cdsp
     install -m 0644 ${S}/usr/share/dsp/cdsp/cv/v81/GLYMUR/*.so ${D}${datadir}/qcom/glymur/Qualcomm/Glymur-CRD/dsp/cdsp
@@ -79,6 +81,7 @@ PACKAGES += "\
     ${PN}-sa8775p-ride-dsp \
     ${PN}-sa8797p-ride-embedded-dsp \
     ${PN}-shikra-evk-dsp \
+    ${PN}-sm8550-rb5gen2-dsp \
     ${PN}-sm8750-mtp-dsp \
     ${PN}-thundercomm-rb3gen2-dsp \
 "
@@ -97,6 +100,7 @@ RDEPENDS:${PN}-qcs8300-ride-dsp = "${PN}-dsp"
 RDEPENDS:${PN}-sa8775p-ride-dsp = "${PN}-dsp"
 RDEPENDS:${PN}-sa8797p-ride-embedded-dsp = "${PN}-dsp"
 RDEPENDS:${PN}-shikra-evk-dsp = "${PN}-dsp"
+RDEPENDS:${PN}-sm8550-rb5gen2-dsp = "${PN}-dsp"
 RDEPENDS:${PN}-sm8750-mtp-dsp = "${PN}-dsp"
 RDEPENDS:${PN}-thundercomm-rb3gen2-dsp = "${PN}-dsp"
 
@@ -111,6 +115,7 @@ INSANE_SKIP:${PN}-qcs8300-ride-dsp = "arch ldflags libdir"
 INSANE_SKIP:${PN}-sa8775p-ride-dsp = "arch ldflags libdir"
 INSANE_SKIP:${PN}-sa8797p-ride-embedded-dsp = "arch libdir ldflags file-rdeps"
 INSANE_SKIP:${PN}-shikra-evk-dsp = "arch ldflags libdir"
+INSANE_SKIP:${PN}-sm8550-rb5gen2-dsp = "arch libdir"
 INSANE_SKIP:${PN}-sm8750-mtp-dsp = "arch ldflags libdir"
 INSANE_SKIP:${PN}-thundercomm-rb3gen2-dsp = "arch ldflags libdir"
 
@@ -126,5 +131,6 @@ FILES:${PN}-qcs8300-ride-dsp += "${datadir}/qcom/qcs8300/Qualcomm/QCS8300-RIDE/d
 FILES:${PN}-sa8775p-ride-dsp += "${datadir}/qcom/sa8775p/Qualcomm/SA8775P-RIDE/dsp"
 FILES:${PN}-sa8797p-ride-embedded-dsp += "${datadir}/qcom/nord/Qualcomm/SA8797P-Ride-Embedded/dsp/cdsp"
 FILES:${PN}-shikra-evk-dsp += "${datadir}/qcom/shikra/Qualcomm/Shikra-CQS-EVK/dsp/cdsp"
+FILES:${PN}-sm8550-rb5gen2-dsp += "${datadir}/qcom/sm8550/Qualcomm/RB5gen2/dsp"
 FILES:${PN}-sm8750-mtp-dsp += "${datadir}/qcom/sm8750/Qualcomm/SM8750-MTP/dsp/cdsp"
 FILES:${PN}-thundercomm-rb3gen2-dsp += "${datadir}/qcom/qcm6490/Thundercomm/RB3gen2/dsp"
