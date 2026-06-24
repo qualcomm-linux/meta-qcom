@@ -1,0 +1,59 @@
+From 3162114ded44c0913a30d011b2e7797ad3cf146d Mon Sep 17 00:00:00 2001
+From: Jianping Li <jianping.li@oss.qualcomm.com>
+Date: Tue, 19 May 2026 15:00:58 +0800
+Subject: [PATCH] arm64: dts: qcom: talos: Add memory-region for
+ audio PD
+
+Reserve memory region for audio PD dynamic loading and remote heap
+requirements. Add the required VMID list for memory ownership
+transfers.
+
+Link: https://lore.kernel.org/all/20260424-talosaudio-v3-1-9e2ad5d78a2e@oss.qualcomm.com/
+Signed-off-by: Jianping Li <jianping.li@oss.qualcomm.com>
+
+Upstream-Status: Submitted [https://github.com/qualcomm-linux/kernel/pull/596/changes]
+
+---
+ arch/arm64/boot/dts/qcom/talos.dtsi | 12 ++++++++++++
+ 1 file changed, 12 insertions(+)
+
+diff --git a/arch/arm64/boot/dts/qcom/talos.dtsi b/arch/arm64/boot/dts/qcom/talos.dtsi
+index 3dd9fb230fee..f265fb0104d4 100644
+--- a/arch/arm64/boot/dts/qcom/talos.dtsi
++++ b/arch/arm64/boot/dts/qcom/talos.dtsi
+@@ -11,6 +11,7 @@
+ #include <dt-bindings/clock/qcom,qcs615-videocc.h>
+ #include <dt-bindings/clock/qcom,rpmh.h>
+ #include <dt-bindings/dma/qcom-gpi.h>
++#include <dt-bindings/firmware/qcom,scm.h>
+ #include <dt-bindings/interconnect/qcom,icc.h>
+ #include <dt-bindings/interconnect/qcom,osm-l3.h>
+ #include <dt-bindings/interconnect/qcom,qcs615-rpmh.h>
+@@ -687,6 +688,14 @@ pil_camera_mem: pil-camera-region@97717000 {
+ 			reg = <0x0 0x97717000 0x0 0x800000>;
+ 			no-map;
+ 		};
++
++		adsp_rpc_remote_heap_mem: adsp-rpc-remote-heap {
++			compatible = "shared-dma-pool";
++			alloc-ranges = <0x0 0x80000000 0x0 0x80000000>;
++			reusable;
++			alignment = <0x0 0x400000>;
++			size = <0x0 0x800000>;
++		};
+ 	};
+ 
+ 	soc: soc@0 {
+@@ -5248,6 +5257,9 @@ fastrpc {
+ 					compatible = "qcom,fastrpc";
+ 					qcom,glink-channels = "fastrpcglink-apps-dsp";
+ 					label = "adsp";
++					memory-region = <&adsp_rpc_remote_heap_mem>;
++					qcom,vmids = <QCOM_SCM_VMID_LPASS
++						      QCOM_SCM_VMID_ADSP_HEAP>;
+ 					#address-cells = <1>;
+ 					#size-cells = <0>;
+ 
+-- 
+2.43.0
+
