@@ -1,0 +1,1 @@
+SHA2-384(qpsa_rootca0.cer)= 9bc289bd255ec63e5752d15c15fa64d2f1ec0dd78e0438e5ffea498ae16d0aada49491eadaefe782fe3f91d147a540d3
