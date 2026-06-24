@@ -68,6 +68,23 @@ do_install:append() {
     done
 }
 
+# Optional secure-boot signing of pre-built MBN/ELF blobs.  When
+# QCOM_FIRMWARE_SIGN_ENABLE is "0" (the default) this is a no-op
+inherit qcom-firmware-sign
+
+do_qcom_firmware_sign() {
+    if ! qcom_check_signing_enabled ; then
+        return 0
+    fi
+
+    bbnote "qcom-firmware-sign: walking ${D}${FW_QCOM_BASE_PATH} for MBN/ELF blobs"
+    find "${D}${FW_QCOM_BASE_PATH}" -type f \
+        \( -iname '*.mbn' -o -iname '*.elf' \) \
+        | while read -r f; do
+            qcom_sign_verify_file "${f}" || bbfatal "Failed to sign: ${f}"
+        done
+}
+
 INHIBIT_PACKAGE_DEBUG_SPLIT = "1"
 INHIBIT_PACKAGE_STRIP = "1"
 INHIBIT_DEFAULT_DEPS = "1"
