@@ -1,0 +1,499 @@
+From 2e06ba9b1a0adcfe5ed26eb440f3a889665eb07a Mon Sep 17 00:00:00 2001
+From: Stoyan Kushlev <skushlev@qti.qualcomm.com>
+Date: Thu, 4 Jun 2026 17:33:39 +0300
+Subject: [PATCH 3/5] Revert "Update ColorSpaceProfiles docs to reflect limited
+ ColorSpace choices."
+
+Upstream-Status: Inappropriate [Qualcomm specific change]
+
+This reverts commit 3eed469064f1da1ea34063fed23e377e6a8dc762.
+---
+ camera/docs/docs.html                        |  96 ++++++++++++-
+ camera/docs/metadata_definitions.xml         |  80 ++++++++++-
+ camera/include/system/camera_metadata_tags.h |  16 ++-
+ camera/src/camera_metadata_asserts.cpp       |  30 +++-
+ camera/src/camera_metadata_tag_info.c        | 138 ++++++++++++++++++-
+ 5 files changed, 341 insertions(+), 19 deletions(-)
+
+diff --git a/camera/docs/docs.html b/camera/docs/docs.html
+index 4d45e207..265af2cd 100644
+--- a/camera/docs/docs.html
++++ b/camera/docs/docs.html
+@@ -22922,6 +22922,42 @@ space to employ.<wbr/></p></span>
+                     <span class="entry_type_enum_value">0</span>
+                     <span class="entry_type_enum_notes"><p>RGB color space sRGB standardized as IEC 61966-2.<wbr/>1:1999.<wbr/></p></span>
+                   </li>
++                  <li>
++                    <span class="entry_type_enum_name">LINEAR_SRGB (v3.9)</span>
++                    <span class="entry_type_enum_hidden">[system]</span>
++                    <span class="entry_type_enum_value">1</span>
++                    <span class="entry_type_enum_notes"><p>RGB color space sRGB standardized as IEC 61966-2.<wbr/>1:1999.<wbr/></p></span>
++                  </li>
++                  <li>
++                    <span class="entry_type_enum_name">EXTENDED_SRGB (v3.9)</span>
++                    <span class="entry_type_enum_hidden">[system]</span>
++                    <span class="entry_type_enum_value">2</span>
++                    <span class="entry_type_enum_notes"><p>RGB color space scRGB-nl standardized as IEC 61966-2-2:2003.<wbr/></p></span>
++                  </li>
++                  <li>
++                    <span class="entry_type_enum_name">LINEAR_EXTENDED_SRGB (v3.9)</span>
++                    <span class="entry_type_enum_hidden">[system]</span>
++                    <span class="entry_type_enum_value">3</span>
++                    <span class="entry_type_enum_notes"><p>RGB color space scRGB standardized as IEC 61966-2-2:2003.<wbr/></p></span>
++                  </li>
++                  <li>
++                    <span class="entry_type_enum_name">BT709 (v3.9)</span>
++                    <span class="entry_type_enum_hidden">[system]</span>
++                    <span class="entry_type_enum_value">4</span>
++                    <span class="entry_type_enum_notes"><p>RGB color space BT.<wbr/>709 standardized as Rec.<wbr/> ITU-R BT.<wbr/>709-5.<wbr/></p></span>
++                  </li>
++                  <li>
++                    <span class="entry_type_enum_name">BT2020 (v3.9)</span>
++                    <span class="entry_type_enum_hidden">[system]</span>
++                    <span class="entry_type_enum_value">5</span>
++                    <span class="entry_type_enum_notes"><p>RGB color space BT.<wbr/>2020 standardized as Rec.<wbr/> ITU-R BT.<wbr/>2020-1.<wbr/></p></span>
++                  </li>
++                  <li>
++                    <span class="entry_type_enum_name">DCI_P3 (v3.9)</span>
++                    <span class="entry_type_enum_hidden">[system]</span>
++                    <span class="entry_type_enum_value">6</span>
++                    <span class="entry_type_enum_notes"><p>RGB color space DCI-P3 standardized as SMPTE RP 431-2-2007.<wbr/></p></span>
++                  </li>
+                   <li>
+                     <span class="entry_type_enum_name">DISPLAY_P3 (v3.9)</span>
+                     <span class="entry_type_enum_hidden">[system]</span>
+@@ -22929,10 +22965,54 @@ space to employ.<wbr/></p></span>
+                     <span class="entry_type_enum_notes"><p>RGB color space Display P3 based on SMPTE RP 431-2-2007 and IEC 61966-2.<wbr/>1:1999.<wbr/></p></span>
+                   </li>
+                   <li>
+-                    <span class="entry_type_enum_name">BT2020_HLG (v3.9)</span>
++                    <span class="entry_type_enum_name">NTSC_1953 (v3.9)</span>
+                     <span class="entry_type_enum_hidden">[system]</span>
+-                    <span class="entry_type_enum_value">16</span>
+-                    <span class="entry_type_enum_notes"><p>RGB color space BT.<wbr/>2100 standardized as Hybrid Log Gamma encoding.<wbr/></p></span>
++                    <span class="entry_type_enum_value">8</span>
++                    <span class="entry_type_enum_notes"><p>RGB color space NTSC,<wbr/> 1953 standard.<wbr/></p></span>
++                  </li>
++                  <li>
++                    <span class="entry_type_enum_name">SMPTE_C (v3.9)</span>
++                    <span class="entry_type_enum_hidden">[system]</span>
++                    <span class="entry_type_enum_value">9</span>
++                    <span class="entry_type_enum_notes"><p>RGB color space SMPTE C.<wbr/></p></span>
++                  </li>
++                  <li>
++                    <span class="entry_type_enum_name">ADOBE_RGB (v3.9)</span>
++                    <span class="entry_type_enum_hidden">[system]</span>
++                    <span class="entry_type_enum_value">10</span>
++                    <span class="entry_type_enum_notes"><p>RGB color space Adobe RGB (1998).<wbr/></p></span>
++                  </li>
++                  <li>
++                    <span class="entry_type_enum_name">PRO_PHOTO_RGB (v3.9)</span>
++                    <span class="entry_type_enum_hidden">[system]</span>
++                    <span class="entry_type_enum_value">11</span>
++                    <span class="entry_type_enum_notes"><p>RGB color space ProPhoto RGB standardized as ROMM RGB ISO 22028-2:2013.<wbr/></p></span>
++                  </li>
++                  <li>
++                    <span class="entry_type_enum_name">ACES (v3.9)</span>
++                    <span class="entry_type_enum_hidden">[system]</span>
++                    <span class="entry_type_enum_value">12</span>
++                    <span class="entry_type_enum_notes"><p>RGB color space ACES standardized as SMPTE ST 2065-1:2012.<wbr/></p></span>
++                  </li>
++                  <li>
++                    <span class="entry_type_enum_name">ACESCG (v3.9)</span>
++                    <span class="entry_type_enum_hidden">[system]</span>
++                    <span class="entry_type_enum_value">13</span>
++                    <span class="entry_type_enum_notes"><p>RGB color space ACEScg standardized as Academy S-2014-004.<wbr/></p></span>
++                  </li>
++                  <li>
++                    <span class="entry_type_enum_name">CIE_XYZ (v3.9)</span>
++                    <span class="entry_type_enum_hidden">[system]</span>
++                    <span class="entry_type_enum_value">14</span>
++                    <span class="entry_type_enum_notes"><p>XYZ color space CIE XYZ.<wbr/> This color space assumes standard illuminant D50 as its white
++point.<wbr/></p></span>
++                  </li>
++                  <li>
++                    <span class="entry_type_enum_name">CIE_LAB (v3.9)</span>
++                    <span class="entry_type_enum_hidden">[system]</span>
++                    <span class="entry_type_enum_value">15</span>
++                    <span class="entry_type_enum_notes"><p>Lab color space CIE L<em>a</em>b*.<wbr/> This color space uses CIE XYZ D50 as a profile conversion
++space.<wbr/></p></span>
+                   </li>
+                 </ul>
+ 
+@@ -22981,11 +23061,9 @@ a color space.<wbr/></p>
+ 2) An image format which can be used with this color space.<wbr/>
+ 3) A bitmap of all compatible dynamic range profiles,<wbr/> if the device is HDR-capable.<wbr/></p>
+ <p>The possible values for #1 are the positive values of the
+-ANDROID_<wbr/>REQUEST_<wbr/>AVAILABLE_<wbr/>COLOR_<wbr/>SPACE_<wbr/>PROFILES_<wbr/>MAP_<wbr/><em> enum,<wbr/> which is equivalent to
++ANDROID_<wbr/>REQUEST_<wbr/>AVAILABLE_<wbr/>COLOR_<wbr/>SPACE_<wbr/>PROFILES_<wbr/>MAP_<wbr/>* enum,<wbr/> which is equivalent to
+ <a href="https://developer.android.com/reference/android/graphics/ColorSpace/Named.html">Named</a> and its ordinals.<wbr/> UNSPECIFIED should not be
+-used here.<wbr/> It should be noted that not all <a href="https://developer.android.com/reference/android/graphics/ColorSpace/Named.html">Named</a>
+-values are supported,<wbr/> only those in the
+-ANDROID_<wbr/>REQUEST_<wbr/>AVAILABLE_<wbr/>COLOR_<wbr/>SPACE_<wbr/>PROFILES_<wbr/>MAP_<wbr/></em> enum.<wbr/></p>
++used here.<wbr/></p>
+ <p>The possible values for #2 consist of the public-facing image/<wbr/>pixel formats,<wbr/> found at
+ <a href="https://developer.android.com/reference/android/graphics/ImageFormat.html">ImageFormat</a> and <a href="https://developer.android.com/reference/android/graphics/PixelFormat.html">PixelFormat</a>.<wbr/> Each map
+ to a HAL pixel format except for <a href="https://developer.android.com/reference/android/graphics/ImageFormat/JPEG.html">JPEG</a>,<wbr/>
+@@ -22997,6 +23075,10 @@ image format a color space is compatible with,<wbr/> this can be
+ <p>If the device is not HDR-capable,<wbr/> #3 should always be
+ ANDROID_<wbr/>REQUEST_<wbr/>AVAILABLE_<wbr/>DYNAMIC_<wbr/>RANGE_<wbr/>PROFILES_<wbr/>STANDARD.<wbr/> Otherwise,<wbr/> #3 should be a
+ bitmap of the compatible ANDROID_<wbr/>REQUEST_<wbr/>AVAILABLE_<wbr/>DYNAMIC_<wbr/>RANGE_<wbr/>PROFILES_<wbr/>* values.<wbr/></p>
++<p>For devices that support P3 color,<wbr/> it is highly recommended to advertise
++<a href="https://developer.android.com/reference/android/graphics/ColorSpace/Named/DISPLAY_P3.html">DISPLAY_<wbr/>P3</a>
++unless the profile is specifically designed for playback in a theater environment
++(<a href="https://developer.android.com/reference/android/graphics/ColorSpace/Named/DCI_P3.html">DCI_<wbr/>P3</a>).<wbr/></p>
+             </td>
+           </tr>
+ 
+diff --git a/camera/docs/metadata_definitions.xml b/camera/docs/metadata_definitions.xml
+index f947d6c2..03a01a0b 100644
+--- a/camera/docs/metadata_definitions.xml
++++ b/camera/docs/metadata_definitions.xml
+@@ -7712,14 +7712,81 @@ xsi:schemaLocation="http://schemas.android.com/service/camera/metadata/ metadata
+               RGB color space sRGB standardized as IEC 61966-2.1:1999.
+             </notes>
+             </value>
++            <value visibility="system" id="1">LINEAR_SRGB
++            <notes>
++              RGB color space sRGB standardized as IEC 61966-2.1:1999.
++            </notes>
++            </value>
++            <value visibility="system" id="2">EXTENDED_SRGB
++            <notes>
++              RGB color space scRGB-nl standardized as IEC 61966-2-2:2003.
++            </notes>
++            </value>
++            <value visibility="system" id="3">LINEAR_EXTENDED_SRGB
++            <notes>
++              RGB color space scRGB standardized as IEC 61966-2-2:2003.
++            </notes>
++            </value>
++            <value visibility="system" id="4">BT709
++            <notes>
++              RGB color space BT.709 standardized as Rec. ITU-R BT.709-5.
++            </notes>
++            </value>
++            <value visibility="system" id="5">BT2020
++            <notes>
++              RGB color space BT.2020 standardized as Rec. ITU-R BT.2020-1.
++            </notes>
++            </value>
++            <value visibility="system" id="6">DCI_P3
++            <notes>
++              RGB color space DCI-P3 standardized as SMPTE RP 431-2-2007.
++            </notes>
++            </value>
+             <value visibility="system" id="7">DISPLAY_P3
+             <notes>
+               RGB color space Display P3 based on SMPTE RP 431-2-2007 and IEC 61966-2.1:1999.
+             </notes>
+             </value>
+-            <value visibility="system" id="16">BT2020_HLG
++            <value visibility="system" id="8">NTSC_1953
+             <notes>
+-              RGB color space BT.2100 standardized as Hybrid Log Gamma encoding.
++              RGB color space NTSC, 1953 standard.
++            </notes>
++            </value>
++            <value visibility="system" id="9">SMPTE_C
++            <notes>
++              RGB color space SMPTE C.
++            </notes>
++            </value>
++            <value visibility="system" id="10">ADOBE_RGB
++            <notes>
++              RGB color space Adobe RGB (1998).
++            </notes>
++            </value>
++            <value visibility="system" id="11">PRO_PHOTO_RGB
++            <notes>
++              RGB color space ProPhoto RGB standardized as ROMM RGB ISO 22028-2:2013.
++            </notes>
++            </value>
++            <value visibility="system" id="12">ACES
++            <notes>
++              RGB color space ACES standardized as SMPTE ST 2065-1:2012.
++            </notes>
++            </value>
++            <value visibility="system" id="13">ACESCG
++            <notes>
++              RGB color space ACEScg standardized as Academy S-2014-004.
++            </notes>
++            </value>
++            <value visibility="system" id="14">CIE_XYZ
++            <notes>
++              XYZ color space CIE XYZ. This color space assumes standard illuminant D50 as its white
++              point.
++            </notes>
++            </value>
++            <value visibility="system" id="15">CIE_LAB
++            <notes>
++              Lab color space CIE L*a*b*. This color space uses CIE XYZ D50 as a profile conversion
++              space.
+             </notes>
+             </value>
+           </enum>
+@@ -7745,9 +7812,7 @@ xsi:schemaLocation="http://schemas.android.com/service/camera/metadata/ metadata
+             The possible values for #1 are the positive values of the
+             ANDROID_REQUEST_AVAILABLE_COLOR_SPACE_PROFILES_MAP_* enum, which is equivalent to
+             {@link android.graphics.ColorSpace.Named} and its ordinals. UNSPECIFIED should not be
+-            used here. It should be noted that not all {@link android.graphics.ColorSpace.Named}
+-            values are supported, only those in the
+-            ANDROID_REQUEST_AVAILABLE_COLOR_SPACE_PROFILES_MAP_* enum.
++            used here.
+ 
+             The possible values for #2 consist of the public-facing image/pixel formats, found at
+             {@link android.graphics.ImageFormat} and {@link android.graphics.PixelFormat}. Each map
+@@ -7761,6 +7826,11 @@ xsi:schemaLocation="http://schemas.android.com/service/camera/metadata/ metadata
+             If the device is not HDR-capable, #3 should always be
+             ANDROID_REQUEST_AVAILABLE_DYNAMIC_RANGE_PROFILES_STANDARD. Otherwise, #3 should be a
+             bitmap of the compatible ANDROID_REQUEST_AVAILABLE_DYNAMIC_RANGE_PROFILES_* values.
++
++            For devices that support P3 color, it is highly recommended to advertise
++            {@link android.graphics.ColorSpace.Named.DISPLAY_P3}
++            unless the profile is specifically designed for playback in a theater environment
++            ({@link android.graphics.ColorSpace.Named.DCI_P3}).
+           </hal_details>
+         </entry>
+       </static>
+diff --git a/camera/include/system/camera_metadata_tags.h b/camera/include/system/camera_metadata_tags.h
+index c73950e9..ab0be6ed 100644
+--- a/camera/include/system/camera_metadata_tags.h
++++ b/camera/include/system/camera_metadata_tags.h
+@@ -1092,8 +1092,22 @@ typedef enum camera_metadata_enum_android_request_available_dynamic_range_profil
+ typedef enum camera_metadata_enum_android_request_available_color_space_profiles_map {
+     ANDROID_REQUEST_AVAILABLE_COLOR_SPACE_PROFILES_MAP_UNSPECIFIED   = -1, // HIDL v3.9
+     ANDROID_REQUEST_AVAILABLE_COLOR_SPACE_PROFILES_MAP_SRGB          = 0, // HIDL v3.9
++    ANDROID_REQUEST_AVAILABLE_COLOR_SPACE_PROFILES_MAP_LINEAR_SRGB   = 1, // HIDL v3.9
++    ANDROID_REQUEST_AVAILABLE_COLOR_SPACE_PROFILES_MAP_EXTENDED_SRGB = 2, // HIDL v3.9
++    ANDROID_REQUEST_AVAILABLE_COLOR_SPACE_PROFILES_MAP_LINEAR_EXTENDED_SRGB
++                                                                      = 3, // HIDL v3.9
++    ANDROID_REQUEST_AVAILABLE_COLOR_SPACE_PROFILES_MAP_BT709         = 4, // HIDL v3.9
++    ANDROID_REQUEST_AVAILABLE_COLOR_SPACE_PROFILES_MAP_BT2020        = 5, // HIDL v3.9
++    ANDROID_REQUEST_AVAILABLE_COLOR_SPACE_PROFILES_MAP_DCI_P3        = 6, // HIDL v3.9
+     ANDROID_REQUEST_AVAILABLE_COLOR_SPACE_PROFILES_MAP_DISPLAY_P3    = 7, // HIDL v3.9
+-    ANDROID_REQUEST_AVAILABLE_COLOR_SPACE_PROFILES_MAP_BT2020_HLG    = 16, // HIDL v3.9
++    ANDROID_REQUEST_AVAILABLE_COLOR_SPACE_PROFILES_MAP_NTSC_1953     = 8, // HIDL v3.9
++    ANDROID_REQUEST_AVAILABLE_COLOR_SPACE_PROFILES_MAP_SMPTE_C       = 9, // HIDL v3.9
++    ANDROID_REQUEST_AVAILABLE_COLOR_SPACE_PROFILES_MAP_ADOBE_RGB     = 10, // HIDL v3.9
++    ANDROID_REQUEST_AVAILABLE_COLOR_SPACE_PROFILES_MAP_PRO_PHOTO_RGB = 11, // HIDL v3.9
++    ANDROID_REQUEST_AVAILABLE_COLOR_SPACE_PROFILES_MAP_ACES          = 12, // HIDL v3.9
++    ANDROID_REQUEST_AVAILABLE_COLOR_SPACE_PROFILES_MAP_ACESCG        = 13, // HIDL v3.9
++    ANDROID_REQUEST_AVAILABLE_COLOR_SPACE_PROFILES_MAP_CIE_XYZ       = 14, // HIDL v3.9
++    ANDROID_REQUEST_AVAILABLE_COLOR_SPACE_PROFILES_MAP_CIE_LAB       = 15, // HIDL v3.9
+ } camera_metadata_enum_android_request_available_color_space_profiles_map_t;
+ 
+ 
+diff --git a/camera/src/camera_metadata_asserts.cpp b/camera/src/camera_metadata_asserts.cpp
+index d721a1c1..930f5c75 100644
+--- a/camera/src/camera_metadata_asserts.cpp
++++ b/camera/src/camera_metadata_asserts.cpp
+@@ -1423,10 +1423,36 @@ static_assert(static_cast<int64_t>(ANDROID_REQUEST_AVAILABLE_COLOR_SPACE_PROFILE
+         == static_cast<int64_t>(::aidl::android::hardware::camera::metadata::RequestAvailableColorSpaceProfilesMap::ANDROID_REQUEST_AVAILABLE_COLOR_SPACE_PROFILES_MAP_UNSPECIFIED));
+ static_assert(static_cast<int64_t>(ANDROID_REQUEST_AVAILABLE_COLOR_SPACE_PROFILES_MAP_SRGB)
+         == static_cast<int64_t>(::aidl::android::hardware::camera::metadata::RequestAvailableColorSpaceProfilesMap::ANDROID_REQUEST_AVAILABLE_COLOR_SPACE_PROFILES_MAP_SRGB));
++static_assert(static_cast<int64_t>(ANDROID_REQUEST_AVAILABLE_COLOR_SPACE_PROFILES_MAP_LINEAR_SRGB)
++        == static_cast<int64_t>(::aidl::android::hardware::camera::metadata::RequestAvailableColorSpaceProfilesMap::ANDROID_REQUEST_AVAILABLE_COLOR_SPACE_PROFILES_MAP_LINEAR_SRGB));
++static_assert(static_cast<int64_t>(ANDROID_REQUEST_AVAILABLE_COLOR_SPACE_PROFILES_MAP_EXTENDED_SRGB)
++        == static_cast<int64_t>(::aidl::android::hardware::camera::metadata::RequestAvailableColorSpaceProfilesMap::ANDROID_REQUEST_AVAILABLE_COLOR_SPACE_PROFILES_MAP_EXTENDED_SRGB));
++static_assert(static_cast<int64_t>(ANDROID_REQUEST_AVAILABLE_COLOR_SPACE_PROFILES_MAP_LINEAR_EXTENDED_SRGB)
++        == static_cast<int64_t>(::aidl::android::hardware::camera::metadata::RequestAvailableColorSpaceProfilesMap::ANDROID_REQUEST_AVAILABLE_COLOR_SPACE_PROFILES_MAP_LINEAR_EXTENDED_SRGB));
++static_assert(static_cast<int64_t>(ANDROID_REQUEST_AVAILABLE_COLOR_SPACE_PROFILES_MAP_BT709)
++        == static_cast<int64_t>(::aidl::android::hardware::camera::metadata::RequestAvailableColorSpaceProfilesMap::ANDROID_REQUEST_AVAILABLE_COLOR_SPACE_PROFILES_MAP_BT709));
++static_assert(static_cast<int64_t>(ANDROID_REQUEST_AVAILABLE_COLOR_SPACE_PROFILES_MAP_BT2020)
++        == static_cast<int64_t>(::aidl::android::hardware::camera::metadata::RequestAvailableColorSpaceProfilesMap::ANDROID_REQUEST_AVAILABLE_COLOR_SPACE_PROFILES_MAP_BT2020));
++static_assert(static_cast<int64_t>(ANDROID_REQUEST_AVAILABLE_COLOR_SPACE_PROFILES_MAP_DCI_P3)
++        == static_cast<int64_t>(::aidl::android::hardware::camera::metadata::RequestAvailableColorSpaceProfilesMap::ANDROID_REQUEST_AVAILABLE_COLOR_SPACE_PROFILES_MAP_DCI_P3));
+ static_assert(static_cast<int64_t>(ANDROID_REQUEST_AVAILABLE_COLOR_SPACE_PROFILES_MAP_DISPLAY_P3)
+         == static_cast<int64_t>(::aidl::android::hardware::camera::metadata::RequestAvailableColorSpaceProfilesMap::ANDROID_REQUEST_AVAILABLE_COLOR_SPACE_PROFILES_MAP_DISPLAY_P3));
+-static_assert(static_cast<int64_t>(ANDROID_REQUEST_AVAILABLE_COLOR_SPACE_PROFILES_MAP_BT2020_HLG)
+-        == static_cast<int64_t>(::aidl::android::hardware::camera::metadata::RequestAvailableColorSpaceProfilesMap::ANDROID_REQUEST_AVAILABLE_COLOR_SPACE_PROFILES_MAP_BT2020_HLG));
++static_assert(static_cast<int64_t>(ANDROID_REQUEST_AVAILABLE_COLOR_SPACE_PROFILES_MAP_NTSC_1953)
++        == static_cast<int64_t>(::aidl::android::hardware::camera::metadata::RequestAvailableColorSpaceProfilesMap::ANDROID_REQUEST_AVAILABLE_COLOR_SPACE_PROFILES_MAP_NTSC_1953));
++static_assert(static_cast<int64_t>(ANDROID_REQUEST_AVAILABLE_COLOR_SPACE_PROFILES_MAP_SMPTE_C)
++        == static_cast<int64_t>(::aidl::android::hardware::camera::metadata::RequestAvailableColorSpaceProfilesMap::ANDROID_REQUEST_AVAILABLE_COLOR_SPACE_PROFILES_MAP_SMPTE_C));
++static_assert(static_cast<int64_t>(ANDROID_REQUEST_AVAILABLE_COLOR_SPACE_PROFILES_MAP_ADOBE_RGB)
++        == static_cast<int64_t>(::aidl::android::hardware::camera::metadata::RequestAvailableColorSpaceProfilesMap::ANDROID_REQUEST_AVAILABLE_COLOR_SPACE_PROFILES_MAP_ADOBE_RGB));
++static_assert(static_cast<int64_t>(ANDROID_REQUEST_AVAILABLE_COLOR_SPACE_PROFILES_MAP_PRO_PHOTO_RGB)
++        == static_cast<int64_t>(::aidl::android::hardware::camera::metadata::RequestAvailableColorSpaceProfilesMap::ANDROID_REQUEST_AVAILABLE_COLOR_SPACE_PROFILES_MAP_PRO_PHOTO_RGB));
++static_assert(static_cast<int64_t>(ANDROID_REQUEST_AVAILABLE_COLOR_SPACE_PROFILES_MAP_ACES)
++        == static_cast<int64_t>(::aidl::android::hardware::camera::metadata::RequestAvailableColorSpaceProfilesMap::ANDROID_REQUEST_AVAILABLE_COLOR_SPACE_PROFILES_MAP_ACES));
++static_assert(static_cast<int64_t>(ANDROID_REQUEST_AVAILABLE_COLOR_SPACE_PROFILES_MAP_ACESCG)
++        == static_cast<int64_t>(::aidl::android::hardware::camera::metadata::RequestAvailableColorSpaceProfilesMap::ANDROID_REQUEST_AVAILABLE_COLOR_SPACE_PROFILES_MAP_ACESCG));
++static_assert(static_cast<int64_t>(ANDROID_REQUEST_AVAILABLE_COLOR_SPACE_PROFILES_MAP_CIE_XYZ)
++        == static_cast<int64_t>(::aidl::android::hardware::camera::metadata::RequestAvailableColorSpaceProfilesMap::ANDROID_REQUEST_AVAILABLE_COLOR_SPACE_PROFILES_MAP_CIE_XYZ));
++static_assert(static_cast<int64_t>(ANDROID_REQUEST_AVAILABLE_COLOR_SPACE_PROFILES_MAP_CIE_LAB)
++        == static_cast<int64_t>(::aidl::android::hardware::camera::metadata::RequestAvailableColorSpaceProfilesMap::ANDROID_REQUEST_AVAILABLE_COLOR_SPACE_PROFILES_MAP_CIE_LAB));
+ 
+ static_assert(static_cast<int32_t>(ANDROID_SCALER_AVAILABLE_FORMATS_RAW16)
+         == static_cast<int32_t>(::aidl::android::hardware::camera::metadata::ScalerAvailableFormats::ANDROID_SCALER_AVAILABLE_FORMATS_RAW16));
+diff --git a/camera/src/camera_metadata_tag_info.c b/camera/src/camera_metadata_tag_info.c
+index 59494d29..af622d56 100644
+--- a/camera/src/camera_metadata_tag_info.c
++++ b/camera/src/camera_metadata_tag_info.c
+@@ -2691,12 +2691,64 @@ int camera_metadata_enum_snprint(uint32_t tag,
+                     msg = "SRGB";
+                     ret = 0;
+                     break;
++                case ANDROID_REQUEST_AVAILABLE_COLOR_SPACE_PROFILES_MAP_LINEAR_SRGB:
++                    msg = "LINEAR_SRGB";
++                    ret = 0;
++                    break;
++                case ANDROID_REQUEST_AVAILABLE_COLOR_SPACE_PROFILES_MAP_EXTENDED_SRGB:
++                    msg = "EXTENDED_SRGB";
++                    ret = 0;
++                    break;
++                case ANDROID_REQUEST_AVAILABLE_COLOR_SPACE_PROFILES_MAP_LINEAR_EXTENDED_SRGB:
++                    msg = "LINEAR_EXTENDED_SRGB";
++                    ret = 0;
++                    break;
++                case ANDROID_REQUEST_AVAILABLE_COLOR_SPACE_PROFILES_MAP_BT709:
++                    msg = "BT709";
++                    ret = 0;
++                    break;
++                case ANDROID_REQUEST_AVAILABLE_COLOR_SPACE_PROFILES_MAP_BT2020:
++                    msg = "BT2020";
++                    ret = 0;
++                    break;
++                case ANDROID_REQUEST_AVAILABLE_COLOR_SPACE_PROFILES_MAP_DCI_P3:
++                    msg = "DCI_P3";
++                    ret = 0;
++                    break;
+                 case ANDROID_REQUEST_AVAILABLE_COLOR_SPACE_PROFILES_MAP_DISPLAY_P3:
+                     msg = "DISPLAY_P3";
+                     ret = 0;
+                     break;
+-                case ANDROID_REQUEST_AVAILABLE_COLOR_SPACE_PROFILES_MAP_BT2020_HLG:
+-                    msg = "BT2020_HLG";
++                case ANDROID_REQUEST_AVAILABLE_COLOR_SPACE_PROFILES_MAP_NTSC_1953:
++                    msg = "NTSC_1953";
++                    ret = 0;
++                    break;
++                case ANDROID_REQUEST_AVAILABLE_COLOR_SPACE_PROFILES_MAP_SMPTE_C:
++                    msg = "SMPTE_C";
++                    ret = 0;
++                    break;
++                case ANDROID_REQUEST_AVAILABLE_COLOR_SPACE_PROFILES_MAP_ADOBE_RGB:
++                    msg = "ADOBE_RGB";
++                    ret = 0;
++                    break;
++                case ANDROID_REQUEST_AVAILABLE_COLOR_SPACE_PROFILES_MAP_PRO_PHOTO_RGB:
++                    msg = "PRO_PHOTO_RGB";
++                    ret = 0;
++                    break;
++                case ANDROID_REQUEST_AVAILABLE_COLOR_SPACE_PROFILES_MAP_ACES:
++                    msg = "ACES";
++                    ret = 0;
++                    break;
++                case ANDROID_REQUEST_AVAILABLE_COLOR_SPACE_PROFILES_MAP_ACESCG:
++                    msg = "ACESCG";
++                    ret = 0;
++                    break;
++                case ANDROID_REQUEST_AVAILABLE_COLOR_SPACE_PROFILES_MAP_CIE_XYZ:
++                    msg = "CIE_XYZ";
++                    ret = 0;
++                    break;
++                case ANDROID_REQUEST_AVAILABLE_COLOR_SPACE_PROFILES_MAP_CIE_LAB:
++                    msg = "CIE_LAB";
+                     ret = 0;
+                     break;
+                 default:
+@@ -6187,15 +6239,93 @@ int camera_metadata_enum_value(uint32_t tag,
+                     ret = 0;
+                     break;
+                 }
++                enumName = "LINEAR_SRGB";
++                if (strncmp(name, enumName, size) == 0) {
++                    *value = ANDROID_REQUEST_AVAILABLE_COLOR_SPACE_PROFILES_MAP_LINEAR_SRGB;
++                    ret = 0;
++                    break;
++                }
++                enumName = "EXTENDED_SRGB";
++                if (strncmp(name, enumName, size) == 0) {
++                    *value = ANDROID_REQUEST_AVAILABLE_COLOR_SPACE_PROFILES_MAP_EXTENDED_SRGB;
++                    ret = 0;
++                    break;
++                }
++                enumName = "LINEAR_EXTENDED_SRGB";
++                if (strncmp(name, enumName, size) == 0) {
++                    *value = ANDROID_REQUEST_AVAILABLE_COLOR_SPACE_PROFILES_MAP_LINEAR_EXTENDED_SRGB;
++                    ret = 0;
++                    break;
++                }
++                enumName = "BT709";
++                if (strncmp(name, enumName, size) == 0) {
++                    *value = ANDROID_REQUEST_AVAILABLE_COLOR_SPACE_PROFILES_MAP_BT709;
++                    ret = 0;
++                    break;
++                }
++                enumName = "BT2020";
++                if (strncmp(name, enumName, size) == 0) {
++                    *value = ANDROID_REQUEST_AVAILABLE_COLOR_SPACE_PROFILES_MAP_BT2020;
++                    ret = 0;
++                    break;
++                }
++                enumName = "DCI_P3";
++                if (strncmp(name, enumName, size) == 0) {
++                    *value = ANDROID_REQUEST_AVAILABLE_COLOR_SPACE_PROFILES_MAP_DCI_P3;
++                    ret = 0;
++                    break;
++                }
+                 enumName = "DISPLAY_P3";
+                 if (strncmp(name, enumName, size) == 0) {
+                     *value = ANDROID_REQUEST_AVAILABLE_COLOR_SPACE_PROFILES_MAP_DISPLAY_P3;
+                     ret = 0;
+                     break;
+                 }
+-                enumName = "BT2020_HLG";
++                enumName = "NTSC_1953";
++                if (strncmp(name, enumName, size) == 0) {
++                    *value = ANDROID_REQUEST_AVAILABLE_COLOR_SPACE_PROFILES_MAP_NTSC_1953;
++                    ret = 0;
++                    break;
++                }
++                enumName = "SMPTE_C";
++                if (strncmp(name, enumName, size) == 0) {
++                    *value = ANDROID_REQUEST_AVAILABLE_COLOR_SPACE_PROFILES_MAP_SMPTE_C;
++                    ret = 0;
++                    break;
++                }
++                enumName = "ADOBE_RGB";
++                if (strncmp(name, enumName, size) == 0) {
++                    *value = ANDROID_REQUEST_AVAILABLE_COLOR_SPACE_PROFILES_MAP_ADOBE_RGB;
++                    ret = 0;
++                    break;
++                }
++                enumName = "PRO_PHOTO_RGB";
++                if (strncmp(name, enumName, size) == 0) {
++                    *value = ANDROID_REQUEST_AVAILABLE_COLOR_SPACE_PROFILES_MAP_PRO_PHOTO_RGB;
++                    ret = 0;
++                    break;
++                }
++                enumName = "ACES";
++                if (strncmp(name, enumName, size) == 0) {
++                    *value = ANDROID_REQUEST_AVAILABLE_COLOR_SPACE_PROFILES_MAP_ACES;
++                    ret = 0;
++                    break;
++                }
++                enumName = "ACESCG";
++                if (strncmp(name, enumName, size) == 0) {
++                    *value = ANDROID_REQUEST_AVAILABLE_COLOR_SPACE_PROFILES_MAP_ACESCG;
++                    ret = 0;
++                    break;
++                }
++                enumName = "CIE_XYZ";
++                if (strncmp(name, enumName, size) == 0) {
++                    *value = ANDROID_REQUEST_AVAILABLE_COLOR_SPACE_PROFILES_MAP_CIE_XYZ;
++                    ret = 0;
++                    break;
++                }
++                enumName = "CIE_LAB";
+                 if (strncmp(name, enumName, size) == 0) {
+-                    *value = ANDROID_REQUEST_AVAILABLE_COLOR_SPACE_PROFILES_MAP_BT2020_HLG;
++                    *value = ANDROID_REQUEST_AVAILABLE_COLOR_SPACE_PROFILES_MAP_CIE_LAB;
+                     ret = 0;
+                     break;
+                 }
+-- 
+2.34.1
+
