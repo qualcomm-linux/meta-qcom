@@ -13,9 +13,9 @@ overrides:
         meta-qcom-distro:
             commit: 775dc8c710f382ef8183000e7f0d40bc7dcf61cc
         meta-openembedded:
-            commit: 9af4488d46cb4fd4c0d2d64820c86225ebd6ac71
+            commit: a43f0d532c399458cae44ce66f3799a220fbb497
         meta-virtualization:
-            commit: 959a211fbba059689a1c3a1b24fe0abb9224281a
+            commit: 781735b97ae5013cacabbecd38e6da6b510cf3fb
         meta-audioreach:
             commit: c80ebf5be5cc47a1bab1acb4b1987c8cd8b48218
         meta-selinux:
