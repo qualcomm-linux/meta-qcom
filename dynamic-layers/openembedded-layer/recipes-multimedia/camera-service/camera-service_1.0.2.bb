@@ -17,6 +17,7 @@ COMPATIBLE_MACHINE:aarch64 = "(.*)"
 inherit cmake pkgconfig systemd
 
 DEPENDS += "\
+    camerametadata \
     camxcommon-headers \
     gtest \
     protobuf-camx \

@@ -1,0 +1,33 @@
+From 1639670372188747286a7f5fc4d3193fa2c8b9d9 Mon Sep 17 00:00:00 2001
+From: Stoyan Kushlev <skushlev@qti.qualcomm.com>
+Date: Thu, 4 Jun 2026 17:35:30 +0300
+Subject: [PATCH 4/4] CAMX: CORE: Add support for YUV 420 P010.
+
+Camera HAL has support for YUV 420 P010 image format.
+We need to add the YUV 420 P010 image format in the
+scaler available formats to support this format.
+
+Add support for YUV 420 P010.
+
+Upstream-Status: Inappropriate [Qualcomm specific change]
+
+Signed-off-by: Stoyan Kushlev <skushlev@qti.qualcomm.com>
+---
+ camera/include/system/camera_metadata_tags.h | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/camera/include/system/camera_metadata_tags.h b/camera/include/system/camera_metadata_tags.h
+index df9e08ba..bc862f50 100644
+--- a/camera/include/system/camera_metadata_tags.h
++++ b/camera/include/system/camera_metadata_tags.h
+@@ -1153,6 +1153,7 @@ typedef enum camera_metadata_enum_android_scaler_available_formats {
+     ANDROID_SCALER_AVAILABLE_FORMATS_RAW10                           = 0x25, // HIDL v3.4
+     ANDROID_SCALER_AVAILABLE_FORMATS_RAW12                           = 0x26, // HIDL v3.4
+     ANDROID_SCALER_AVAILABLE_FORMATS_RAW14                           = 0x2C, // HIDL v3.12
++    ANDROID_SCALER_AVAILABLE_FORMATS_YCbCr_420_P010                  = 0x36, // HIDL v3.4
+     ANDROID_SCALER_AVAILABLE_FORMATS_Y8                              = 0x20203859, // HIDL v3.4
+ } camera_metadata_enum_android_scaler_available_formats_t;
+ 
+-- 
+2.34.1
+
