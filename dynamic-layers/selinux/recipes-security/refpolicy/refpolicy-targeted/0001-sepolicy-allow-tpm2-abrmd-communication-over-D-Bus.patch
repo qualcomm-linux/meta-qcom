@@ -1,0 +1,81 @@
+From 0b6bab473e8c3e0aaf8c1899180c74faf43b1aeb Mon Sep 17 00:00:00 2001
+From: Khalid Faisal Ansari <khalid.ansari@oss.qualcomm.com>
+Date: Tue, 23 Jun 2026 18:17:15 +0530
+Subject: [PATCH] sepolicy: allow tpm2-abrmd communication over D-Bus
+
+Allow initrc_t and unconfined_t to communicate with
+tpm2-abrmd over D-Bus and enable system_dbusd_t stream
+connections required for TPM2 resource manager operation.
+
+Fixes AVC denials observed during TPM2 usage.
+
+Upstream-Status: Inappropriate [Qualcomm specific change]
+
+Signed-off-by: Khalid Faisal Ansari <khalid.ansari@oss.qualcomm.com>
+---
+ policy/modules/services/dbus.te     |  1 +
+ policy/modules/services/tpm2.if     | 16 ++++++++++++++++
+ policy/modules/system/init.te       |  1 +
+ policy/modules/system/unconfined.te |  1 +
+ 4 files changed, 19 insertions(+)
+
+diff --git a/policy/modules/services/dbus.te b/policy/modules/services/dbus.te
+index 2c7851438..36ffcd99e 100644
+--- a/policy/modules/services/dbus.te
++++ b/policy/modules/services/dbus.te
+@@ -422,3 +422,4 @@ optional_policy(`
+ 
+ allow dbusd_unconfined { dbusd_session_bus_client dbusd_system_bus_client }:dbus send_msg;
+ allow dbusd_unconfined { system_dbusd_t session_bus_type }:dbus all_dbus_perms;
++tpm2_dbus_stream_connect(system_dbusd_t)
+diff --git a/policy/modules/services/tpm2.if b/policy/modules/services/tpm2.if
+index 2ed89eab5..56df48970 100644
+--- a/policy/modules/services/tpm2.if
++++ b/policy/modules/services/tpm2.if
+@@ -224,3 +224,19 @@ interface(`tpm2_rw_abrmd_pipes',`
+ 	allow $1 tpm2_abrmd_t:fd use;
+ 	allow $1 tpm2_abrmd_t:fifo_file rw_fifo_file_perms;
+ ')
++
++########################################
++## <summary>
++## Allow dbus daemon to communicate with tpm2 abrmd over unix socket
++## </summary>
++## <param name="domain">
++## Domain allowed to communicate
++## </param>
++#
++interface(`tpm2_dbus_stream_connect',`
++    gen_require(`
++        type tpm2_abrmd_t;
++    ')
++
++    allow $1 tpm2_abrmd_t:unix_stream_socket rw_stream_socket_perms;
++')
+diff --git a/policy/modules/system/init.te b/policy/modules/system/init.te
+index 388c9b28c..baf8771f6 100644
+--- a/policy/modules/system/init.te
++++ b/policy/modules/system/init.te
+@@ -403,6 +403,7 @@ ifdef(`init_systemd',`
+ 	dev_manage_sysfs_dirs(init_t)
+ 	dev_relabel_sysfs_dirs(init_t)
+ 	dev_read_usbfs(initrc_t)
++	tpm2_dbus_chat_abrmd(initrc_t)
+ 	# sandbox
+ 	dev_create_null_dev(init_t)
+ 	dev_create_zero_dev(init_t)
+diff --git a/policy/modules/system/unconfined.te b/policy/modules/system/unconfined.te
+index 1c98f5e85..15624c205 100644
+--- a/policy/modules/system/unconfined.te
++++ b/policy/modules/system/unconfined.te
+@@ -277,6 +277,7 @@ unconfined_domain_noaudit(unconfined_execmem_t)
+ optional_policy(`
+ 	unconfined_dbus_chat(unconfined_execmem_t)
+ ')
++tpm2_dbus_chat_abrmd(unconfined_t)
+ 
+ ########################################
+ #
+-- 
+2.34.1
+
