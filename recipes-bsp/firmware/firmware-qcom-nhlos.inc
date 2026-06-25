@@ -42,7 +42,7 @@ def get_nhlos_path(path):
 
 do_compile:prepend() {
     if [ -z "${NHLOS_URI}" ] ; then
-        bbwarn "${PN}: not packaging NHLOS firmware. Please provide HNLOS_URI"
+        bbdebug 1 "${PN}: not packaging NHLOS firmware. Please provide HNLOS_URI"
     else
         unpack_nhlos_image ${UNPACKDIR}/${@get_nhlos_path(d.getVar("NHLOS_URI"))}
         handle_nonhlos_image
