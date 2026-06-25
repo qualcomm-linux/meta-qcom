@@ -1,0 +1,58 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/siemens/kas/master/kas/schema-kas.json
+
+header:
+  version: 14
+
+distro: qcom-distro
+
+defaults:
+  repos:
+    branch: wrynose
+
+repos:
+  meta-qcom-distro:
+    url: https://github.com/qualcomm-linux/meta-qcom-distro
+
+  meta-openembedded:
+    url: https://github.com/openembedded/meta-openembedded
+    patches:
+      plain:
+        repo: meta-qcom
+        path: patches/meta-oe/0001-mariadb-fix-building-for-the-ARMv8.3-A-and-later-sys.patch
+    layers:
+      meta-filesystems:
+      meta-gnome:
+      meta-multimedia:
+      meta-networking:
+      meta-oe:
+      meta-python:
+      meta-xfce:
+
+  meta-virtualization:
+    url: https://git.yoctoproject.org/git/meta-virtualization
+
+  meta-audioreach:
+    url: https://github.com/AudioReach/meta-audioreach
+    branch: master
+
+  meta-selinux:
+    url: https://git.yoctoproject.org/meta-selinux
+
+  meta-updater:
+    url: https://github.com/uptane/meta-updater
+
+  meta-security:
+    url: https://git.yoctoproject.org/meta-security
+    layers:
+      .:
+      meta-tpm:
+
+local_conf_header:
+  virtualization:
+    SKIP_META_VIRT_SANITY_CHECK = "1"
+
+target:
+  - qcom-multimedia-image
+  - qcom-multimedia-proprietary-image
+  - qcom-container-orchestration-image
+  - qcom-networking-image

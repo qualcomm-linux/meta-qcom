@@ -17,10 +17,6 @@ repos:
     layers:
       meta:
 
-  meta-lts-mixins:
-    url: https://git.yoctoproject.org/meta-lts-mixins
-    branch: wrynose/linux-firmware
-
   bitbake:
     url: https://github.com/openembedded/bitbake
     branch: "2.18"

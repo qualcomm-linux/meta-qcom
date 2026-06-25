@@ -2,8 +2,12 @@ SUMMARY = "Firmware for Qualcomm M.2 wireless attachments"
 
 inherit packagegroup
 
-QCOM_M2_WIFI_FIRMWARE = " \
+QCOM_M2_MIXIN_WIFI_FIRMWARE = " \
     linux-firmware-ath12k-qcc2072 \
+"
+
+QCOM_M2_WIFI_FIRMWARE = " \
+    ${@bb.utils.contains('BBFILE_COLLECTIONS', 'lts-linux-firmware-mixin', '${QCOM_M2_MIXIN_WIFI_FIRMWARE}', '', d)} \
     linux-firmware-ath12k-qcn9274 \
     linux-firmware-ath12k-wcn7850 \
 "
