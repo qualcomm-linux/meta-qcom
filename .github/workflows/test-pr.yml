@@ -8,6 +8,15 @@ on:
     types:
       - completed
 
+# Cancel an in-flight test run for a PR when a newer commit (re)triggers the
+# build. This stops an orphaned commit's run from continuing to publish the
+# "Test Results" check and PR comment after the PR head has moved on, so the
+# only surviving results belong to the current head. Re-running failed jobs on
+# an existing run keeps the same run id and is therefore not cancelled.
+concurrency:
+  group: test-pr-${{ github.event.workflow_run.head_repository.full_name }}-${{ github.event.workflow_run.head_branch }}
+  cancel-in-progress: true
+
 permissions:
   checks: write
   pull-requests: write
@@ -93,6 +102,10 @@ jobs:
         with:
           file-path: pr-comment.txt
           pr-number: ${{ steps.pr_comment_prep.outputs.pr_number }}
+          # Update a single tagged comment per PR instead of posting a new one on
+          # every run, so the PR shows one current result instead of accumulating
+          # stale comments (one per run / per superseded commit).
+          comment-tag: test-results
 
   publish-test-results:
     uses: ./.github/workflows/publish-results.yml
