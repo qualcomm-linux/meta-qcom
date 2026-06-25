@@ -1,4 +1,8 @@
 FILESEXTRAPATHS:prepend := "${THISDIR}/${PN}:"
+
+# use latest version of linux-firmware from the lts-linux-firmware-mixin layer
+DEFAULT_PREFERENCE:layer-lts-linux-firmware-mixin:qcom = "1"
+
 # To make the layer pass yocto-check-layer only inherit update-alternatives when building for qualcomm
 ALTERNATIVES_CLASS = ""
 ALTERNATIVES_CLASS:qcom = "update-alternatives"
