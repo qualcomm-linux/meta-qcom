@@ -21,7 +21,7 @@ PACKAGE_INSTALL += " \
     util-linux \
     util-linux-chrt \
     util-linux-lsblk \
-    weston-examples \
+    ${@bb.utils.contains('DISTRO_FEATURES', 'opengl', 'weston-examples', '', d)} \
 "
 
 PACKAGE_INSTALL:append:aarch64 = " \
@@ -50,9 +50,12 @@ PACKAGE_INSTALL_openembedded-layer += " \
     makedumpfile \
     mbw \
     ncurses-terminfo-base \
-    pipewire-tools \
     sysbench \
     tinymembench \
     tiobench \
     whetstone \
+"
+
+PACKAGE_INSTALL_multimedia-layer += " \
+    pipewire-tools \
 "

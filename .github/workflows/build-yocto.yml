@@ -299,6 +299,14 @@ jobs:
           # Additional builds for specific machines
           - machine: qcom-armv8a
             distro:
+                name: nodistro-nogl
+                yamlfile: ':ci/test-oe-nogl.yml'
+            kernel:
+                type: default
+                dirname: ""
+                yamlfile: ""
+          - machine: qcom-armv8a
+            distro:
                 name: qcom-distro
                 yamlfile: ':ci/qcom-distro.yml'
             kernel:
