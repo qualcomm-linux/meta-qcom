@@ -19,6 +19,7 @@ require conf/machine/include/fit-dtb-compatible.inc
 
 # ---------- hamoa  ----------
 FIT_DTB_COMPATIBLE[qcom_hamoa-evk-camx] = "hamoa-iot-evk hamoa-evk-camx"
+FIT_DTB_COMPATIBLE[qcom_hamoa-evk-camx-staging] = "hamoa-iot-evk hamoa-evk-camx hamoa-staging"
 
 # ---------- purwa -----------
 FIT_DTB_COMPATIBLE[qcom_purwa-evk-camx] = "purwa-iot-evk purwa-evk-camx"
@@ -210,3 +211,6 @@ FIT_DTB_COMPATIBLE[qcom_qcs6490-iot-camx-staging] = \
     "qcs6490-rb3gen2 qcs6490-rb3gen2-vision-mezzanine-camx kodiak-staging"
 FIT_DTB_COMPATIBLE[qcom_qcs6490-iot-subtype2-camx-staging] = \
     "qcs6490-rb3gen2 qcs6490-rb3gen2-vision-mezzanine-camx kodiak-staging"
+# ---------- glymur ----------
+FIT_DTB_COMPATIBLE[qcom_glymur-crd-staging] = "glymur-crd glymur-staging"
+FIT_DTB_COMPATIBLE[qcom_glymur-crd-camx] = "glymur-crd glymur-crd-camx"
