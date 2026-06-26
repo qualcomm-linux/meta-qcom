@@ -189,14 +189,32 @@ jobs:
           INPUTS_MACHINE: ${{ inputs.machine }}
           INPUTS_DISTRO_NAME: ${{ inputs.distro_name }}
           INPUTS_KERNEL_DIRNAME: ${{ inputs.kernel_dirname }}
-
+      - name: Set S3 object tag
+        run: |
+          if [[ "$GITHUB_EVENT_NAME" = "pull_request" ]]; then
+            echo "OBJECT_TAG=retention=7d" >> $GITHUB_ENV
+            echo "BUILD_TYPE=buildType=PR" >> $GITHUB_ENV
+          elif [[ "$GITHUB_EVENT_NAME" = "push" ]]; then
+            echo "OBJECT_TAG=retention=15d" >> $GITHUB_ENV
+            echo "BUILD_TYPE=buildType=PUSH" >> $GITHUB_ENV
+          elif [[ "$GITHUB_WORKFLOW" == *"Nightly Build"* ]]; then
+            echo "OBJECT_TAG=retention=15d" >> $GITHUB_ENV
+            echo "BUILD_TYPE=buildType=NIGHTLY" >> $GITHUB_ENV
+          else
+            echo "OBJECT_TAG=retention=15d" >> $GITHUB_ENV
+            echo "BUILD_TYPE=buildType=OTHER" >> $GITHUB_ENV
+          fi
+      
       - name: Upload artifacts to S3 bucket
-        uses: qualcomm-linux/upload-private-artifact-action@aws-v4
+        uses: qualcomm-linux/upload-private-artifact-action@aws-v5
         id: upload_s3_artifacts
         with:
           path: ./uploads
           destination: ${{ github.repository_owner }}/${{ github.event.repository.name }}/${{ github.run_id }}-${{ github.run_attempt }}/
           s3_bucket: qcom-prd-gh-artifacts
+          object_tag: ${{ env.OBJECT_TAG }}
+          build_type: ${{ env.BUILD_TYPE }}
+          build_branch: "branch=${{ github.base_ref || github.ref_name }}"
 
       - name: "Print output"
         shell: bash
