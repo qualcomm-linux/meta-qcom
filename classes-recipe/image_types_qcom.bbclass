@@ -156,6 +156,13 @@ create_qcomflash_pkg() {
                 install -m 0644 ${DEPLOY_DIR_IMAGE}/${QCOM_BOOT_FILES_SUBDIR}/spinor/${QCOM_CDT_FILE}.bin spinor/cdt.bin
             fi
 
+            # uefi dtb
+            if [ -n "${QCOM_UEFI_DTB}" ] && \
+                    [ -f "${DEPLOY_DIR_IMAGE}/${QCOM_BOOT_FILES_SUBDIR}/spinor/${QCOM_UEFI_DTB}" ]; then
+                find spinor -maxdepth 1 -type f -name 'uefi_dtbs*.xz' -delete
+                install -m 0644 "${DEPLOY_DIR_IMAGE}/${QCOM_BOOT_FILES_SUBDIR}/spinor/${QCOM_UEFI_DTB}" spinor/uefi_dtbs.xz
+            fi
+
             # dtb image
             if [ -n "${QCOM_DTB_FILE}" ]; then
                 install -m 0644 ${DEPLOY_DIR_IMAGE}/dtb-${QCOM_DTB_DEFAULT}-image.vfat spinor/${QCOM_DTB_FILE}
