@@ -15,4 +15,7 @@ python split_imsdk_module_packages () {
 
 PACKAGES += "${PN}-configs"
 
-FILES:${PN}-configs = "${sysconfdir}/configs/"
+FILES:${PN}-configs = " \
+    ${sysconfdir}/configs/ \
+    ${sysconfdir}/qimsdk/ \
+"
