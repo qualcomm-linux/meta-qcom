@@ -1,0 +1,69 @@
+From af94961759c7c92342a3db0506b677a15d57866a Mon Sep 17 00:00:00 2001
+From: Ricardo Salveti <ricardo.salveti@oss.qualcomm.com>
+Date: Fri, 26 Jun 2026 20:06:36 +0000
+Subject: [PATCH] tests/amdgpu/amd_basic: use a portable spin-wait CPU hint
+
+wait_for_value64() polls a 64-bit value and, when no polling interval is
+requested, issues a CPU spin-loop hint through inline assembly. The hint
+was hardcoded to the x86 'pause' instruction, which is not a valid
+mnemonic on other architectures, so assembling it on aarch64 (or arm)
+fails:
+
+  {standard input}: Error: unknown mnemonic `pause' -- `pause'
+
+The breakage is easy to miss because it only surfaces in unoptimized
+builds. wait_for_value64() is static and both of its callers pass a
+non-zero compile-time constant for check_interval_ns. At -O2 the compiler
+inlines the function, folds 'check_interval_ns > 0' to true and discards
+the else branch holding the 'pause' as dead code, so the bad instruction
+never reaches the assembler and the build happens to succeed. At -O0
+there is no inlining, constant propagation or dead-code elimination: the
+branch is emitted as written and the assembler rejects it. Builds that
+select a debug / unoptimized build type therefore fail to cross-build the
+amdgpu tests for non-x86 targets, while optimized builds do not.
+
+Define a cpu_relax() helper guarded by architecture, mirroring the idiom
+already used in tests/kms_cursor_legacy.c: __builtin_ia32_pause() on x86,
+a 'yield' (the equivalent spin-loop hint) on aarch64/arm, and a plain
+compiler barrier elsewhere. This assembles on every architecture
+regardless of optimization level.
+
+Assisted-by: Claude:claude-opus-4-8
+Upstream-Status: Submitted [https://lists.freedesktop.org/archives/igt-dev/2026-June/112474.html]
+Signed-off-by: Ricardo Salveti <ricardo.salveti@oss.qualcomm.com>
+---
+ tests/amdgpu/amd_basic.c | 11 ++++++++++-
+ 1 file changed, 10 insertions(+), 1 deletion(-)
+
+diff --git a/tests/amdgpu/amd_basic.c b/tests/amdgpu/amd_basic.c
+index 3ad023472..5278fc572 100644
+--- a/tests/amdgpu/amd_basic.c
++++ b/tests/amdgpu/amd_basic.c
+@@ -20,6 +20,15 @@
+ #include "lib/amdgpu/amdgpu_asic_addr.h"
+ #include "lib/amdgpu/amd_utils.h"
+ 
++/* CPU hint for spin-wait loops */
++#if defined(__x86_64__) || defined(__i386__)
++#define cpu_relax()	__builtin_ia32_pause()
++#elif defined(__aarch64__) || defined(__arm__)
++#define cpu_relax()	asm volatile("yield" ::: "memory")
++#else
++#define cpu_relax()	asm volatile("" ::: "memory")
++#endif
++
+ #define BUFFER_SIZE (8 * 1024)
+ 
+ /**
+@@ -704,7 +713,7 @@ static int wait_for_value64(volatile uint64_t *ptr, uint64_t expected,
+ 		if (check_interval_ns > 0)
+ 			nanosleep(&sleep_time, NULL);
+ 		else
+-			__asm__ __volatile__("pause" ::: "memory"); /* CPU hint for spin-wait */
++			cpu_relax();
+ 	}
+ }
+ 
+-- 
+2.43.0
+
