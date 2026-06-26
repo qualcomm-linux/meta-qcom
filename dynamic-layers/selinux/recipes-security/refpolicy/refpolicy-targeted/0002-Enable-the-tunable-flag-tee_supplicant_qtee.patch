@@ -1,0 +1,41 @@
+From 777c675bd4c68ed690e1dab97623b7dd2fcb3ae0 Mon Sep 17 00:00:00 2001
+From: Wenjia Zhang <wenjia.zhang@oss.qualcomm.com>
+Date: Thu, 11 Jun 2026 14:29:58 +0800
+Subject: [PATCH] Enable the tunable flag tee_supplicant_qtee
+
+Set the status of tunable flag tee_supplicant_qtee to true.
+The KLMT devices (Kodiak, Lemans, Monaco and Talos) in
+meta-qcom need qtee_supplicant to get below permissions.
+
+To request sys_rawio capability;
+To block system suspend by wake_lock;
+To open/read /sys/firmware/devicetree/base/compatible;
+To write /sys/power/wake_lock;
+To read /var;
+To visit /var/lib;
+To access /proc/cmdline;
+To send logs to systemd journal;
+
+Upstream-Status: Inappropriate [This tunable is only relevant on qtee_supplicant available on Qualcomm platforms]
+
+Signed-off-by: Wenjia Zhang <wenjia.zhang@oss.qualcomm.com>
+---
+ policy/modules/services/tee_supplicant.te | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/policy/modules/services/tee_supplicant.te b/policy/modules/services/tee_supplicant.te
+index ab0cc2e8c..c3710e13e 100644
+--- a/policy/modules/services/tee_supplicant.te
++++ b/policy/modules/services/tee_supplicant.te
+@@ -10,7 +10,7 @@ policy_module(tee_supplicant)
+ ##  Enable rules specific to qtee_supplicant.
+ ##  </p>
+ ## </desc>
+-gen_tunable(tee_supplicant_qtee, false)
++gen_tunable(tee_supplicant_qtee, true)
+ 
+ type tee_supplicant_t;
+ type tee_supplicant_exec_t;
+-- 
+2.43.0
+
