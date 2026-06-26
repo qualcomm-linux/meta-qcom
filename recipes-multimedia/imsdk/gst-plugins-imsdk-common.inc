@@ -41,6 +41,9 @@ PACKAGECONFIG[tflite]       = "-DENABLE_GST_PLUGIN_MLTFLITE=1, -DENABLE_GST_PLUG
 PACKAGECONFIG[tools]        = "-DENABLE_GST_PLUGIN_TOOLS=1, -DENABLE_GST_PLUGIN_TOOLS=0, gstreamer1.0-rtsp-server"
 PACKAGECONFIG[videoproc]    = "-DENABLE_GST_VIDEOPROC_PLUGINS=1, -DENABLE_GST_VIDEOPROC_PLUGINS=0, cairo"
 
+PACKAGECONFIG[app-builder-cpp]    = "-DENABLE_APP_BUILDER_CPP=1, -DENABLE_APP_BUILDER_CPP=0, yaml-cpp"
+PACKAGECONFIG[app-builder-python] = "-DENABLE_APP_BUILDER_PYTHON=1 -DPYTHON_SITEPACKAGES_DIR=${PYTHON_SITEPACKAGES_DIR}, -DENABLE_APP_BUILDER_PYTHON=0, "
+
 # The TFLite plugin loads the TensorFlow Lite library at runtime using dlopen(). To ensure runtime availability, added runtime dependency on 'tensorflow-lite'.
 RDEPENDS:${PN}-qtimltflite += "tensorflow-lite"
 
