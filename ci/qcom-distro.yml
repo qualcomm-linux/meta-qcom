@@ -30,7 +30,7 @@ repos:
     branch: main
 
   meta-virtualization:
-    url: https://git.yoctoproject.org/git/meta-virtualization
+    url: https://git.yoctoproject.org/meta-virtualization
 
   meta-audioreach:
     url: https://github.com/AudioReach/meta-audioreach
