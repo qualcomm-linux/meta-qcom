@@ -1,6 +1,6 @@
-From 6eb99a23c15f43e84c88b156a575668180e33b2b Mon Sep 17 00:00:00 2001
+From 44c57cd405bda4974f7e10450ab8c74ab4cedf48 Mon Sep 17 00:00:00 2001
 From: Rohit Biradar <rohibira@qti.qualcomm.com>
-Date: Wed, 25 Feb 2026 22:01:44 +0530
+Date: Wed, 10 Jun 2026 00:05:54 +0530
 Subject: [PATCH] Add SELinux policy for nhx.sh
 
 The proprietary camera testing script 'nhx.sh' currently executes in the
@@ -23,11 +23,11 @@ Upstream-Status: Inappropriate [Qualcomm specific change]
 
 Signed-off-by: Rohit Biradar <rohibira@qti.qualcomm.com>
 ---
- policy/modules.conf                 |   6 ++
- policy/modules/services/qcom_nhx.fc |  10 +++
- policy/modules/services/qcom_nhx.if |  75 +++++++++++++++++
- policy/modules/services/qcom_nhx.te |  73 +++++++++++++++++++++++++++++
- 4 files changed, 246 insertions(+)
+ policy/modules.conf                 |  6 ++
+ policy/modules/services/qcom_nhx.fc | 10 ++++
+ policy/modules/services/qcom_nhx.if | 89 ++++++++++++++++++++++++++++
+ policy/modules/services/qcom_nhx.te | 91 +++++++++++++++++++++++++++++
+ 4 files changed, 196 insertions(+)
  create mode 100644 policy/modules.conf
  create mode 100644 policy/modules/services/qcom_nhx.fc
  create mode 100644 policy/modules/services/qcom_nhx.if
@@ -47,7 +47,7 @@ index 0000000..f2dda81
 +qcom_nhx = module
 diff --git a/policy/modules/services/qcom_nhx.fc b/policy/modules/services/qcom_nhx.fc
 new file mode 100644
-index 0000000..0fa22b0
+index 0000000..3562ddf
 --- /dev/null
 +++ b/policy/modules/services/qcom_nhx.fc
 @@ -0,0 +1,10 @@
@@ -63,10 +63,10 @@ index 0000000..0fa22b0
 +/var/cache/camera(/.*)?    gen_context(system_u:object_r:qcom_camera_cache_t,s0)
 diff --git a/policy/modules/services/qcom_nhx.if b/policy/modules/services/qcom_nhx.if
 new file mode 100644
-index 0000000..58bfd17
+index 0000000..2f73e8f
 --- /dev/null
 +++ b/policy/modules/services/qcom_nhx.if
-@@ -0,0 +1,75 @@
+@@ -0,0 +1,89 @@
 +## <summary>Qualcomm NHX camera test launcher</summary>
 +
 +########################################
@@ -158,10 +158,10 @@ index 0000000..58bfd17
 +')
 diff --git a/policy/modules/services/qcom_nhx.te b/policy/modules/services/qcom_nhx.te
 new file mode 100644
-index 0000000..aad78c5
+index 0000000..9ad9303
 --- /dev/null
 +++ b/policy/modules/services/qcom_nhx.te
-@@ -0,0 +1,73 @@
+@@ -0,0 +1,91 @@
 +policy_module(qcom_nhx, 1.0)
 +
 +########################################
@@ -186,7 +186,7 @@ index 0000000..aad78c5
 +#
 +
 +gen_require(`
-+	type initrc_t;
++	type initrc_t, etc_runtime_t, v4l_device_t, usr_t;
 +')
 +
 +dev_read_sysfs(qcom_nhx_launcher_t)
@@ -195,9 +195,12 @@ index 0000000..aad78c5
 +corecmd_exec_bin(qcom_nhx_launcher_t)
 +libs_use_ld_so(qcom_nhx_launcher_t)
 +libs_use_shared_libs(qcom_nhx_launcher_t)
-+allow qcom_nhx_launcher_t qcom_nhx_launcher_t:fifo_file { read write getattr };
++allow qcom_nhx_launcher_t qcom_nhx_launcher_t:fifo_file { read write getattr ioctl };
++allow qcom_nhx_launcher_t usr_t:lnk_file read;
 +domtrans_pattern(qcom_nhx_launcher_t, qcom_nhx_exec_t, qcom_nhx_t)
 +allow qcom_nhx_launcher_t initrc_t:unix_stream_socket { read write ioctl getattr };
++allow qcom_nhx_launcher_t etc_runtime_t:file getattr;
++allow qcom_nhx_launcher_t v4l_device_t:chr_file getattr;
 +
 +########################################
 +#
@@ -207,6 +210,8 @@ index 0000000..aad78c5
 +gen_require(`
 +	type dma_device_t, fastrpc_device_t, fastrpc_secure_device_t, v4l_device_t;
 +	type var_t, debugfs_t, fs_t, default_t;
++	type etc_runtime_t, usr_t, node_t, unreserved_port_t, tracefs_t;
++	type sysctl_vm_overcommit_t, sysctl_vm_t;
 +')
 +
 +dev_read_sysfs(qcom_nhx_t)
@@ -217,7 +222,7 @@ index 0000000..aad78c5
 +libs_use_ld_so(qcom_nhx_t)
 +libs_use_shared_libs(qcom_nhx_t)
 +allow qcom_nhx_t qcom_nhx_t:fifo_file { read write getattr };
-+allow qcom_nhx_t qcom_camera_cache_t:file { read write open getattr create };
++allow qcom_nhx_t qcom_camera_cache_t:file { read write open getattr create append };
 +allow qcom_nhx_t qcom_camera_cache_t:dir { search read write add_name open getattr create };
 +filetrans_pattern(qcom_nhx_t, var_t, qcom_camera_cache_t, dir, "camera")
 +filetrans_pattern(qcom_nhx_t, qcom_camera_cache_t, qcom_camera_cache_t, file)
@@ -235,5 +240,19 @@ index 0000000..aad78c5
 +allow qcom_nhx_t default_t:dir { search read open };
 +allow qcom_nhx_t debugfs_t:dir search;
 +allow qcom_nhx_t self:process setsched;
++allow qcom_nhx_t etc_runtime_t:file { open read };
++allow qcom_nhx_t default_t:file { getattr open write };
++allow qcom_nhx_t node_t:tcp_socket node_bind;
++allow qcom_nhx_t self:qipcrtr_socket { create getattr read setopt write };
++allow qcom_nhx_t self:tcp_socket { bind create listen };
++allow qcom_nhx_t sysctl_vm_overcommit_t:file { open read };
++allow qcom_nhx_t sysctl_vm_t:dir search;
++allow qcom_nhx_t tracefs_t:dir search;
++allow qcom_nhx_t tracefs_t:file { open write };
++allow qcom_nhx_t unreserved_port_t:tcp_socket name_bind;
++allow qcom_nhx_t usr_t:dir { read watch };
++allow qcom_nhx_t usr_t:file { getattr open read };
++allow qcom_nhx_t usr_t:lnk_file read;
 -- 
 2.34.1
+
