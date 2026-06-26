@@ -55,7 +55,8 @@ FILES:${PN} += "${@bb.utils.contains('DISTRO_FEATURES', 'opencl', '${CAMX_OPENCL
 # - Library files are Pre-stripped  (already-stripped)
 # - skel binaries/library are not AArch64 (arch mismatch)      (arch)
 # - Files are installed under /usr/share (non-libdir path) (libdir)
-INSANE_SKIP:${PN}-skel += " arch libdir already-stripped"
+# - .so symlink is used for runtime DSP usage, not a dev artifact (dev-so)
+INSANE_SKIP:${PN}-skel += " arch libdir already-stripped dev-so"
 
 # Preserve ${PN}-skel naming to avoid ambiguity in package identification.
 DEBIAN_NOAUTONAME:${PN}-skel = "1"
