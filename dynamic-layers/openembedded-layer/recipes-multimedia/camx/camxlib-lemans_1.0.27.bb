@@ -21,6 +21,9 @@ do_install:append() {
     cp -r ${S}/usr/share/camx ${D}${datadir}
     # copy skel file
     cp -r ${S}/usr/share/qcom ${D}${datadir}
+    install -d ${D}${datadir}/qcom/qcs8300/Qualcomm/QCS8300-RIDE/dsp/cdsp
+    ln -sf ../../../../../sa8775p/Qualcomm/SA8775P-RIDE/dsp/cdsp/libbitml_nsp_73nb_skel.so \
+        ${D}${datadir}/qcom/qcs8300/Qualcomm/QCS8300-RIDE/dsp/cdsp/libbitml_nsp_73nb_skel.so
 
     # Remove OpenCL-dependent libraries when opencl is not enabled.
     if ${@bb.utils.contains('DISTRO_FEATURES', 'opencl', 'false', 'true', d)}; then
