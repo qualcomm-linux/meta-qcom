@@ -1,0 +1,14 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/siemens/kas/master/kas/schema-kas.json
+#
+# Include this kas file to enable test ECDSA PKI keys for Qualcomm
+# secure-boot image signing.  These keys are for CI / development use
+# only and must NOT be used in production images.
+#
+# Usage: kas build ci/base.yml:ci/<machine>.yml:ci/secure-boot.yml:ci/ecdsa-secure-boot-test-keys.yml
+
+header:
+  version: 14
+
+local_conf_header:
+  ecdsa-secure-boot-test-keys: |
+    QCOM_FIRMWARE_SIGN_KEY_DIR = "${LAYERDIR_qcom}/ci/test-keys/ecdsa"
