@@ -2,6 +2,9 @@
 # Include the file to be able to dissect the image using handle_nonhlos_image()
 # If NHLOS_URI is defined, the image will be dissected automatically
 #
+# If specified, NHLOS_LICENSE and NHLOS_LICENSE_MD5 specify the licence file
+# (and the checksum) for the NHLOS binaries.
+#
 # Additionally PROPRIETARY_URI can be specified. Its contents will be used to
 # provide additional firmware files (like Adreno or IPA), which are not a part
 # of NON-HLOS.bin.
@@ -17,6 +20,12 @@ DEPENDS += "pil-squasher-native mtools-native"
 # Conditionally populate SRC_URI. We have to do it here rather than in python
 # script to let base.bbclass to pick up dependencies
 SRC_URI += "${NHLOS_URI} ${PROPRIETARY_URI}${@ ';subdir=proprietary' if d.getVar('PROPRIETARY_URI') != '' else '' }"
+
+inherit nhlos-license
+
+python() {
+    handle_nhlos_license(d, d.getVar("SPLIT_FIRMWARE_PACKAGES").split())
+}
 
 unpack_nhlos_image() {
     mkdir -p ${B}/firmware
@@ -51,6 +60,8 @@ do_compile:prepend() {
 
 do_install:prepend() {
     if [ -n "${NHLOS_URI}${PROPRIETARY_URI}" ] ; then
+        install_nhlos_license
+
         install -d ${D}${FW_QCOM_PATH}
 
         for fw in ${FW_QCOM_LIST} ; do

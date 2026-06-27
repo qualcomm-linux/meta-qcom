@@ -14,10 +14,10 @@ LICENSE = "CLOSED"
 DEPENDS = "firmware-${DSP_PKG_NAME}"
 S = "${UNPACKDIR}"
 
-require hexagon-dspso.inc
-
 # Only package SLPI binaries, ADSP and CDSP are provided by
 # hexagon-dsp-binaries
-PACKAGES = " \
+DSPSO_PACKAGES = " \
     hexagon-dsp-binaries-${DSP_PKG_NAME}-sdsp \
 "
+
+require hexagon-dspso.inc

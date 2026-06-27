@@ -7,6 +7,12 @@ DSPSO_SOC ?= "unknown"
 DSPSO_VENDOR ?= "Qualcomm"
 DSPSO_DEVICE ?= "Unknown"
 
+DSPSO_PACKAGES ?= " \
+    hexagon-dsp-binaries-${DSP_PKG_NAME}-adsp \
+    hexagon-dsp-binaries-${DSP_PKG_NAME}-cdsp \
+    hexagon-dsp-binaries-${DSP_PKG_NAME}-sdsp \
+"
+
 # Conditionally populate SRC_URI. We have to do it here rather than in python
 # script to let base.bbclass to pick up dependencies
 SRC_URI += "${DSPSO_URI}"
@@ -25,12 +31,16 @@ DEPENDS += "e2fsprogs-native"
 
 inherit allarch
 
-PACKAGES = " \
+PACKAGES:append = " \
     hexagon-dsp-binaries-${DSP_PKG_NAME}-config \
-    hexagon-dsp-binaries-${DSP_PKG_NAME}-adsp \
-    hexagon-dsp-binaries-${DSP_PKG_NAME}-cdsp \
-    hexagon-dsp-binaries-${DSP_PKG_NAME}-sdsp \
+    ${DSPSO_PACKAGES} \
 "
+
+inherit nhlos-license
+
+python() {
+    handle_nhlos_license(d, d.getVar("DSPSO_PACKAGES").split())
+}
 
 RDEPENDS:hexagon-dsp-binaries-${DSP_PKG_NAME}-adsp = "${DSPSO_CONFIG}"
 RDEPENDS:hexagon-dsp-binaries-${DSP_PKG_NAME}-cdsp = "${DSPSO_CONFIG}"
@@ -97,6 +107,9 @@ do_compile:prepend() {
 }
 
 do_install:prepend() {
+    if [ -n "${DSPSO_URI}" ] ; then
+        install_nhlos_license
+    fi
     if [ -f "${B}/${BPN}.yaml" ] ; then
         install -d ${D}${DSP_QCOM_CONF_D_PATH}
         install -m 0644 ${B}/${BPN}.yaml ${D}${DSP_QCOM_CONF_D_PATH}
