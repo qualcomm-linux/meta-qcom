@@ -10,7 +10,7 @@ LICENSE = "BSD-3-Clause-Clear"
 LIC_FILES_CHKSUM = "file://LICENSE.txt;md5=2998c54c288b081076c9af987bdf4838"
 
 SRC_URI = "git://github.com/qualcomm/userspace-resource-manager-extensions.git;protocol=https;branch=main;tag=v${PV}"
-SRCREV = "4ff35e6422395014d4d1c2bae99d59cf2722d5a6"
+SRCREV = "2dc58413f7b6def0e1b2be94e4a6f3c4e2605297"
 
 inherit cmake
 
