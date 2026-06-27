@@ -16,6 +16,7 @@ RRECOMMENDS:${PN}-firmware = " \
     linux-firmware-qcom-qcm6490-audio \
     linux-firmware-qcom-qcm6490-compute \
     linux-firmware-qcom-qcm6490-ipa \
+    linux-firmware-qcom-qcm6490-modem \
     linux-firmware-qcom-qcm6490-qupv3fw \
     linux-firmware-qcom-vpu \
 "
