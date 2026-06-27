@@ -21,6 +21,7 @@ DEPENDS += "\
     gtest \
     protobuf-camx \
     protobuf-camx-native \
+    camerametadata \
 "
 
 SYSTEMD_SERVICE:${PN} = "cam-server.service"
