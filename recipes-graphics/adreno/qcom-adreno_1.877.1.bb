@@ -10,8 +10,8 @@ LIC_FILES_CHKSUM = "file://NO.LOGIN.BINARY.LICENSE.QTI.pdf;md5=4ceffe94cb40cdce6
 
 # no top-level dir in the archive, unpack to subdir to prevent UNPACKDIR pollution
 SRC_URI = "https://qartifactory-edge.qualcomm.com/artifactory/qsc_releases/software/chip/component/gfx-adreno.le.0.0/${PBT_BUILD_DATE}/prebuilt_yocto/${BPN}_${PV}_armv8a.tar.gz;subdir=${BP}"
-PBT_BUILD_DATE = "260608"
-SRC_URI[sha256sum] = "771b20cd2bfbbef08f707af6ff8c765027c8351cf24c767d9698ca9acda2c599"
+PBT_BUILD_DATE = "260623"
+SRC_URI[sha256sum] = "e72fa32f25eb4f20964ed0fd3192576305c40e8ef4d7d90cf9669f231dea195e"
 
 # These are listed here in order to identify RDEPENDS
 DEPENDS += " glib-2.0 libdrm \
@@ -89,7 +89,9 @@ do_install () {
         cp ${S}/etc/OpenCL/vendors/adrenocl.icd ${D}${sysconfdir}/OpenCL/vendors/
     else
         rm  ${D}${libdir}/libOpenCL_*.so* \
-            ${D}${libdir}/libCB*.so*
+            ${D}${libdir}/libCB*.so* \
+            ${D}${libdir}/libkcl*.so* \
+            ${D}${libdir}/libkernelmanager*.so*
     fi
 
     install -d ${D}${sysconfdir}/modprobe.d
@@ -112,6 +114,8 @@ FILES:${PN}-vulkan = "${libdir}/libvulkan_*.so.* \
                       ${datadir}/vulkan/icd.d/adrenovk.json"
 FILES:${PN}-cl = "${libdir}/libOpenCL_*.so.* \
                   ${libdir}/libCB.so.1 \
+                  ${libdir}/libkcl.so.1 \
+                  ${libdir}/libkernelmanager.so.1 \
                   ${sysconfdir}/OpenCL/vendors/adrenocl.icd"
 FILES:${PN} = ""
 
