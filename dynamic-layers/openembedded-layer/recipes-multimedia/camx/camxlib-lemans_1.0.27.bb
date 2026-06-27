@@ -21,6 +21,9 @@ do_install:append() {
     cp -r ${S}/usr/share/camx ${D}${datadir}
     # copy skel file
     cp -r ${S}/usr/share/qcom ${D}${datadir}
+    install -d ${D}${datadir}/qcom/qcs8300/Qualcomm/QCS8300-RIDE/dsp/cdsp
+    ln -sf ../../../../../sa8775p/Qualcomm/SA8775P-RIDE/dsp/cdsp/libbitml_nsp_73nb_skel.so \
+        ${D}${datadir}/qcom/qcs8300/Qualcomm/QCS8300-RIDE/dsp/cdsp/libbitml_nsp_73nb_skel.so
 
     # Remove OpenCL-dependent libraries when opencl is not enabled.
     if ${@bb.utils.contains('DISTRO_FEATURES', 'opencl', 'false', 'true', d)}; then
@@ -55,7 +58,8 @@ FILES:${PN} += "${@bb.utils.contains('DISTRO_FEATURES', 'opencl', '${CAMX_OPENCL
 # - Library files are Pre-stripped  (already-stripped)
 # - skel binaries/library are not AArch64 (arch mismatch)      (arch)
 # - Files are installed under /usr/share (non-libdir path) (libdir)
-INSANE_SKIP:${PN}-skel += " arch libdir already-stripped"
+# - .so symlink is used for runtime DSP usage, not a dev artifact (dev-so)
+INSANE_SKIP:${PN}-skel += " arch libdir already-stripped dev-so"
 
 # Preserve ${PN}-skel naming to avoid ambiguity in package identification.
 DEBIAN_NOAUTONAME:${PN}-skel = "1"
