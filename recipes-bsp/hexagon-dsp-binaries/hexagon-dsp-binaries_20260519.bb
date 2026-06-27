@@ -13,7 +13,7 @@ LICENSE = " \
 LIC_FILES_CHKSUM = "\
     file://LICENSE.qcom;md5=56e86b6c508490dadc343f39468b5f5e \
     file://LICENSE.qcom-2;md5=165287851294f2fb8ac8cbc5e24b02b0 \
-    file://WHENCE;md5=7033ed3790855866a84dedb1a5a215d4 \
+    file://WHENCE;md5=460998f82d40da8b9e249f0eef02bdf5 \
     file://conf.d/hexagon-dsp-binaries-qualcomm-iq9075-evk.yaml;endline=2;md5=077232564320a8fce4ea446daad3d726 \
 "
 NO_GENERIC_LICENSE[dspso-qcom] = "LICENSE.qcom"
@@ -22,11 +22,15 @@ NO_GENERIC_LICENSE[dspso-WHENCE] = "WHENCE"
 
 SRC_URI = " \
     git://github.com/linux-msm/dsp-binaries;protocol=https;branch=trunk;tag=${PV} \
+    file://0001-shikra-update-CDSP-dynamic-modules-for-shikra-platfo.patch \
+    file://0002-shikra-add-links-for-Shikra-CQM-EVK-and-Shikra-IQS-E.patch \
 "
 
 SRCREV = "f4021ba695bc1335666561d4f96fd3844cf88c45"
 
 inherit allarch
+
+PATCHTOOL:qcom = "git"
 
 INHIBIT_PACKAGE_DEBUG_SPLIT = "1"
 INHIBIT_PACKAGE_STRIP = "1"
@@ -68,7 +72,9 @@ PACKAGE_BEFORE_PN =+ "\
     ${PN}-qcom-sa8775p-ride-gdsp \
     ${PN}-qcom-sdm845-hdk-adsp \
     ${PN}-qcom-sdm845-hdk-cdsp \
+    ${PN}-qcom-shikra-cqm-evk-cdsp \
     ${PN}-qcom-shikra-cqs-evk-cdsp \
+    ${PN}-qcom-shikra-iqs-evk-cdsp \
     ${PN}-qcom-sm8750-mtp-adsp \
     ${PN}-qcom-sm8750-mtp-cdsp \
     ${PN}-radxa-dragon-q6a-adsp \
@@ -120,7 +126,9 @@ LICENSE:${PN}-qcom-sa8775p-ride-cdsp = "dspso-qcom-2"
 LICENSE:${PN}-qcom-sa8775p-ride-gdsp = "dspso-qcom-2"
 LICENSE:${PN}-qcom-sdm845-hdk-adsp = "dspso-qcom"
 LICENSE:${PN}-qcom-sdm845-hdk-cdsp = "dspso-qcom"
+LICENSE:${PN}-qcom-shikra-cqm-evk-cdsp = "dspso-qcom-2"
 LICENSE:${PN}-qcom-shikra-cqs-evk-cdsp = "dspso-qcom-2"
+LICENSE:${PN}-qcom-shikra-iqs-evk-cdsp = "dspso-qcom-2"
 LICENSE:${PN}-qcom-sm8750-mtp-adsp = "dspso-qcom-2"
 LICENSE:${PN}-qcom-sm8750-mtp-cdsp = "dspso-qcom-2"
 LICENSE:${PN}-radxa-dragon-q6a-adsp = "dspso-qcom"
@@ -176,7 +184,11 @@ RDEPENDS:${PN}-qcom-qcs8300-ride-gdsp = "${PN}-conf linux-firmware-qcom-qcs8300-
 RDEPENDS:${PN}-qcom-sa8775p-ride-adsp = "${PN}-conf linux-firmware-qcom-sa8775p-audio (= 1:${PV})"
 RDEPENDS:${PN}-qcom-sa8775p-ride-cdsp = "${PN}-conf linux-firmware-qcom-sa8775p-compute (= 1:${PV})"
 RDEPENDS:${PN}-qcom-sa8775p-ride-gdsp = "${PN}-conf linux-firmware-qcom-sa8775p-generalpurpose (= 1:${PV})"
+RDEPENDS:${PN}-qcom-shikra-cqm-evk-cdsp = "${PN}-conf linux-firmware-qcom-shikra-compute (= 1:${PV})"
+RDEPENDS:${PN}-qcom-shikra-cqm-evk-cdsp += "${PN}-qcom-shikra-cqs-evk-cdsp"
 RDEPENDS:${PN}-qcom-shikra-cqs-evk-cdsp = "${PN}-conf linux-firmware-qcom-shikra-compute (= 1:${PV})"
+RDEPENDS:${PN}-qcom-shikra-iqs-evk-cdsp = "${PN}-conf linux-firmware-qcom-shikra-compute (= 1:${PV})"
+RDEPENDS:${PN}-qcom-shikra-iqs-evk-cdsp += "${PN}-qcom-shikra-cqs-evk-cdsp"
 RDEPENDS:${PN}-qcom-sm8750-mtp-adsp = "${PN}-conf linux-firmware-qcom-sa8775p-audio (= 1:${PV})"
 RDEPENDS:${PN}-qcom-sm8750-mtp-cdsp = "${PN}-conf linux-firmware-qcom-sa8775p-compute (= 1:${PV})"
 RDEPENDS:${PN}-radxa-dragon-q6a-adsp = "${PN}-conf linux-firmware-qcom-qcs6490-radxa-dragon-q6a-audio (= 1:${PV})"
@@ -231,7 +243,9 @@ FILES:${PN}-qcom-sa8775p-ride-cdsp = "${datadir}/qcom/sa8775p/Qualcomm/SA8775P-R
 FILES:${PN}-qcom-sa8775p-ride-gdsp = "${datadir}/qcom/sa8775p/Qualcomm/SA8775P-RIDE/dsp/gdsp*"
 FILES:${PN}-qcom-sdm845-hdk-adsp = "${datadir}/qcom/sdm845/Qualcomm/SDM845-HDK/dsp/adsp"
 FILES:${PN}-qcom-sdm845-hdk-cdsp = "${datadir}/qcom/sdm845/Qualcomm/SDM845-HDK/dsp/cdsp*"
+FILES:${PN}-qcom-shikra-cqm-evk-cdsp = "${datadir}/qcom/shikra/Qualcomm/Shikra-CQM-EVK/dsp/cdsp"
 FILES:${PN}-qcom-shikra-cqs-evk-cdsp = "${datadir}/qcom/shikra/Qualcomm/Shikra-CQS-EVK/dsp/cdsp"
+FILES:${PN}-qcom-shikra-iqs-evk-cdsp = "${datadir}/qcom/shikra/Qualcomm/Shikra-IQS-EVK/dsp/cdsp"
 FILES:${PN}-qcom-sm8750-mtp-adsp = "${datadir}/qcom/sm8750/Qualcomm/SM8750-MTP/dsp/adsp"
 FILES:${PN}-qcom-sm8750-mtp-cdsp = "${datadir}/qcom/sm8750/Qualcomm/SM8750-MTP/dsp/cdsp*"
 FILES:${PN}-radxa-dragon-q6a-adsp = "${datadir}/qcom/qcs6490/radxa/dragon-q6a/dsp/adsp"
@@ -265,7 +279,9 @@ INSANE_SKIP:${PN}-qcom-qcs8300-ride-gdsp = "arch libdir file-rdeps textrel"
 INSANE_SKIP:${PN}-qcom-sa8775p-ride-adsp = "arch libdir file-rdeps textrel"
 INSANE_SKIP:${PN}-qcom-sa8775p-ride-cdsp = "arch libdir file-rdeps textrel"
 INSANE_SKIP:${PN}-qcom-sa8775p-ride-gdsp = "arch libdir file-rdeps textrel"
+INSANE_SKIP:${PN}-qcom-shikra-cqm-evk-cdsp = "arch libdir file-rdeps textrel"
 INSANE_SKIP:${PN}-qcom-shikra-cqs-evk-cdsp = "arch libdir file-rdeps textrel"
+INSANE_SKIP:${PN}-qcom-shikra-iqs-evk-cdsp = "arch libdir file-rdeps textrel"
 INSANE_SKIP:${PN}-qcom-sm8750-mtp-adsp = "arch libdir file-rdeps textrel"
 INSANE_SKIP:${PN}-qcom-sm8750-mtp-cdsp = "arch libdir file-rdeps textrel"
 INSANE_SKIP:${PN}-radxa-dragon-q6a-adsp = "arch libdir file-rdeps textrel"
@@ -294,7 +310,9 @@ SKIP_FILEDEPS:${PN}-qcom-qcs8300-ride-gdsp = "1"
 SKIP_FILEDEPS:${PN}-qcom-sa8775p-ride-adsp = "1"
 SKIP_FILEDEPS:${PN}-qcom-sa8775p-ride-cdsp = "1"
 SKIP_FILEDEPS:${PN}-qcom-sa8775p-ride-gdsp = "1"
+SKIP_FILEDEPS:${PN}-qcom-shikra-cqm-evk-cdsp = "1"
 SKIP_FILEDEPS:${PN}-qcom-shikra-cqs-evk-cdsp = "1"
+SKIP_FILEDEPS:${PN}-qcom-shikra-iqs-evk-cdsp = "1"
 SKIP_FILEDEPS:${PN}-qcom-sm8750-mtp-adsp = "1"
 SKIP_FILEDEPS:${PN}-qcom-sm8750-mtp-cdsp = "1"
 SKIP_FILEDEPS:${PN}-radxa-dragon-q6a-adsp = "1"

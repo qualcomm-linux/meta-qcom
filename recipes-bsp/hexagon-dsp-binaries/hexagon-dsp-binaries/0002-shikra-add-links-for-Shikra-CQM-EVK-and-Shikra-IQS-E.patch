@@ -1,0 +1,62 @@
+From 371e0c02691499cc443ae58f0f04a8dd4c972f3f Mon Sep 17 00:00:00 2001
+From: Vivek Puar <vpuar@qti.qualcomm.com>
+Date: Thu, 18 Jun 2026 17:23:59 +0530
+Subject: [PATCH] shikra: add links for Shikra CQM EVK and Shikra IQS EVK
+
+Add links for Shikra CQM EVK, Shikra IQS EVK platforms based on Shikra
+CQS EVK.
+
+Signed-off-by: Vivek Puar <vpuar@qti.qualcomm.com>
+Upstream-Status: Backport [https://github.com/linux-msm/hexagon-dsp-binaries/commit/8253352a04e60570efbd01136671d586e85caa26]
+---
+ conf.d/hexagon-dsp-binaries-qualcomm-shikra-cqm-evk.yaml | 6 ++++++
+ conf.d/hexagon-dsp-binaries-qualcomm-shikra-iqs-evk.yaml | 6 ++++++
+ config.txt                                               | 6 ++++++
+ 3 files changed, 18 insertions(+)
+ create mode 100644 conf.d/hexagon-dsp-binaries-qualcomm-shikra-cqm-evk.yaml
+ create mode 100644 conf.d/hexagon-dsp-binaries-qualcomm-shikra-iqs-evk.yaml
+
+diff --git a/conf.d/hexagon-dsp-binaries-qualcomm-shikra-cqm-evk.yaml b/conf.d/hexagon-dsp-binaries-qualcomm-shikra-cqm-evk.yaml
+new file mode 100644
+index 0000000..32382eb
+--- /dev/null
++++ b/conf.d/hexagon-dsp-binaries-qualcomm-shikra-cqm-evk.yaml
+@@ -0,0 +1,6 @@
++# SPDX-License-Identifier: MIT
++# Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
++# yaml-language-server: $schema=schema.json
++machines:
++  Qualcomm Technologies, Inc. Shikra CQM EVK:
++    DSP_LIBRARY_PATH: shikra/Qualcomm/Shikra-CQM-EVK/dsp
+diff --git a/conf.d/hexagon-dsp-binaries-qualcomm-shikra-iqs-evk.yaml b/conf.d/hexagon-dsp-binaries-qualcomm-shikra-iqs-evk.yaml
+new file mode 100644
+index 0000000..0d35d2e
+--- /dev/null
++++ b/conf.d/hexagon-dsp-binaries-qualcomm-shikra-iqs-evk.yaml
+@@ -0,0 +1,6 @@
++# SPDX-License-Identifier: MIT
++# Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
++# yaml-language-server: $schema=schema.json
++machines:
++  Qualcomm Technologies, Inc. Shikra IQS EVK:
++    DSP_LIBRARY_PATH: shikra/Qualcomm/Shikra-IQS-EVK/dsp
+diff --git a/config.txt b/config.txt
+index c74c8b3..649cc66 100644
+--- a/config.txt
++++ b/config.txt
+@@ -77,6 +77,12 @@ Install: glymur/Qualcomm/Glymur-CRD	cdsp	CDSP.HT.3.3-00311-GLYMUR-1
+ # Shikra CQS EVK
+ Install: shikra/Qualcomm/Shikra-CQS-EVK	cdsp	CDSP.VT.2.4.3-00088-SHIKRA-1
+ 
++# Shikra CQM EVK 
++Link: shikra/Qualcomm/Shikra-CQS-EVK/dsp/cdsp	shikra/Qualcomm/Shikra-CQM-EVK/dsp/cdsp
++
++# Shikra IQS EVK 
++Link: shikra/Qualcomm/Shikra-CQS-EVK/dsp/cdsp	shikra/Qualcomm/Shikra-IQS-EVK/dsp/cdsp
++
+ # Arduino Monza
+ Link: qcs8300/Qualcomm/QCS8300-RIDE/dsp/adsp	qcs8300/Arduino/Monza/dsp/adsp
+ Link: qcs8300/Qualcomm/QCS8300-RIDE/dsp/cdsp	qcs8300/Arduino/Monza/dsp/cdsp
+-- 
+2.34.1
+
