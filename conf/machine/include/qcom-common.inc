@@ -55,6 +55,7 @@ SERIAL_CONSOLES ?= "115200;ttyMSM0"
 # so this image would fit.
 INITRAMFS_MAXSIZE = "655360"
 # This initramfs is bigger than the others
+INITRAMFS_MAXSIZE:pn-initramfs-test-full-image = "983040"
 INITRAMFS_MAXSIZE:pn-initramfs-kerneltest-full-image = "983040"
 
 # Use systemd-boot as the EFI bootloader
