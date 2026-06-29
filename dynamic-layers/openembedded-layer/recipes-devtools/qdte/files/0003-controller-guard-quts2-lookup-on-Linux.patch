@@ -1,0 +1,43 @@
+From 3da82bee62fe3999968b0c3935a33d23b6149947 Mon Sep 17 00:00:00 2001
+From: Igor Opaniuk <igor.opaniuk@oss.qualcomm.com>
+Date: Sun, 14 Jun 2026 21:13:43 +0200
+Subject: [PATCH] controller: guard quts2 lookup on Linux
+
+flags.py:global_info defines a "quts2" key only in its Windows branch
+(it points at the secondary 64-bit "Program Files\Qualcomm\QUTS"
+install path). On Linux, only "quts" is present, so the QUTS startup
+probe in controller.py raises KeyError on the elif lookup before any
+QDTE logic gets a chance to run.
+
+Guard the second lookup with a containment check so the Linux path
+falls through cleanly. The QUTS toolchain is optional anyway -- the
+surrounding block silently ignores missing files via the
+os.path.exists chain that follows.
+
+Upstream-Status: Submitted [https://github.com/qualcomm/DTE/pull/N]
+Signed-off-by: Igor Opaniuk <igor.opaniuk@oss.qualcomm.com>
+---
+ controller.py | 5 ++++-
+ 1 file changed, 4 insertions(+), 1 deletion(-)
+
+diff --git a/controller.py b/controller.py
+index add04c3..e4c9850 100644
+--- a/controller.py
++++ b/controller.py
+@@ -86,9 +86,12 @@ import get_qsahara_files
+ 
+ QUTS_STATE = None
+ quts_path = None
++# The "quts2" key is only present in the Windows branch of
++# flags.py:global_info (see the platform check there).  Guard the
++# lookup so the Linux startup path does not raise KeyError.
+ if os.path.exists(gl_info["quts"]):
+     quts_path = gl_info["quts"]
+-elif os.path.exists(gl_info["quts2"]):
++elif "quts2" in gl_info and os.path.exists(gl_info["quts2"]):
+     quts_path = gl_info["quts2"]
+ if quts_path and os.path.exists(os.path.join(quts_path,'Common','ttypes.py'))\
+     and os.path.exists(os.path.join(quts_path,'ImageManagementService','ImageManagementService.py'))\
+-- 
+2.53.0
+

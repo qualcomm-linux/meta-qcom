@@ -10,6 +10,18 @@
 header:
   version: 14
 
+# meta-oe provides the `openembedded-layer` collection name, which gates
+# our local python3-pyfdt and qdte recipes under
+# dynamic-layers/openembedded-layer/ (see conf/layer.conf BBFILES_DYNAMIC).
+# meta-python is not required: pyfdt is shipped via the local recipe,
+# and qdte's other runtime deps (fs, pyfatfs, tkinter) are stubbed by
+# recipe-local patches when running --nogui.
+repos:
+  meta-openembedded:
+    url: https://github.com/openembedded/meta-openembedded
+    layers:
+      meta-oe:
+
 local_conf_header:
   capsule: |
     PREFERRED_PROVIDER_virtual/qcom-capsule-firmware = "firmware-qcom-capsule"
