@@ -30,6 +30,7 @@ do_install() {
     install -d ${D}${datadir}/qcom/qcs615/Qualcomm/QCS615-RIDE/dsp/cdsp
     install -d ${D}${datadir}/qcom/qcs8300/Qualcomm/QCS8300-RIDE/dsp/cdsp
     install -d ${D}${datadir}/qcom/sa8775p/Qualcomm/SA8775P-RIDE/dsp/cdsp
+    install -d ${D}${datadir}/qcom/shikra/Qualcomm/Shikra-CQS-EVK/dsp/cdsp
     install -d ${D}${datadir}/qcom/sm8750/Qualcomm/SM8750-MTP/dsp/cdsp
     install -d ${D}${datadir}/qcom/x1e80100/Qualcomm/Hamoa-IoT-EVK/dsp/cdsp
 
@@ -47,6 +48,7 @@ do_install() {
     install -m 0644 ${S}/usr/include/fastcv/fastcvExt.h ${D}${includedir}/fastcv/
 
     install -m 0644 ${S}/usr/lib/dsp/cdsp/cv/v65/TALOS_MOOREA/*.so ${D}${datadir}/qcom/qcs615/Qualcomm/QCS615-RIDE/dsp/cdsp
+    install -m 0644 ${S}/usr/lib/dsp/cdsp/cv/v66/SHIKRA/*.so ${D}${datadir}/qcom/shikra/Qualcomm/Shikra-CQS-EVK/dsp/cdsp
     install -m 0644 ${S}/usr/lib/dsp/cdsp/cv/v68/KODIAK/*.so ${D}${datadir}/qcom/qcm6490/Thundercomm/RB3gen2/dsp/cdsp
     install -m 0644 ${S}/usr/lib/dsp/cdsp/cv/v73/HAMOA/*.so ${D}${datadir}/qcom/x1e80100/Qualcomm/Hamoa-IoT-EVK/dsp/cdsp
     install -m 0644 ${S}/usr/lib/dsp/cdsp/cv/v73/LEMANS/*.so ${D}${datadir}/qcom/sa8775p/Qualcomm/SA8775P-RIDE/dsp/cdsp
@@ -68,6 +70,7 @@ PACKAGES += "\
     ${PN}-qcs615-ride-dsp \
     ${PN}-qcs8300-ride-dsp \
     ${PN}-sa8775p-ride-dsp \
+    ${PN}-shikra-cqs-evk-dsp \
     ${PN}-sm8750-mtp-dsp \
     ${PN}-thundercomm-rb3gen2-dsp \
 "
@@ -82,6 +85,7 @@ RDEPENDS:${PN}-purwa-iot-evk-dsp = "${PN}-dsp ${PN}-hamoa-iot-evk-dsp"
 RDEPENDS:${PN}-qcs615-ride-dsp = "${PN}-dsp"
 RDEPENDS:${PN}-qcs8300-ride-dsp = "${PN}-dsp"
 RDEPENDS:${PN}-sa8775p-ride-dsp = "${PN}-dsp"
+RDEPENDS:${PN}-shikra-cqs-evk-dsp = "${PN}-dsp"
 RDEPENDS:${PN}-sm8750-mtp-dsp = "${PN}-dsp"
 RDEPENDS:${PN}-thundercomm-rb3gen2-dsp = "${PN}-dsp"
 
@@ -91,6 +95,7 @@ INSANE_SKIP:${PN}-kaanapali-mtp-dsp = "arch libdir"
 INSANE_SKIP:${PN}-qcs615-ride-dsp = "arch libdir"
 INSANE_SKIP:${PN}-qcs8300-ride-dsp = "arch libdir"
 INSANE_SKIP:${PN}-sa8775p-ride-dsp = "arch libdir"
+INSANE_SKIP:${PN}-shikra-cqs-evk-dsp = "arch libdir"
 INSANE_SKIP:${PN}-sm8750-mtp-dsp = "arch libdir"
 INSANE_SKIP:${PN}-thundercomm-rb3gen2-dsp = "arch libdir"
 
@@ -103,5 +108,6 @@ FILES:${PN}-kaanapali-mtp-dsp += "${datadir}/qcom/kaanapali/Qualcomm/Kaanapali-M
 FILES:${PN}-qcs615-ride-dsp += "${datadir}/qcom/qcs615/Qualcomm/QCS615-RIDE/dsp"
 FILES:${PN}-qcs8300-ride-dsp += "${datadir}/qcom/qcs8300/Qualcomm/QCS8300-RIDE/dsp"
 FILES:${PN}-sa8775p-ride-dsp += "${datadir}/qcom/sa8775p/Qualcomm/SA8775P-RIDE/dsp"
+FILES:${PN}-shikra-cqs-evk-dsp += "${datadir}/qcom/shikra/Qualcomm/Shikra-CQS-EVK/dsp/cdsp"
 FILES:${PN}-sm8750-mtp-dsp += "${datadir}/qcom/sm8750/Qualcomm/SM8750-MTP/dsp/cdsp"
 FILES:${PN}-thundercomm-rb3gen2-dsp += "${datadir}/qcom/qcm6490/Thundercomm/RB3gen2/dsp"
