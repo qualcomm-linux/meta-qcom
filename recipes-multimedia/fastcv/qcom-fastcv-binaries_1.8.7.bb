@@ -4,12 +4,12 @@ LICENSE = "LICENSE.qcom-2"
 LIC_FILES_CHKSUM = "file://${UNPACKDIR}/usr/share/doc/${PN}/NOLOGINBINARYLICENSEQTI.pdf;md5=4ceffe94cb40cdce6d2f4fb93cc063d1 \
                     file://${UNPACKDIR}/usr/share/doc/${PN}/NOTICE;md5=4b722aa0574e24873e07b94e40b92e4d "
 
-PBT_BUILD_DATE = "260422"
-ARTIFACTORY_URL = "https://qartifactory-edge.qualcomm.com/artifactory/qsc_releases/software/chip/component/computervision-fastcv.qclinux.0.1/${PBT_BUILD_DATE}/prebuilt_yocto"
-PBT_ARCH = "armv8a"
+PBT_BUILD_DATE = "260624.1"
+ARTIFACTORY_URL = "https://qartifactory-edge.qualcomm.com/artifactory/qsc_releases/software/chip/component/computervision-fastcv.qclinux.0.1/${PBT_BUILD_DATE}/prebuilt_yocto_master"
+PBT_ARCH = "armv8-6a"
 
 SRC_URI = "${ARTIFACTORY_URL}/${BPN}_${PV}_${PBT_ARCH}.tar.gz"
-SRC_URI[sha256sum] = "bcaa974b97b4e9ec09edf1843dc821dd01bf0cfe6953c93de447064bf8898b56"
+SRC_URI[sha256sum] = "831edddfe6c1df285949c6722f406b4a4633913c30a9b7f02787c4405e1dde2d"
 S = "${UNPACKDIR}"
 
 DEPENDS += "glib-2.0 fastrpc"
@@ -46,14 +46,14 @@ do_install() {
     install -m 0644 ${S}/usr/include/fastcv/fastcv.h ${D}${includedir}/fastcv/
     install -m 0644 ${S}/usr/include/fastcv/fastcvExt.h ${D}${includedir}/fastcv/
 
-    install -m 0644 ${S}/usr/lib/dsp/cdsp/cv/v68/KODIAK/*.so ${D}${datadir}/qcom/qcm6490/Thundercomm/RB3gen2/dsp/cdsp
     install -m 0644 ${S}/usr/lib/dsp/cdsp/cv/v65/TALOS_MOOREA/*.so ${D}${datadir}/qcom/qcs615/Qualcomm/QCS615-RIDE/dsp/cdsp
-    install -m 0644 ${S}/usr/lib/dsp/cdsp/cv/v75/MONACO/*.so ${D}${datadir}/qcom/qcs8300/Qualcomm/QCS8300-RIDE/dsp/cdsp
+    install -m 0644 ${S}/usr/lib/dsp/cdsp/cv/v68/KODIAK/*.so ${D}${datadir}/qcom/qcm6490/Thundercomm/RB3gen2/dsp/cdsp
     install -m 0644 ${S}/usr/lib/dsp/cdsp/cv/v73/HAMOA/*.so ${D}${datadir}/qcom/x1e80100/Qualcomm/Hamoa-IoT-EVK/dsp/cdsp
     install -m 0644 ${S}/usr/lib/dsp/cdsp/cv/v73/LEMANS/*.so ${D}${datadir}/qcom/sa8775p/Qualcomm/SA8775P-RIDE/dsp/cdsp
+    install -m 0644 ${S}/usr/lib/dsp/cdsp/cv/v75/MONACO/*.so ${D}${datadir}/qcom/qcs8300/Qualcomm/QCS8300-RIDE/dsp/cdsp
     install -m 0644 ${S}/usr/lib/dsp/cdsp/cv/v79/PAKALA/*.so ${D}${datadir}/qcom/sm8750/Qualcomm/SM8750-MTP/dsp/cdsp
     install -m 0644 ${S}/usr/lib/dsp/cdsp/cv/v81/KAANAPALI/*.so ${D}${datadir}/qcom/kaanapali/Qualcomm/Kaanapali-MTP/dsp/cdsp
-	install -m 0644 ${S}/usr/lib/dsp/cdsp/cv/v81/GLYMUR/*.so ${D}${datadir}/qcom/glymur/Qualcomm/Glymur-CRD/dsp/cdsp
+    install -m 0644 ${S}/usr/lib/dsp/cdsp/cv/v81/GLYMUR/*.so ${D}${datadir}/qcom/glymur/Qualcomm/Glymur-CRD/dsp/cdsp
 
     install -m 0755 ${S}/usr/bin/fastcv_simple_test64 ${D}${bindir}
 }
