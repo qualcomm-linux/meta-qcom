@@ -1,0 +1,30 @@
+From a8ea7b4cd6ecc2e63074ce83d88732c0453ef00b Mon Sep 17 00:00:00 2001
+From: rhouji <rhouji@qti.qualcomm.com>
+Date: Fri, 19 Jun 2026 15:56:21 +0530
+Subject: [PATCH] test change
+
+Inserted string in the usb device register
+
+Upstream-Status: Pending
+
+Signed-off-by: Roopak Houji <rhouji@qti.qualcomm.com>
+---
+ drivers/usb/core/driver.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/usb/core/driver.c b/drivers/usb/core/driver.c
+index f63004417058..a35e7b79cadd 100644
+--- a/drivers/usb/core/driver.c
++++ b/drivers/usb/core/driver.c
+@@ -1083,7 +1083,7 @@ int usb_register_driver(struct usb_driver *new_driver, struct module *owner,
+ 	if (retval)
+ 		goto out_newid;
+ 
+-	pr_info("%s: registered new interface driver %s\n",
++	pr_info("%s: registered new interface driver %s, Test_QC_123\n",
+ 			usbcore_name, new_driver->name);
+ 
+ 	return 0;
+-- 
+2.34.1
+
