@@ -1,0 +1,40 @@
+From cc11ef48e4a1b27ddee32f6199225ffdc642443c Mon Sep 17 00:00:00 2001
+From: Arnd Bergmann <arnd@arndb.de>
+Date: Wed, 1 Apr 2026 21:10:13 +0200
+Subject: [PATCH 13/27] power: sequencing: pcie-m2: add SERIAL_DEV_BUS
+ dependency
+
+The newly added serdev code fails to link when serdev is turned off:
+
+arm-linux-gnueabi-ld: drivers/power/sequencing/pwrseq-pcie-m2.o: in function `pwrseq_pcie_m2_remove_serdev':
+pwrseq-pcie-m2.c:(.text+0xc8): undefined reference to `serdev_device_remove'
+arm-linux-gnueabi-ld: drivers/power/sequencing/pwrseq-pcie-m2.o: in function `pwrseq_m2_pcie_notify':
+pwrseq-pcie-m2.c:(.text+0x69c): undefined reference to `of_find_serdev_controller_by_node'
+arm-linux-gnueabi-ld: pwrseq-pcie-m2.c:(.text+0x6f8): undefined reference to `serdev_device_alloc'
+arm-linux-gnueabi-ld: pwrseq-pcie-m2.c:(.text+0x724): undefined reference to `serdev_device_add'
+
+Add another Kconfig dependency for this
+
+Fixes: a70ca484a661 ("power: sequencing: pcie-m2: Create serdev device for WCN7850 bluetooth")
+Signed-off-by: Arnd Bergmann <arnd@arndb.de>
+Link: https://patch.msgid.link/20260401191030.948046-1-arnd@kernel.org
+Signed-off-by: Bartosz Golaszewski <bartosz.golaszewski@oss.qualcomm.com>
+---
+ drivers/power/sequencing/Kconfig | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/drivers/power/sequencing/Kconfig b/drivers/power/sequencing/Kconfig
+index 77c6d9227251..1c5f5820f5b7 100644
+--- a/drivers/power/sequencing/Kconfig
++++ b/drivers/power/sequencing/Kconfig
+@@ -39,6 +39,7 @@ config POWER_SEQUENCING_PCIE_M2
+ 	tristate "PCIe M.2 connector power sequencing driver"
+ 	depends on OF
+ 	depends on PCI
++	depends on SERIAL_DEV_BUS
+ 	select OF_DYNAMIC
+ 	help
+ 	  Say Y here to enable the power sequencing driver for PCIe M.2
+-- 
+2.34.1
+

@@ -1,0 +1,63 @@
+From 409d5aaa7349123ec80cc4a81a95a210e9dc9098 Mon Sep 17 00:00:00 2001
+From: Manivannan Sadhasivam <manivannan.sadhasivam@oss.qualcomm.com>
+Date: Tue, 19 May 2026 14:26:03 +0530
+Subject: [PATCH 23/27] Bluetooth: hci_qca: Rename 'power_ctrl_enabled' to
+ 'bt_en_available'
+
+'power_ctrl_enabled' flag is used to indicate the availability of the BT_EN
+GPIO in devicetree. But the naming causes confusion with the new pwrctrl
+framework.
+
+So rename it to 'bt_en_available' to make it clear and explicit.
+
+Tested-by: Wei Deng <wei.deng@oss.qualcomm.com>
+Reviewed-by: Dmitry Baryshkov <dmitry.baryshkov@oss.qualcomm.com>
+Reviewed-by: Bartosz Golaszewski <bartosz.golaszewski@oss.qualcomm.com>
+Signed-off-by: Manivannan Sadhasivam <manivannan.sadhasivam@oss.qualcomm.com>
+---
+ drivers/bluetooth/hci_qca.c | 8 ++++----
+ 1 file changed, 4 insertions(+), 4 deletions(-)
+
+diff --git a/drivers/bluetooth/hci_qca.c b/drivers/bluetooth/hci_qca.c
+index 915ec5a9fb8f..1011eb8e88eb 100644
+--- a/drivers/bluetooth/hci_qca.c
++++ b/drivers/bluetooth/hci_qca.c
+@@ -2395,7 +2395,7 @@ static int qca_serdev_probe(struct serdev_device *serdev)
+ 	struct hci_dev *hdev;
+ 	const struct qca_device_data *data;
+ 	int err;
+-	bool power_ctrl_enabled = true;
++	bool bt_en_available = true;
+ 
+ 	qcadev = devm_kzalloc(&serdev->dev, sizeof(*qcadev), GFP_KERNEL);
+ 	if (!qcadev)
+@@ -2506,7 +2506,7 @@ static int qca_serdev_probe(struct serdev_device *serdev)
+ 		     data->soc_type == QCA_WCN6855 ||
+ 		     data->soc_type == QCA_QCC2072 ||
+ 		     data->soc_type == QCA_WCN7850))
+-			power_ctrl_enabled = false;
++			bt_en_available = false;
+ 
+ 		qcadev->sw_ctrl = devm_gpiod_get_optional(&serdev->dev, "swctrl",
+ 					       GPIOD_IN);
+@@ -2545,7 +2545,7 @@ static int qca_serdev_probe(struct serdev_device *serdev)
+ 		}
+ 
+ 		if (!qcadev->bt_en)
+-			power_ctrl_enabled = false;
++			bt_en_available = false;
+ 
+ 		qcadev->susclk = devm_clk_get_optional_enabled_with_rate(
+ 					&serdev->dev, NULL, SUSCLK_RATE_32KHZ);
+@@ -2563,7 +2563,7 @@ static int qca_serdev_probe(struct serdev_device *serdev)
+ 
+ 	hdev = qcadev->serdev_hu.hdev;
+ 
+-	if (power_ctrl_enabled) {
++	if (bt_en_available) {
+ 		hci_set_quirk(hdev, HCI_QUIRK_NON_PERSISTENT_SETUP);
+ 		hdev->shutdown = qca_power_off;
+ 	}
+-- 
+2.34.1
+

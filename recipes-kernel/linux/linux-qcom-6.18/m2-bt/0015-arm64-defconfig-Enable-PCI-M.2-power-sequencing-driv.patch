@@ -1,0 +1,32 @@
+From 2fe81c9d3c44ef6bad1437f9b4b49df0c06fdf80 Mon Sep 17 00:00:00 2001
+From: Manivannan Sadhasivam <manivannan.sadhasivam@oss.qualcomm.com>
+Date: Thu, 14 May 2026 12:20:17 +0530
+Subject: [PATCH 15/27] arm64: defconfig: Enable PCI M.2 power sequencing
+ driver
+
+POWER_SEQUENCING_PCIE_M2 driver handles power supply to the PCIe M.2
+connectors and is required on wide variety of ARM64 platforms such as
+Qcom Snapdragon X Elite laptops and Mediatek Dojo Chromebooks.
+
+Reviewed-by: Dmitry Baryshkov <dmitry.baryshkov@oss.qualcomm.com>
+Reviewed-by: Krzysztof Kozlowski <krzysztof.kozlowski@oss.qualcomm.com>
+Signed-off-by: Manivannan Sadhasivam <manivannan.sadhasivam@oss.qualcomm.com>
+---
+ arch/arm64/configs/defconfig | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/arch/arm64/configs/defconfig b/arch/arm64/configs/defconfig
+index f616dd6ae116..5e6405e8da6d 100644
+--- a/arch/arm64/configs/defconfig
++++ b/arch/arm64/configs/defconfig
+@@ -252,6 +252,7 @@ CONFIG_PCI_ENDPOINT=y
+ CONFIG_PCI_ENDPOINT_CONFIGFS=y
+ CONFIG_PCI_EPF_TEST=m
+ CONFIG_PCI_PWRCTRL_GENERIC=m
++CONFIG_POWER_SEQUENCING_PCIE_M2=m
+ CONFIG_DEVTMPFS=y
+ CONFIG_DEVTMPFS_MOUNT=y
+ CONFIG_FW_LOADER_USER_HELPER=y
+-- 
+2.34.1
+

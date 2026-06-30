@@ -1,0 +1,73 @@
+From 8853a3ebc8624e312a4537872dc9c65054024f14 Mon Sep 17 00:00:00 2001
+From: Manivannan Sadhasivam <manivannan.sadhasivam@oss.qualcomm.com>
+Date: Thu, 26 Mar 2026 13:36:29 +0530
+Subject: [PATCH 05/27] serdev: Convert to_serdev_*() helpers to macros and use
+ container_of_const()
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+If these helpers receive the 'const struct device' pointer, then the const
+qualifier will get dropped, leading to below warning:
+
+warning: passing argument 1 of ‘to_serdev_device_driver’ discards 'const'
+qualifier from pointer target type [-Wdiscarded-qualifiers]
+
+This is not an issue as of now, but with the future commits adding serdev
+device based driver matching, this warning will get triggered. Hence,
+convert these helpers to macros so that the qualifier get preserved and
+also use container_of_const() as container_of() is deprecated.
+
+Tested-by: Hans de Goede <johannes.goede@oss.qualcomm.com> # ThinkPad T14s gen6 (arm64)
+Reviewed-by: Bartosz Golaszewski <bartosz.golaszewski@linaro.org>
+Signed-off-by: Manivannan Sadhasivam <manivannan.sadhasivam@oss.qualcomm.com>
+Reviewed-by: Rob Herring (Arm) <robh@kernel.org>
+Link: https://patch.msgid.link/20260326-pci-m2-e-v7-1-43324a7866e6@oss.qualcomm.com
+Signed-off-by: Bartosz Golaszewski <bartosz.golaszewski@oss.qualcomm.com>
+---
+ include/linux/serdev.h | 15 +++------------
+ 1 file changed, 3 insertions(+), 12 deletions(-)
+
+diff --git a/include/linux/serdev.h b/include/linux/serdev.h
+index 34562eb99931..ecde0ad3e248 100644
+--- a/include/linux/serdev.h
++++ b/include/linux/serdev.h
+@@ -49,10 +49,7 @@ struct serdev_device {
+ 	struct mutex write_lock;
+ };
+ 
+-static inline struct serdev_device *to_serdev_device(struct device *d)
+-{
+-	return container_of(d, struct serdev_device, dev);
+-}
++#define to_serdev_device(d) container_of_const(d, struct serdev_device, dev)
+ 
+ /**
+  * struct serdev_device_driver - serdev slave device driver
+@@ -67,10 +64,7 @@ struct serdev_device_driver {
+ 	void	(*remove)(struct serdev_device *);
+ };
+ 
+-static inline struct serdev_device_driver *to_serdev_device_driver(struct device_driver *d)
+-{
+-	return container_of(d, struct serdev_device_driver, driver);
+-}
++#define to_serdev_device_driver(d) container_of_const(d, struct serdev_device_driver, driver)
+ 
+ enum serdev_parity {
+ 	SERDEV_PARITY_NONE,
+@@ -111,10 +105,7 @@ struct serdev_controller {
+ 	const struct serdev_controller_ops *ops;
+ };
+ 
+-static inline struct serdev_controller *to_serdev_controller(struct device *d)
+-{
+-	return container_of(d, struct serdev_controller, dev);
+-}
++#define to_serdev_controller(d) container_of_const(d, struct serdev_controller, dev)
+ 
+ static inline void *serdev_device_get_drvdata(const struct serdev_device *serdev)
+ {
+-- 
+2.34.1
+

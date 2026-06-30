@@ -1,0 +1,58 @@
+From 30da081f8a3ba1488727f7111bd5123cae795f23 Mon Sep 17 00:00:00 2001
+From: Manivannan Sadhasivam <manivannan.sadhasivam@oss.qualcomm.com>
+Date: Tue, 19 May 2026 14:25:56 +0530
+Subject: [PATCH 16/27] power: sequencing: pcie-m2: Fix inconsistent function
+ prefixes
+
+All functions in this driver follow 'pwrseq_pcie_m2' prefix except a few.
+Fix them to avoid inconsistency.
+
+Tested-by: Wei Deng <wei.deng@oss.qualcomm.com>
+Signed-off-by: Manivannan Sadhasivam <manivannan.sadhasivam@oss.qualcomm.com>
+---
+ drivers/power/sequencing/pwrseq-pcie-m2.c | 8 ++++----
+ 1 file changed, 4 insertions(+), 4 deletions(-)
+
+diff --git a/drivers/power/sequencing/pwrseq-pcie-m2.c b/drivers/power/sequencing/pwrseq-pcie-m2.c
+index ecb5d94c55ef..5441bb648c98 100644
+--- a/drivers/power/sequencing/pwrseq-pcie-m2.c
++++ b/drivers/power/sequencing/pwrseq-pcie-m2.c
+@@ -177,7 +177,7 @@ static int pwrseq_pcie_m2_match(struct pwrseq_device *pwrseq,
+ 	return PWRSEQ_NO_MATCH;
+ }
+ 
+-static int pwrseq_m2_pcie_create_bt_node(struct pwrseq_pcie_m2_ctx *ctx,
++static int pwrseq_pcie_m2_create_bt_node(struct pwrseq_pcie_m2_ctx *ctx,
+ 					struct device_node *parent)
+ {
+ 	struct device *dev = ctx->dev;
+@@ -254,7 +254,7 @@ static int pwrseq_pcie_m2_create_serdev(struct pwrseq_pcie_m2_ctx *ctx)
+ 		goto err_put_ctrl;
+ 	}
+ 
+-	ret = pwrseq_m2_pcie_create_bt_node(ctx, serdev_parent);
++	ret = pwrseq_pcie_m2_create_bt_node(ctx, serdev_parent);
+ 	if (ret)
+ 		goto err_free_serdev;
+ 
+@@ -299,7 +299,7 @@ static void pwrseq_pcie_m2_remove_serdev(struct pwrseq_pcie_m2_ctx *ctx)
+ 	}
+ }
+ 
+-static int pwrseq_m2_pcie_notify(struct notifier_block *nb, unsigned long action,
++static int pwrseq_pcie_m2_notify(struct notifier_block *nb, unsigned long action,
+ 			      void *data)
+ {
+ 	struct pwrseq_pcie_m2_ctx *ctx = container_of(nb, struct pwrseq_pcie_m2_ctx, nb);
+@@ -364,7 +364,7 @@ static int pwrseq_pcie_m2_register_notifier(struct pwrseq_pcie_m2_ctx *ctx, stru
+ 	if (pwrseq_pcie_m2_check_remote_node(dev, 3, 0, "serial")) {
+ 		if (pwrseq_pcie_m2_check_remote_node(dev, 0, 0, "pcie")) {
+ 			ctx->dev = dev;
+-			ctx->nb.notifier_call = pwrseq_m2_pcie_notify;
++			ctx->nb.notifier_call = pwrseq_pcie_m2_notify;
+ 			ret = bus_register_notifier(&pci_bus_type, &ctx->nb);
+ 			if (ret)
+ 				return dev_err_probe(dev, ret,
+-- 
+2.34.1
+

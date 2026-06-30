@@ -1,0 +1,30 @@
+From b9a6f69de72b31ddf2f72c25fc78e237daa3f037 Mon Sep 17 00:00:00 2001
+From: Wei Deng <wei.deng@oss.qualcomm.com>
+Date: Thu, 7 May 2026 22:34:11 +0530
+Subject: [PATCH 25/27] power: sequencing: pcie-m2: Add 0x1103 in
+ pwrseq_m2_pci_ids for NFA765A
+
+Add PCI device ID 0x1103 (NFA765A) with compatible string "qcom,wcn6855-bt"
+to pwrseq_m2_pci_ids[] table.
+
+Signed-off-by: Wei Deng <wei.deng@oss.qualcomm.com>
+---
+ drivers/power/sequencing/pwrseq-pcie-m2.c | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/drivers/power/sequencing/pwrseq-pcie-m2.c b/drivers/power/sequencing/pwrseq-pcie-m2.c
+index a80489eab34d..9ee24a9bb9e2 100644
+--- a/drivers/power/sequencing/pwrseq-pcie-m2.c
++++ b/drivers/power/sequencing/pwrseq-pcie-m2.c
+@@ -188,6 +188,8 @@ static int pwrseq_pcie_m2_match(struct pwrseq_device *pwrseq,
+ static const struct pci_device_id pwrseq_m2_pci_ids[] = {
+ 	{ PCI_DEVICE(PCI_VENDOR_ID_QCOM, 0x1107),
+ 	  .driver_data = (kernel_ulong_t)"qcom,wcn7850-bt" },
++	{ PCI_DEVICE(PCI_VENDOR_ID_QCOM, 0x1103),
++	  .driver_data = (kernel_ulong_t)"qcom,wcn6855-bt" },
+ 	{ } /* Sentinel */
+ };
+ 
+-- 
+2.34.1
+

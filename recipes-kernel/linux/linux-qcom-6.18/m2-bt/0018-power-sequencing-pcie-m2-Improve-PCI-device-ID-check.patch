@@ -1,0 +1,55 @@
+From eb5552a858f4a0d7a2fb4f56659081fbadc96839 Mon Sep 17 00:00:00 2001
+From: Manivannan Sadhasivam <manivannan.sadhasivam@oss.qualcomm.com>
+Date: Tue, 19 May 2026 14:25:58 +0530
+Subject: [PATCH 18/27] power: sequencing: pcie-m2: Improve PCI device ID check
+
+Instead of hardcoding the PCI device check, use pci_match_id() to check for
+the known IDs using the pwrseq_m2_pci_ids[] array.
+
+This makes adding support for new devices easier.
+
+Tested-by: Wei Deng <wei.deng@oss.qualcomm.com>
+Reviewed-by: Konrad Dybcio <konrad.dybcio@oss.qualcomm.com>
+Signed-off-by: Manivannan Sadhasivam <manivannan.sadhasivam@oss.qualcomm.com>
+---
+ drivers/power/sequencing/pwrseq-pcie-m2.c | 11 +++++++----
+ 1 file changed, 7 insertions(+), 4 deletions(-)
+
+diff --git a/drivers/power/sequencing/pwrseq-pcie-m2.c b/drivers/power/sequencing/pwrseq-pcie-m2.c
+index 5666a47a0936..799b4f0b81ea 100644
+--- a/drivers/power/sequencing/pwrseq-pcie-m2.c
++++ b/drivers/power/sequencing/pwrseq-pcie-m2.c
+@@ -343,6 +343,11 @@ static void pwrseq_pcie_m2_remove_serdev(struct pwrseq_pcie_m2_ctx *ctx,
+ 	mutex_unlock(&ctx->list_lock);
+ }
+ 
++static const struct pci_device_id pwrseq_m2_pci_ids[] = {
++	{ PCI_DEVICE(PCI_VENDOR_ID_QCOM, 0x1107) },
++	{ } /* Sentinel */
++};
++
+ static int pwrseq_pcie_m2_notify(struct notifier_block *nb, unsigned long action,
+ 			      void *data)
+ {
+@@ -362,16 +367,14 @@ static int pwrseq_pcie_m2_notify(struct notifier_block *nb, unsigned long action
+ 
+ 	switch (action) {
+ 	case BUS_NOTIFY_ADD_DEVICE:
+-		/* Create serdev device for WCN7850 */
+-		if (pdev->vendor == PCI_VENDOR_ID_QCOM && pdev->device == 0x1107) {
++		if (pci_match_id(pwrseq_m2_pci_ids, pdev)) {
+ 			ret = pwrseq_pcie_m2_create_serdev(ctx, pdev);
+ 			if (ret)
+ 				return notifier_from_errno(ret);
+ 		}
+ 		break;
+ 	case BUS_NOTIFY_REMOVED_DEVICE:
+-		/* Destroy serdev device for WCN7850 */
+-		if (pdev->vendor == PCI_VENDOR_ID_QCOM && pdev->device == 0x1107)
++		if (pci_match_id(pwrseq_m2_pci_ids, pdev))
+ 			pwrseq_pcie_m2_remove_serdev(ctx, pdev);
+ 
+ 		break;
+-- 
+2.34.1
+

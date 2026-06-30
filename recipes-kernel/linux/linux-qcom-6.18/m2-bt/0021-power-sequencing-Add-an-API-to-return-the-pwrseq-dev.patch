@@ -1,0 +1,70 @@
+From 5012ff60520317a2ef2de5329346fd9f2960302c Mon Sep 17 00:00:00 2001
+From: Manivannan Sadhasivam <manivannan.sadhasivam@oss.qualcomm.com>
+Date: Tue, 19 May 2026 14:26:01 +0530
+Subject: [PATCH 21/27] power: sequencing: Add an API to return the pwrseq
+ device's 'dev' pointer
+
+The consumer drivers can make use of the pwrseq device's 'dev' pointer to
+query the pwrseq provider's DT node to check for existence of specific
+properties.
+
+Hence, add an API to return the pwrseq device's 'dev' pointer to consumers.
+
+Note that since pwrseq_get() would've increased the pwrseq refcount, there
+is no need to increase the refcount in this API again.
+
+Tested-by: Wei Deng <wei.deng@oss.qualcomm.com>
+Signed-off-by: Manivannan Sadhasivam <manivannan.sadhasivam@oss.qualcomm.com>
+---
+ drivers/power/sequencing/core.c | 9 +++++++++
+ include/linux/pwrseq/consumer.h | 7 +++++++
+ 2 files changed, 16 insertions(+)
+
+diff --git a/drivers/power/sequencing/core.c b/drivers/power/sequencing/core.c
+index 1fcf0af7cc0b..4f74464b7ff8 100644
+--- a/drivers/power/sequencing/core.c
++++ b/drivers/power/sequencing/core.c
+@@ -966,6 +966,15 @@ int pwrseq_power_off(struct pwrseq_desc *desc)
+ }
+ EXPORT_SYMBOL_GPL(pwrseq_power_off);
+ 
++struct device *pwrseq_to_device(struct pwrseq_desc *desc)
++{
++	if (!desc)
++		return NULL;
++
++	return &desc->pwrseq->dev;
++}
++EXPORT_SYMBOL_GPL(pwrseq_to_device);
++
+ #if IS_ENABLED(CONFIG_DEBUG_FS)
+ 
+ struct pwrseq_debugfs_count_ctx {
+diff --git a/include/linux/pwrseq/consumer.h b/include/linux/pwrseq/consumer.h
+index 7d583b4f266e..3c907c9e1885 100644
+--- a/include/linux/pwrseq/consumer.h
++++ b/include/linux/pwrseq/consumer.h
+@@ -23,6 +23,8 @@ devm_pwrseq_get(struct device *dev, const char *target);
+ int pwrseq_power_on(struct pwrseq_desc *desc);
+ int pwrseq_power_off(struct pwrseq_desc *desc);
+ 
++struct device *pwrseq_to_device(struct pwrseq_desc *desc);
++
+ #else /* CONFIG_POWER_SEQUENCING */
+ 
+ static inline struct pwrseq_desc * __must_check
+@@ -51,6 +53,11 @@ static inline int pwrseq_power_off(struct pwrseq_desc *desc)
+ 	return -ENOSYS;
+ }
+ 
++static inline struct device *pwrseq_to_device(struct pwrseq_desc *desc)
++{
++	return NULL;
++}
++
+ #endif /* CONFIG_POWER_SEQUENCING */
+ 
+ #endif /* __POWER_SEQUENCING_CONSUMER_H__ */
+-- 
+2.34.1
+

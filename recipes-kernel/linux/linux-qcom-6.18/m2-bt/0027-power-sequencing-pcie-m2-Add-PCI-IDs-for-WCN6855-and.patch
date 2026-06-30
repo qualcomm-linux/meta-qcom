@@ -1,0 +1,44 @@
+From d3f6b2969b2a2996a5f12f62cd2761c2b6992681 Mon Sep 17 00:00:00 2001
+From: Wei Deng <wei.deng@oss.qualcomm.com>
+Date: Thu, 25 Jun 2026 08:35:17 +0530
+Subject: [PATCH 27/27] power: sequencing: pcie-m2: Add PCI IDs for WCN6855 and
+ QCC2072 Bluetooth
+
+Add PCI device IDs to the pwrseq-pcie-m2 driver so the Bluetooth
+subdevice is created for two additional Qualcomm M.2 cards:
+
+  - 0x1103: WCN6855 (QCNFA765)
+  - 0x1112: QCC2072 (Cologne)
+
+With these entries, the driver dynamically creates a bluetooth child
+node under the M.2 connector's UART controller with the matching
+"qcom,*-bt" compatible string when the corresponding PCI device is
+detected on the M.2 slot.
+
+Signed-off-by: Wei Deng <wei.deng@oss.qualcomm.com>
+---
+ drivers/power/sequencing/pwrseq-pcie-m2.c | 6 ++++--
+ 1 file changed, 4 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/power/sequencing/pwrseq-pcie-m2.c b/drivers/power/sequencing/pwrseq-pcie-m2.c
+index 9ee24a9bb9e2..890f54c80fa9 100644
+--- a/drivers/power/sequencing/pwrseq-pcie-m2.c
++++ b/drivers/power/sequencing/pwrseq-pcie-m2.c
+@@ -186,10 +186,12 @@ static int pwrseq_pcie_m2_match(struct pwrseq_device *pwrseq,
+ }
+ 
+ static const struct pci_device_id pwrseq_m2_pci_ids[] = {
+-	{ PCI_DEVICE(PCI_VENDOR_ID_QCOM, 0x1107),
+-	  .driver_data = (kernel_ulong_t)"qcom,wcn7850-bt" },
+ 	{ PCI_DEVICE(PCI_VENDOR_ID_QCOM, 0x1103),
+ 	  .driver_data = (kernel_ulong_t)"qcom,wcn6855-bt" },
++	{ PCI_DEVICE(PCI_VENDOR_ID_QCOM, 0x1107),
++	  .driver_data = (kernel_ulong_t)"qcom,wcn7850-bt" },
++	{ PCI_DEVICE(PCI_VENDOR_ID_QCOM, 0x1112),
++	  .driver_data = (kernel_ulong_t)"qcom,qcc2072-bt" },
+ 	{ } /* Sentinel */
+ };
+ 
+-- 
+2.34.1
+

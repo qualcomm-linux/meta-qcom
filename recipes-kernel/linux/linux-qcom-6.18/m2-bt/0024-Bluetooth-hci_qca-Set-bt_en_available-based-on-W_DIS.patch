@@ -1,0 +1,44 @@
+From 36d1b571c2c51d479e270c6630f264374383f08f Mon Sep 17 00:00:00 2001
+From: Manivannan Sadhasivam <manivannan.sadhasivam@oss.qualcomm.com>
+Date: Tue, 19 May 2026 14:26:04 +0530
+Subject: [PATCH 24/27] Bluetooth: hci_qca: Set 'bt_en_available' based on
+ W_DISABLE2# presence in M.2 connector
+
+Check if the M.2 connector supports the W_DISABLE2# property or not by
+querying the pwrseq provider's DT node. If not available, then set
+'bt_en_available' flag to 'false'. This flag is used to set the
+HCI_QUIRK_NON_PERSISTENT_SETUP HCI quirk, which informs the HCI layer
+whether the shutdown() callback for the device can be triggered or not.
+
+Tested-by: Wei Deng <wei.deng@oss.qualcomm.com>
+Reviewed-by: Bartosz Golaszewski <bartosz.golaszewski@oss.qualcomm.com>
+Signed-off-by: Manivannan Sadhasivam <manivannan.sadhasivam@oss.qualcomm.com>
+---
+ drivers/bluetooth/hci_qca.c | 7 +++++++
+ 1 file changed, 7 insertions(+)
+
+diff --git a/drivers/bluetooth/hci_qca.c b/drivers/bluetooth/hci_qca.c
+index 1011eb8e88eb..520852f7066d 100644
+--- a/drivers/bluetooth/hci_qca.c
++++ b/drivers/bluetooth/hci_qca.c
+@@ -2450,10 +2450,17 @@ static int qca_serdev_probe(struct serdev_device *serdev)
+ 		 * the M.2 Key E connector.
+ 		 */
+ 		if (of_graph_is_present(dev_of_node(&serdev->ctrl->dev))) {
++			struct device *dev;
++
+ 			qcadev->bt_power->pwrseq = devm_pwrseq_get(&serdev->ctrl->dev,
+ 								   "uart");
+ 			if (IS_ERR(qcadev->bt_power->pwrseq))
+ 				return PTR_ERR(qcadev->bt_power->pwrseq);
++
++			dev = pwrseq_to_device(qcadev->bt_power->pwrseq);
++			if (!device_property_present(dev, "w-disable2-gpios"))
++				bt_en_available = false;
++
+ 			break;
+ 		}
+ 
+-- 
+2.34.1
+

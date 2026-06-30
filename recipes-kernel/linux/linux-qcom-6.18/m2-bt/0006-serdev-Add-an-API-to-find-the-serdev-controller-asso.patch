@@ -1,0 +1,71 @@
+From a1a71831c61fa998b7a065b8a960244de1e78b65 Mon Sep 17 00:00:00 2001
+From: Manivannan Sadhasivam <manivannan.sadhasivam@oss.qualcomm.com>
+Date: Thu, 26 Mar 2026 13:36:30 +0530
+Subject: [PATCH 06/27] serdev: Add an API to find the serdev controller
+ associated with the devicetree node
+
+Add of_find_serdev_controller_by_node() API to find the serdev controller
+device associated with the devicetree node.
+
+Tested-by: Hans de Goede <johannes.goede@oss.qualcomm.com> # ThinkPad T14s gen6 (arm64)
+Reviewed-by: Bartosz Golaszewski <bartosz.golaszewski@oss.qualcomm.com>
+Signed-off-by: Manivannan Sadhasivam <manivannan.sadhasivam@oss.qualcomm.com>
+Reviewed-by: Rob Herring (Arm) <robh@kernel.org>
+Link: https://patch.msgid.link/20260326-pci-m2-e-v7-2-43324a7866e6@oss.qualcomm.com
+Signed-off-by: Bartosz Golaszewski <bartosz.golaszewski@oss.qualcomm.com>
+---
+ drivers/tty/serdev/core.c | 19 +++++++++++++++++++
+ include/linux/serdev.h    |  9 +++++++++
+ 2 files changed, 28 insertions(+)
+
+diff --git a/drivers/tty/serdev/core.c b/drivers/tty/serdev/core.c
+index b33e708cb245..fc3b51cd3a0e 100644
+--- a/drivers/tty/serdev/core.c
++++ b/drivers/tty/serdev/core.c
+@@ -504,6 +504,25 @@ struct serdev_controller *serdev_controller_alloc(struct device *host,
+ }
+ EXPORT_SYMBOL_GPL(serdev_controller_alloc);
+ 
++#ifdef CONFIG_OF
++/**
++ * of_find_serdev_controller_by_node() - Find the serdev controller associated
++ *					 with the devicetree node
++ * @node:	Devicetree node
++ *
++ * Return: Pointer to the serdev controller associated with the node. NULL if
++ * the controller is not found. Caller is responsible for calling
++ * serdev_controller_put() to drop the reference.
++ */
++struct serdev_controller *of_find_serdev_controller_by_node(struct device_node *node)
++{
++	struct device *dev = bus_find_device_by_of_node(&serdev_bus_type, node);
++
++	return (dev && dev->type == &serdev_ctrl_type) ? to_serdev_controller(dev) : NULL;
++}
++EXPORT_SYMBOL_GPL(of_find_serdev_controller_by_node);
++#endif
++
+ static int of_serdev_register_devices(struct serdev_controller *ctrl)
+ {
+ 	struct device_node *node;
+diff --git a/include/linux/serdev.h b/include/linux/serdev.h
+index ecde0ad3e248..0728e6bb7abd 100644
+--- a/include/linux/serdev.h
++++ b/include/linux/serdev.h
+@@ -333,4 +333,13 @@ static inline bool serdev_acpi_get_uart_resource(struct acpi_resource *ares,
+ }
+ #endif /* CONFIG_ACPI */
+ 
++#ifdef CONFIG_OF
++struct serdev_controller *of_find_serdev_controller_by_node(struct device_node *node);
++#else
++static inline struct serdev_controller *of_find_serdev_controller_by_node(struct device_node *node)
++{
++	return NULL;
++}
++#endif /* CONFIG_OF */
++
+ #endif /*_LINUX_SERDEV_H */
+-- 
+2.34.1
+

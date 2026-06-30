@@ -1,0 +1,95 @@
+From d67482a615e593fde47287fbcbdcd4fa475e283c Mon Sep 17 00:00:00 2001
+From: Manivannan Sadhasivam <manivannan.sadhasivam@oss.qualcomm.com>
+Date: Tue, 19 May 2026 14:26:00 +0530
+Subject: [PATCH 20/27] power: sequencing: pcie-m2: Create BT node based on the
+ pci_device_id[] table
+
+Currently, pwrseq_pcie_m2_create_bt_node() hardcodes the BT compatible for
+creating the devicetree node. But to allow adding support for more devices
+in the future, create the BT node based on the pci_device_id[] table. The
+BT compatible is passed using 'driver_data'.
+
+Co-developed-by: Wei Deng <wei.deng@oss.qualcomm.com>
+Tested-by: Wei Deng <wei.deng@oss.qualcomm.com>
+Signed-off-by: Manivannan Sadhasivam <manivannan.sadhasivam@oss.qualcomm.com>
+Signed-off-by: Wei Deng <wei.deng@oss.qualcomm.com>
+---
+ drivers/power/sequencing/pwrseq-pcie-m2.c | 29 ++++++++++++++++-------
+ 1 file changed, 20 insertions(+), 9 deletions(-)
+
+diff --git a/drivers/power/sequencing/pwrseq-pcie-m2.c b/drivers/power/sequencing/pwrseq-pcie-m2.c
+index 3f7c3e86bc09..a80489eab34d 100644
+--- a/drivers/power/sequencing/pwrseq-pcie-m2.c
++++ b/drivers/power/sequencing/pwrseq-pcie-m2.c
+@@ -185,14 +185,29 @@ static int pwrseq_pcie_m2_match(struct pwrseq_device *pwrseq,
+ 	return PWRSEQ_NO_MATCH;
+ }
+ 
++static const struct pci_device_id pwrseq_m2_pci_ids[] = {
++	{ PCI_DEVICE(PCI_VENDOR_ID_QCOM, 0x1107),
++	  .driver_data = (kernel_ulong_t)"qcom,wcn7850-bt" },
++	{ } /* Sentinel */
++};
++
+ static int pwrseq_pcie_m2_create_bt_node(struct pwrseq_pcie_m2_ctx *ctx,
+ 					struct pwrseq_pci_dev *pci_dev,
+-					struct device_node *parent)
++					struct device_node *parent,
++					struct pci_dev *pdev)
+ {
++	const struct pci_device_id *id;
+ 	struct device *dev = ctx->dev;
++	const char *compatible;
+ 	struct device_node *np;
+ 	int ret;
+ 
++	id = pci_match_id(pwrseq_m2_pci_ids, pdev);
++	if (WARN_ON_ONCE(!id)) /* Shouldn't happen */
++		return -ENODEV;
++
++	compatible = (const char *)id->driver_data;
++
+ 	pci_dev->ocs = kzalloc(sizeof(*pci_dev->ocs), GFP_KERNEL);
+ 	if (!pci_dev->ocs)
+ 		return -ENOMEM;
+@@ -206,7 +221,7 @@ static int pwrseq_pcie_m2_create_bt_node(struct pwrseq_pcie_m2_ctx *ctx,
+ 		goto err_destroy_changeset;
+ 	}
+ 
+-	ret = of_changeset_add_prop_string(pci_dev->ocs, np, "compatible", "qcom,wcn7850-bt");
++	ret = of_changeset_add_prop_string(pci_dev->ocs, np, "compatible", compatible);
+ 	if (ret) {
+ 		dev_err(dev, "Failed to add bluetooth compatible: %d\n", ret);
+ 		goto err_destroy_changeset;
+@@ -279,13 +294,14 @@ static int pwrseq_pcie_m2_create_serdev_one(struct pwrseq_pcie_m2_ctx *ctx,
+ 		goto err_free_pci_dev;
+ 	}
+ 
+-	ret = pwrseq_pcie_m2_create_bt_node(ctx, pci_dev, serdev_parent);
++	ret = pwrseq_pcie_m2_create_bt_node(ctx, pci_dev, serdev_parent, pdev);
+ 	if (ret)
+ 		goto err_free_serdev;
+ 
+ 	ret = serdev_device_add(pci_dev->serdev);
+ 	if (ret) {
+-		dev_err(dev, "Failed to add serdev for WCN7850: %d\n", ret);
++		dev_err(dev, "Failed to add serdev for PCI device (%s): %d\n",
++			pci_name(pdev), ret);
+ 		goto err_free_dt_node;
+ 	}
+ 
+@@ -351,11 +367,6 @@ static void pwrseq_pcie_m2_remove_serdev(struct pwrseq_pcie_m2_ctx *ctx,
+ 	mutex_unlock(&ctx->list_lock);
+ }
+ 
+-static const struct pci_device_id pwrseq_m2_pci_ids[] = {
+-	{ PCI_DEVICE(PCI_VENDOR_ID_QCOM, 0x1107) },
+-	{ } /* Sentinel */
+-};
+-
+ static int pwrseq_pcie_m2_notify(struct notifier_block *nb, unsigned long action,
+ 			      void *data)
+ {
+-- 
+2.34.1
+

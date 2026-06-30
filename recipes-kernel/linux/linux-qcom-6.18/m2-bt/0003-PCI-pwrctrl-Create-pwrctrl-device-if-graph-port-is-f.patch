@@ -1,0 +1,42 @@
+From 11155fce7cae99b44db5750c686f71819f9615b5 Mon Sep 17 00:00:00 2001
+From: Manivannan Sadhasivam <manivannan.sadhasivam@oss.qualcomm.com>
+Date: Wed, 28 Jan 2026 21:07:16 +0530
+Subject: [PATCH 03/27] PCI/pwrctrl: Create pwrctrl device if graph port is
+ found
+
+The devicetree node of the PCIe Root Port/Slot could have the graph port to
+link the PCIe M.2 connector node. Since the M.2 connectors are modeled as
+Power Sequencing devices, they need to be controlled by the pwrctrl driver
+like the Root Port/Slot supplies.
+
+Hence, create the pwrctrl device if the graph port is found in the node.
+
+Signed-off-by: Manivannan Sadhasivam <manivannan.sadhasivam@oss.qualcomm.com>
+Signed-off-by: Bjorn Helgaas <bhelgaas@google.com>
+Reviewed-by: Bartosz Golaszewski <bartosz.golaszewski@linaro.org>
+Link: https://patch.msgid.link/20260128-pci-m2-v7-2-9b3a5fe3d244@oss.qualcomm.com
+---
+ drivers/pci/pwrctrl/core.c | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/drivers/pci/pwrctrl/core.c b/drivers/pci/pwrctrl/core.c
+index 47a877125761..09777de3ae29 100644
+--- a/drivers/pci/pwrctrl/core.c
++++ b/drivers/pci/pwrctrl/core.c
+@@ -344,10 +344,10 @@ static int pci_pwrctrl_create_device(struct device_node *np,
+ 
+ 	/*
+ 	 * Check whether the pwrctrl device really needs to be created or not.
+-	 * This is decided based on at least one of the power supplies being
+-	 * defined in the devicetree node of the device.
++	 * This is decided based on at least one of the power supplies defined
++	 * in the devicetree node of the device or the graph property.
+ 	 */
+-	if (!of_pci_supply_present(np)) {
++	if (!of_pci_supply_present(np) && !of_graph_is_present(np)) {
+ 		dev_dbg(parent, "Skipping OF node: %s\n", np->name);
+ 		return 0;
+ 	}
+-- 
+2.34.1
+

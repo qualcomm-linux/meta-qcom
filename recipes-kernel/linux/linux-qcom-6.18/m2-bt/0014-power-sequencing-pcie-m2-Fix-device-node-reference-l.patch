@@ -1,0 +1,37 @@
+From f2999f8d4a470f271a86889f9077a44ca7cabf1e Mon Sep 17 00:00:00 2001
+From: Felix Gu <ustc.gu@gmail.com>
+Date: Mon, 2 Mar 2026 22:31:44 +0800
+Subject: [PATCH 14/27] power: sequencing: pcie-m2: Fix device node reference
+ leak in probe
+
+In pwrseq_pcie_m2_probe(), ctx->of_node acquires an explicit reference
+to the device node using of_node_get(), but there is no corresponding
+of_node_put() in the driver's error handling paths or removal.
+
+Since the ctx is tied to the lifecycle of the platform device, there
+is no need to hold an additional reference to the device's own of_node.
+
+Fixes: 5deb04fb9cfa ("power: sequencing: Add the Power Sequencing driver for the PCIe M.2 connectors")
+Signed-off-by: Felix Gu <ustc.gu@gmail.com>
+Link: https://patch.msgid.link/20260302-m2-v1-1-a6533e18aa69@gmail.com
+Signed-off-by: Bartosz Golaszewski <bartosz.golaszewski@oss.qualcomm.com>
+---
+ drivers/power/sequencing/pwrseq-pcie-m2.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/power/sequencing/pwrseq-pcie-m2.c b/drivers/power/sequencing/pwrseq-pcie-m2.c
+index b6e22e266c2f..ecb5d94c55ef 100644
+--- a/drivers/power/sequencing/pwrseq-pcie-m2.c
++++ b/drivers/power/sequencing/pwrseq-pcie-m2.c
+@@ -387,7 +387,7 @@ static int pwrseq_pcie_m2_probe(struct platform_device *pdev)
+ 		return -ENOMEM;
+ 
+ 	platform_set_drvdata(pdev, ctx);
+-	ctx->of_node = of_node_get(dev->of_node);
++	ctx->of_node = dev_of_node(dev);
+ 	ctx->pdata = device_get_match_data(dev);
+ 	if (!ctx->pdata)
+ 		return dev_err_probe(dev, -ENODEV,
+-- 
+2.34.1
+

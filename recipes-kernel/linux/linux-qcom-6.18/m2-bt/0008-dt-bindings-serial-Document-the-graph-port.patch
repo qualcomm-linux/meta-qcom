@@ -1,0 +1,35 @@
+From 4579b828dd93f20f11719ed1de59c9c1542571e3 Mon Sep 17 00:00:00 2001
+From: Manivannan Sadhasivam <manivannan.sadhasivam@oss.qualcomm.com>
+Date: Thu, 26 Mar 2026 13:36:32 +0530
+Subject: [PATCH 08/27] dt-bindings: serial: Document the graph port
+
+A serial controller could be connected to an external connector like PCIe
+M.2 for controlling the serial interface of the card. Hence, document the
+OF graph port.
+
+Reviewed-by: Rob Herring (Arm) <robh@kernel.org>
+Reviewed-by: Bartosz Golaszewski <bartosz.golaszewski@oss.qualcomm.com>
+Signed-off-by: Manivannan Sadhasivam <manivannan.sadhasivam@oss.qualcomm.com>
+Link: https://patch.msgid.link/20260326-pci-m2-e-v7-4-43324a7866e6@oss.qualcomm.com
+Signed-off-by: Bartosz Golaszewski <bartosz.golaszewski@oss.qualcomm.com>
+---
+ Documentation/devicetree/bindings/serial/serial.yaml | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/Documentation/devicetree/bindings/serial/serial.yaml b/Documentation/devicetree/bindings/serial/serial.yaml
+index 6aa9cfae417b..96eb1de8771e 100644
+--- a/Documentation/devicetree/bindings/serial/serial.yaml
++++ b/Documentation/devicetree/bindings/serial/serial.yaml
+@@ -87,6 +87,9 @@ properties:
+     description:
+       TX FIFO threshold configuration (in bytes).
+ 
++  port:
++    $ref: /schemas/graph.yaml#/properties/port
++
+ patternProperties:
+   "^(bluetooth|bluetooth-gnss|embedded-controller|gnss|gps|mcu|onewire)$":
+     if:
+-- 
+2.34.1
+

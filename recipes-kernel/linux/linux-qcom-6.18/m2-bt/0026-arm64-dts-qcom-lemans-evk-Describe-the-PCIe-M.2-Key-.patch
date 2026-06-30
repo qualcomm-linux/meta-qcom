@@ -1,0 +1,136 @@
+From e63496a699636f3535d951029c169acc46799dde Mon Sep 17 00:00:00 2001
+From: Wei Deng <wei.deng@oss.qualcomm.com>
+Date: Fri, 3 Apr 2026 14:36:54 +0530
+Subject: [PATCH 26/27] arm64: dts: qcom: lemans-evk: Describe the PCIe M.2 Key
+ E connector
+
+The lemans EVK has the PCIe M.2 Mechanical Key E connector to connect
+wireless connectivity cards over PCIe and UART interfaces. Hence,
+describe the connector node, link it with the PCIe 0 Root Port node and
+replace the direct Bluetooth child node under UART17 with a graph
+port/endpoint.
+
+Also add 'compatible = "pciclass,0604"' to the pcieport0 node in
+lemans.dtsi to allow the PCI subsystem to associate the DT node with
+the PCI-to-PCI bridge device.
+
+Signed-off-by: Wei Deng <wei.deng@oss.qualcomm.com>
+---
+ arch/arm64/boot/dts/qcom/lemans-evk.dts | 59 +++++++++++++++++++------
+ arch/arm64/boot/dts/qcom/lemans.dtsi    |  1 +
+ 2 files changed, 47 insertions(+), 13 deletions(-)
+
+diff --git a/arch/arm64/boot/dts/qcom/lemans-evk.dts b/arch/arm64/boot/dts/qcom/lemans-evk.dts
+index eec8b8a1d9ae..27d3a01ab1f4 100644
+--- a/arch/arm64/boot/dts/qcom/lemans-evk.dts
++++ b/arch/arm64/boot/dts/qcom/lemans-evk.dts
+@@ -127,6 +127,38 @@ usb2_con_hs_ep: endpoint {
+ 		};
+ 	};
+ 
++	connector-3 {
++		compatible = "pcie-m2-e-connector";
++		vpcie3v3-supply = <&vreg_wcn_3p3>;
++
++		ports {
++			#address-cells = <1>;
++			#size-cells = <0>;
++
++			port@0 {
++				reg = <0>;
++				#address-cells = <1>;
++				#size-cells = <0>;
++
++				m2_e_pcie_ep: endpoint@0 {
++					reg = <0>;
++					remote-endpoint = <&pcieport0_ep>;
++				};
++			};
++
++			port@3 {
++				reg = <3>;
++				#address-cells = <1>;
++				#size-cells = <0>;
++
++				m2_e_uart_ep: endpoint@0 {
++					reg = <0>;
++					remote-endpoint = <&uart17_ep>;
++				};
++			};
++		};
++	};
++
+ 	edp0-connector {
+ 		compatible = "dp-connector";
+ 		label = "EDP0";
+@@ -250,8 +282,8 @@ vreg_dcin_12v: regulator-dcin-12v {
+ 		regulator-min-microvolt = <12000000>;
+ 		regulator-max-microvolt = <12000000>;
+ 
+-		regulator-boot-on;
+ 		regulator-always-on;
++		regulator-boot-on;
+ 	};
+ 
+ 	vreg_sdc: regulator-vreg-sdc {
+@@ -277,6 +309,7 @@ vreg_wcn_3p3: regulator-wcn-3p3 {
+ 
+ 		vin-supply = <&vreg_dcin_12v>;
+ 
++		regulator-always-on;
+ 		regulator-boot-on;
+ 	};
+ };
+@@ -866,6 +899,14 @@ &pcie1_phy {
+ 	status = "okay";
+ };
+ 
++&pcieport0 {
++	port {
++		pcieport0_ep: endpoint {
++			remote-endpoint = <&m2_e_pcie_ep>;
++		};
++	};
++};
++
+ &psci {
+ 	reboot-mode {
+ 		mode-bootloader = <0x10001 0x2>;
+@@ -1098,18 +1139,10 @@ &uart10 {
+ &uart17 {
+ 	status = "okay";
+ 
+-	bluetooth: bluetooth {
+-		compatible = "qcom,wcn6855-bt";
+-		max-speed = <3200000>;
+-
+-		vddrfacmn-supply = <&vreg_wcn_3p3>;
+-		vddaon-supply = <&vreg_wcn_3p3>;
+-		vddwlcx-supply = <&vreg_wcn_3p3>;
+-		vddwlmx-supply = <&vreg_wcn_3p3>;
+-		vddbtcmx-supply = <&vreg_wcn_3p3>;
+-		vddrfa0p8-supply = <&vreg_wcn_3p3>;
+-		vddrfa1p2-supply = <&vreg_wcn_3p3>;
+-		vddrfa1p8-supply = <&vreg_wcn_3p3>;
++	port {
++		uart17_ep: endpoint {
++			remote-endpoint = <&m2_e_uart_ep>;
++		};
+ 	};
+ };
+ 
+diff --git a/arch/arm64/boot/dts/qcom/lemans.dtsi b/arch/arm64/boot/dts/qcom/lemans.dtsi
+index 5cff6bb90f40..7d3b48d81bd3 100644
+--- a/arch/arm64/boot/dts/qcom/lemans.dtsi
++++ b/arch/arm64/boot/dts/qcom/lemans.dtsi
+@@ -8998,6 +8998,7 @@ pcie0: pcie@1c00000 {
+ 		status = "disabled";
+ 
+ 		pcieport0: pcie@0 {
++			compatible = "pciclass,0604";
+ 			device_type = "pci";
+ 			reg = <0x0 0x0 0x0 0x0 0x0>;
+ 			bus-range = <0x01 0xff>;
+-- 
+2.34.1
+
