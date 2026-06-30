@@ -144,7 +144,19 @@ create_qcomflash_pkg() {
         # SPI-NOR firmware, partition bins, CDT etc.
         if [ -d "${DEPLOY_DIR_IMAGE}/${QCOM_BOOT_FILES_SUBDIR}/spinor" ]; then
             install -d spinor
-            find "${DEPLOY_DIR_IMAGE}/${QCOM_BOOT_FILES_SUBDIR}/spinor" -maxdepth 1 -type f -exec install -m 0644 {} spinor \;
+            # spinor boot firmware
+            for bfw in `find ${DEPLOY_DIR_IMAGE}/${QCOM_BOOT_FILES_SUBDIR}/spinor -maxdepth 1 -type f \
+                    \( -name '*.bin' -o \
+                       -name '*.elf' -o \
+                       -name '*.fv'  -o \
+                       -name '*.lzma' -o \
+                       -name '*.mbn' -o \
+                       -name '*.melf' -o \
+                       -name '*.xz' -o \
+                       -name 'qsahara_*.xml' \) \
+                    ! -name 'uefi_dtbs*.xz'` ; do
+                install -m 0644 ${bfw} spinor
+            done
 
             # partition bins/xml files
             if [ -n "${QCOM_PARTITION_FILES_SUBDIR_SPINOR}" ]; then
@@ -154,6 +166,12 @@ create_qcomflash_pkg() {
             # cdt file
             if [ -n "${QCOM_CDT_FILE}" ]; then
                 install -m 0644 ${DEPLOY_DIR_IMAGE}/${QCOM_BOOT_FILES_SUBDIR}/spinor/${QCOM_CDT_FILE}.bin spinor/cdt.bin
+            fi
+
+            # uefi dtb
+            if [ -n "${QCOM_UEFI_DTB}" ] && \
+                    [ -f "${DEPLOY_DIR_IMAGE}/${QCOM_BOOT_FILES_SUBDIR}/spinor/${QCOM_UEFI_DTB}" ]; then
+                install -m 0644 "${DEPLOY_DIR_IMAGE}/${QCOM_BOOT_FILES_SUBDIR}/spinor/${QCOM_UEFI_DTB}" spinor/uefi_dtbs.xz
             fi
 
             # dtb image
