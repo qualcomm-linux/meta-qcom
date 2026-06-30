@@ -45,8 +45,9 @@ python () {
 # The DTB names are asked for rather than configured per machine: they are
 # assigned during disassembly, from container metadata in one container and
 # from each DTB's /compatible in another, so hardcoding them goes stale.
-# More than one line is possible, so the ops are joined with '&' and a
-# single pass applies them all.
+# More than one line is normal -- on hamoa the property appears in a base
+# DTB and in a .dtbo overlay, at different node paths -- and the ops are
+# joined with '&' so a single pass applies them all.
 #
 # bin-to-hex owns the DER-to-cells conversion so the padding of a trailing
 # partial cell lives in one place rather than being reimplemented here.
@@ -106,6 +107,13 @@ do_compile() {
         patch_config_elf_cert "${OEM_CERT_STAGE}/${QCOM_XBL_CONFIG}"
     fi
 
+    # uefi_dtbs.xz can sit in a SPI-NOR subdirectory of the boot bins.
+    UEFI_DTBS_XZ=$(find "${BOOTBINS_DIR}" -name "uefi_dtbs.xz" -print -quit)
+    if [ -n "${UEFI_DTBS_XZ}" ]; then
+        install -m 0644 "${UEFI_DTBS_XZ}" "${OEM_CERT_STAGE}/"
+        patch_config_elf_cert "${OEM_CERT_STAGE}/uefi_dtbs.xz"
+    fi
+
     if [ -z "$(ls -A ${OEM_CERT_STAGE} 2>/dev/null)" ]; then
         bbfatal "No boot config ELF carrying QcCapsuleRootCert was found under ${BOOTBINS_DIR}."
     fi
@@ -120,6 +128,11 @@ do_deploy() {
     if [ -f "${OEM_CERT_STAGE}/${QCOM_XBL_CONFIG}" ]; then
         install -m 0644 "${OEM_CERT_STAGE}/${QCOM_XBL_CONFIG}" \
             "${DEPLOYDIR}/xbl_config-with-oem-cert.elf"
+    fi
+
+    if [ -f "${OEM_CERT_STAGE}/uefi_dtbs.xz" ]; then
+        install -m 0644 "${OEM_CERT_STAGE}/uefi_dtbs.xz" \
+            "${DEPLOYDIR}/uefi_dtbs-with-oem-cert.xz"
     fi
 }
 addtask deploy before do_build after do_compile
