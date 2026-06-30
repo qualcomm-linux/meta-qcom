@@ -7,8 +7,8 @@ LIC_FILES_CHKSUM = "file://LICENSE;md5=ca25dbf5ebfc1a058bfc657c895aac2f"
 
 inherit systemd
 
-SRCREV = "44facf5694036ebda53fd09c9535774982df5247"
-SRC_URI = "git://github.com/linux-msm/${BPN}.git;branch=master;protocol=https;tag=v1.1.1"
+SRCREV = "b30a3eb38f9af283f18dbd3c7755653efc52c094"
+SRC_URI = "git://github.com/linux-msm/${BPN}.git;branch=master;protocol=https;tag=v${PV}"
 DEPENDS = "qmic-native qrtr udev"
 
 do_install () {
