@@ -8,7 +8,7 @@ DSPSO_SOC = "sdm845"
 DSPSO_DEVICE = "SDM845-HDK"
 
 # Config for SDM845-HDK is a part of the main repo
-DSPSO_CONFIG = "hexagon-dsp-binaries-conf"
+DSPSO_CONFIG = "hexagon-dsp-binaries-qualcomm-sdm845-hdk-config"
 
 LICENSE = "CLOSED"
 DEPENDS = "firmware-${DSP_PKG_NAME}"
