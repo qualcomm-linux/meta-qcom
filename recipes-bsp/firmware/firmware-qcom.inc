@@ -43,9 +43,7 @@ python() {
     pn = d.getVar("PN")
     insanes = d.getVar("INSANE_SKIP:%s" % pn)
     for pkg in d.getVar("SPLIT_FIRMWARE_PACKAGES").split():
-        # Depend on the main package to get the license file
-        d.appendVar("RDEPENDS:" + pkg, " " + pn)
-        # and append the INSANE_SKIP of the main package to pass QA
+        # append the INSANE_SKIP of the main package to pass QA
         d.appendVar("INSANE_SKIP:" + pkg, " " + insanes)
     if d.getVar("FW_QCOM_NAME") == "unset" and d.getVar("SPLIT_FIRMWARE_PACKAGES") != "":
         bb.error("%s: split firmware-qcom packages engaged, but FW_QCOM_NAME is not defined" % pn)
