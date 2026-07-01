@@ -1,0 +1,42 @@
+name: Bitbake Lint
+
+on:
+  pull_request:
+    paths:
+      - '**/*.bb'
+      - '**/*.bbappend'
+      - '**/*.bbclass'
+      - '**/*.inc'
+      - '**/*.conf'
+      - '!.github/**'
+      - '!ci/**'
+
+permissions:
+  contents: read
+  pull-requests: write
+  checks: write
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Determine Yocto release
+        id: release
+        run: |
+          rel=$(awk -F'"' '/^LAYERSERIES_COMPAT_qcom/ {n=split($2,a," "); print a[n]}' conf/layer.conf)
+          echo "Inferred Yocto release: ${rel}"
+          echo "release=${rel}" >> "$GITHUB_OUTPUT"
+
+      - name: Run bitbake-lint
+        uses: qualcomm-linux/bitbake-lint-action@1b3b5e7d6753138d75e7d179dd956c437824cb7a # v1.0.0
+        with:
+          diff_only: 'true'
+          hide: info
+          mode: fast
+          release: ${{ steps.release.outputs.release }}
+          exit_zero: 'true'
