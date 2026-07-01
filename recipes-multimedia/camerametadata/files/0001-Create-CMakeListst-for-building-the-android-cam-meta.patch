@@ -1,0 +1,82 @@
+From fe0790db8485516ce0e2d6b16f142743e29c8df7 Mon Sep 17 00:00:00 2001
+From: Stoyan Kushlev <skushlev@qti.qualcomm.com>
+Date: Wed, 10 Jun 2026 17:36:11 +0300
+Subject: [PATCH 1/4] Create CMakeListst for building the android cam metadata
+
+Linux embedded uses CMake to build libraries, but the provided
+code is from android repo. This request creating new CMakeLists.txt
+for building the camera metadata lib.
+
+Upstream-Status: Inappropriate [Yocto specific change]
+
+Signed-off-by: Stoyan Kushlev <skushlev@qti.qualcomm.com>
+---
+ CMakeLists.txt        | 36 ++++++++++++++++++++++++++++++++++++
+ camera_metadata.pc.in | 11 +++++++++++
+ 2 files changed, 47 insertions(+)
+ create mode 100644 CMakeLists.txt
+ create mode 100644 camera_metadata.pc.in
+
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+new file mode 100644
+index 00000000..6bcc8f70
+--- /dev/null
++++ b/CMakeLists.txt
+@@ -0,0 +1,36 @@
++cmake_minimum_required(VERSION 3.16)
++
++# Define version - can be passed from Yocto via command line
++if(NOT DEFINED PROJECT_VERSION)
++    set(PROJECT_VERSION "1.0.0")
++endif()
++
++project(camera_metadata VERSION ${PROJECT_VERSION})
++
++# Add destination of compiletime pkg-config file to PKG_CONFIG_PATH
++set(ENV{PKG_CONFIG_PATH} "${CMAKE_CURRENT_BINARY_DIR}:$ENV{PKG_CONFIG_PATH}")
++
++configure_file(
++  camera_metadata.pc.in
++  camera_metadata.pc
++  @ONLY
++)
++
++add_library(camera_metadata SHARED
++    camera/src/camera_metadata.c
++)
++
++target_include_directories(camera_metadata PRIVATE
++    private/camera/include
++    camera/include
++)
++
++set_target_properties(camera_metadata PROPERTIES
++    VERSION ${PROJECT_VERSION}
++    SOVERSION ${PROJECT_VERSION_MAJOR}
++    OUTPUT_NAME "camera_metadata"
++)
++
++install(TARGETS camera_metadata DESTINATION lib)
++install(DIRECTORY camera/include/system DESTINATION include)
++install(FILES ${CMAKE_CURRENT_BINARY_DIR}/camera_metadata.pc DESTINATION lib/pkgconfig)
+\ No newline at end of file
+diff --git a/camera_metadata.pc.in b/camera_metadata.pc.in
+new file mode 100644
+index 00000000..29b9001e
+--- /dev/null
++++ b/camera_metadata.pc.in
+@@ -0,0 +1,11 @@
++prefix=@CMAKE_INSTALL_PREFIX@
++exec_prefix=${prefix}
++libdir=${exec_prefix}/lib
++includedir=${prefix}/include/system
++
++Name: camera_metadata
++Description: Android camera metadata library
++Version: @PROJECT_VERSION@
++Libs: -L${libdir} -lcamera_metadata
++Libs.private:
++Cflags: -I${includedir}
+-- 
+2.34.1
+
