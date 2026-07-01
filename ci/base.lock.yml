@@ -3,11 +3,11 @@ header:
 overrides:
     repos:
         oe-core:
-            commit: 5b718f4c044147dfa0742caacbc20133ead53f10
+            commit: f810998ac90f7a3e20e26555f39d754b16ce8b69
         bitbake:
             commit: 7e3489ab3ec39b2dcf4e50eff54d36d42e5a7307
         meta-arm:
-            commit: 3681201897f164408194e4cc823e1e3650607dab
+            commit: 847af9c082cc190b3781f101200a9403426e481b
         meta-openembedded:
             commit: a7428c96bf97a751ccd5baa63acfa1f5b49f077e
         meta-virtualization:
