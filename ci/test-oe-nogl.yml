@@ -1,0 +1,18 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/siemens/kas/master/kas/schema-kas.json
+
+header:
+  version: 14
+
+repos:
+  meta-openembedded:
+    url: https://github.com/openembedded/meta-openembedded
+    patches:
+      plain:
+        repo: meta-qcom
+        path: patches/meta-oe/0001-mariadb-fix-building-for-the-ARMv8.3-A-and-later-sys.patch
+    layers:
+      meta-oe:
+
+local_conf_header:
+  nogl: |
+    DISTRO_FEATURES:remove = "opengl"
