@@ -28,6 +28,11 @@ concurrency:
 env:
   CACHE_DIR: /efs/qli/meta-qcom
   KAS_CLONE_DEPTH: 1
+  # Internal mirror of ghcr.io/siemens/kas/kas, only reachable from the
+  # self-hosted runners. Keep the image tag in sync with KAS_VERSION
+  # (kas-container script version) and with compile.yml.
+  KAS_VERSION: "5.3"
+  KAS_CONTAINER_IMAGE: 418295714268.dkr.ecr.us-west-2.amazonaws.com/ghcr.io/kas-image:5.3
 
 jobs:
   kas-setup:
@@ -38,8 +43,7 @@ jobs:
         run: |
           KAS_CONTAINER=$RUNNER_TEMP/kas-container
           echo "KAS_CONTAINER=$KAS_CONTAINER" >> $GITHUB_ENV
-          LATEST=$(git ls-remote --tags --refs --sort="v:refname" https://github.com/siemens/kas | tail -n1 | sed 's/.*\///')
-          wget -qO ${KAS_CONTAINER} https://raw.githubusercontent.com/siemens/kas/refs/tags/$LATEST/kas-container
+          wget -qO ${KAS_CONTAINER} https://raw.githubusercontent.com/siemens/kas/refs/tags/${KAS_VERSION}/kas-container
           chmod +x ${KAS_CONTAINER}
 
       - uses: actions/checkout@v6

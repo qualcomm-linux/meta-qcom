@@ -41,6 +41,10 @@ on:
 
 env:
   KAS_CLONE_DEPTH: 1
+  # Internal mirror of ghcr.io/siemens/kas/kas, only reachable from the
+  # self-hosted runners. Keep the image tag in sync with KAS_VERSION in
+  # build-yocto.yml (env does not propagate across workflow_call).
+  KAS_CONTAINER_IMAGE: 418295714268.dkr.ecr.us-west-2.amazonaws.com/ghcr.io/kas-image:5.3
 
 jobs:
   reusable_compile_job:
