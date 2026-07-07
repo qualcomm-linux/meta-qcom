@@ -84,7 +84,7 @@ runs:
               TEST_RESULTS=$(for SUITE in $(echo "$JOB_SUITES" | jq -r -c ".results[]")
               do
                   if [ "${JOB_TYPE}" = "test" ]; then
-                      if [ "${JOB_STATE}" = "Finished" ] && [ ${JOB_HEALTH} = "Complete" ]; then
+                      if [ "${JOB_STATE}" = "Finished" ]; then
                           SUITE_NAME=$(echo "$SUITE" | jq -r ".name")
                           SUITE_ID=$(echo "$SUITE" | jq -r ".id")
                           SUITE_TESTS=$(curl -s "https://lava.infra.foundries.io/api/v0.2/jobs/$JOB_ID/suites/$SUITE_ID/tests/")
