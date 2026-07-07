@@ -20,6 +20,8 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       branch: ${{ steps.branch.outputs.value }}
+      pr_number: ${{ steps.branch.outputs.pr_number }}
+      pr_url: ${{ steps.branch.outputs.pr_url }}
     steps:
       # github.event.workflow_run.pull_requests is empty for PRs opened from
       # forked repositories, so the target branch can't be read from the event
@@ -37,6 +39,14 @@ jobs:
           BRANCH=$(jq -r '.pull_request.base.ref // "master"' event.json)
           echo "::notice title=Target branch::Resolved target branch: $BRANCH"
           echo "value=$BRANCH" >> "$GITHUB_OUTPUT"
+          # PR number and URL are taken from the pull_request event payload and
+          # forwarded to the test workflow so they can be embedded in the LAVA
+          # test job metadata section.
+          PR_NUMBER=$(jq -r '.number // .pull_request.number // ""' event.json)
+          PR_URL=$(jq -r '.pull_request.html_url // ""' event.json)
+          echo "::notice title=Pull request::PR #${PR_NUMBER} (${PR_URL})"
+          echo "pr_number=$PR_NUMBER" >> "$GITHUB_OUTPUT"
+          echo "pr_url=$PR_URL" >> "$GITHUB_OUTPUT"
 
   test:
     needs: determine-target-branch
@@ -45,6 +55,8 @@ jobs:
     secrets: inherit
     with:
       build_id: ${{ github.event.workflow_run.id }}
+      pr_number: ${{ needs.determine-target-branch.outputs.pr_number }}
+      pr_url: ${{ needs.determine-target-branch.outputs.pr_url }}
 
   comment-on-pr:
     name: "Comment on PR"

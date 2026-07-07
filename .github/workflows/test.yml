@@ -6,6 +6,14 @@ on:
       build_id:
         required: true
         type: string
+      pr_number:
+        required: false
+        type: string
+        description: "Pull request number. Added to the LAVA job metadata for PR builds"
+      pr_url:
+        required: false
+        type: string
+        description: "Pull request URL. Added to the LAVA job metadata for PR builds"
     outputs:
       summary_ids:
         description: "IDs of the test summary artifact"
@@ -40,6 +48,8 @@ jobs:
       distro_name: "nodistro"
       lava_test_plans_ref: "${{ needs.prepare-env.outputs.lava-test-plans-ref }}"
       testkit_ref: "${{ needs.prepare-env.outputs.testkit-ref }}"
+      pr_number: "${{ inputs.pr_number }}"
+      pr_url: "${{ inputs.pr_url }}"
   test-qcom-distro:
     needs: [prepare-env]
     name: "Test qcom-distro"
@@ -53,6 +63,8 @@ jobs:
       distro_name: "qcom-distro"
       lava_test_plans_ref: "${{ needs.prepare-env.outputs.lava-test-plans-ref }}"
       testkit_ref: "${{ needs.prepare-env.outputs.testkit-ref }}"
+      pr_number: "${{ inputs.pr_number }}"
+      pr_url: "${{ inputs.pr_url }}"
   test-qcom-distro_linux-qcom-6-18:
     needs: [prepare-env]
     name: "Test qcom-distro_linux-qcom-6.18"
@@ -67,6 +79,8 @@ jobs:
       distro_suffix: "_linux-qcom-6.18"
       lava_test_plans_ref: "${{ needs.prepare-env.outputs.lava-test-plans-ref }}"
       testkit_ref: "${{ needs.prepare-env.outputs.testkit-ref }}"
+      pr_number: "${{ inputs.pr_number }}"
+      pr_url: "${{ inputs.pr_url }}"
 
   collect-ids:
     name: "Collect Summary artifact IDs"
