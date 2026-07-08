@@ -1,0 +1,30 @@
+From 8f048e9f396dd92229bda35c61f16f41d2ba7764 Mon Sep 17 00:00:00 2001
+From: Jose Quaresma <jose.quaresma@oss.qualcomm.com>
+Date: Wed, 8 Jul 2026 18:43:09 +0100
+Subject: [PATCH] oe/spdx30_tasks: fix image deploy
+
+IMGDEPLOYDIR is not populated when the artifacts comes from sstate-cache.
+
+Upstream-Status: Pending
+
+Signed-off-by: Jose Quaresma <jose.quaresma@oss.qualcomm.com>
+---
+ meta/lib/oe/spdx30_tasks.py | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/meta/lib/oe/spdx30_tasks.py b/meta/lib/oe/spdx30_tasks.py
+index 79e18db11d..52255108a6 100644
+--- a/meta/lib/oe/spdx30_tasks.py
++++ b/meta/lib/oe/spdx30_tasks.py
+@@ -1435,7 +1435,7 @@ def create_rootfs_spdx(d):
+ def create_image_spdx(d):
+     import oe.sbom30
+ 
+-    image_deploy_dir = Path(d.getVar("IMGDEPLOYDIR"))
++    image_deploy_dir = Path(d.getVar("DEPLOY_DIR_IMAGE"))
+     manifest_path = Path(d.getVar("IMAGE_OUTPUT_MANIFEST"))
+     spdx_work_dir = Path(d.getVar("SPDXIMAGEWORK"))
+ 
+-- 
+2.55.0
+
