@@ -193,6 +193,31 @@ jobs:
       kernel_dirname: ''
       cache_dir: ${{ needs.compile-env.outputs.CACHE_DIR }}
 
+  testimage-runs:
+    needs: [testimage, github-cache-check, compile-env]
+    if: |
+      github.repository_owner == 'qualcomm-linux' &&
+      (inputs.skip_if_github_cached != true || needs.github-cache-check.outputs.cache_hit != 'true')
+    strategy:
+      fail-fast: false
+      matrix:
+        machine:
+          - testimage-run
+        distro:
+          - name: nodistro
+            yamlfile: ""
+    uses: ./.github/workflows/compile.yml
+    with:
+      run_on: arm64-metal
+      name: ${{ matrix.machine }}/${{ matrix.distro.name }}
+      world: false
+      machine: ${{matrix.machine}}
+      distro_yaml: ${{matrix.distro.yamlfile}}
+      distro_name: ${{matrix.distro.name}}
+      kernel_yaml: ''
+      kernel_dirname: ''
+      cache_dir: ${{ needs.compile-env.outputs.CACHE_DIR }}
+
   compile_warm_up:
     needs: [kas-setup, github-cache-check, compile-env]
     if: |
