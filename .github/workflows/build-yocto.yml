@@ -237,6 +237,7 @@ jobs:
           - qcm6490-idp
           - qcom-armv8a
           - qcs615-ride
+          - qcs615-talos-evk
           - qcs8300-ride-sx
           - qcs9100-ride-sx
           - rb1-core-kit
@@ -355,6 +356,14 @@ jobs:
                 dirname: ""
                 yamlfile: ""
           - machine: qcs615-ride
+            distro:
+                name: qcom-distro
+                yamlfile: ':ci/qcom-distro.yml'
+            kernel:
+                type: u-boot-qcom
+                dirname: "_u-boot-qcom"
+                yamlfile: ":ci/u-boot-qcom.yml"
+          - machine: qcs615-talos-evk
             distro:
                 name: qcom-distro
                 yamlfile: ':ci/qcom-distro.yml'

@@ -12,5 +12,14 @@ SRC_URI = " \
 SRC_URI[license.sha256sum] = "3ad8f1fd82f2918c858cec2d0887b7df6f71a06416beecfdb3efe7d62874d863"
 
 QCOM_BOOT_IMG_SUBDIR = "qcs615"
+QCOM_BOOT_IMG_SUBDIR_ALIASES = "qcs615-talos"
+
+do_deploy:append() {
+    for subdir in ${QCOM_BOOT_IMG_SUBDIR_ALIASES}; do
+        [ -z "$subdir" ] && continue
+        install -d ${DEPLOYDIR}/$subdir
+        cp -a ${DEPLOYDIR}/${QCOM_BOOT_IMG_SUBDIR}/. ${DEPLOYDIR}/$subdir/
+    done
+}
 
 include firmware-qcom-boot-common.inc
