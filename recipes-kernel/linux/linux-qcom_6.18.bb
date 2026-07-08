@@ -24,6 +24,7 @@ SRC_URI = " \
     git://github.com/qualcomm-linux/kernel.git;${SRCBRANCH};protocol=https \
     file://0001-tools-use-basename-to-identify-file-in-gen-mach-type.patch \
     file://0001-DO-NOT-MERGE-arm64-dts-qcom-lemans-monaco-disable-PC.patch \
+    file://0001-Revert-QCLINUX-arm64-dts-qcom-Enable-combo-mode-for-.patch \
 "
 # Additional kernel configs.
 SRC_URI += " \

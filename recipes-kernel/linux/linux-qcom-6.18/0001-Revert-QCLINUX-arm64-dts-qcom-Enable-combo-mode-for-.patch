@@ -1,0 +1,243 @@
+From f6d3c4f89e77ba00676c643fb784ac5bb12ca75c Mon Sep 17 00:00:00 2001
+From: Kas User <kas@example.com>
+Date: Fri, 3 Jul 2026 15:09:26 +0530
+Subject: Revert "QCLINUX: arm64: dts: qcom: Enable combo mode for CSI1 port"
+
+This reverts commit 34598eecdf6bde166bb99109fa37a3fe2d0fc080.
+
+Upstream-Status: Inappropriate [Camera sensor 1s blocking issue]
+---
+ .../dts/qcom/lemans-evk-camera-sensor.dtsi    | 68 +++++++++++++----
+ .../dts/qcom/monaco-evk-camera-sensor.dtsi    | 75 +++++++++++++++++++
+ 2 files changed, 130 insertions(+), 13 deletions(-)
+
+diff --git a/arch/arm64/boot/dts/qcom/lemans-evk-camera-sensor.dtsi b/arch/arm64/boot/dts/qcom/lemans-evk-camera-sensor.dtsi
+index 9156516a78ea..cbc5e5ec8047 100644
+--- a/arch/arm64/boot/dts/qcom/lemans-evk-camera-sensor.dtsi
++++ b/arch/arm64/boot/dts/qcom/lemans-evk-camera-sensor.dtsi
+@@ -435,6 +435,11 @@ qcom,cam-sensor21 {
+ 		rgltr-max-voltage = <1800000>;
+ 		rgltr-load-current = <120000>;
+ 		gpio-no-mux = <0>;
++		pinctrl-0 = <&cam_sensor_mclk1_active
++			     &cam_sensor_active_rst1>;
++		pinctrl-1 = <&cam_sensor_mclk1_suspend
++			     &cam_sensor_suspend_rst1>;
++		pinctrl-names = "cam_default", "cam_suspend";
+ 		gpios = <&tlmm 73 0>,
+ 			<&tlmm 133 0>,
+ 			<&pmm8654au_0_gpios 8 0>;
+@@ -454,14 +459,14 @@ qcom,cam-sensor21 {
+ 		status = "ok";
+ 	};
+ 
+-	/*cam1-cmk_imx577*/
+-	qcom,cam-sensor28 {
++	/*cam1-imx577*/
++	qcom,cam-sensor26 {
+ 		compatible = "qcom,cam-sensor";
+ 		csiphy-sd-index = <1>;
+ 		sensor-position-roll = <0>;
+ 		sensor-position-pitch = <0>;
+ 		sensor-position-yaw = <180>;
+-		eeprom-src = <&eeprom_cam28>;
++		eeprom-src = <&eeprom_cam26>;
+ 		cam_vio-supply = <&vreg_s4a>;
+ 		regulator-names = "cam_vio";
+ 		power-domains = <&camcc CAM_CC_TITAN_TOP_GDSC>;
+@@ -471,6 +476,11 @@ qcom,cam-sensor28 {
+ 		rgltr-max-voltage = <1800000>;
+ 		rgltr-load-current = <120000>;
+ 		gpio-no-mux = <0>;
++		pinctrl-0 = <&cam_sensor_mclk1_active
++			     &cam_sensor_active_rst1>;
++		pinctrl-1 = <&cam_sensor_mclk1_suspend
++			     &cam_sensor_suspend_rst1>;
++		pinctrl-names = "cam_default", "cam_suspend";
+ 		gpios = <&tlmm 73 0>,
+ 			<&tlmm 133 0>,
+ 			<&pmm8654au_0_gpios 8 0>;
+@@ -486,17 +496,18 @@ qcom,cam-sensor28 {
+ 		clock-names = "cam_clk";
+ 		clock-cntl-level = "nominal";
+ 		clock-rates = <24000000>;
+-		cell-index = <28>;
++		cell-index = <26>;
+ 		status = "ok";
+ 	};
+ 
+-	/*cam1-ov9282*/
+-	qcom,cam-sensor31 {
++	/*cam1-cmk_imx577*/
++	qcom,cam-sensor28 {
+ 		compatible = "qcom,cam-sensor";
+ 		csiphy-sd-index = <1>;
+ 		sensor-position-roll = <0>;
+ 		sensor-position-pitch = <0>;
+ 		sensor-position-yaw = <180>;
++		eeprom-src = <&eeprom_cam28>;
+ 		cam_vio-supply = <&vreg_s4a>;
+ 		regulator-names = "cam_vio";
+ 		power-domains = <&camcc CAM_CC_TITAN_TOP_GDSC>;
+@@ -507,7 +518,7 @@ qcom,cam-sensor31 {
+ 		rgltr-load-current = <120000>;
+ 		gpio-no-mux = <0>;
+ 		gpios = <&tlmm 73 0>,
+-			<&expander2 2 0>,
++			<&tlmm 133 0>,
+ 			<&pmm8654au_0_gpios 8 0>;
+ 		gpio-reset = <1>;
+ 		gpio-custom1 = <2>;
+@@ -521,7 +532,43 @@ qcom,cam-sensor31 {
+ 		clock-names = "cam_clk";
+ 		clock-cntl-level = "nominal";
+ 		clock-rates = <24000000>;
+-		cell-index = <31>;
++		cell-index = <28>;
++		status = "ok";
++	};
++
++	eeprom_cam26: qcom,eeprom26 {
++		compatible = "qcom,eeprom";
++		cam_vio-supply = <&vreg_s4a>;
++		regulator-names = "cam_vio";
++		power-domains = <&camcc CAM_CC_TITAN_TOP_GDSC>;
++		rgltr-cntrl-support;
++		pwm-switch;
++		rgltr-min-voltage = <1800000>;
++		rgltr-max-voltage = <1800000>;
++		rgltr-load-current = <120000>;
++		gpio-no-mux = <0>;
++		pinctrl-0 = <&cam_sensor_mclk1_active
++			     &cam_sensor_active_rst1>;
++		pinctrl-1 = <&cam_sensor_mclk1_suspend
++			     &cam_sensor_suspend_rst1>;
++		pinctrl-names = "cam_default", "cam_suspend";
++		gpios = <&tlmm 73 0>,
++			<&tlmm 133 0>,
++			<&pmm8654au_0_gpios 8 0>;
++		gpio-reset = <1>;
++		gpio-custom1 = <2>;
++		gpio-req-tbl-num = <0 1 2>;
++		gpio-req-tbl-flags = <1 0 0>;
++		gpio-req-tbl-label = "CAMIF_MCLK1",
++				     "CAM_RESET1",
++				     "CAM_CUSTOM1";
++		sensor-mode = <0>;
++		cci-master = <0>;
++		clocks = <&camcc CAM_CC_MCLK1_CLK>;
++		clock-names = "cam_clk";
++		clock-cntl-level = "nominal";
++		clock-rates = <24000000>;
++		cell-index = <26>;
+ 		status = "ok";
+ 	};
+ 
+@@ -1015,11 +1062,6 @@ &soc {
+ 	qcom,cam-res-mgr {
+ 		compatible = "qcom,cam-res-mgr";
+ 		gpios-shared = <518 519 520 521>;
+-		gpios-shared-pinctrl = <633>;
+-		shared-pctrl-gpio-names = "mclk1";
+-		pinctrl-0 = <&cam_sensor_mclk1_active>;
+-		pinctrl-1 = <&cam_sensor_mclk1_suspend>;
+-		pinctrl-names = "mclk1_active", "mclk1_suspend";
+ 		status = "ok";
+ 	};
+ };
+diff --git a/arch/arm64/boot/dts/qcom/monaco-evk-camera-sensor.dtsi b/arch/arm64/boot/dts/qcom/monaco-evk-camera-sensor.dtsi
+index 8bdf5a555cfe..167b85c0e884 100644
+--- a/arch/arm64/boot/dts/qcom/monaco-evk-camera-sensor.dtsi
++++ b/arch/arm64/boot/dts/qcom/monaco-evk-camera-sensor.dtsi
+@@ -399,6 +399,46 @@ rb4_slot1: qcom,cam-sensor17 {
+ 		status = "ok";
+ 	};
+ 
++	/*cam0-imx577*/
++	qcom,cam-sensor19 {
++		compatible = "qcom,cam-sensor";
++		cell-index = <19>;
++		csiphy-sd-index = <1>;
++		sensor-position-roll = <0>;
++		sensor-position-pitch = <0>;
++		sensor-position-yaw = <180>;
++		eeprom-src = <&eeprom_cam19>;
++		regulator-names = "cam_vio";
++		power-domains = <&camcc CAM_CC_TITAN_TOP_GDSC>;
++		rgltr-cntrl-support;
++		pwm-switch;
++		rgltr-min-voltage = <1800000>;
++		rgltr-max-voltage = <1800000>;
++		rgltr-load-current = <120000>;
++		gpio-no-mux = <0>;
++		pinctrl-0 = <&cam_sensor_mclk1_active
++			     &cam_sensor_active_rst1>;
++		pinctrl-1 = <&cam_sensor_mclk1_suspend
++			     &cam_sensor_suspend_rst1>;
++		pinctrl-names = "cam_default", "cam_suspend";
++		gpios = <&tlmm 68 0>,
++			<&tlmm 74 0>,
++			<&expander2 1 0>;
++		gpio-reset = <1>;
++		gpio-custom1 = <2>;
++		gpio-req-tbl-num = <0 1 2>;
++		gpio-req-tbl-flags = <1 0 0>;
++		gpio-req-tbl-label = "CAM_MCLK1",
++				     "CAMIF_RESET1",
++				     "CAM_CUSTOM1";
++		cci-master = <0>;
++		clocks = <&camcc CAM_CC_MCLK1_CLK>;
++		clock-names = "cam_clk";
++		clock-cntl-level = "nominal";
++		clock-rates = <24000000>;
++		status = "ok";
++	};
++
+ 	/*cam0-imx577*/
+ 	qcom,cam-sensor21 {
+ 		compatible = "qcom,cam-sensor";
+@@ -439,6 +479,41 @@ qcom,cam-sensor21 {
+ 		status = "ok";
+ 	};
+ 
++	eeprom_cam19: qcom,eeprom19 {
++		compatible = "qcom,eeprom";
++		cell-index = <19>;
++		regulator-names = "cam_vio";
++		power-domains = <&camcc CAM_CC_TITAN_TOP_GDSC>;
++		rgltr-cntrl-support;
++		pwm-switch;
++		rgltr-min-voltage = <1800000>;
++		rgltr-max-voltage = <1800000>;
++		rgltr-load-current = <120000>;
++		gpio-no-mux = <0>;
++		pinctrl-0 = <&cam_sensor_mclk1_active
++			     &cam_sensor_active_rst1>;
++		pinctrl-1 = <&cam_sensor_mclk1_suspend
++			     &cam_sensor_suspend_rst1>;
++		pinctrl-names = "cam_default", "cam_suspend";
++		gpios = <&tlmm 68 0>,
++			<&tlmm 74 0>,
++			<&expander2 1 0>;
++		gpio-reset = <1>;
++		gpio-custom1 = <2>;
++		gpio-req-tbl-num = <0 1 2>;
++		gpio-req-tbl-flags = <1 0 0>;
++		gpio-req-tbl-label = "CAM_MCLK1",
++				     "CAMIF_RESET1",
++				     "CAM_CUSTOM1";
++		sensor-mode = <0>;
++		cci-master = <0>;
++		clocks = <&camcc CAM_CC_MCLK1_CLK>;
++		clock-names = "cam_clk";
++		clock-cntl-level = "nominal";
++		clock-rates = <24000000>;
++		status = "ok";
++	};
++
+ 	eeprom_cam21: qcom,eeprom21 {
+ 		compatible = "qcom,eeprom";
+ 		cell-index = <21>;
+-- 
+2.43.0
+
