@@ -1,0 +1,20 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/siemens/kas/master/kas/schema-kas.json
+
+header:
+  version: 14
+  includes:
+  - ci/genericarm64.yml
+
+local_conf_header:
+  ptest: |
+    # install ptest pkgs
+    EXTRA_IMAGE_FEATURES += "ptest-pkgs"
+  testimage: |
+    # enable testimage for the target image excluding initramfs
+    IMAGE_CLASSES += "testimage"
+    IMAGE_CLASSES:remove:pn-core-image-initramfs-boot = "testimage"
+    # test requirements: ssh scp
+    #CORE_IMAGE_EXTRA_INSTALL += "dropbear"
+    CORE_IMAGE_EXTRA_INSTALL += "openssh-sshd"
+    # test requirements: parselogs
+    CORE_IMAGE_EXTRA_INSTALL += "openssh-sftp-server"
