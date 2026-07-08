@@ -169,8 +169,25 @@ jobs:
           uploads_dir=./uploads/${INPUTS_DISTRO_NAME}${INPUTS_KERNEL_DIRNAME}/${INPUTS_MACHINE}
           mkdir -p $uploads_dir
           if [ -d $images_dir ]; then
+            # Skip symlink names whose content is also published under another
+            # name: the versioned '*--<version>*' links duplicate the
+            # machine-suffixed ones, and the '<type>-<machine>.bin' kernel
+            # links duplicate Image, Image.gz, zImage and vmlinux.
+            exclude=( ! -name '*--*' ! -name 'vmlinux-*.bin' ! -name 'Image-*.bin' ! -name 'Image.gz-*.bin' ! -name 'zImage-*.bin' )
+            # The qcomflash tarball already ships the rootfs (rootfs.img), the
+            # ESP (efi.bin) and vmlinux, so skip their standalone copies when
+            # the tarball is published (uncompress or extract them if needed)
+            if compgen -G "$images_dir/*.qcomflash.tar.gz" > /dev/null; then
+              exclude+=( ! -name '*.rootfs.ext4' ! -name 'esp-qcom-image-*.vfat' ! -name 'vmlinux' )
+            fi
+            # The world build deploys the same initramfs images for every
+            # machine, so publish them only from the generic machines
+            case "${INPUTS_MACHINE}" in
+              qcom-armv8a|qcom-armv7a) ;;
+              *) exclude+=( ! -name 'initramfs-firmware-*' ! -name 'initramfs-test*' ! -name 'initramfs-kerneltest*' ! -name 'initramfs-tiny*' ) ;;
+            esac
             # Publish everything that is linked by bitbake at the end of the build (avoid timestamp and duplication)
-            find $images_dir/ -maxdepth 1 -type l -exec cp -v --dereference {} $uploads_dir/ \;
+            find $images_dir/ -maxdepth 1 -type l "${exclude[@]}" -exec cp -v --dereference {} $uploads_dir/ \;
             # Files without links: *.vfat, *.elf, *.efi, efi.stub, fit *.its, qcom-metadata.dtb and qclinuxfitImage
             # Copy *.efi, *.efi and *.vfat as they are useful for debugging
             find $images_dir/ -maxdepth 1 -type f \( -name \*.efi -o -name \*.elf -o -name dtb-\*.vfat \) -exec cp -v {} $uploads_dir/ \;
