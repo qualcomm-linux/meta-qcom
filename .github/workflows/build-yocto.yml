@@ -193,6 +193,12 @@ jobs:
     uses: ./.github/workflows/compile.yml
     with:
       name: ${{ matrix.machine }}/${{ matrix.distro.name }}${{ matrix.kernel.dirname }}
+      # One world build per machine and distro family is enough for compile
+      # coverage: nodistro (including the nogl variant) covers the plain OE
+      # configuration and qcom-distro-catchall enables a superset of the
+      # qcom-distro DISTRO_FEATURES, so the remaining distro and kernel
+      # combinations only repeat already-covered world builds.
+      world: ${{ (startsWith(matrix.distro.name, 'nodistro') || matrix.distro.name == 'qcom-distro-catchall') && matrix.kernel.type == 'default' }}
       machine: ${{matrix.machine}}
       distro_yaml: ${{matrix.distro.yamlfile}}
       distro_name: ${{matrix.distro.name}}
@@ -438,6 +444,12 @@ jobs:
     with:
       name: ${{ matrix.machine }}/${{ matrix.distro.name }}${{ matrix.kernel.dirname }}
       enabled: ${{inputs.profile != 'pr' || (matrix.distro.name != 'debug' && matrix.distro.name != 'performance')}}
+      # One world build per machine and distro family is enough for compile
+      # coverage: nodistro (including the nogl variant) covers the plain OE
+      # configuration and qcom-distro-catchall enables a superset of the
+      # qcom-distro DISTRO_FEATURES, so the remaining distro and kernel
+      # combinations only repeat already-covered world builds.
+      world: ${{ (startsWith(matrix.distro.name, 'nodistro') || matrix.distro.name == 'qcom-distro-catchall') && matrix.kernel.type == 'default' }}
       machine: ${{matrix.machine}}
       distro_yaml: ${{matrix.distro.yamlfile}}
       distro_name: ${{matrix.distro.name}}
