@@ -1,0 +1,66 @@
+<?xml version="1.0"?>
+
+<!-- BEGIN -->
+<ThermalConfiguration>
+
+  <!--
+    Platform-specific thermal mitigation rules for Qualcomm SoC can be added here.
+    Use <SoCModel> to match the platform via /sys/firmware/devicetree/base/model (prefix match).
+    Temperatures are in milli-degrees Celsius (e.g., 95000 = 95°C).
+  -->
+
+  <!--
+  <Platform>
+    <Name>Qualcomm SoC Thermal Policy</Name>
+    <SoCModel>Qualcomm Technologies, Inc. REPLACE_WITH_SOC_NAME</SoCModel>
+    <Preference>ENERGY_CONSERVE</Preference>
+    <ThermalSensors>
+      <ThermalSensor>
+        <Type>cpu-thermal</Type>
+        <Path>/sys/class/thermal/thermal_zone0/temp</Path>
+        <AsyncCapable>0</AsyncCapable>
+      </ThermalSensor>
+    </ThermalSensors>
+    <CoolingDevices>
+      <CoolingDevice>
+        <Index>0</Index>
+        <Type>cpu-freq</Type>
+        <Path>/sys/class/thermal/cooling_device0/cur_state</Path>
+        <MinState>0</MinState>
+        <MaxState>10</MaxState>
+        <IncDecStep>1</IncDecStep>
+      </CoolingDevice>
+    </CoolingDevices>
+    <ThermalZones>
+      <ThermalZone>
+        <Type>cpu-zone</Type>
+        <TripPoints>
+          <TripPoint>
+            <Temperature>85000</Temperature>
+            <Hyst>5000</Hyst>
+            <type>passive</type>
+            <SensorType>cpu-thermal</SensorType>
+            <CoolingDevice>
+              <type>cpu-freq</type>
+              <influence>100</influence>
+              <PidControl>
+                <Kp>0.0005</Kp>
+                <Ki>0.0001</Ki>
+                <Kd>0.0001</Kd>
+              </PidControl>
+            </CoolingDevice>
+          </TripPoint>
+          <TripPoint>
+            <Temperature>105000</Temperature>
+            <Hyst>0</Hyst>
+            <type>critical</type>
+            <SensorType>cpu-thermal</SensorType>
+          </TripPoint>
+        </TripPoints>
+      </ThermalZone>
+    </ThermalZones>
+  </Platform>
+  -->
+
+</ThermalConfiguration>
+<!-- END -->
