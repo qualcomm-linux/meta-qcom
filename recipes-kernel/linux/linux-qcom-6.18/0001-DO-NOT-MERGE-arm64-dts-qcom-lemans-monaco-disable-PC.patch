@@ -1,0 +1,112 @@
+From fb8c7d16d7e877562187c4e751bd72f4952da23b Mon Sep 17 00:00:00 2001
+From: Ziyue Zhang <ziyue.zhang@oss.qualcomm.com>
+Date: Fri, 3 Jul 2026 12:44:54 +0530
+Subject: [DO NOT MERGE] arm64: dts: qcom: lemans: monaco: disable PCIe1
+ controller and PHY
+
+PCIe1 to be not used on Lemans, Monaco-based platforms.
+
+Disable the PCIe1 controller and its associated PHY in both the shared
+Ride common DTSI and the EVK board DTS to prevent unnecessary resource
+allocation and avoid spurious probe failures.
+
+Upstream-Status: Inappropriate [PCIe hack to prevent 0.6s blocker in
+boot time]
+Signed-off-by: Ziyue Zhang <ziyue.zhang@oss.qualcomm.com>
+---
+ arch/arm64/boot/dts/qcom/lemans-evk.dts          | 4 ++--
+ arch/arm64/boot/dts/qcom/lemans-ride-common.dtsi | 4 ++--
+ arch/arm64/boot/dts/qcom/monaco-evk-common.dtsi  | 4 ++--
+ arch/arm64/boot/dts/qcom/qcs8300-ride.dts        | 4 ++--
+ 4 files changed, 8 insertions(+), 8 deletions(-)
+
+diff --git a/arch/arm64/boot/dts/qcom/lemans-evk.dts b/arch/arm64/boot/dts/qcom/lemans-evk.dts
+index eec8b8a1d9ae..355768332573 100644
+--- a/arch/arm64/boot/dts/qcom/lemans-evk.dts
++++ b/arch/arm64/boot/dts/qcom/lemans-evk.dts
+@@ -856,14 +856,14 @@ &pcie1 {
+ 	pinctrl-0 = <&pcie1_default_state>;
+ 	pinctrl-names = "default";
+ 
+-	status = "okay";
++	status = "disabled";
+ };
+ 
+ &pcie1_phy {
+ 	vdda-phy-supply = <&vreg_l5a>;
+ 	vdda-pll-supply = <&vreg_l1c>;
+ 
+-	status = "okay";
++	status = "disabled";
+ };
+ 
+ &psci {
+diff --git a/arch/arm64/boot/dts/qcom/lemans-ride-common.dtsi b/arch/arm64/boot/dts/qcom/lemans-ride-common.dtsi
+index d66b33a1812c..dc0b82e4f299 100644
+--- a/arch/arm64/boot/dts/qcom/lemans-ride-common.dtsi
++++ b/arch/arm64/boot/dts/qcom/lemans-ride-common.dtsi
+@@ -984,7 +984,7 @@ &pcie1 {
+ 	pinctrl-names = "default";
+ 	pinctrl-0 = <&pcie1_default_state>;
+ 
+-	status = "okay";
++	status = "disabled";
+ };
+ 
+ &pcie0_phy {
+@@ -998,7 +998,7 @@ &pcie1_phy {
+ 	vdda-phy-supply = <&vreg_l5a>;
+ 	vdda-pll-supply = <&vreg_l1c>;
+ 
+-	status = "okay";
++	status = "disabled";
+ };
+ 
+ &pcieport0 {
+diff --git a/arch/arm64/boot/dts/qcom/monaco-evk-common.dtsi b/arch/arm64/boot/dts/qcom/monaco-evk-common.dtsi
+index 2434d1f9f58b..a96e780e20cd 100644
+--- a/arch/arm64/boot/dts/qcom/monaco-evk-common.dtsi
++++ b/arch/arm64/boot/dts/qcom/monaco-evk-common.dtsi
+@@ -721,7 +721,7 @@ &pcie1 {
+ 	pinctrl-0 = <&pcie1_default_state>;
+ 	pinctrl-names = "default";
+ 
+-	status = "okay";
++	status = "disabled";
+ };
+ 
+ &pcie1_phy {
+@@ -729,7 +729,7 @@ &pcie1_phy {
+ 	vdda-pll-supply = <&vreg_l5a>;
+ 	vdda-qref-supply = <&vreg_l4a>;
+ 
+-	status = "okay";
++	status = "disabled";
+ };
+ 
+ &pcieport0 {
+diff --git a/arch/arm64/boot/dts/qcom/qcs8300-ride.dts b/arch/arm64/boot/dts/qcom/qcs8300-ride.dts
+index 4e2fb94a147c..615297720cf5 100644
+--- a/arch/arm64/boot/dts/qcom/qcs8300-ride.dts
++++ b/arch/arm64/boot/dts/qcom/qcs8300-ride.dts
+@@ -612,7 +612,7 @@ &pcie1 {
+ 	pinctrl-0 = <&pcie1_default_state>;
+ 	pinctrl-names = "default";
+ 
+-	status = "okay";
++	status = "disabled";
+ };
+ 
+ &pcieport1 {
+@@ -625,7 +625,7 @@ &pcie1_phy {
+ 	vdda-pll-supply = <&vreg_l5a>;
+ 	vdda-qref-supply = <&vreg_l4a>;
+ 
+-	status = "okay";
++	status = "disabled";
+ };
+ 
+ &pcieport0 {
+-- 
+2.43.0
+
