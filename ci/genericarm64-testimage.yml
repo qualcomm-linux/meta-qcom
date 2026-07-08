@@ -1,0 +1,22 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/siemens/kas/master/kas/schema-kas.json
+
+header:
+  version: 14
+  includes:
+  - ci/genericarm64.yml
+
+local_conf_header:
+  testimage: |
+    INHERIT:remove = "create-spdx"
+    # enable testimage
+    IMAGE_CLASSES += "testimage"
+    # test requirements: ssh scp
+    IMAGE_FEATURES += "ssh-server-openssh"
+    # test requirements: parselogs
+    CORE_IMAGE_EXTRA_INSTALL += "openssh-sftp-server"
+  testimage-qemu: |
+    # change qemu defaults
+    TEST_QEMUBOOT_TIMEOUT = "180"
+    TEST_RUNQEMUPARAMS = "snapshot slirp nographic"
+    # minimal test suite
+    #TEST_SUITES = "ping ssh parselogs"
