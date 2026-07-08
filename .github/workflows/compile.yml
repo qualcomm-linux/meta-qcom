@@ -17,6 +17,10 @@ on:
         required: false
         type: boolean
         default: true
+      run_on:
+        required: false
+        type: string
+        default: amd64
       name:
         required: true
         type: string
@@ -45,7 +49,7 @@ env:
 jobs:
   reusable_compile_job:
     if: inputs.enabled
-    runs-on: [self-hosted, qcom-u2404, amd64]
+    runs-on: [self-hosted, qcom-u2404, "${{ inputs.run_on }}"]
     name: ${{ inputs.name }}
     steps:
       - uses: actions/checkout@v6
