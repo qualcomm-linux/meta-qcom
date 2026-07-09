@@ -1,12 +1,12 @@
 PLATFORM = "lemans"
-PBT_BUILD_DATE = "260616"
+PBT_BUILD_DATE = "260708"
 
 require common.inc
 
-SRC_URI[camxlib.sha256sum] = "97d494798573681192147acdd87411dbe0413157d820ddaec81d51a9a2c6dadf"
-SRC_URI[camx.sha256sum] = "b84903c48932462e4373934c7c10d311b8ad80f5ff822375de3008a3553245fd"
-SRC_URI[chicdk.sha256sum] = "e563a96bc45f4685d0b7514400a1a81d07cb1b48c3dc2bef19438a48f2d09986"
-SRC_URI[camxcommon.sha256sum] = "91d79a5530f926571e6921bd38b8eb22d7b223867cd2d375d28441e2282c88c1"
+SRC_URI[camxlib.sha256sum] = "b0ccf732368795b585f31779cdcf468e322a8480c763a209c8dc6566a60877a3"
+SRC_URI[camx.sha256sum] = "60a949a85590f6281fcae365bc30af0efc03c88716afae62e465add98b17ca8a"
+SRC_URI[chicdk.sha256sum] = "260b8522eeca0a1de4f658e424c343a35bc6855d0450d29c21252f5b29242f13"
+SRC_URI[camxcommon.sha256sum] = "1603dcb36647e9cd34d8c1c92cb653e7fb2de1b71744b4530054f2c9d690940d"
 
 DEPENDS += "${@bb.utils.contains('DISTRO_FEATURES', 'opencl', 'virtual/libopencl1', '', d)}"
 DEPENDS += "${@bb.utils.contains('DISTRO_FEATURES', 'opengl', 'virtual/egl virtual/libgles2', '', d)}"
