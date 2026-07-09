@@ -1,0 +1,35 @@
+From 47427b95c7339fcaff2f6fa21a190b078010395f Mon Sep 17 00:00:00 2001
+From: Kas User <kas@example.com>
+Date: Thu, 9 Jul 2026 11:58:49 +0530
+Subject: initramfs-framework: limit udev trigger to block devices only
+
+Add patch to restrict udevadm trigger to block devices during initramfs
+boot by adding '--subsystem-match=block' to the udevadm trigger command.
+
+Without this filter, udevadm trigger fires for all subsystems (net,
+input, usb, etc.) during early boot, causing unnecessary delays while
+waiting for non-critical devices to settle. Limiting to block devices
+ensures only storage devices are enumerated in the initramfs stage,
+reducing boot latency.
+
+Upstream-Status: Pending
+Signed-off-by: Kas User <kas@example.com>
+---
+ udev | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/udev b/udev
+index 4898b89246..3a9af2dc38 100644
+--- a/udev
++++ b/udev
+@@ -45,6 +45,6 @@ udev_run() {
+ 	sh -c "exec 4< /dev/console" || { exec 0> /dev/null; exec 1> /dev/null; exec 2> /dev/null; }
+ 
+ 	$_UDEV_DAEMON --daemon
+-	udevadm trigger --action=add
++	udevadm trigger --subsystem-match=block --action=add
+ 	udevadm settle
+ }
+-- 
+2.43.0
+
