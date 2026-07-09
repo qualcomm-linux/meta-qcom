@@ -11,8 +11,7 @@ LIC_FILES_CHKSUM = "file://LICENSE.txt;md5=2b1366ebba1ebd9ae25ad19626bbca93"
 
 inherit cmake
 
-SRC_URI = "git://github.com/quic/quic-teec.git;branch=main;protocol=https"
-SRCREV = "a40de2d23dc04f2fad144315848c31e70c869d3d"
-PV = "0.0+git"
+SRC_URI = "git://github.com/quic/quic-teec.git;nobranch=1;protocol=https;tag=v${PV}"
+SRCREV = "34fa8197a34a06ec0187c2958c776f3c3a6b9ec1"
 
 DEPENDS += "qcbor"
