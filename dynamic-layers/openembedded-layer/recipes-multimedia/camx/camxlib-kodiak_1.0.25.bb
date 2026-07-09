@@ -8,15 +8,16 @@ LICENSE = "LICENSE.qcom-2"
 LIC_FILES_CHKSUM = "file://usr/share/doc/${BPN}/LICENSE.QCOM-2.txt;md5=165287851294f2fb8ac8cbc5e24b02b0 \
                     file://usr/share/doc/${BPN}/NOTICE;md5=04facc2e07e3d41171a931477be0c690"
 
-PBT_BUILD_DATE = "260617"
+PBT_BUILD_DATE = "260708"
+PBT_BRANCH = "master"
 SRC_URI = " \
-   https://qartifactory-edge.qualcomm.com/artifactory/qsc_releases/software/chip/component/camx.qclinux.0.0/${PBT_BUILD_DATE}/prebuilt_yocto/${BPN}_${PV}_armv8-2a.tar.gz;name=camxlib \
-   https://qartifactory-edge.qualcomm.com/artifactory/qsc_releases/software/chip/component/camx.qclinux.0.0/${PBT_BUILD_DATE}/prebuilt_yocto/camx-kodiak_${PV}_armv8-2a.tar.gz;name=camx \
-   https://qartifactory-edge.qualcomm.com/artifactory/qsc_releases/software/chip/component/camx.qclinux.0.0/${PBT_BUILD_DATE}/prebuilt_yocto/chicdk-kodiak_${PV}_armv8-2a.tar.gz;name=chicdk \
+   https://qartifactory-edge.qualcomm.com/artifactory/qsc_releases/software/chip/component/camx.qclinux.0.0/${PBT_BUILD_DATE}/prebuilt_yocto_${PBT_BRANCH}/${BPN}_${PV}_armv8-2a.tar.gz;name=camxlib \
+   https://qartifactory-edge.qualcomm.com/artifactory/qsc_releases/software/chip/component/camx.qclinux.0.0/${PBT_BUILD_DATE}/prebuilt_yocto_${PBT_BRANCH}/camx-kodiak_${PV}_armv8-2a.tar.gz;name=camx \
+   https://qartifactory-edge.qualcomm.com/artifactory/qsc_releases/software/chip/component/camx.qclinux.0.0/${PBT_BUILD_DATE}/prebuilt_yocto_${PBT_BRANCH}/chicdk-kodiak_${PV}_armv8-2a.tar.gz;name=chicdk \
    "
-SRC_URI[camxlib.sha256sum] = "25972b1932bb3dc06c73c5261c16ce047645e7ed95162810f4bb243c1816a025"
-SRC_URI[camx.sha256sum] = "e83ad33e4c2dc823339ac9512d45a02dfe7f316cb60d34f27aea5637f9c80b0e"
-SRC_URI[chicdk.sha256sum] = "8adc152ebdb6d0a105f9b4f8ccaae0bfde9f05058605ebcc07b7057dfcc55c61"
+SRC_URI[camxlib.sha256sum] = "c8bc1baab12d2002a3a614b28c045868693a3a59a003b25b8a9236a0df7e941e"
+SRC_URI[camx.sha256sum] = "46a1d3d0682beb931e44cccdd47834b59a54004908441e4597ad11ced4f5d0c8"
+SRC_URI[chicdk.sha256sum] = "386f7cb21feffeb9ede8430e58c837f47ed988bc3980b3a7f2430dfbc67ae785"
 
 S = "${UNPACKDIR}"
 
@@ -93,7 +94,7 @@ RDEPENDS:${PN}-dev += "camxcommon-headers-dev"
 RRECOMMENDS:${PN} += "${@bb.utils.contains('DISTRO_FEATURES', 'opencl', 'virtual-opencl-icd', '', d)} sensinghub qcom-sensors-binaries"
 
 FILES:camx-kodiak = "\
-    ${libdir}/libcamera_hardware_kodiak*${SOLIBS} \
+    ${libdir}/libcamx_hardware_kodiak*${SOLIBS} \
     ${libdir}/libcamxexternalformatutils_kodiak*${SOLIBS} \
     ${libdir}/camx/kodiak/libchilog*${SOLIBS} \
     ${libdir}/camx/kodiak/camera/components/com.qti.node.eisv*${SOLIBS} \
@@ -127,7 +128,7 @@ FILES:${PN}-skel = "\
     ${datadir}/qcom \
     "
 FILES:${PN} = "\
-    ${libdir}/libcamera_metadata_kodiak*${SOLIBS} \
+    ${libdir}/libcamx_metadata_kodiak*${SOLIBS} \
     ${libdir}/camx/kodiak/*${SOLIBS} \
     ${libdir}/camx/kodiak/hw/*${SOLIBS} \
     ${libdir}/camx/kodiak/camera/components/*${SOLIBS} \
