@@ -4,7 +4,7 @@ DESCRIPTION = "Qualcomm KGSL driver for managing Adreno GPU"
 LICENSE = "GPL-2.0-only"
 LIC_FILES_CHKSUM = "file://adreno.c;beginline=1;endline=1;md5=fcab174c20ea2e2bc0be64b493708266"
 
-SRCREV = "69e8520d0b879b9b486a1ffd88116f5bf322a7f5"
+SRCREV = "6aaf29813f2495babc02823f8afe4cff4af6d372"
 SRC_URI = " \
     git://github.com/qualcomm-linux/kgsl.git;branch=gfx-kernel.le.0.0;protocol=https;tag=v${PV} \
     file://kgsl.rules \
