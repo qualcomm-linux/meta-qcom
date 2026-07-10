@@ -1,0 +1,35 @@
+From e4bcddf67221dc7ceabcf59d0eecbb47feafb5c2 Mon Sep 17 00:00:00 2001
+From: Chitti Babu Theegala <ctheegal@qti.qualcomm.com>
+Date: Mon, 22 Jun 2026 18:18:45 +0530
+Subject: [PATCH] audioreach: reduce APM cmd timeout from 2s to 200ms
+
+Reduce wait_time from 2s to 200ms timeout.
+This saves ~1.8s during boot when ADSP SPF is not yet ready to respond to
+APM_CMD_GET_SPF_STATE. The dummy ops fallback is acceptable since
+userspace PAL handles real APM communication directly.
+
+Upstream-Status: Inappropriate [boot-time optimization]
+Signed-off-by: Chitti Babu Theegala <ctheegal@qti.qualcomm.com>
+---
+ audioreach-driver/q6apm_audio_pkt.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/audioreach-driver/q6apm_audio_pkt.c b/audioreach-driver/q6apm_audio_pkt.c
+index 768e8aa..fbdf241 100644
+--- a/audioreach-driver/q6apm_audio_pkt.c
++++ b/audioreach-driver/q6apm_audio_pkt.c
+@@ -150,9 +150,9 @@ static int q6apm_send_audio_cmd_sync(struct device *dev, gpr_device_t *gdev,
+ 
+ 	if (rsp_opcode)
+ 		rc = wait_event_timeout(*cmd_wait, (result->opcode == hdr->opcode) ||
+-					(result->opcode == rsp_opcode),	wait_time * HZ);
++					(result->opcode == rsp_opcode),	(wait_time * HZ)/10);
+ 	else
+-		rc = wait_event_timeout(*cmd_wait, (result->opcode == hdr->opcode), wait_time * HZ);
++		rc = wait_event_timeout(*cmd_wait, (result->opcode == hdr->opcode), (wait_time * HZ)/10 );
+ 
+ 	if (!rc) {
+ 		dev_err(&g_apm->adev->dev, "CMD timeout for [%x] opcode\n", hdr->opcode);
+-- 
+2.43.0
+
