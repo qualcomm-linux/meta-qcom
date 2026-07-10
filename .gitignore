@@ -1,2 +1,3 @@
 lib/qcom/__pycache__/
 ci/build-id.yml
+kas-container
