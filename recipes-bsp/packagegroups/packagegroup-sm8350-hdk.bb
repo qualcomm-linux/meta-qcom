@@ -21,7 +21,7 @@ RRECOMMENDS:${PN}-firmware = " \
     linux-firmware-qcom-vpu \
 "
 
-RDEPENDS:${PN}-hexagon-dsp-binaries = " \
+RRECOMMENDS:${PN}-hexagon-dsp-binaries = " \
     hexagon-dsp-binaries-qcom-sm8350-hdk-adsp \
     hexagon-dsp-binaries-qcom-sm8350-hdk-cdsp \
     hexagon-dsp-binaries-qcom-sm8350-hdk-sdsp \

@@ -17,7 +17,7 @@ RRECOMMENDS:${PN}-firmware = " \
     linux-firmware-qcom-sm8550-modem \
 "
 
-RDEPENDS:${PN}-hexagon-dsp-binaries = " \
+RRECOMMENDS:${PN}-hexagon-dsp-binaries = " \
     hexagon-dsp-binaries-qcom-sm8550-hdk-adsp \
     hexagon-dsp-binaries-qcom-sm8550-hdk-cdsp \
 "

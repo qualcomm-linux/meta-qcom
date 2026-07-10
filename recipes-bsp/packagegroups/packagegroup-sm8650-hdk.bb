@@ -19,7 +19,7 @@ RRECOMMENDS:${PN}-firmware = " \
     linux-firmware-qcom-sm8650-ipa \
 "
 
-RDEPENDS:${PN}-hexagon-dsp-binaries = " \
+RRECOMMENDS:${PN}-hexagon-dsp-binaries = " \
     hexagon-dsp-binaries-qcom-sm8650-hdk-adsp \
     hexagon-dsp-binaries-qcom-sm8650-hdk-cdsp \
 "
