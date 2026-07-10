@@ -151,11 +151,6 @@ jobs:
           rename.ul -av buildstats buildstats-sdk $KAS_WORK_DIR/build/buildstats*
           mv $KAS_WORK_DIR/build/buildstats* .
 
-      - uses: actions/upload-artifact@v6
-        with:
-          name: kas-build-${{ inputs.distro_name }}${{ inputs.kernel_dirname }}-${{ inputs.machine }}
-          path: kas-build.yml
-
       - name: Stage build artifacts for publishing
         shell: bash
         run: |
