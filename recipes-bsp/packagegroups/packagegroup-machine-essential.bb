@@ -7,6 +7,7 @@ PACKAGES = " \
     ${PN}-qcom-generic \
     ${PN}-qcom-glymur-soc \
     ${PN}-qcom-hamoa-soc \
+    ${PN}-qcom-nord-soc \
     ${PN}-qcom-purwa-soc \
     ${PN}-qcom-qcm2290-soc \
     ${PN}-qcom-qcs615-soc \
@@ -133,6 +134,11 @@ RRECOMMENDS:${PN}-qcom-hamoa-soc += " \
     kernel-module-snd-soc-x1e80100 \
     kernel-module-tscrcc-x1e80100 \
     kernel-module-videocc-sm8550 \
+"
+
+RDEPENDS:${PN}-qcom-nord-soc += " \
+    ${PN}-board-generic \
+    ${PN}-qcom-generic \
 "
 
 RRECOMMENDS:${PN}-qcom-purwa-soc += " \
