@@ -51,10 +51,6 @@ FILES:hexagon-dsp-binaries-${DSP_PKG_NAME}-cdsp = "${DSP_QCOM_PATH}/dsp/cdsp"
 FILES:hexagon-dsp-binaries-${DSP_PKG_NAME}-config = "${DSP_QCOM_CONF_D_PATH}"
 FILES:hexagon-dsp-binaries-${DSP_PKG_NAME}-sdsp = "${DSP_QCOM_PATH}/dsp/sdsp"
 
-ALLOW_EMPTY:hexagon-dsp-binaries-${DSP_PKG_NAME}-adsp = "1"
-ALLOW_EMPTY:hexagon-dsp-binaries-${DSP_PKG_NAME}-cdsp = "1"
-ALLOW_EMPTY:hexagon-dsp-binaries-${DSP_PKG_NAME}-sdsp = "1"
-
 INSANE_SKIP:hexagon-dsp-binaries-${DSP_PKG_NAME}-adsp = "arch libdir file-rdeps textrel"
 INSANE_SKIP:hexagon-dsp-binaries-${DSP_PKG_NAME}-cdsp = "arch libdir file-rdeps textrel"
 INSANE_SKIP:hexagon-dsp-binaries-${DSP_PKG_NAME}-sdsp = "arch libdir file-rdeps textrel"
