@@ -114,3 +114,7 @@ do_install:prepend() {
     ls ${B}/dspso-cdsp/* && mkdir -p ${D}${DSP_QCOM_PATH}/dsp/cdsp && install -m 0644 ${B}/dspso-cdsp/* ${D}${DSP_QCOM_PATH}/dsp/cdsp
     ls ${B}/dspso-sdsp/* && mkdir -p ${D}${DSP_QCOM_PATH}/dsp/sdsp && install -m 0644 ${B}/dspso-sdsp/* ${D}${DSP_QCOM_PATH}/dsp/sdsp
 }
+
+# Make sure that there is nothing in the meta-package, all firmware must go to
+# a particular package.
+FILES:${PN} = ""
