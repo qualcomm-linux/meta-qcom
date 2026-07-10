@@ -1,0 +1,41 @@
+From 0000000000000000000000000000000000000004 Mon Sep 17 00:00:00 2001
+From: tnidigan <tnidigan@qti.qualcomm.com>
+Date: Mon, 27 Apr 2026 11:00:00 +0530
+Subject: [PATCH] agm: reduce snd card retry interval from 1s to 50ms
+
+RETRY_INTERVAL of 1 second causes ~1s wasted boot time when the sound
+card becomes available just after a poll. Reduce to 50ms so the card
+is detected within 50ms of becoming available instead of up to 1s.
+
+Upstream-Status: Inappropriate [boot-time optimization]
+Signed-off-by: tnidigan <tnidigan@qti.qualcomm.com>
+---
+--- a/service/src/device.c
++++ b/service/src/device.c
+@@ -56,7 +56,7 @@
+ #define SNDCARD_PATH "/sys/kernel/snd_card/card_state"
+ #define PCM_DEVICE_FILE "/proc/asound/pcm"
+ #define MAX_RETRY 100 /*Device will try these many times before return an error*/
+-#define RETRY_INTERVAL 1 /*Retry interval in seconds*/
++#define RETRY_INTERVAL_MS 50 /*Retry interval in milliseconds*/
+ 
+ #ifdef DYNAMIC_LOG_ENABLED
+ #include <log_xml_parser.h>
+@@ -1246,7 +1246,7 @@
+         }
+ #endif
+         retries--;
+-        sleep(RETRY_INTERVAL);
++        usleep(RETRY_INTERVAL_MS * 1000);
+     } while ( retries > 0);
+ 
+     if (0 == retries) {
+@@ -1453,7 +1453,7 @@
+             break;
+         } else {
+             AGM_LOGI("Sound card not found, retry %d", retry++);
+-            sleep(1);
++            usleep(50 * 1000);
+         }
+     } while (!snd_card_found && retry <= MAX_RETRY_CNT);
+ 
