@@ -15,22 +15,15 @@ inputs:
 runs:
   using: "composite"
   steps:
-    - name: Download kas lockfile
+    - name: Download kas
       uses: actions/download-artifact@v7
       with:
-        name: kas-lockfile
-        path: ci/
-
-    - name: Download kas-container
-      uses: actions/download-artifact@v7
-      with:
-         name: kas-container
-         path: ${{runner.temp}}
+        name: kas
 
     - name: Setting up kas-container
       shell: bash
       run: |
-        KAS_CONTAINER=$RUNNER_TEMP/kas-container
+        KAS_CONTAINER=$GITHUB_WORKSPACE/kas-container
         echo "KAS_CONTAINER=$KAS_CONTAINER" >> $GITHUB_ENV
         chmod +x $KAS_CONTAINER
 
