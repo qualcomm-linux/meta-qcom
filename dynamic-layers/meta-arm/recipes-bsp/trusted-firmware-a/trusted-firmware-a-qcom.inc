@@ -1,7 +1,12 @@
 DEPENDS += "qtestsign-native optee-os-qcom u-boot-qcom"
 
-SRC_URI += "git://github.com/coreboot/qc_blobs.git;protocol=https;name=qc_blobs;subdir=qc_blobs;branch=main"
-SRCREV_qc_blobs = "16207f367ddbf280a0c2c8a3d3ee454a59710a25"
+SRCREV_FORMAT_qcom ?= ""
+
+SRC_URI:append:qcm6490 = " git://github.com/coreboot/qc_blobs.git;protocol=https;name=qc-blobs;subdir=qc_blobs;branch=main"
+SRCREV_qc-blobs = "16207f367ddbf280a0c2c8a3d3ee454a59710a25"
+SRCREV_FORMAT_qcom:qcm6490 = "_qc-blobs"
+
+SRCREV_FORMAT .= "${SRCREV_FORMAT_qcom}"
 
 LICENSE += "& LICENSE.qcom"
 LIC_FILES_CHKSUM:qcm6490 += "file://${UNPACKDIR}/qc_blobs/sc7280/qtiseclib/LICENSE;md5=fa83f30385e617b56ef0934f13645621"
