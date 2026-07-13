@@ -1,0 +1,262 @@
+From 11037ad8b5d30f1db388edde10eb8afe44cd7136 Mon Sep 17 00:00:00 2001
+From: Gargi Misra <quic_gmisra@quicinc.com>
+Date: Mon, 13 Jul 2026 13:01:16 +0530
+Subject: [PATCH] refpolicy-targeted: address QLI SELinux denial sweep
+
+Cover the denial clusters collected from the QLI flash-test run by\nusing existing interfaces where possible and keeping the downstream\nchanges localized to the affected services.\n\nAdd /usr symlink access for the impacted systemd domains and dnsmasq,\nrestore the missing D-Bus paths for bluetooth and ofono, enable the\nexisting qtee tee_supplicant policy path, and extend virt/modutils for\nlibvirt credential and fd handoff access. The same patch also folds in\nthe tmpfiles and journalctl rules seen in the sweep and grants URM the\nexplicit capabilities requested by the collected AVCs.\n\nSigned-off-by: Gargi Misra <quic_gmisra@quicinc.com>
+---
+ policy/modules/kernel/files.if            | 18 ++++++++++++++++++
+ policy/modules/services/bluetooth.te      |  1 +
+ policy/modules/services/dnsmasq.te        |  1 +
+ policy/modules/services/ofono.te          |  1 +
+ policy/modules/services/tee_supplicant.te |  2 +-
+ policy/modules/services/urm.te            |  5 +++++
+ policy/modules/services/virt.if           | 18 ++++++++++++++++++
+ policy/modules/services/virt.te           |  2 ++
+ policy/modules/system/modutils.te         |  4 ++++
+ policy/modules/system/systemd.te          | 13 +++++++++++--
+ 10 files changed, 62 insertions(+), 3 deletions(-)
+
+diff --git a/policy/modules/kernel/files.if b/policy/modules/kernel/files.if
+index 79ea2171f..8f0a3ef81 100644
+--- a/policy/modules/kernel/files.if
++++ b/policy/modules/kernel/files.if
+@@ -2799,6 +2799,24 @@ interface(`files_manage_boot_symlinks',`
+ 	manage_lnk_files_pattern($1, boot_t, boot_t)
+ ')
+ 
++########################################
++## <summary>
++##	Relabel symbolic links in the /boot directory.
++## </summary>
++## <param name="domain">
++##	<summary>
++##	Domain allowed access.
++##	</summary>
++## </param>
++#
++interface(`files_relabel_boot_symlinks',`
++	gen_require(`
++		type boot_t;
++	')
++
++	relabel_lnk_files_pattern($1, boot_t, boot_t)
++')
++
+ ########################################
+ ## <summary>
+ ##	Read kernel files in the /boot directory.
+diff --git a/policy/modules/services/bluetooth.te b/policy/modules/services/bluetooth.te
+index ceb42d147..bb84b1ecb 100644
+--- a/policy/modules/services/bluetooth.te
++++ b/policy/modules/services/bluetooth.te
+@@ -136,6 +136,7 @@ userdom_dontaudit_search_user_home_dirs(bluetooth_t)
+ optional_policy(`
+ 	dbus_system_bus_client(bluetooth_t)
+ 	dbus_connect_system_bus(bluetooth_t)
++	init_dbus_chat(bluetooth_t)
+ 	init_dbus_send_script(bluetooth_t)
+ 
+ 	optional_policy(`
+diff --git a/policy/modules/services/dnsmasq.te b/policy/modules/services/dnsmasq.te
+index ff66c5763..211f8dcd8 100644
+--- a/policy/modules/services/dnsmasq.te
++++ b/policy/modules/services/dnsmasq.te
+@@ -84,6 +84,7 @@ dev_read_urand(dnsmasq_t)
+ domain_use_interactive_fds(dnsmasq_t)
+ 
+ files_read_etc_runtime_files(dnsmasq_t)
++files_read_usr_symlinks(dnsmasq_t)
+ files_watch_etc_dirs(dnsmasq_t)
+ 
+ fs_getattr_all_fs(dnsmasq_t)
+diff --git a/policy/modules/services/ofono.te b/policy/modules/services/ofono.te
+index 953953275..6627b4a42 100644
+--- a/policy/modules/services/ofono.te
++++ b/policy/modules/services/ofono.te
+@@ -32,6 +32,7 @@ files_read_usr_files(ofono_t)
+ logging_send_syslog_msg(ofono_t)
+ 
+ init_dbus_chat(ofono_t)
++init_dbus_send_script(ofono_t)
+ 
+ udev_search_runtime(ofono_t)
+ udev_read_runtime_files(ofono_t)
+diff --git a/policy/modules/services/tee_supplicant.te b/policy/modules/services/tee_supplicant.te
+index ab0cc2e8c..c3710e13e 100644
+--- a/policy/modules/services/tee_supplicant.te
++++ b/policy/modules/services/tee_supplicant.te
+@@ -10,7 +10,7 @@ policy_module(tee_supplicant)
+ ##  Enable rules specific to qtee_supplicant.
+ ##  </p>
+ ## </desc>
+-gen_tunable(tee_supplicant_qtee, false)
++gen_tunable(tee_supplicant_qtee, true)
+ 
+ type tee_supplicant_t;
+ type tee_supplicant_exec_t;
+diff --git a/policy/modules/services/urm.te b/policy/modules/services/urm.te
+index b7dae8bec..8e2fd993e 100644
+--- a/policy/modules/services/urm.te
++++ b/policy/modules/services/urm.te
+@@ -23,6 +23,11 @@ files_runtime_file(urm_runtime_t)
+ # Suppress spurious capability denials
+ dontaudit urm_t self:capability { dac_override dac_read_search net_admin };
+ 
++# Allow CPU scheduling, tracing, and perf monitoring operations
++# used by per-username resource management.
++allow urm_t self:capability { sys_admin sys_ptrace };
++allow urm_t self:capability2 perfmon;
++
+ # Netlink connector socket access
+ allow urm_t self:netlink_connector_socket create_socket_perms;
+ 
+diff --git a/policy/modules/services/virt.if b/policy/modules/services/virt.if
+index 0ef4f689e..55e6669f1 100644
+--- a/policy/modules/services/virt.if
++++ b/policy/modules/services/virt.if
+@@ -316,6 +316,24 @@ interface(`virt_stream_connect',`
+ 	stream_connect_pattern($1, virt_runtime_t, virt_runtime_t, virtd_t)
+ ')
+ 
++########################################
++## <summary>
++##	Use file descriptors owned by virtd.
++## </summary>
++## <param name="domain">
++##	<summary>
++##	Domain allowed access.
++##	</summary>
++## </param>
++#
++interface(`virt_use_virtd_fds',`
++	gen_require(`
++		type virtd_t;
++	')
++
++	allow $1 virtd_t:fd use;
++')
++
+ ########################################
+ ## <summary>
+ ##	Attach to virt tun devices.
+diff --git a/policy/modules/services/virt.te b/policy/modules/services/virt.te
+index 0f6dc341e..6b66a704d 100644
+--- a/policy/modules/services/virt.te
++++ b/policy/modules/services/virt.te
+@@ -507,6 +507,7 @@ filetrans_pattern(virtd_t, virt_runtime_t, svirt_runtime_t, dir, "qemu")
+ 
+ read_files_pattern(virtd_t, virt_etc_t, virt_etc_t)
+ read_lnk_files_pattern(virtd_t, virt_etc_t, virt_etc_t)
++allow virtd_t init_tmpfs_t:file open;
+ 
+ manage_dirs_pattern(virtd_t, virt_etc_rw_t, virt_etc_rw_t)
+ manage_files_pattern(virtd_t, virt_etc_rw_t, virt_etc_rw_t)
+@@ -1161,6 +1162,7 @@ manage_files_pattern(virt_leaseshelper_t, virt_runtime_t, virt_runtime_t)
+ files_runtime_filetrans(virt_leaseshelper_t, virt_runtime_t, file)
+ 
+ kernel_dontaudit_read_system_state(virt_leaseshelper_t)
++kernel_getattr_proc(virt_leaseshelper_t)
+ kernel_read_kernel_sysctls(virt_leaseshelper_t)
+ 
+ # Read /sys/devices/system/node/node*/meminfo
+diff --git a/policy/modules/system/modutils.te b/policy/modules/system/modutils.te
+index fa06e9ec3..670ccd87b 100644
+--- a/policy/modules/system/modutils.te
++++ b/policy/modules/system/modutils.te
+@@ -160,6 +160,10 @@ optional_policy(`
+ 	mount_domtrans(kmod_t)
+ ')
+ 
++optional_policy(`
++	virt_use_virtd_fds(kmod_t)
++')
++
+ optional_policy(`
+ 	nis_use_ypbind(kmod_t)
+ ')
+diff --git a/policy/modules/system/systemd.te b/policy/modules/system/systemd.te
+index 5b389b337..984be7af8 100644
+--- a/policy/modules/system/systemd.te
++++ b/policy/modules/system/systemd.te
+@@ -988,8 +988,7 @@ seutil_read_file_contexts(systemd_hw_t)
+ 
+ dontaudit systemd_journal_init_t self:capability net_admin;
+ 
+-manage_dirs_pattern(systemd_journal_init_t, systemd_journal_t, systemd_journal_t)
+-manage_files_pattern(systemd_journal_init_t, systemd_journal_t, systemd_journal_t)
++systemd_manage_journal_files(systemd_journal_init_t)
+ 
+ fs_getattr_all_fs(systemd_journal_init_t)
+ fs_search_cgroup_dirs(systemd_journal_init_t)
+@@ -1002,12 +1001,15 @@ kernel_read_system_state(systemd_journal_init_t)
+ init_read_state(systemd_journal_init_t)
+ init_search_var_lib_dirs(systemd_journal_init_t)
+ init_var_lib_filetrans(systemd_journal_init_t, systemd_journal_t, dir)
++init_rw_script_stream_sockets(systemd_journal_init_t)
++init_use_script_ptys(systemd_journal_init_t)
+ 
+ logging_search_logs(systemd_journal_init_t)
+ logging_send_syslog_msg(systemd_journal_init_t)
+ logging_stream_connect_journald_varlink(systemd_journal_init_t)
+ 
+ miscfiles_read_localization(systemd_journal_init_t)
++files_read_etc_runtime_files(systemd_journal_init_t)
+ 
+ #######################################
+ #
+@@ -1135,6 +1137,7 @@ domain_obj_id_change_exemption(systemd_logind_t)
+ 
+ files_check_write_runtime_dirs(systemd_logind_t)
+ files_read_etc_runtime_files(systemd_logind_t)
++files_read_usr_symlinks(systemd_logind_t)
+ files_search_runtime(systemd_logind_t)
+ # Getattr all shm segments as part of cleaning up the
+ # segments of deleted ephemeral users.
+@@ -1431,6 +1434,7 @@ dev_read_sysfs(systemd_modules_load_t)
+ 
+ files_mmap_read_kernel_modules(systemd_modules_load_t)
+ files_read_etc_files(systemd_modules_load_t)
++files_read_usr_symlinks(systemd_modules_load_t)
+ 
+ fs_getattr_all_fs(systemd_modules_load_t)
+ fs_search_all(systemd_modules_load_t)
+@@ -1997,6 +2001,7 @@ auth_use_nsswitch(systemd_resolved_t)
+ files_watch_root_dirs(systemd_resolved_t)
+ files_watch_runtime_dirs(systemd_resolved_t)
+ files_list_runtime(systemd_resolved_t)
++files_read_usr_symlinks(systemd_resolved_t)
+ 
+ fs_getattr_all_fs(systemd_resolved_t)
+ fs_getattr_nsfs_files(systemd_resolved_t)
+@@ -2098,6 +2103,7 @@ kernel_rw_all_sysctls(systemd_sysctl_t)
+ kernel_dontaudit_getattr_proc(systemd_sysctl_t)
+ 
+ files_read_etc_files(systemd_sysctl_t)
++files_read_usr_symlinks(systemd_sysctl_t)
+ 
+ fs_getattr_all_fs(systemd_sysctl_t)
+ fs_search_cgroup_dirs(systemd_sysctl_t)
+@@ -2247,9 +2253,11 @@ files_manage_all_locks(systemd_tmpfiles_t)
+ files_purge_tmp(systemd_tmpfiles_t)
+ files_read_etc_files(systemd_tmpfiles_t)
+ files_read_etc_runtime_files(systemd_tmpfiles_t)
++files_read_usr_symlinks(systemd_tmpfiles_t)
+ files_relabel_config_dirs(systemd_tmpfiles_t)
+ files_relabel_config_files(systemd_tmpfiles_t)
+ files_relabel_config_symlinks(systemd_tmpfiles_t)
++files_relabel_boot_symlinks(systemd_tmpfiles_t)
+ files_relabel_all_locks(systemd_tmpfiles_t)
+ files_relabel_all_runtime_dirs(systemd_tmpfiles_t)
+ files_relabel_all_tmp_dirs(systemd_tmpfiles_t)
+@@ -2301,6 +2309,7 @@ kernel_relabelfrom_unlabeled_pipes(systemd_tmpfiles_t)
+ kernel_relabelfrom_unlabeled_sockets(systemd_tmpfiles_t)
+ kernel_relabelfrom_unlabeled_blk_devs(systemd_tmpfiles_t)
+ kernel_relabelfrom_unlabeled_chr_devs(systemd_tmpfiles_t)
++kernel_manage_unlabeled_symlinks(systemd_tmpfiles_t)
+ 
+ logging_create_audit_log_dirs(systemd_tmpfiles_t)
+ logging_relabel_audit_log_dirs(systemd_tmpfiles_t)
+-- 
+2.43.0
+
