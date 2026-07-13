@@ -12,7 +12,7 @@ SRC_URI = "\
     file://run-ptest \
 "
 
-inherit autotools systemd ptest pkgconfig
+inherit autotools systemd ptest pkgconfig useradd
 
 EXTRA_OECONF += "\
     --with-systemdsystemunitdir=${systemd_system_unitdir} \
@@ -61,6 +61,9 @@ FILES:${PN}-tests += " \
     ${libdir}/fastrpc_test/*.so \
     ${datadir}/fastrpc_test \
 "
+
+USERADD_PACKAGES = "${PN}"
+GROUPADD_PARAM:${PN} = "--system fastrpc"
 
 # Tests specific packages are including prebuilt test libraries
 INSANE_SKIP:${PN}-tests += "arch libdir ldflags"
