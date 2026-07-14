@@ -76,8 +76,16 @@ jobs:
         shell: bash
         run: |
           KAS_CONTAINER=$RUNNER_TEMP/kas-container
-          echo "KAS_CONTAINER=$KAS_CONTAINER" >> $GITHUB_ENV
           chmod +x $KAS_CONTAINER
+          if [ -c /dev/kvm ]; then
+            git clone -b kvm https://github.com/quaresmajose/kas $RUNNER_TEMP/kas
+            sudo apt update && sudo apt install -y docker-buildx
+            docker buildx build --tag kas-kvm $RUNNER_TEMP/kas
+            echo "KAS_CONTAINER_IMAGE=kas-kvm" >> $GITHUB_ENV
+            cp $RUNNER_TEMP/kas/kas-container $KAS_CONTAINER
+            KAS_CONTAINER="$KAS_CONTAINER --kvm"
+          fi
+          echo "KAS_CONTAINER=$KAS_CONTAINER" >> $GITHUB_ENV
 
       - name: Setup build variables
         shell: bash
