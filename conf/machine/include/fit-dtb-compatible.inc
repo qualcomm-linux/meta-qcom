@@ -71,6 +71,7 @@ FIT_DTB_COMPATIBLE[qcom_shikraiqs-itp] = "shikra-iqs-evk shikra-iqs-evk-imx577-c
 # ---------- talos ----------
 FIT_DTB_COMPATIBLE[qcom_qcs615-adp] = "qcs615-ride"
 FIT_DTB_COMPATIBLE[qcom_qcs615-iot] = "talos-evk talos-evk-camera-imx577"
+FIT_DTB_COMPATIBLE[qcom_qcs615-iot-subtype8] = "talos-lyra-evk"
 FIT_DTB_COMPATIBLE[qcom_talos-evk-lvds-auo_g133han01] = \
     "talos-evk talos-evk-lvds-auo_g133han01"
 
