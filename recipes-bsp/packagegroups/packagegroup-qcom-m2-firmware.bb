@@ -3,12 +3,14 @@ SUMMARY = "Firmware for Qualcomm M.2 wireless attachments"
 inherit packagegroup
 
 QCOM_M2_WIFI_FIRMWARE = " \
+    linux-firmware-ath11k-wcn6855 \
     linux-firmware-ath12k-qcc2072 \
     linux-firmware-ath12k-qcn9274 \
     linux-firmware-ath12k-wcn7850 \
 "
 
 QCOM_M2_BT_FIRMWARE = " \
+    linux-firmware-qca-wcn685x \
     linux-firmware-qca-qcc2072 \
     linux-firmware-qca-wcn7850 \
 "
