@@ -1,0 +1,100 @@
+From 7f3c9a2e1b6d4508c2af5e0d9b41236a8e5c7d90 Mon Sep 17 00:00:00 2001
+From: Wenwen Fu <wenwfu@qti.qualcomm.com>
+Date: Tue, 15 Jul 2026 00:00:00 +0000
+Subject: [PATCH] refpolicy: grant systemd_modules_load_t CAP_NET_ADMIN
+
+systemd-modules-load fails to load the qrtr and qrtr_smd kernel modules
+under SELinux enforcing, reporting EPERM ("Failed to insert module
+'qrtr': Permission denied"). Both modules register the PF_QIPCRTR network
+protocol family during module init (sock_register(), MODULE_ALIAS_NETPROTO),
+which the kernel gates on CAP_NET_ADMIN. The systemd_modules_load_t domain
+is not granted net_admin, so the load is denied.
+
+The denial is dontaudit'd by the base policy, so no AVC is emitted during
+normal operation; it is only observable after disabling dontaudit rules
+(semodule -DB):
+
+  avc: denied { net_admin } for pid=404 comm="systemd-modules"
+  capability=12 scontext=system_u:system_r:systemd_modules_load_t:s0
+  tcontext=system_u:system_r:systemd_modules_load_t:s0 tclass=capability
+
+Add a policy module qcom_qrtr_modload granting systemd_modules_load_t the
+net_admin capability, so these modules can be preloaded from
+modules-load.d instead of falling back to a delayed modalias autoload.
+
+The require block must declare the capability class explicitly (in
+addition to the type via gen_require): without it the module compiles to
+an empty rule set (the allow is silently dropped) and grants nothing.
+
+Upstream-Status: Inappropriate [Qualcomm/product boot-time tuning]
+
+Signed-off-by: Wenwen Fu <wenwfu@qti.qualcomm.com>
+---
+ policy/modules.conf                          |  6 ++++++
+ policy/modules/services/qcom_qrtr_modload.fc |  1 +
+ policy/modules/services/qcom_qrtr_modload.if |  4 ++++
+ policy/modules/services/qcom_qrtr_modload.te | 16 ++++++++++++++++
+ 4 files changed, 27 insertions(+)
+ create mode 100644 policy/modules/services/qcom_qrtr_modload.fc
+ create mode 100644 policy/modules/services/qcom_qrtr_modload.if
+ create mode 100644 policy/modules/services/qcom_qrtr_modload.te
+
+diff --git a/policy/modules.conf b/policy/modules.conf
+index 3a7d1e9..b2f6c84 100644
+--- a/policy/modules.conf
++++ b/policy/modules.conf
+@@ -1,6 +1,12 @@
+ # Layer: services
+ # Module: qcom_nhx
+ #
+ # Qualcomm NHX camera test launcher
+ #
+ qcom_nhx = module
++
++# Layer: services
++# Module: qcom_qrtr_modload
++#
++# Allow systemd-modules-load net_admin to preload qrtr (PF_QIPCRTR)
++#
++qcom_qrtr_modload = module
+diff --git a/policy/modules/services/qcom_qrtr_modload.fc b/policy/modules/services/qcom_qrtr_modload.fc
+new file mode 100644
+index 0000000..c81a4f2
+--- /dev/null
++++ b/policy/modules/services/qcom_qrtr_modload.fc
+@@ -0,0 +1 @@
++# qcom_qrtr_modload: no file contexts (allow-only module)
+diff --git a/policy/modules/services/qcom_qrtr_modload.if b/policy/modules/services/qcom_qrtr_modload.if
+new file mode 100644
+index 0000000..d4e9b17
+--- /dev/null
++++ b/policy/modules/services/qcom_qrtr_modload.if
+@@ -0,0 +1,4 @@
++## <summary>
++## Allow systemd-modules-load to hold net_admin so qrtr/qrtr_smd
++## (which register PF_QIPCRTR at module init) can be preloaded early.
++## </summary>
+diff --git a/policy/modules/services/qcom_qrtr_modload.te b/policy/modules/services/qcom_qrtr_modload.te
+new file mode 100644
+index 0000000..5f2c8ab
+--- /dev/null
++++ b/policy/modules/services/qcom_qrtr_modload.te
+@@ -0,0 +1,16 @@
++policy_module(qcom_qrtr_modload, 1.0)
++
++########################################
++#
++# Allow systemd (systemd_modules_load_t) to hold CAP_NET_ADMIN so it can
++# preload qrtr/qrtr_smd, which register the PF_QIPCRTR network protocol
++# family at module init (requires net_admin). Without this the preload
++# fails with EPERM (dontaudit'd) and qrtr loads ~5s late, delaying audio.
++#
++
++gen_require(`
++	type systemd_modules_load_t;
++	class capability net_admin;
++')
++
++allow systemd_modules_load_t self:capability net_admin;
+--
+2.43.0
