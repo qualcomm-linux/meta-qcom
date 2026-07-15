@@ -1,0 +1,38 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Wenwen Fu <wenwfu@qti.qualcomm.com>
+Date: Fri, 21 Aug 2026 00:00:00 +0800
+Subject: [PATCH] kernel: enable module loader net_admin tunable
+
+Qualcomm platforms preload qrtr and qrtr_smd from modules-load.d so the
+QRTR transport is available early for dependent services such as audio.
+The modules register PF_QIPCRTR during initialization, which requires
+CAP_NET_ADMIN.
+
+Enable the upstream kernel_module_load_net_admin tunable by default for
+Qualcomm builds. Without it, systemd-modules-load fails to insert the
+modules under SELinux enforcing and they are only loaded later through
+modalias autoloading.
+
+Upstream-Status: Inappropriate [Qualcomm platform configuration]
+
+Signed-off-by: Wenwen Fu <wenwfu@qti.qualcomm.com>
+---
+ policy/modules/kernel/kernel.te | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/policy/modules/kernel/kernel.te b/policy/modules/kernel/kernel.te
+index 648b92ec1..d59aad9c8 100644
+--- a/policy/modules/kernel/kernel.te
++++ b/policy/modules/kernel/kernel.te
+@@ -22,7 +22,7 @@ gen_bool(secure_mode_insmod, false)
+ ## capability during module initialization.
+ ## </p>
+ ## </desc>
+-gen_tunable(kernel_module_load_net_admin, false)
++gen_tunable(kernel_module_load_net_admin, true)
+ 
+ # assertion related attributes
+ attribute can_load_kernmodule;
+-- 
+2.43.0
+
