@@ -16,7 +16,7 @@ Signed-off-by: Dmitry Baryshkov <dmitry.baryshkov@oss.qualcomm.com>
 Upstream-Status: Submitted [https://lore.kernel.org/r/20260626201256.112352-1-dmitry.baryshkov@oss.qualcomm.com/]
 ---
  ...t-pause-mnemonic-only-on-x86-x86_64-.patch | 36 +++++++++++++++++++
- .../igt-gpu-tools/igt-gpu-tools_2.4.bb        |  1 +
+ .../igt-gpu-tools/igt-gpu-tools_2.5.bb        |  1 +
  2 files changed, 37 insertions(+)
  create mode 100644 meta/recipes-graphics/igt-gpu-tools/igt-gpu-tools/0001-lib-amdgpu-insert-pause-mnemonic-only-on-x86-x86_64-.patch
 
@@ -62,11 +62,11 @@ index 000000000000..1fdaad7b0c66
 + 	}
 + }
 + 
-diff --git a/meta/recipes-graphics/igt-gpu-tools/igt-gpu-tools_2.4.bb b/meta/recipes-graphics/igt-gpu-tools/igt-gpu-tools_2.4.bb
+diff --git a/meta/recipes-graphics/igt-gpu-tools/igt-gpu-tools_2.5.bb b/meta/recipes-graphics/igt-gpu-tools/igt-gpu-tools_2.5.bb
 index 32a3a3cc48c9..f5f5b3b87316 100644
---- a/meta/recipes-graphics/igt-gpu-tools/igt-gpu-tools_2.4.bb
-+++ b/meta/recipes-graphics/igt-gpu-tools/igt-gpu-tools_2.4.bb
-@@ -13,6 +13,7 @@ SRCREV = "e6b603e4984e4ce30fe1cc2705734d0f130e0550"
+--- a/meta/recipes-graphics/igt-gpu-tools/igt-gpu-tools_2.5.bb
++++ b/meta/recipes-graphics/igt-gpu-tools/igt-gpu-tools_2.5.bb
+@@ -13,6 +13,7 @@ SRCREV = "a8e2cbd2854d7980a9eccecc6e0c801d0824b88f"
  
  SRC_URI = "git://gitlab.freedesktop.org/drm/igt-gpu-tools.git;protocol=https;branch=master;tag=v${PV} \
             file://0001-lib-meson.build-do-not-hardcode-the-build-directory-.patch \
