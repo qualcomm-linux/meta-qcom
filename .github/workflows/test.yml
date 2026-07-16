@@ -43,7 +43,7 @@ jobs:
     secrets: inherit
     with:
       build_id: "${{ inputs.build_id }}"
-      devices: "iq-8275-evk,iq-9075-evk,iq-x7181-evk,qcm6490-idp,qcs615-ride,rb3gen2-core-kit,qcs8300-ride-sx,qcs9100-ride-sx,dragonboard-410c,dragonboard-820c,rb1-core-kit"
+      devices: "iq-8275-evk,iq-9075-evk,iq-x5121-evk,iq-x7181-evk,qcm6490-idp,qcs615-ride,rb3gen2-core-kit,qcs8300-ride-sx,qcs9100-ride-sx,dragonboard-410c,dragonboard-820c,rb1-core-kit"
       project_name: "meta-qcom"
       distro_name: "nodistro"
       lava_test_plans_ref: "${{ needs.prepare-env.outputs.lava-test-plans-ref }}"
@@ -57,8 +57,8 @@ jobs:
     secrets: inherit
     with:
       build_id: "${{ inputs.build_id }}"
-      devices: "glymur-crd,iq-8275-evk,iq-9075-evk,iq-x7181-evk,kaanapali-mtp,qcm6490-idp,qcs615-ride,rb3gen2-core-kit,qcs8300-ride-sx,qcs9100-ride-sx,rb1-core-kit"
-      devices_premerge: "glymur-crd,iq-8275-evk,iq-9075-evk,iq-x7181-evk,kaanapali-mtp,qcm6490-idp,qcs615-ride,rb3gen2-core-kit,qcs8300-ride-sx,qcs9100-ride-sx,rb1-core-kit"
+      devices: "glymur-crd,iq-8275-evk,iq-9075-evk,iq-x5121-evk,iq-x7181-evk,kaanapali-mtp,qcm6490-idp,qcs615-ride,rb3gen2-core-kit,qcs8300-ride-sx,qcs9100-ride-sx,rb1-core-kit"
+      devices_premerge: "glymur-crd,iq-8275-evk,iq-9075-evk,iq-x5121-evk,iq-x7181-evk,kaanapali-mtp,qcm6490-idp,qcs615-ride,rb3gen2-core-kit,qcs8300-ride-sx,qcs9100-ride-sx,rb1-core-kit"
       project_name: "meta-qcom"
       distro_name: "qcom-distro"
       lava_test_plans_ref: "${{ needs.prepare-env.outputs.lava-test-plans-ref }}"
@@ -72,8 +72,8 @@ jobs:
     secrets: inherit
     with:
       build_id: "${{ inputs.build_id }}"
-      devices: "iq-8275-evk,iq-9075-evk,iq-x7181-evk,qcm6490-idp,qcs615-ride,rb3gen2-core-kit,qcs8300-ride-sx,qcs9100-ride-sx,rb1-core-kit"
-      devices_premerge: "iq-8275-evk,iq-9075-evk,iq-x7181-evk,qcm6490-idp,qcs615-ride,rb3gen2-core-kit,qcs8300-ride-sx,qcs9100-ride-sx,rb1-core-kit"
+      devices: "iq-8275-evk,iq-9075-evk,iq-x5121-evk,iq-x7181-evk,qcm6490-idp,qcs615-ride,rb3gen2-core-kit,qcs8300-ride-sx,qcs9100-ride-sx,rb1-core-kit"
+      devices_premerge: "iq-8275-evk,iq-9075-evk,iq-x5121-evk,iq-x7181-evk,qcm6490-idp,qcs615-ride,rb3gen2-core-kit,qcs8300-ride-sx,qcs9100-ride-sx,rb1-core-kit"
       project_name: "meta-qcom"
       distro_name: "qcom-distro"
       distro_suffix: "_linux-qcom-6.18"
