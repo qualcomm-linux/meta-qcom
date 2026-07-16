@@ -45,7 +45,28 @@ runs:
           INPUTS_SUMMARY_TITLE: ${{ inputs.summary_title }}
         run: |
           set -x
-          INPUT=$(for TESTJOB in $(find "${GITHUB_WORKSPACE}" -name "${INPUTS_PREFIX}.json")
+          # When a failed LAVA job is re-run, GitHub keeps the original failed
+          # job's "<distro>-test-job-<id>" artifact AND adds a new artifact for the
+          # re-submitted job (LAVA assigns a fresh, higher id). Both get downloaded
+          # here, so without de-duplication the stale failed job is counted again
+          # and the summary reports phantom failures even after a green re-run.
+          # Keep only the newest LAVA job (highest id) per device + test, keyed by
+          # (requested_device_type, description) which is stable across re-runs of
+          # the same job. The fields are read from the saved job-detail JSON.
+          declare -A KEEP_FILE
+          declare -A KEEP_ID
+          for TESTJOB in $(find "${GITHUB_WORKSPACE}" -name "${INPUTS_PREFIX}.json")
+          do
+              KEY=$(jq -r '"\(.requested_device_type)@@\(.description)"' "${TESTJOB}")
+              JOB_ID=$(jq -r '.id' "${TESTJOB}")
+              if [ -z "${KEEP_ID[$KEY]:-}" ] || [ "${JOB_ID}" -gt "${KEEP_ID[$KEY]}" ]; then
+                  KEEP_ID["$KEY"]="${JOB_ID}"
+                  KEEP_FILE["$KEY"]="${TESTJOB}"
+              fi
+          done
+          TESTJOBS=$(printf '%s\n' "${KEEP_FILE[@]}")
+
+          INPUT=$(for TESTJOB in ${TESTJOBS}
           do
               JOB_ID=$(cat "$TESTJOB" | jq ".id")
               JOB_URL="https://lava.infra.foundries.io/results/$JOB_ID"
@@ -63,7 +84,7 @@ runs:
               TEST_RESULTS=$(for SUITE in $(echo "$JOB_SUITES" | jq -r -c ".results[]")
               do
                   if [ "${JOB_TYPE}" = "test" ]; then
-                      if [ "${JOB_STATE}" = "Finished" ] && [ ${JOB_HEALTH} = "Complete" ]; then
+                      if [ "${JOB_STATE}" = "Finished" ]; then
                           SUITE_NAME=$(echo "$SUITE" | jq -r ".name")
                           SUITE_ID=$(echo "$SUITE" | jq -r ".id")
                           SUITE_TESTS=$(curl -s "https://lava.infra.foundries.io/api/v0.2/jobs/$JOB_ID/suites/$SUITE_ID/tests/")
@@ -148,7 +169,7 @@ runs:
           echo "" >> "${INPUTS_SUMMARY_FILE_NAME}"
           echo "| Job ID | Device | State | Health |" >> "${INPUTS_SUMMARY_FILE_NAME}"
           echo "| ---- | ---- | ---- | ---- |" >> "${INPUTS_SUMMARY_FILE_NAME}"
-          for TESTJOB in $(find "${GITHUB_WORKSPACE}" -name "${INPUTS_PREFIX}.json")
+          for TESTJOB in ${TESTJOBS}
           do
               JOB_ID=$(cat "${TESTJOB}" | jq ".id")
               JOB_URL="https://lava.infra.foundries.io/results/$JOB_ID"
