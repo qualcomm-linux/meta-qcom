@@ -3,7 +3,7 @@ header:
 overrides:
     repos:
         oe-core:
-            commit: 05b964cc4b56783715fa2db7c7303d978ccef7a4
+            commit: c2746a4a165fd99c2d1aafed17533555787f37ce
         meta-lts-mixins:
             commit: 6ad95d00531b32ec01792ab496718943dc95277b
         bitbake:
@@ -11,7 +11,7 @@ overrides:
         meta-arm:
             commit: caa36c53f796beb25d9b9f58b1b7a492e9987e15
         meta-openembedded:
-            commit: 100027977216601000cbefc42c2ff6cf667e7b5e
+            commit: d97b5602d7f64422c94b7311466cda7f6b1962d5
         meta-virtualization:
             commit: 781735b97ae5013cacabbecd38e6da6b510cf3fb
         meta-audioreach:
