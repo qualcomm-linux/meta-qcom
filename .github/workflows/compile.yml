@@ -9,6 +9,10 @@ on:
         required: false
         type: boolean
         default: false
+      bblock:
+        required: false
+        type: boolean
+        default: false
       target:
         required: false
         type: boolean
@@ -17,6 +21,10 @@ on:
         required: false
         type: boolean
         default: true
+      run_on:
+        required: false
+        type: string
+        default: amd64
       name:
         required: true
         type: string
@@ -45,7 +53,7 @@ env:
 jobs:
   reusable_compile_job:
     if: inputs.enabled
-    runs-on: [self-hosted, qcom-u2404, amd64]
+    runs-on: [self-hosted, qcom-u2404, "${{ inputs.run_on }}"]
     name: ${{ inputs.name }}
     steps:
       - uses: actions/checkout@v6
@@ -68,8 +76,16 @@ jobs:
         shell: bash
         run: |
           KAS_CONTAINER=$RUNNER_TEMP/kas-container
-          echo "KAS_CONTAINER=$KAS_CONTAINER" >> $GITHUB_ENV
           chmod +x $KAS_CONTAINER
+          if [ -c /dev/kvm ]; then
+            git clone -b kvm https://github.com/quaresmajose/kas $RUNNER_TEMP/kas
+            sudo apt update && sudo apt install -y docker-buildx
+            docker buildx build --tag kas-kvm $RUNNER_TEMP/kas
+            echo "KAS_CONTAINER_IMAGE=kas-kvm" >> $GITHUB_ENV
+            cp $RUNNER_TEMP/kas/kas-container $KAS_CONTAINER
+            KAS_CONTAINER="$KAS_CONTAINER --kvm"
+          fi
+          echo "KAS_CONTAINER=$KAS_CONTAINER" >> $GITHUB_ENV
 
       - name: Setup build variables
         shell: bash
@@ -121,6 +137,12 @@ jobs:
           ci/kas-container-shell-helper.sh ci/yocto-buildstats.sh
           rename.ul -va buildstats buildstats-world $KAS_WORK_DIR/build/buildstats*
           mv $KAS_WORK_DIR/build/buildstats* .
+
+      - name: Kas bblock
+        if: inputs.bblock
+        shell: bash
+        run: |
+          $KAS_CONTAINER shell ${KAS_YAMLS} --command "bblock qemu-system-native"
 
       - name: Kas build images
         if:  inputs.target
