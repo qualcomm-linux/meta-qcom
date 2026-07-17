@@ -18,7 +18,6 @@ KERNEL_DEVICETREE = ""
 KERNEL_DEVICETREE:glymur-crd = "${QCOM_DTB_DEFAULT}.dtb"
 KERNEL_DEVICETREE:kaanapali-mtp = "${QCOM_DTB_DEFAULT}.dtb"
 KERNEL_DEVICETREE:sm8750-mtp = "${QCOM_DTB_DEFAULT}.dtb"
-KERNEL_DEVICETREE:iq-x7181-evk = "${QCOM_DTB_DEFAULT}.dtb"
 
 setup_efi_folder() {
     # Move EFI content from packages expecting /boot to be the ESP location
