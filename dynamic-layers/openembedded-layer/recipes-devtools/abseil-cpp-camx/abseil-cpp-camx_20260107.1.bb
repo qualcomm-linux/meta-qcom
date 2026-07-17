@@ -7,7 +7,11 @@ SECTION = "libs"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=df52c6edb7adc22e533b2bacc3bd3915"
 
-SRC_URI = "https://github.com/abseil/${BPN}/releases/download/${PV}/${BP}.tar.gz \
+_BPN = "abseil-cpp"
+_BP = "${_BPN}-${PV}"
+S = "${UNPACKDIR}/${_BP}"
+
+SRC_URI = "https://github.com/abseil/${_BPN}/releases/download/${PV}/${_BP}.tar.gz \
            file://0001-absl-always-use-asm-sgidefs.h.patch \
            file://0002-abseil-ppc-fixes.patch \
            "
@@ -29,7 +33,7 @@ LDFLAGS:append:riscv32 = " -latomic"
 
 SYSROOT_DIRS:append:class-nativesdk:mingw32 = " ${bindir}"
 
-PACKAGES_DYNAMIC += "^libabsl-*"
+PACKAGES_DYNAMIC += "^libabsl-camx-*"
 PACKAGES_DYNAMIC:class-native = ""
 
 PACKAGESPLITFUNCS =+ "split_dynamic_packages"
@@ -40,8 +44,8 @@ python split_dynamic_packages() {
     libpackages = do_split_packages(
         d,
         root=libdir,
-        file_regex=r'^libabsl_(.*)\.so\..*$',
-        output_pattern='libabsl-%s',
+        file_regex=r'^libabsl-camx_(.*)\.so\..*$',
+        output_pattern='libabsl-camx-%s',
         description="abseil shared library %s",
         prepend=True,
         extra_depends='',
