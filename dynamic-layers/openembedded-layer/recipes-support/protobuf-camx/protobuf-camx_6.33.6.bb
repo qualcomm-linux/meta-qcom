@@ -1,7 +1,8 @@
-SUMMARY = "Protocol Buffers - structured data serialisation mechanism"
+SUMMARY = "Protocol Buffers - structured data serialisation mechanism, backport for CamX"
 DESCRIPTION = "Protocol Buffers are a way of encoding structured data in an \
 efficient yet extensible format. Google uses Protocol Buffers for almost \
-all of its internal RPC protocols and file formats."
+all of its internal RPC protocols and file formats. This is the version backported \
+for the use inside Qualcomm layer"
 HOMEPAGE = "https://github.com/google/protobuf"
 SECTION = "console/tools"
 LICENSE = "BSD-3-Clause & MIT"
@@ -13,8 +14,8 @@ LIC_FILES_CHKSUM = " \
 PROTOC_VERSION = "v${@d.getVar('PV').split('.', 1)[1]}"
 PROTOC_BRANCH = "${@d.getVar('PV').split('.', 2)[1]}.x"
 
-DEPENDS = "zlib abseil-cpp jsoncpp"
-DEPENDS:append:class-target = " protobuf-native"
+DEPENDS = "zlib abseil-cpp-camx jsoncpp"
+DEPENDS:append:class-target = " protobuf-camx-native"
 
 SRCREV = "6e1998413a5bca7c058b85999667893f167434bc"
 
