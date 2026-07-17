@@ -25,6 +25,7 @@ SRCBRANCH:class-devupstream ?= "branch=qcom-6.18.y"
 SRC_URI = " \
     git://github.com/qualcomm-linux/kernel.git;${SRCBRANCH};protocol=https \
     file://0001-tools-use-basename-to-identify-file-in-gen-mach-type.patch \
+    file://0002-kbuild-disable-gcc-switch-recording-in-dwarf.patch \
 "
 
 # Additional kernel configs.
