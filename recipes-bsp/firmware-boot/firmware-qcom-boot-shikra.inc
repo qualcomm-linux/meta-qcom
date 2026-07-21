@@ -1,5 +1,5 @@
 DESCRIPTION = "QCOM NHLOS Firmware for Qualcomm Shikra-EVK platform"
-LICENSE = "LICENSE.qcom-2"
+LICENSE = "LicenseRef-LICENSE.qcom-2"
 LIC_FILES_CHKSUM = "file://${UNPACKDIR}/${BOOTBINARIES}/LICENSE.qcom-2.txt;md5=165287851294f2fb8ac8cbc5e24b02b0"
 
 FW_ARTIFACTORY = "softwarecenter.qualcomm.com/nexus/generic/product/chip/tech-package/SHIKRA_bootbinaries.1.0/shikra_bootbinaries.1.0-test-device-public"
