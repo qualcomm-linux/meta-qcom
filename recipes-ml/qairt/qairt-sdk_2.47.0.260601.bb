@@ -7,7 +7,7 @@ while also supporting the development of ML applications. \
 "
 HOMEPAGE = "https://docs.qualcomm.com/doc/80-63442-10/topic/general_overview.html"
 
-LICENSE = "qcom-ai-stack"
+LICENSE = "LicenseRef-qcom-ai-stack"
 LIC_FILES_CHKSUM = "file://LICENSE.pdf;md5=878b885995f453e328edbcd5a1302306"
 NO_GENERIC_LICENSE[qcom-ai-stack] = "LICENSE.pdf"
 
