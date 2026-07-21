@@ -1,6 +1,6 @@
 SUMMARY = "Prebuilt bootlader images for Qualcomm RB1"
 
-LICENSE = "LICENSE.qcom"
+LICENSE = "LicenseRef-LICENSE.qcom"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=cbbe399f2c983ad51768f4561587f000"
 
 SRC_URI = "https://artifacts.codelinaro.org/artifactory/clo-549-96boards-backup/96boards/rb1/linaro/rescue/23.12/rb1-bootloader-emmc-linux-47528.zip"
