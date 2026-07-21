@@ -1,6 +1,6 @@
 SUMMARY = "Prebuilt Qualcomm diagnostic library and utility applications"
 DESCRIPTION = "Prebuilt library and utility applications for diagnostic traffic"
-LICENSE = "LICENSE.qcom-2"
+LICENSE = "LicenseRef-LICENSE.qcom-2"
 LIC_FILES_CHKSUM = "file://${UNPACKDIR}/usr/share/doc/diag/LICENSE.QCOM-2.txt;md5=165287851294f2fb8ac8cbc5e24b02b0"
 
 SRC_URI = "https://softwarecenter.qualcomm.com/nexus/generic/software/chip/component/core-technologies.qclinux.0.0/${PBT_BUILD_DATE}/prebuilt_yocto/diag_15.0.qcom+really${PV}_armv8a.tar.gz"
