@@ -1,0 +1,27 @@
+From acc225f1ed99213a4e3a6f6c0384498a8122d428 Mon Sep 17 00:00:00 2001
+From: Dmitry Baryshkov <dmitry.baryshkov@oss.qualcomm.com>
+Date: Mon, 3 Aug 2026 23:50:21 +0300
+Subject: [meta-selinux][PATCH 1/2] libsepol: enable nativesdk
+
+Enable nativesdk class extension, letting libsepol to satisfy
+dependencies of nativesdk-rpm if SELinux is enabled by the distro.
+
+Signed-off-by: Dmitry Baryshkov <dmitry.baryshkov@oss.qualcomm.com>
+Upstream-Status: Submitted [https://lore.kernel.org/yocto-patches/20260804114749.625810-1-dmitry.baryshkov@oss.qualcomm.com/T/#t]
+---
+ recipes-security/selinux/libsepol_3.10.bb | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/recipes-security/selinux/libsepol_3.10.bb b/recipes-security/selinux/libsepol_3.10.bb
+index 0a51aba28ee8..49cc9d256460 100644
+--- a/recipes-security/selinux/libsepol_3.10.bb
++++ b/recipes-security/selinux/libsepol_3.10.bb
+@@ -17,4 +17,4 @@ DEPENDS = "flex-native"
+ # sections which are not affected by -ffile-prefix-map, causing buildpaths QA failure
+ LTO = ""
+ 
+-BBCLASSEXTEND = "native"
++BBCLASSEXTEND = "native nativesdk"
+-- 
+2.47.3
+
