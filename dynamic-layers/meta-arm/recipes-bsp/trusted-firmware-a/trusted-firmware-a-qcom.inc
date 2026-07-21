@@ -3,7 +3,7 @@ DEPENDS += "qtestsign-native optee-os-qcom u-boot-qcom"
 SRC_URI += "git://github.com/coreboot/qc_blobs.git;protocol=https;name=qc_blobs;subdir=qc_blobs;branch=main"
 SRCREV_qc_blobs = "16207f367ddbf280a0c2c8a3d3ee454a59710a25"
 
-LICENSE += "& LICENSE.qcom"
+LICENSE += "AND LicenseRef-LICENSE.qcom"
 LIC_FILES_CHKSUM:qcm6490 += "file://${UNPACKDIR}/qc_blobs/sc7280/qtiseclib/LICENSE;md5=fa83f30385e617b56ef0934f13645621"
 
 COMPATIBLE_MACHINE = "qcm6490|qcs9100"
