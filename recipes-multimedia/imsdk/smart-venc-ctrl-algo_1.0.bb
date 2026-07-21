@@ -1,6 +1,6 @@
 SUMMARY = "Smart Video Encoder Control Algorithm Prebuilt Libraries"
 DESCRIPTION = "Provides prebuilt binaries for the Smart Video Encoder Control Algorithm, used to dynamically optimize video encoding parameters and performance."
-LICENSE = "LICENSE.qcom-2"
+LICENSE = "LicenseRef-LICENSE.qcom-2"
 LIC_FILES_CHKSUM = "file://${UNPACKDIR}/usr/share/doc/qcom-video-ctrl/NO.LOGIN.BINARY.LICENSE.QTI;md5=eabe5444aa94c3e0e8b37b132a94e08b"
 
 PBT_BUILD_DATE = "260112.1"
