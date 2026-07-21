@@ -1,6 +1,6 @@
 SUMMARY = "Qualcomm camera firmware for Hamoa"
 DESCRIPTION = "Qualcomm camera firmware to support camera functionality on Hamoa"
-LICENSE = "LICENSE.qcom-2"
+LICENSE = "LicenseRef-LICENSE.qcom-2"
 LIC_FILES_CHKSUM = "file://usr/share/doc/${BPN}/LICENSE.QCOM-2.txt;md5=165287851294f2fb8ac8cbc5e24b02b0"
 
 PBT_BUILD_DATE = "260514"
