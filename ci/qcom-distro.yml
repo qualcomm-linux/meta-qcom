@@ -37,6 +37,13 @@ repos:
 
   meta-selinux:
     url: https://git.yoctoproject.org/meta-selinux
+    patches:
+      libsepol-nativesdk:
+        repo: meta-qcom
+        path: patches/selinux/0001-libsepol-enable-nativesdk.patch
+      libselinux-nativesdk:
+        repo: meta-qcom
+        path: patches/selinux/0002-libselinux-enable-nativesdk.patch
 
   meta-updater:
     url: https://github.com/uptane/meta-updater
