@@ -20,7 +20,7 @@ on:
         value: ${{ jobs.collect-ids.outputs.summary_ids }}
 env:
   # git sha, tag or branch in lava-test-plans repository
-  LAVA_TEST_PLANS_REF: "1d5707eec220248e0b4e7a039c545aba4d3e3deb"
+  LAVA_TEST_PLANS_REF: "a20c74e6827b87ca39dff33eff4769d860e7942c"
   # CalVer tag in qcom-linux-testkit repository (format: testkit-YYYY.MM.DD)
   TESTKIT_REF: "testkit-2026.07.12"
 
