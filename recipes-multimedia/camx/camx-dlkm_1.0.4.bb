@@ -1,6 +1,6 @@
 DESCRIPTION = "Qualcomm Camera driver (CAMX)"
 HOMEPAGE = "https://github.com/qualcomm-linux/camera-driver"
-LICENSE = "GPL-2.0-with-Linux-syscall-note"
+LICENSE = "GPL-2.0-only WITH Linux-syscall-note"
 LIC_FILES_CHKSUM = "file://LICENSE.txt;md5=b234ee4d69f5fce4486a80fdaf4a4263"
 
 SRC_URI = " \
