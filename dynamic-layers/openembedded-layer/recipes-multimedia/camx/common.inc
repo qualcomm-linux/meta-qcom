@@ -12,7 +12,7 @@ mechanism for use case selection and camera pipeline topology creation. \
 Includes configurable sensor and tuning binaries, which are essential for enabling \
 full camera functionality."
 
-LICENSE = "LICENSE.qcom-2"
+LICENSE = "LicenseRef-LICENSE.qcom-2"
 LIC_FILES_CHKSUM = "file://usr/share/doc/${BPN}/LICENSE.QCOM-2.txt;md5=165287851294f2fb8ac8cbc5e24b02b0 \
                     file://usr/share/doc/${BPN}/NOTICE;md5=198d001f49d9a313355d5219f669a76c"
 
