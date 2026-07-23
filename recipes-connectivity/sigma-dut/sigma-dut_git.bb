@@ -6,7 +6,7 @@ LIC_FILES_CHKSUM = "file://README;md5=e877b35748195c6ab87bf2d1ebed9a89"
 SRC_URI = "git://github.com/qualcomm/sigma-dut.git;branch=master;protocol=https"
 
 PV = "1.11+git"
-SRCREV = "89d3c0271c1000932475467c70f529b67157a386"
+SRCREV = "bd455d362f824f8d15dee305fec32aefafdca0a1"
 
 DEPENDS = "libnl"
 
