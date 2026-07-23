@@ -114,10 +114,13 @@ jobs:
         with:
           file-path: pr-comment.txt
           pr-number: ${{ steps.pr_comment_prep.outputs.pr_number }}
-          # Update a single tagged comment per PR instead of posting a new one on
-          # every run, so the PR shows one current result instead of accumulating
-          # stale comments (one per run / per superseded commit).
+          # Keep a single tagged results comment per PR, but recreate it
+          # (delete + post new) instead of editing in place: GitHub only
+          # notifies on comment creation, so this makes every (re-)run's
+          # results generate an email while still avoiding stale-comment
+          # accumulation.
           comment-tag: test-results
+          mode: recreate
 
   publish-test-results:
     uses: ./.github/workflows/publish-results.yml
