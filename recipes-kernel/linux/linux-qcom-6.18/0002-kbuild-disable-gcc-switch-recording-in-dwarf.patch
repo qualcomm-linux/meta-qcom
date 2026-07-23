@@ -1,0 +1,40 @@
+From 5e76bb77cab5bb9fc2ed0f3f07605bb238592b0c Mon Sep 17 00:00:00 2001
+From: Jaihind Yadav <jaihindy@qti.qualcomm.com>
+Date: Sat, 18 Jul 2026 12:40:00 +0530
+Subject: [PATCH] kbuild: disable gcc switch recording in DWARF
+
+GCC records the complete command line in DWARF producer metadata by
+default. When CONFIG_KSTACK_ERASE is enabled, GCC plugin options include
+absolute host paths, and those paths leak into debug artifacts built from
+the kernel and external modules.
+
+Disable GCC switch recording globally in kbuild so all modules built
+against this kernel inherit the same behavior without per-module
+workarounds.
+
+Upstream-Status: Pending
+Signed-off-by: Jaihind Yadav <jaihindy@qti.qualcomm.com>
+---
+ Makefile | 7 +++++++
+ 1 file changed, 7 insertions(+)
+
+diff --git a/Makefile b/Makefile
+index 899fdcc9a75d..97189dc2ef5c 100644
+--- a/Makefile
++++ b/Makefile
+@@ -1147,6 +1147,13 @@ ifdef CONFIG_CC_IS_GCC
+ KBUILD_CFLAGS   += -fconserve-stack
+ endif
+ 
++# Do not record full GCC command lines in DWARF producer strings.
++# This avoids leaking host-specific absolute paths (for example GCC plugin
++# paths) into debug artifacts built from this kernel.
++ifdef CONFIG_CC_IS_GCC
++KBUILD_CFLAGS   += $(call cc-option,-gno-record-gcc-switches)
++endif
++
+ # Ensure compilers do not transform certain loops into calls to wcslen()
+ KBUILD_CFLAGS += -fno-builtin-wcslen
+ 
+-- 
+2.34.1

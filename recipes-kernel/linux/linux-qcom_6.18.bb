@@ -25,6 +25,7 @@ SRCBRANCH:class-devupstream ?= "branch=qcom-6.18.y"
 SRC_URI = " \
     git://github.com/qualcomm-linux/kernel.git;${SRCBRANCH};protocol=https \
     file://0001-tools-use-basename-to-identify-file-in-gen-mach-type.patch \
+    file://0002-kbuild-disable-gcc-switch-recording-in-dwarf.patch \
 "
 
 # Additional kernel configs.
@@ -43,7 +44,7 @@ S = "${UNPACKDIR}/${BP}"
 KBUILD_DEFCONFIG ?= "defconfig"
 KBUILD_DEFCONFIG:qcom-armv7a = "qcom_defconfig"
 
-KBUILD_CONFIG_EXTRA = "${@bb.utils.contains('DISTRO_FEATURES', 'hardened', '${S}/kernel/configs/hardening.config', '', d)}"
+KBUILD_CONFIG_EXTRA = "${S}/kernel/configs/hardening.config"
 KBUILD_CONFIG_EXTRA:append:aarch64 = " ${S}/arch/arm64/configs/prune.config"
 KBUILD_CONFIG_EXTRA:append:aarch64 = " ${S}/arch/arm64/configs/qcom.config"
 KBUILD_CONFIG_EXTRA:append = " ${@oe.utils.vartrue('DEBUG_BUILD', '${S}/kernel/configs/debug.config', '', d)}"
