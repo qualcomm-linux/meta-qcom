@@ -1,0 +1,26 @@
+From 80cc03258d3e7242a64ee2cb006405bcab86e082 Mon Sep 17 00:00:00 2001
+From: Nirmesh Kumar Singh <nirmesh.singh@oss.qualcomm.com>
+Date: Thu, 23 Jul 2026 01:37:36 +0530
+Subject: [PATCH] dt-bindings: arm: qcom: Add Talos Lyra EVK board
+
+Add the qcom,talos-lyra-evk compatible string for the Talos lyra EVK
+board, which pairs the Talos lyra SoM with a common carrier board.
+
+Signed-off-by: Nirmesh Kumar Singh <nirmesh.singh@oss.qualcomm.com>
+Upstream-Status: Pending
+---
+ Documentation/devicetree/bindings/arm/qcom.yaml | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/Documentation/devicetree/bindings/arm/qcom.yaml b/Documentation/devicetree/bindings/arm/qcom.yaml
+index 50cc18a6ec5e..2d5daa94b05b 100644
+--- a/Documentation/devicetree/bindings/arm/qcom.yaml
++++ b/Documentation/devicetree/bindings/arm/qcom.yaml
+@@ -939,6 +939,7 @@ properties:
+       - items:
+           - enum:
+               - qcom,qcs615-ride
++              - qcom,talos-lyra-evk
+               - qcom,talos-evk
+           - const: qcom,qcs615
+           - const: qcom,sm6150
