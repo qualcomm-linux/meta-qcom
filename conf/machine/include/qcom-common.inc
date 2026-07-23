@@ -35,7 +35,7 @@ IMAGE_FSTYPES ?= "ext4.gz"
 IMAGE_ROOTFS_ALIGNMENT ?= "4096"
 
 # XBL Config selection
-QCOM_XBL_CONFIG ?= "${@bb.utils.contains("MACHINE_FEATURES", "kvm", "xbl_config_kvm.elf", "xbl_config.elf", d)}"
+QCOM_XBL_CONFIG ?= "${@bb.utils.contains("COMBINED_FEATURES", "kvm", "xbl_config_kvm.elf", "xbl_config.elf", d)}"
 
 # UEFI DTB selection
 QCOM_UEFI_DTB ?= "${@bb.utils.contains("MACHINE_FEATURES", "kvm", "uefi_dtbs_kvm.xz", "uefi_dtbs.xz", d)}"
