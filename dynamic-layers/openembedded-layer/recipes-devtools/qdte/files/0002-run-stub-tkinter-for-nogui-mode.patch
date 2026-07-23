@@ -1,0 +1,99 @@
+From f7938c07dca4712f16f88435577caf02cd800649 Mon Sep 17 00:00:00 2001
+From: Igor Opaniuk <igor.opaniuk@oss.qualcomm.com>
+Date: Sun, 14 Jun 2026 21:05:31 +0200
+Subject: [PATCH] run: stub tkinter for --nogui mode
+
+QDTE's modules import tkinter at top level pervasively (controller.py,
+treeview.py, settings.py, hexview.py, xblcfgint.py, and several
+others), and define GUI classes like `class DTGUIController(tk.Frame, ...)`
+whose bases are looked up at class-definition time. As a result the
+mere act of importing controller -- which run.py does
+unconditionally -- requires Tcl/Tk to be available in the host
+environment, even when the user only wants the headless --nogui mode
+for tasks like patching a single property inside xbl_config.elf.
+
+In minimal Yocto native sysroots, Qualcomm-internal CI containers, and
+similar restricted environments, tkinter is not always packaged. The
+result is a hard ImportError before any headless logic has a chance
+to run.
+
+Install a permissive stub `tkinter` module (plus submodules: font,
+ttk, colorchooser, messagebox, filedialog, simpledialog,
+scrolledtext) into sys.modules at the very top of run.py when
+--nogui is present in argv. The stub is:
+
+  * subclassable, so `class Foo(tk.Frame)` succeeds during
+    class-body execution;
+  * callable, so `tk.Tk()` evaluates without raising (the run_str
+    expression at the bottom of __main__ short-circuits via
+    `None if nogui else tk.Tk()`, but the lookup itself still
+    has to succeed);
+  * attribute-polymorphic via __getattr__ on both the stub class
+    and the stub module (PEP 562), so `from tkinter import E /
+    W / N / ttk / font / ...` all resolve to the stub class.
+
+The stubs are never instantiated under --nogui because the GUI code
+paths (DTGUIController, TreeView, etc.) are only constructed in the
+non-nogui branch of controller.run(). When tkinter is present and
+the GUI is used, the stub installation is skipped entirely and
+behaviour is unchanged.
+
+Upstream-Status: Submitted [https://github.com/qualcomm/DTE/pull/N]
+Signed-off-by: Igor Opaniuk <igor.opaniuk@oss.qualcomm.com>
+---
+ run.py | 39 +++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 39 insertions(+)
+
+diff --git a/run.py b/run.py
+index fb3767d..b35d4ce 100644
+--- a/run.py
++++ b/run.py
+@@ -14,6 +14,45 @@ An example of when this file could come in use is when profiling application per
+ decide upon an appropriate tool to use and set up the output profile file, etc.
+ """
+ import sys
++
++# When invoked in --nogui mode, QDTE never instantiates any tkinter
++# widgets -- the controller.run() nogui branch only uses DTWrapper and
++# Autocmd. Install a permissive stub for `tkinter` (and its submodules)
++# before anything else loads so that the pervasive top-level
++# `import tkinter` / `from tkinter import E` / `class X(tk.Frame)`
++# statements throughout QDTE succeed in environments where Tcl/Tk is
++# not available, such as minimal Yocto native sysroots.
++if '--nogui' in sys.argv:
++    import types
++
++    class _TkStub:
++        """Pretends to be any tkinter symbol -- class, constant, callable.
++        Subclassable (so `class Foo(tk.Frame)` works), callable (so
++        `tk.Tk()` works if it ever runs), attribute-polymorphic."""
++        def __init__(self, *args, **kwargs):
++            pass
++        def __getattr__(self, name):
++            return _TkStub
++        def __call__(self, *args, **kwargs):
++            return _TkStub()
++        def __class_getitem__(cls, item):
++            return _TkStub
++
++    def _make_stub_module(name):
++        mod = types.ModuleType(name)
++        mod.__path__ = []  # mark as package so submodule imports resolve
++        # PEP 562: __getattr__ on a module handles `from <mod> import X`
++        # for unknown names by returning the stub class.
++        mod.__getattr__ = lambda n: _TkStub
++        return mod
++
++    sys.modules['tkinter'] = _make_stub_module('tkinter')
++    for _sub in ('font', 'ttk', 'colorchooser', 'messagebox',
++                 'filedialog', 'simpledialog', 'scrolledtext'):
++        _stub = _make_stub_module('tkinter.' + _sub)
++        sys.modules['tkinter.' + _sub] = _stub
++        setattr(sys.modules['tkinter'], _sub, _stub)
++
+ import argparse
+ import tkinter as tk
+ import flags as gflags
+-- 
+2.53.0
+
