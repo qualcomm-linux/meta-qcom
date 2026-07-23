@@ -1,0 +1,17 @@
+SUMMARY = "Camera metadata library"
+DESCRIPTION = "This recipe provides the camera metadata library"
+
+HOMEPAGE = "https://android.googlesource.com/platform/system/media"
+LICENSE = "Apache-2.0"
+LIC_FILES_CHKSUM = "file://NOTICE;md5=3b83ef96387f14655fc854ddc3c6bd57"
+
+SRCREV = "440eb272fd3da0ca7bdae932e61e7fd9be1fd324"
+SRC_URI = "git://android.googlesource.com/platform/system/media;protocol=https;branch=android17-release \
+           file://0001-Create-CMakeListst-for-building-the-android-cam-meta.patch \
+           file://0002-Fix-camera-metadata-headers-for-linux-embedded-compi.patch \
+           file://0003-Revert-Update-ColorSpaceProfiles-docs-to-reflect-lim.patch \
+           "
+
+EXTRA_OECMAKE = "-DPROJECT_VERSION=${PV}"
+
+inherit cmake

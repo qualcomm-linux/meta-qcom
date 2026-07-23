@@ -127,7 +127,6 @@ FILES:${PN}-skel = "\
     ${datadir}/qcom \
     "
 FILES:${PN} = "\
-    ${libdir}/libcamera_metadata_kodiak*${SOLIBS} \
     ${libdir}/camx/kodiak/*${SOLIBS} \
     ${libdir}/camx/kodiak/hw/*${SOLIBS} \
     ${libdir}/camx/kodiak/camera/components/*${SOLIBS} \
