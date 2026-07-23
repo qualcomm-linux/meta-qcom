@@ -11,7 +11,7 @@ PACKAGES = " \
 
 RRECOMMENDS:${PN}-firmware = " \
     ${@bb.utils.contains_any('DISTRO_FEATURES', 'opencl opengl vulkan', 'linux-firmware-qcom-adreno-a702 linux-firmware-qcom-shikra-adreno', '', d)} \
-    ${@bb.utils.contains('DISTRO_FEATURES', 'bluetooth', 'linux-firmware-qca-wcn3950', '', d)} \
+    ${@bb.utils.contains('DISTRO_FEATURES', 'bluetooth', 'linux-firmware-qca-wcn3950 linux-firmware-qca-wcn3988', '', d)} \
     linux-firmware-qcom-shikra-compute \
     linux-firmware-qcom-shikra-audio \
     linux-firmware-qcom-shikra-modem \
