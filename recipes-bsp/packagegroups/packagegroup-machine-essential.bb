@@ -5,6 +5,7 @@ inherit packagegroup
 PACKAGES = " \
     ${PN}-board-generic \
     ${PN}-qcom-generic \
+    ${PN}-qcom-glymur-soc \
     ${PN}-qcom-hamoa-soc \
     ${PN}-qcom-purwa-soc \
     ${PN}-qcom-qcm2290-soc \
@@ -96,6 +97,23 @@ RRECOMMENDS:${PN}-qcom-generic += " \
 "
 
 # The packagegroups below are SoC specific
+
+RRECOMMENDS:${PN}-qcom-glymur-soc += " \
+    ${PN}-board-generic \
+    ${PN}-qcom-generic \
+    kernel-module-ath11k-pci \
+    kernel-module-ath12k \
+    kernel-module-camcc-glymur \
+    kernel-module-dispcc-glymur \
+    kernel-module-evacc-glymur \
+    kernel-module-gpucc-glymur \
+    kernel-module-pinctrl-glymur \
+    kernel-module-pmic-glink \
+    kernel-module-pmic-glink-altmode \
+    kernel-module-pwrseq-qcom-wcn \
+    kernel-module-tcsrcc-glymur \
+    kernel-module-videocc-glymur \
+"
 
 RRECOMMENDS:${PN}-qcom-hamoa-soc += " \
     ${PN}-board-generic \
