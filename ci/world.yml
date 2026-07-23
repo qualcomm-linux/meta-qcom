@@ -7,7 +7,7 @@ local_conf_header:
   world_build: |
     EXCLUDE_FROM_WORLD = "1"
     EXCLUDE_FROM_WORLD:layer-qcom = "0"
-    #EXCLUDE_FROM_WORLD:layer-qcom-distro = "0"
+    EXCLUDE_FROM_WORLD:layer-qcom-distro = "0"
 
 target:
   - world
