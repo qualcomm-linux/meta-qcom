@@ -16,6 +16,7 @@ SRCREV = "806ad865287c418d2aac380506b7ad44b5a11319"
 DEPENDS += "\
     gstreamer1.0 \
     gstreamer1.0-plugins-base \
+    protobuf-native \
 "
 
 # This package is currently only used and tested on ARMv8 (aarch64) machines.
