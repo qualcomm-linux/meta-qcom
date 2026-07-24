@@ -8,6 +8,20 @@ header:
 local_conf_header:
   ci: |
     BB_SIGNATURE_HANDLER = "OEBasicHash"
+    IMAGE_CLASSES += "image-on-sstate"
     FIRMWARE_COMPRESSION:qcom-armv8a = "zst"
     # Workaround needed due https://bugzilla.yoctoproject.org/show_bug.cgi?id=16010
     PACKAGE_CLASSES = "package_rpm"
+
+repos:
+  oe-core:
+    patches:
+      sstatesig-do_image_complete-1:
+        repo: meta-qcom
+        path: patches/oe-core/0001-sstatesig-do_image_complete-needs-to-run-with-pseudo.patch
+      sstatesig-do_image_complete-2:
+        repo: meta-qcom
+        path: patches/oe-core/0001-os-release-set-BUILD_ID-vardepsexclude-with-weak-ass.patch
+      sstatesig-do_image_complete-3:
+        repo: meta-qcom
+        path: patches/oe-core/0001-oe-spdx30_tasks-fix-image-deploy.patch

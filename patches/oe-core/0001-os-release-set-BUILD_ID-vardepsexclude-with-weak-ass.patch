@@ -1,0 +1,28 @@
+From 3bd3d449dfc9ee8cbfd7df003763e2c50eba92c1 Mon Sep 17 00:00:00 2001
+From: Jose Quaresma <jose.quaresma@oss.qualcomm.com>
+Date: Wed, 8 Jul 2026 17:39:14 +0100
+Subject: [PATCH] os-release: set BUILD_ID vardepsexclude with weak assignment
+
+Upstream-Status: Pending
+
+Signed-off-by: Jose Quaresma <jose.quaresma@oss.qualcomm.com>
+---
+ meta/recipes-core/os-release/os-release.bb | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/meta/recipes-core/os-release/os-release.bb b/meta/recipes-core/os-release/os-release.bb
+index e1906d05d8..bbbf9e3e11 100644
+--- a/meta/recipes-core/os-release/os-release.bb
++++ b/meta/recipes-core/os-release/os-release.bb
+@@ -41,7 +41,7 @@ CPE_DISTRO ??= "${DISTRO}"
+ CPE_NAME = "cpe:/o:openembedded:${CPE_DISTRO}:${VERSION_ID}"
+ 
+ BUILD_ID ?= "${DATETIME}"
+-BUILD_ID[vardepsexclude] = "DATETIME"
++BUILD_ID[vardepsexclude] ?= "DATETIME"
+ 
+ def sanitise_value(ver):
+     # unquoted fields like VERSION_ID should be (from os-release(5)):
+-- 
+2.55.0
+
