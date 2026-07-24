@@ -16,11 +16,12 @@ LICENSE = "LICENSE.qcom-2"
 LIC_FILES_CHKSUM = "file://usr/share/doc/${BPN}/LICENSE.QCOM-2.txt;md5=165287851294f2fb8ac8cbc5e24b02b0 \
                     file://usr/share/doc/${BPN}/NOTICE;md5=198d001f49d9a313355d5219f669a76c"
 
+PBT_BRANCH = "master"
 SRC_URI = " \
-    https://qartifactory-edge.qualcomm.com/artifactory/qsc_releases/software/chip/component/camx.qclinux.0.0/${PBT_BUILD_DATE}/prebuilt_yocto/${BPN}_${PV}_armv8-2a.tar.gz;name=camxlib \
-    https://qartifactory-edge.qualcomm.com/artifactory/qsc_releases/software/chip/component/camx.qclinux.0.0/${PBT_BUILD_DATE}/prebuilt_yocto/camx-${PLATFORM}_${PV}_armv8-2a.tar.gz;name=camx \
-    https://qartifactory-edge.qualcomm.com/artifactory/qsc_releases/software/chip/component/camx.qclinux.0.0/${PBT_BUILD_DATE}/prebuilt_yocto/chicdk-${PLATFORM}_${PV}_armv8-2a.tar.gz;name=chicdk \
-    https://qartifactory-edge.qualcomm.com/artifactory/qsc_releases/software/chip/component/camx.qclinux.0.0/${PBT_BUILD_DATE}/prebuilt_yocto/camxcommon-${PLATFORM}_${PV}_armv8-2a.tar.gz;name=camxcommon \
+    https://qartifactory-edge.qualcomm.com/artifactory/qsc_releases/software/chip/component/camx.qclinux.0.0/${PBT_BUILD_DATE}/prebuilt_yocto_${PBT_BRANCH}/${BPN}_${PV}_armv8-2a.tar.gz;name=camxlib \
+    https://qartifactory-edge.qualcomm.com/artifactory/qsc_releases/software/chip/component/camx.qclinux.0.0/${PBT_BUILD_DATE}/prebuilt_yocto_${PBT_BRANCH}/camx-${PLATFORM}_${PV}_armv8-2a.tar.gz;name=camx \
+    https://qartifactory-edge.qualcomm.com/artifactory/qsc_releases/software/chip/component/camx.qclinux.0.0/${PBT_BUILD_DATE}/prebuilt_yocto_${PBT_BRANCH}/chicdk-${PLATFORM}_${PV}_armv8-2a.tar.gz;name=chicdk \
+    https://qartifactory-edge.qualcomm.com/artifactory/qsc_releases/software/chip/component/camx.qclinux.0.0/${PBT_BUILD_DATE}/prebuilt_yocto_${PBT_BRANCH}/camxcommon-${PLATFORM}_${PV}_armv8-2a.tar.gz;name=camxcommon \
 "
 
 S = "${UNPACKDIR}"
@@ -79,7 +80,7 @@ RDEPENDS:${PN} += "chicdk-${PLATFORM}"
 RDEPENDS:${PN}-dev += "camxcommon-headers-dev"
 
 FILES:camx-${PLATFORM} = "\
-    ${libdir}/libcamera_hardware_${PLATFORM}*${SOLIBS} \
+    ${libdir}/libcamx_hardware_${PLATFORM}*${SOLIBS} \
     ${libdir}/libcamxexternalformatutils_${PLATFORM}*${SOLIBS} \
     ${libdir}/camx/${PLATFORM}/hw/camera.qcom*${SOLIBS} \
     ${libdir}/camx/${PLATFORM}/libcamera_hardware*${SOLIBS} \
@@ -103,7 +104,7 @@ FILES:chicdk-${PLATFORM} = "\
 "
 
 FILES:${PN} = "\
-    ${libdir}/libcamera_metadata_${PLATFORM}*${SOLIBS} \
+    ${libdir}/libcamx_metadata_${PLATFORM}*${SOLIBS} \
     ${libdir}/camx/${PLATFORM}/*${SOLIBS} \
     ${libdir}/camx/${PLATFORM}/camera/components/com.qti.node.swregistration*${SOLIBS} \
     ${libdir}/camx/${PLATFORM}/camera/components/*${SOLIBS} \
