@@ -1,0 +1,57 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/siemens/kas/master/kas/schema-kas.json
+#
+# Include this kas file to enable Qualcomm secure-boot signing of
+# pre-built firmware images via classes-recipe/qcom-firmware-sign.bbclass.
+# Wires the build through to sectools-native and security-profiles-native
+# and supplies the fuse-binding parameters used by sectools at sign time.
+#
+# Usage:
+#   kas build ci/base.yml:ci/<machine>.yml:ci/secure-boot.yml:ci/ecdsa-secure-boot-test-keys.yml
+#
+# For production builds, replace ecdsa-secure-boot-test-keys.yml with
+# a kas overlay that sets QCOM_FIRMWARE_SIGN_KEY_DIR to an OEM key
+# directory (with qpsa_rootca0.cer / qpsa_attestca0.cer /
+# qpsa_attestca0.key / sha384_roots_hash.txt) sourced from a secrets
+# manager rather than the in-tree test fixtures.
+
+header:
+  version: 14
+
+# meta-oe provides libzip, which qdl-native links against (besides
+# libusb-1.0 and libxml-2.0 from oe-core).  meta-python is not pulled
+# in; we have no Python-only dependency.
+repos:
+  meta-openembedded:
+    url: https://github.com/openembedded/meta-openembedded
+    layers:
+      meta-oe:
+
+local_conf_header:
+  secure-boot: |
+    QCOM_FIRMWARE_SIGN_ENABLE = "1"
+
+    # Per-SoC Security Profile XML.  Bare filenames are resolved
+    # against the directory staged by security-profiles-native; an
+    # absolute path can be used to point at a custom profile.
+    QCOM_SECURITY_PROFILE       ?= "kodiak_security_profile.xml"
+    QCOM_FIRMWARE_SIGN_SECPROFILE = "${QCOM_SECURITY_PROFILE}"
+
+    # Fuse-binding identifiers.  These are device-specific; the values
+    # below are placeholders for development.  Override per OEM /
+    # production build.
+    QCOM_FUSE_OEM_HW_ID              = "0x0001"
+    QCOM_FUSE_OEM_PRODUCT_ID         = "0xabcd"
+    QCOM_FUSE_SEC_KEY_DERIVATION_KEY = ""
+
+    # Anti-rollback floor stamped into signed images.  Bump only when
+    # rolling forward security-critical firmware revisions.
+    QCOM_FIRMWARE_SIGN_ANTI_ROLLBACK = "0x0"
+
+    # Enable the qcomflash-vip image type.  Produces an additional
+    # ${IMAGE_NAME}.qcomflash-vip.tar.gz next to the qcomflash tarball
+    # containing the signed VIP (Validated Image Programming) digest
+    # table -- intended to be flashed alongside qcomflash via
+    # `qdl --vip-table-path`.  See classes-recipe/image_types_qcom_vip.bbclass
+    # and recipes-devtools/qdl/qdl-native_2.7.bb.
+    IMAGE_CLASSES += "image_types_qcom_vip"
+    IMAGE_FSTYPES += "qcomflash-vip"

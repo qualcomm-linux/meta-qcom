@@ -27,4 +27,21 @@ do_deploy() {
 }
 addtask deploy before do_build after do_install
 
+# Optional secure-boot signing of pre-built MBN/ELF/MELF images.
+# When QCOM_FIRMWARE_SIGN_ENABLE is "0" (default) this is a no-op
+inherit qcom-firmware-sign
+
+do_qcom_firmware_sign() {
+    if ! qcom_check_signing_enabled ; then
+        return 0
+    fi
+
+    bbnote "qcom-firmware-sign: walking ${S} for MBN/ELF/MELF blobs"
+    find "${S}" -maxdepth 1 -type f \
+        \( -iname '*.mbn' -o -iname '*.elf' -o -iname '*.melf' \) \
+        | while read -r f; do
+            qcom_sign_verify_file "${f}" || bbfatal "Failed to sign: ${f}"
+        done
+}
+
 inherit allarch
