@@ -43,6 +43,8 @@ FIT_DTB_COMPATIBLE[qcom_sm8750-mtp] = "sm8750-mtp"
 # ---------- hamoa ----------
 FIT_DTB_COMPATIBLE[qcom_hamoa-evk] = \
     "hamoa-iot-evk hamoa-iot-evk-camera-imx577"
+FIT_DTB_COMPATIBLE[qcom_hamoa-evk-el2kvm] = \
+    "hamoa-iot-evk hamoa-iot-evk-camera-imx577 x1-el2"
 
 # ---------- purwa ----------
 FIT_DTB_COMPATIBLE[qcom_purwa-evk-el2kvm] = "purwa-iot-evk x1-el2"
