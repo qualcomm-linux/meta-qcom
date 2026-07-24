@@ -1,0 +1,52 @@
+From 8e5845a4d3a13b70410144a3af555b33d02bc93f Mon Sep 17 00:00:00 2001
+From: Vishnu Saini <vishnu.saini@oss.qualcomm.com>
+Date: Fri, 24 Jul 2026 11:49:26 +0530
+Subject: [PATCH] arm64: dts: qcom: talos-lyra-evk: Enable Native DP
+
+Enabled Native DP with DP-connector using tlmm hpd-gpio 104.
+
+Signed-off-by: Vishnu Saini <vishnu.saini@oss.qualcomm.com>
+Upstream-Status: Pending
+---
+ arch/arm64/boot/dts/qcom/talos-lyra-evk.dts | 26 +++++++++++++++++++++
+ 1 file changed, 26 insertions(+)
+
+diff --git a/arch/arm64/boot/dts/qcom/talos-lyra-evk.dts b/arch/arm64/boot/dts/qcom/talos-lyra-evk.dts
+index 8660a3261057..56731205e353 100644
+--- a/arch/arm64/boot/dts/qcom/talos-lyra-evk.dts
++++ b/arch/arm64/boot/dts/qcom/talos-lyra-evk.dts
+@@ -11,6 +11,32 @@ / {
+ 	compatible = "qcom,talos-lyra-evk", "qcom,qcs615", "qcom,sm6150";
+ 	chassis-type = "embedded";
+ 
++	dp0-connector {
++                compatible = "dp-connector";
++                label = "DP0";
++                type = "full-size";
++
++                hpd-gpios = <&tlmm 104 GPIO_ACTIVE_HIGH>;
++
++                port {
++                        dp0_connector_in: endpoint {
++                                remote-endpoint = <&mdss_dp0_out>;
++                        };
++                };
++        };
++};
++
++&mdss {
++        status = "okay";
++};
++
++&mdss_dp0 {
++        status = "okay";
++};
++
++&mdss_dp0_out {
++        link-frequencies = /bits/ 64 <1620000000 2700000000 5400000000>;
++        remote-endpoint = <&dp0_connector_in>;
+ };
+ 
+ &pon_pwrkey {
+-- 
+2.34.1

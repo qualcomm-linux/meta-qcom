@@ -1,0 +1,55 @@
+From 9df0f9e3a06b9b9d5bbe461eb5936f37309b7661 Mon Sep 17 00:00:00 2001
+From: Monish Chunara <monish.chunara@oss.qualcomm.com>
+Date: Sun, 26 Jul 2026 11:13:43 +0530
+Subject: [PATCH] arm64: dts: qcom: Enable eMMC support for Talos IoT SoM
+
+Enable eMMC and configure required its required power-supplies and speed
+modes for Talos IoT SoM platform.
+
+Signed-off-by: Monish Chunara <monish.chunara@oss.qualcomm.com>
+Upstream-Status: Pending
+---
+ arch/arm64/boot/dts/qcom/talos-lyra-som.dtsi | 21 ++++++++++++++++++++
+ 1 file changed, 21 insertions(+)
+
+diff --git a/arch/arm64/boot/dts/qcom/talos-lyra-som.dtsi b/arch/arm64/boot/dts/qcom/talos-lyra-som.dtsi
+index 7a46947cac88..142f7405f6de 100644
+--- a/arch/arm64/boot/dts/qcom/talos-lyra-som.dtsi
++++ b/arch/arm64/boot/dts/qcom/talos-lyra-som.dtsi
+@@ -11,6 +11,7 @@
+ / {
+ 	aliases {
+ 		serial0 = &uart0;
++		mmc0 = &sdhc_1;
+ 	};
+ 
+ 	chosen {
+@@ -222,6 +223,26 @@ &remoteproc_cdsp {
+ 	status = "okay";
+ };
+ 
++&sdhc_1 {
++        pinctrl-0 = <&sdc1_state_on>;
++        pinctrl-1 = <&sdc1_state_off>;
++        pinctrl-names = "default", "sleep";
++
++        bus-width = <8>;
++        mmc-ddr-1_8v;
++        mmc-hs200-1_8v;
++        mmc-hs400-1_8v;
++        mmc-hs400-enhanced-strobe;
++        vmmc-supply = <&vreg_l17a>;
++        vqmmc-supply = <&vreg_s4a>;
++
++        non-removable;
++        no-sd;
++        no-sdio;
++
++        status = "okay";
++};
++
+ &uart0 {
+ 	status = "okay";
+ };
+-- 
+2.34.1

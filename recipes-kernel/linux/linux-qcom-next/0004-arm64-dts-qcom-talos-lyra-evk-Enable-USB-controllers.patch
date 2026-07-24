@@ -1,0 +1,67 @@
+From 71840d994583b2ccd0f28d66c539ea38255b32d2 Mon Sep 17 00:00:00 2001
+From: Akash Kumar <akakum@qti.qualcomm.com>
+Date: Thu, 23 Jul 2026 14:04:18 +0530
+Subject: [PATCH] arm64: dts: qcom: talos-lyra-evk: Enable USB controllers
+
+Enable usb_1 in peripheral mode and usb_2 in host mode on the
+Talos Lyra EVK, wiring up the associated HS/QMP PHYs and their
+regulator supplies.
+
+Signed-off-by: Akash Kumar <akakum@qti.qualcomm.com>
+Upstream-Status: Pending
+---
+ arch/arm64/boot/dts/qcom/talos-lyra-evk.dts | 42 +++++++++++++++++++++
+ 1 file changed, 42 insertions(+)
+
+diff --git a/arch/arm64/boot/dts/qcom/talos-lyra-evk.dts b/arch/arm64/boot/dts/qcom/talos-lyra-evk.dts
+index 8b26f83fa747..8660a3261057 100644
+--- a/arch/arm64/boot/dts/qcom/talos-lyra-evk.dts
++++ b/arch/arm64/boot/dts/qcom/talos-lyra-evk.dts
+@@ -22,3 +22,45 @@ &pon_resin {
+ 
+ 	status = "okay";
+ };
++
++&usb_1_hsphy {
++	vdd-supply = <&vreg_l5a>;
++	vdda-pll-supply = <&vreg_l12a>;
++	vdda-phy-dpdm-supply = <&vreg_l13a>;
++
++	status = "okay";
++};
++
++&usb_qmpphy {
++	vdda-phy-supply = <&vreg_l5a>;
++	vdda-pll-supply = <&vreg_l12a>;
++
++	status = "okay";
++};
++
++&usb_qmpphy_2 {
++	vdda-phy-supply = <&vreg_l5a>;
++	vdda-pll-supply = <&vreg_l12a>;
++
++	status = "okay";
++};
++
++&usb_1 {
++	dr_mode = "peripheral";
++
++	status = "okay";
++};
++
++&usb_2_hsphy {
++	vdd-supply = <&vreg_l5a>;
++	vdda-pll-supply = <&vreg_l12a>;
++	vdda-phy-dpdm-supply = <&vreg_l13a>;
++
++	status = "okay";
++};
++
++&usb_2 {
++	dr_mode = "host";
++
++	status = "okay";
++};
+-- 
+2.34.1

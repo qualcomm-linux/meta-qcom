@@ -1,0 +1,44 @@
+From 095e55286679010e2e7b772fe3450d64363518cb Mon Sep 17 00:00:00 2001
+From: Monish Chunara <monish.chunara@oss.qualcomm.com>
+Date: Sat, 25 Jul 2026 20:52:16 +0530
+Subject: [PATCH] arm64: dts: qcom: Enable UFS support for Talos IoT SoM
+
+Enable UFS and configure required its required power-supplies for Talos
+IoT SoM platform.
+
+Signed-off-by: Monish Chunara <monish.chunara@oss.qualcomm.com>
+Upstream-Status: Pending
+---
+ arch/arm64/boot/dts/qcom/talos-lyra-som.dtsi | 17 +++++++++++++++++
+ 1 file changed, 17 insertions(+)
+
+diff --git a/arch/arm64/boot/dts/qcom/talos-lyra-som.dtsi b/arch/arm64/boot/dts/qcom/talos-lyra-som.dtsi
+index e72e8e9d0453..7a46947cac88 100644
+--- a/arch/arm64/boot/dts/qcom/talos-lyra-som.dtsi
++++ b/arch/arm64/boot/dts/qcom/talos-lyra-som.dtsi
+@@ -226,6 +226,23 @@ &uart0 {
+ 	status = "okay";
+ };
+ 
++&ufs_mem_hc {
++	reset-gpios = <&tlmm 123 GPIO_ACTIVE_LOW>;
++	vcc-supply = <&vreg_l17a>;
++	vcc-max-microamp = <600000>;
++	vccq2-supply = <&vreg_s4a>;
++	vccq2-max-microamp = <600000>;
++
++	status = "okay";
++};
++
++&ufs_mem_phy {
++	vdda-phy-supply = <&vreg_l5a>;
++	vdda-pll-supply = <&vreg_l12a>;
++
++	status = "okay";
++};
++
+ &venus {
+ 	status = "okay";
+ };
+-- 
+2.34.1
