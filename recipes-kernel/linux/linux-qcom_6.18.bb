@@ -16,6 +16,10 @@ PV = "${LINUX_VERSION}"
 
 FILESEXTRAPATHS:prepend := "${THISDIR}/linux-qcom-6.18:"
 
+KERNEL_PAHOLE ?= '${@oe.utils.vartrue("DEBUG_BUILD", bb.utils.contains("BBFILE_COLLECTIONS", "openembedded-layer", "1", "0", d), "0", d)}'
+do_configure[depends] += '${@oe.utils.vartrue("KERNEL_PAHOLE", "pahole-native:do_populate_sysroot", "", d)}'
+EXTRA_OEMAKE += '${@oe.utils.vartrue("KERNEL_PAHOLE", "", "PAHOLE=false", d)}'
+
 # tag:qcom-6.18.y-20260720
 SRCREV ?= "4ab384e41300a12c67d5c18c4e7bc1e3f546cc28"
 
