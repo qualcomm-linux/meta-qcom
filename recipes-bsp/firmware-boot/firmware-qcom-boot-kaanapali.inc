@@ -7,7 +7,7 @@ BOOTBINARIES = "kaanapali_bootbinaries"
 
 SRC_URI = " \
     https://${FW_ARTIFACTORY}/r0.0_${PV}/KAANAPALI.LE.0.0/common/build/ufs/bin/${BOOTBINARIES}.zip;downloadfilename=${BOOTBINARIES}_r0.0_${PV}.zip;name=bootbinaries \
-    https://${FW_ARTIFACTORY}/${FW_BUILD_ID}/LICENSE.txt;downloadfilename=LICENSE.${BPN};name=license \
+    https://${FW_ARTIFACTORY}/r0.0_${PV}/KAANAPALI.LE.0.0/LICENSE.txt;downloadfilename=LICENSE.${BPN};name=license \
     "
 SRC_URI[license.sha256sum] = "3ad8f1fd82f2918c858cec2d0887b7df6f71a06416beecfdb3efe7d62874d863"
 
