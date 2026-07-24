@@ -15,6 +15,7 @@ RRECOMMENDS:${PN}-firmware = " \
     linux-firmware-qcom-qcm2290-audio \
     linux-firmware-qcom-qcm2290-modem \
     linux-firmware-qcom-venus-6.0 \
+    linux-firmware-qcom-vpu \
 "
 
 RDEPENDS:${PN}-hexagon-dsp-binaries = " \
