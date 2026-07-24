@@ -22,7 +22,9 @@ FIT_DTB_COMPATIBLE[qcom_hamoa-evk-camx] = "hamoa-iot-evk hamoa-evk-camx"
 FIT_DTB_COMPATIBLE[qcom_hamoa-evk-camx-staging] = "hamoa-iot-evk hamoa-evk-camx hamoa-staging"
 
 # ---------- purwa -----------
+FIT_DTB_COMPATIBLE[qcom_purwa-evk-staging] = "purwa-iot-evk purwa-staging"
 FIT_DTB_COMPATIBLE[qcom_purwa-evk-camx] = "purwa-iot-evk purwa-evk-camx"
+FIT_DTB_COMPATIBLE[qcom_purwa-evk-camx-staging] = "purwa-iot-evk purwa-evk-camx purwa-staging"
 
 # ---------- lemans ----------
 
