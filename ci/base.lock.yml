@@ -23,4 +23,4 @@ overrides:
         meta-dpdk:
             commit: ded70edc0937d939596a0c38b737af59afbb5e7b
         meta-ai:
-            commit: c6bd686178d1dcf3b9b4c859058428ede406f7d1
+            commit: 60e38e2015f19058b467febd044f49bf70c4528f
