@@ -1,10 +1,9 @@
-# Specify location of the corresponding NON-HLOS.bin file by adding
-# NHLOS_URI:pn-firmware-qcom-rb3gen2 = "..."  to local.conf. Use "file://"
-# if the file is provided locally.
+# Placeholder recipe, actual modem firmware is provided in a separate layer
 
 DESCRIPTION = "QCOM Firmware for Rb3 Gen2 board"
 
-LICENSE = "CLOSED"
+LICENSE = "MIT"
+LIC_FILES_CHKSUM = "file://${COMMON_LICENSE_DIR}/MIT;md5=0835ade698e0bcf8506ecda2f7b4f302"
 
 FW_QCOM_NAME = "qcs6490"
 
@@ -15,8 +14,9 @@ FW_QCOM_LIST = "\
 S = "${UNPACKDIR}"
 
 require recipes-bsp/firmware/firmware-qcom.inc
-require recipes-bsp/firmware/firmware-qcom-nhlos.inc
 
 SPLIT_FIRMWARE_PACKAGES = "\
     linux-firmware-qcom-${FW_QCOM_NAME}-modem \
 "
+
+FILES:linux-firmware-qcom-${FW_QCOM_NAME}-modem = ""
