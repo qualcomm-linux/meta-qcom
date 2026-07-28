@@ -116,7 +116,7 @@ runs:
           if [ -n "${INPUTS_PR_URL}" ]; then
             echo "PR_URL=${INPUTS_PR_URL}" >> "${VARS_OUT_PATH}/gh-variables.ini"
           fi
-          echo "GITHUB_WORKFLOW_URL=${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/ations/runs/${GITHUB_RUN_ID}" >> "${VARS_OUT_PATH}/gh-variables.ini"
+          echo "GITHUB_WORKFLOW_URL=${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}" >> "${VARS_OUT_PATH}/gh-variables.ini"
           echo "GITHUB_WORKFLOW_RUN_ID=${GITHUB_RUN_ID}" >> "${VARS_OUT_PATH}/gh-variables.ini"
           echo "GITHUB_WORKFLOW_RUN_ATTEMPT=${GITHUB_RUN_ATTEMPT}" >> "${VARS_OUT_PATH}/gh-variables.ini"
           IMAGE_TYPE="core-image-base"
@@ -153,6 +153,7 @@ runs:
                continue
             fi
             echo "BUILD_DOWNLOAD_URL=${BUILD_URL}/" >> "${VARS_OUT_PATH}/${machine}.ini"
+            echo "BUILD_URL=${BUILD_URL}" >> "${VARS_OUT_PATH}/${machine}.ini"
 
             echo "ROOTFS_URL=${BUILD_URL}/${INPUTS_DISTRO_NAME}/${machine}/${IMAGE_TYPE}-${machine}.rootfs.qcomflash.tar.gz" >> "${VARS_OUT_PATH}/${machine}.ini"
 
