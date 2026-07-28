@@ -33,6 +33,7 @@ SRC_URI += " \
     file://0005-arm64-dts-qcom-Enable-UFS-support-for-Talos-IoT-SoM.patch \
     file://0006-arm64-dts-qcom-Enable-eMMC-support-for-Talos-IoT-SoM.patch \
     file://0007-arm64-dts-qcom-talos-lyra-evk-Enable-Native-DP.patch \
+    file://0008-arm64-dts-qcom-talos-lyra-evk-Add-I2C-GPIO-expanders.patch \
 "
 
 # To build tip of qcom-next branch set preferred

@@ -1,0 +1,58 @@
+From fc6bbfc49ddf6b9c452bf5530820fc23d3679d42 Mon Sep 17 00:00:00 2001
+From: Nirmesh Kumar Singh <nirmesh.singh@oss.qualcomm.com>
+Date: Mon, 27 Jul 2026 16:17:31 +0530
+Subject: [PATCH] arm64: dts: qcom: talos-lyra-evk: Add I2C GPIO expanders
+
+Add three I2C GPIO expander devices on the i2c5 bus of the Talos
+Lyra EVK board:
+
+Signed-off-by: Nirmesh Kumar Singh <nirmesh.singh@oss.qualcomm.com>
+Upstream-Status: Pending
+---
+ arch/arm64/boot/dts/qcom/talos-lyra-evk.dts | 31 +++++++++++++++++++++
+ 1 file changed, 31 insertions(+)
+
+diff --git a/arch/arm64/boot/dts/qcom/talos-lyra-evk.dts b/arch/arm64/boot/dts/qcom/talos-lyra-evk.dts
+index 56731205e353..db57223ff536 100644
+--- a/arch/arm64/boot/dts/qcom/talos-lyra-evk.dts
++++ b/arch/arm64/boot/dts/qcom/talos-lyra-evk.dts
+@@ -39,6 +39,37 @@ &mdss_dp0_out {
+         remote-endpoint = <&dp0_connector_in>;
+ };
+ 
++&i2c5 {
++	status = "okay";
++
++	expander0: gpio@20 {
++		compatible = "kinetic,kts1622", "nxp,pca9555";
++		reg = <0x20>;
++		gpio-controller;
++		#gpio-cells = <2>;
++		#interrupt-cells = <2>;
++		interrupt-controller;
++	};
++
++	expander1: gpio@21 {
++		compatible = "kinetic,kts1622", "nxp,pca9555";
++		reg = <0x21>;
++		gpio-controller;
++		#gpio-cells = <2>;
++		#interrupt-cells = <2>;
++		interrupt-controller;
++	};
++
++	expander2: gpio@38 {
++		compatible = "ti,tca9538";
++		reg = <0x38>;
++		gpio-controller;
++		#gpio-cells = <2>;
++		#interrupt-cells = <2>;
++		interrupt-controller;
++	};
++};
++
+ &pon_pwrkey {
+ 	status = "okay";
+ };
+-- 
+2.34.1
