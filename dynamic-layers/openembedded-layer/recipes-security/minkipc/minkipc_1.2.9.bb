@@ -17,6 +17,7 @@ SRC_URI = "git://github.com/qualcomm/minkipc.git;branch=main;protocol=https;tag=
            git://github.com/OP-TEE/optee_test.git;branch=master;protocol=https;tag=4.0.0;name=opteet;destsuffix=${BPN}-${PV}/optee-test/optee_test \
            file://0001-xtest-Remove-regression-suite-from-default-test-suit.patch;patchdir=optee-test/optee_test \
            file://0002-xtest-pkcs11-Stub-the-test-cases-inapplicable-for-QT.patch;patchdir=optee-test/optee_test \
+           file://0003-test-pkcs11-Fix-static-initialization-issue-caused-b.patch;patchdir=optee-test/optee_test \
            "
 
 LIC_FILES_CHKSUM = "file://LICENSE.txt;md5=2b1366ebba1ebd9ae25ad19626bbca93 \
