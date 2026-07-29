@@ -1,0 +1,107 @@
+From db50de18b880a7a375d9e2adcc796e890dfc936c Mon Sep 17 00:00:00 2001
+From: chejiang <chejiang@qti.qualcomm.com>
+Date: Fri, 24 Jul 2026 14:17:03 +0800
+Subject: [PATCH] arm64: dts: qcom: talos-lyra-evk: enable WCN3988 BT via
+ pwrseq
+
+Add wcn3988-pmu node with WLAN/BT supplies routed through the on-chip PMU LDOs,
+wire up UART7 to the WCN3988 bluetooth serdev, and configure GPIO85 as the BT
+enable line driven by the power sequencer.
+
+Signed-off-by: chejiang <chejiang@qti.qualcomm.com>
+Upstream-Status: Pending
+---
+ arch/arm64/boot/dts/qcom/talos-lyra-evk.dts | 71 +++++++++++++++++++++
+ 1 file changed, 71 insertions(+)
+
+diff --git a/arch/arm64/boot/dts/qcom/talos-lyra-evk.dts b/arch/arm64/boot/dts/qcom/talos-lyra-evk.dts
+index db57223ff536..893eb7c7a6cd 100644
+--- a/arch/arm64/boot/dts/qcom/talos-lyra-evk.dts
++++ b/arch/arm64/boot/dts/qcom/talos-lyra-evk.dts
+@@ -24,6 +24,53 @@ dp0_connector_in: endpoint {
+                         };
+                 };
+         };
++	aliases {
++		serial1 = &uart7;
++	};
++
++	vreg_wcn_3p3: regulator-wcn-3p3 {
++		compatible = "regulator-fixed";
++		regulator-name = "wcn_3p3";
++		regulator-min-microvolt = <3300000>;
++		regulator-max-microvolt = <3300000>;
++		regulator-always-on;
++	};
++
++	wcn3988-pmu {
++		compatible = "qcom,wcn3988-pmu";
++
++		pinctrl-0 = <&bt_en_default>;
++		pinctrl-names = "default";
++
++		vddio-supply = <&vreg_s4a>;
++		vddxo-supply = <&vreg_l15a>;
++		vddrf-supply = <&vreg_l8a>;
++		vddch0-supply = <&vreg_wcn_3p3>;
++
++		/* bt-enable-gpios = <&tlmm 85 GPIO_ACTIVE_HIGH>; */
++
++		regulators {
++			vreg_pmu_io: ldo0 {
++				regulator-name = "vreg_pmu_io";
++			};
++
++			vreg_pmu_xo: ldo1 {
++				regulator-name = "vreg_pmu_xo";
++			};
++
++			vreg_pmu_rf: ldo2 {
++				regulator-name = "vreg_pmu_rf";
++			};
++
++			vreg_pmu_ch0: ldo3 {
++				regulator-name = "vreg_pmu_ch0";
++			};
++
++			vreg_pmu_ch1: ldo4 {
++				regulator-name = "vreg_pmu_ch1";
++			};
++		};
++	};
+ };
+ 
+ &mdss {
+@@ -70,6 +117,30 @@ expander2: gpio@38 {
+ 	};
+ };
+ 
++&tlmm {
++	bt_en_default: bt-en-default-state {
++		pins = "gpio85";
++		function = "gpio";
++		drive-strength = <2>;
++		bias-pull-down;
++		output-low;
++	};
++};
++
++&uart7 {
++	status = "okay";
++
++	bluetooth {
++		compatible = "qcom,wcn3988-bt";
++		max-speed = <3200000>;
++
++		vddio-supply = <&vreg_pmu_io>;
++		vddxo-supply = <&vreg_pmu_xo>;
++		vddrf-supply = <&vreg_pmu_rf>;
++		vddch0-supply = <&vreg_pmu_ch0>;
++	};
++};
++
+ &pon_pwrkey {
+ 	status = "okay";
+ };
+-- 
+2.34.1
