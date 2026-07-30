@@ -1,0 +1,71 @@
+From ac9264064638328112f0e1f0db14d3ca5edc426c Mon Sep 17 00:00:00 2001
+From: Viswanath Kraleti <viswanath.kraleti@oss.qualcomm.com>
+Date: Mon, 7 Sep 2026 12:05:18 +0530
+Subject: [PATCH] Add FIT support for Nord boards
+
+ * In qcom-metadata.dts add msm-ids for Nord(0x288) and qam8x97p(0x2b2)
+ * In qcom-next-fitimage.its add conf-72 for qcom,qam8x97p-qam and
+   conf-73 for qcom,nord-qam
+
+Signed-off-by: Viswanath Kraleti <viswanath.kraleti@oss.qualcomm.com>
+Upstream-Status: Submitted [https://github.com/qualcomm-linux/qcom-dtb-metadata/commit/ac9264064638328112f0e1f0db14d3ca5edc426c]
+---
+ qcom-metadata.dts      |  8 ++++++++
+ qcom-next-fitimage.its | 15 +++++++++++++++
+ 2 files changed, 23 insertions(+)
+
+diff --git a/qcom-metadata.dts b/qcom-metadata.dts
+index 333464a..87a9727 100644
+--- a/qcom-metadata.dts
++++ b/qcom-metadata.dts
+@@ -28,10 +28,18 @@
+ 			msm-id = <0x000002b5>;
+ 		};
+ 
++		nord {
++			msm-id = <0x00000288>;
++		};
++
+ 		purwa {
+ 			msm-id = <0x000002c7>;
+ 		};
+ 
++		qam8x97p {
++			msm-id = <0x000002b2>;
++		};
++
+ 		qcm6490 {
+ 			msm-id = <0x000001f1>;
+ 		};
+diff --git a/qcom-next-fitimage.its b/qcom-next-fitimage.its
+index 9da5371..66946bc 100644
+--- a/qcom-next-fitimage.its
++++ b/qcom-next-fitimage.its
+@@ -250,6 +250,13 @@
+ 			data = /incbin/("./arch/arm64/boot/dts/qcom/mahua-crd.dtb");
+ 			type = "flat_dt";
+ 		};
++		fdt-nord-ride-sx.dtb {
++			data = /incbin/("./arch/arm64/boot/dts/qcom/nord-ride-sx.dtb");
++			type = "flat_dt";
++		fdt-nord-rrd.dtb {
++			data = /incbin/("./arch/arm64/boot/dts/qcom/nord-rrd.dtb");
++			type = "flat_dt";
++		};
+ 		fdt-purwa-staging.dtbo {
+ 			data = /incbin/("./arch/arm64/boot/dts/qcom/purwa-staging.dtbo");
+ 			type = "flat_dt";
+@@ -541,5 +548,13 @@
+ 			compatible = "qcom,purwa-evk-el2kvm-staging";
+ 			fdt = "fdt-purwa-iot-evk.dtb", "fdt-x1-el2.dtbo", "fdt-purwa-staging.dtbo";
+ 		};
++		conf-72 {
++			compatible = "qcom,qam8x97p-qam";
++			fdt = "fdt-nord-ride-sx.dtb";
++		};
++		conf-73 {
++			compatible = "qcom,nord-qam";
++			fdt = "fdt-nord-rrd.dtb";
++		};
+ 	};
+ };

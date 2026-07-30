@@ -7,6 +7,7 @@ LIC_FILES_CHKSUM = "file://LICENSE.txt;md5=2998c54c288b081076c9af987bdf4838"
 DEPENDS += "dtc-native"
 
 SRC_URI = "git://github.com/qualcomm-linux/qcom-dtb-metadata.git;branch=main;protocol=https;tag=v${PV}"
+SRC_URI:append = " file://0001-Add-FIT-support-for-Nord.patch"
 
 SRCREV = "f1596a6b726c232743f968786de375a91d954eca"
 
