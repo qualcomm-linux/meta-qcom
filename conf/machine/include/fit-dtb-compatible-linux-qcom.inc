@@ -295,3 +295,9 @@ FIT_DTB_COMPATIBLE[qcom_shikraiqs-itp-camx-el2kvm] = \
     "shikra-iqs-evk shikra-iqs-evk-camx shikra-el2"
 FIT_DTB_COMPATIBLE[qcom_shikracqm-itp-camx-el2kvm] = \
     "shikra-cqm-evk shikra-cqm-evk-camx shikra-el2"
+
+# ---------- nord ----------
+FIT_DTB_COMPATIBLE[qcom_qam8x97p-qam] = "nord-ride-embedded"
+FIT_DTB_COMPATIBLE[qcom_nord-qam] = "nord-rrd"
+FIT_DTB_COMPATIBLE[qcom_qam8x97p-qam-camx] = "nord-ride-embedded nord-ride-embedded-camx"
+FIT_DTB_COMPATIBLE[qcom_nord-qam-camx] = "nord-rrd nord-rrd-camx"
