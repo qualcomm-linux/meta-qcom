@@ -27,7 +27,7 @@ ANY_OF_DISTRO_FEATURES = "glvnd vulkan opencl"
 COMPATIBLE_MACHINE = "^$"
 # It should be armv8-2a, but then it wouldn't be possible to use it for
 # qcom-armv8a machine.
-COMPATIBLE_MACHINE:aarch64 = "(.*)"
+COMPATIBLE_MACHINE:aarch64 = "(qcom)"
 
 PACKAGE_BEFORE_PN += " \
     ${PN}-common \

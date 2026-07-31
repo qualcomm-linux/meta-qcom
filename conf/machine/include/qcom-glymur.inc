@@ -9,6 +9,7 @@ require conf/machine/include/arm/arch-armv8-6a.inc
 
 MACHINE_ESSENTIAL_EXTRA_RRECOMMENDS += " \
     packagegroup-qcom-boot-essential \
+    packagegroup-machine-essential-qcom-glymur-soc \
 "
 
 MACHINE_EXTRA_RRECOMMENDS += " \

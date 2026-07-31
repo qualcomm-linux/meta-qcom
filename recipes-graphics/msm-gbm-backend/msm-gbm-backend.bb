@@ -14,6 +14,8 @@ SRC_URI = "git://github.com/qualcomm-linux/gbm-msm-backend.git;protocol=https;br
 
 inherit meson pkgconfig features_check
 
+COMPATIBLE_MACHINE = "(qcom)"
+
 DEPENDS = "mesa libdrm libxml2"
 REQUIRED_DISTRO_FEATURES = "opengl"
 

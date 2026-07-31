@@ -14,6 +14,10 @@ LINUX_VERSION ?= "7.1"
 
 PV = "${LINUX_VERSION}+git"
 
+KERNEL_PAHOLE ?= '${@oe.utils.vartrue("DEBUG_BUILD", bb.utils.contains("BBFILE_COLLECTIONS", "openembedded-layer", "1", "0", d), "0", d)}'
+do_configure[depends] += '${@oe.utils.vartrue("KERNEL_PAHOLE", "pahole-native:do_populate_sysroot", "", d)}'
+EXTRA_OEMAKE += '${@oe.utils.vartrue("KERNEL_PAHOLE", "", "PAHOLE=false", d)}'
+
 # tag: qcom-next-7.1-20260708
 SRCREV ?= "947408df47978cb86ffcd180a6244379e03301bf"
 
