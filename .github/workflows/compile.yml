@@ -41,6 +41,7 @@ on:
 
 env:
   KAS_CLONE_DEPTH: 1
+  KAS_IMAGE_VERSION: "latest"
 
 jobs:
   reusable_compile_job:
