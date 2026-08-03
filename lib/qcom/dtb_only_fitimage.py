@@ -23,15 +23,9 @@ class QcomItsNodeRoot(ItsNodeRootKernel):
     def __init__(self, description, address_cells, conf_prefix, mkimage=None):
         # We only pass the essential parameters needed for QCOM DTB-only FIT image generation
         # because FIT features like signing, hashing, and padding are not required here.
-        # Original full signature for reference:
-        # super().__init__(description, address_cells, host_prefix, arch, conf_prefix,
-        #                  sign_enable, sign_keydir, mkimage, mkimage_dtcopts,
-        #                  mkimage_sign, mkimage_sign_args, hash_algo, sign_algo,
-        #                  pad_algo, sign_keyname_conf, sign_individual, sign_keyname_img
-        super().__init__(description, address_cells, None, "arm64", conf_prefix,
-                         False, None, mkimage, None,
-                         None, None, None, None,
-                         None, None, False, None)
+        # The fit_os value is unused since no kernel node is emitted.
+        super().__init__(description, address_cells, None, "arm64", None, conf_prefix,
+                         mkimage=mkimage)
 
         self._mkimage_extra_opts = []
         self._dtbs = []

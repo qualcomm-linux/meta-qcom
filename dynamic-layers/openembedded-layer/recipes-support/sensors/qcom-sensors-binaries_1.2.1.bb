@@ -2,7 +2,7 @@ SUMMARY = "Prebuilt Qualcomm sensors libraries and test applications"
 DESCRIPTION = "Prebuilt core binaries required for sensor enablement and hardware \
 sensor data access. These prebuilt binaries also include test applications to \
 validate sensor services functionality through the Sensinghub Interface."
-LICENSE = "LICENSE.qcom-2"
+LICENSE = "LicenseRef-LICENSE.qcom-2"
 LIC_FILES_CHKSUM = "file://LICENSE.qcom-2;md5=f33ba334514c4dfabc6ab7377babb377"
 
 PBT_BUILD_DATE = "260514.1"

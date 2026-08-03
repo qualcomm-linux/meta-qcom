@@ -3,7 +3,7 @@ DESCRIPTION = "Qualcomm Wireless Edge Services provide a suite of features Platf
 device attestation and secure provisioning. This recipe includes the daemon and scripts which setup \
 the store and optionally load QcWES TA to provide these features."
 
-LICENSE = "LICENSE.qcom-2"
+LICENSE = "LicenseRef-LICENSE.qcom-2"
 LIC_FILES_CHKSUM = "file://usr/share/doc/${BPN}/LICENSE.qcom-2;md5=165287851294f2fb8ac8cbc5e24b02b0"
 
 PBT_BUILD_DATE = "260620"

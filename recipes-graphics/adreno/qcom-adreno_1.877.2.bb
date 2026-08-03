@@ -4,7 +4,7 @@ DESCRIPTION = "Collection of prebuilt User Mode libraries to support OpenGL ES, 
                For Qualcomm-specific OpenCL extensions declared in cl_ext_qcom.h, documentation is available in the Adreno OpenCL SDK: \
                https://softwarecenter.qualcomm.com/catalog/item/Adreno_OpenCL_SDK"
 
-LICENSE = "LICENSE.qcom-2"
+LICENSE = "LicenseRef-LICENSE.qcom-2"
 LIC_FILES_CHKSUM = "file://NO.LOGIN.BINARY.LICENSE.QTI.pdf;md5=4ceffe94cb40cdce6d2f4fb93cc063d1 \
                     file://NOTICE;md5=356106e5f0928f95d25f52304574ba35 "
 

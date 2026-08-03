@@ -4,9 +4,9 @@
 
 SUMMARY = "Additional firmware files for Qualcomm/Atheros Ath6k SoC"
 
-LICENSE = "Firmware-qualcommAthos_ath6kl"
+LICENSE = "LicenseRef-Firmware-qualcommAthos-ath6kl"
 LIC_FILES_CHKSUM = "file://LICENSE.qca_firmware;md5=2a397c0e988f4c52d3d526133b617c8d"
-NO_GENERIC_LICENSE[Firmware-qualcommAthos_ath6kl] = "LICENSE.qca_firmware"
+NO_GENERIC_LICENSE[Firmware-qualcommAthos-ath6kl] = "LICENSE.qca_firmware"
 
 SRC_URI = "git://github.com/qca/ath6kl-firmware;protocol=https;branch=master"
 SRCREV = "2e02576c1dab6fd35118eea1004f50aaaed3794f"
