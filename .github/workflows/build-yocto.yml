@@ -28,6 +28,7 @@ concurrency:
 env:
   CACHE_DIR: /efs/qli/meta-qcom
   KAS_CLONE_DEPTH: 1
+  KAS_IMAGE_VERSION: "latest"
 
 jobs:
   kas-setup:
@@ -38,8 +39,7 @@ jobs:
         run: |
           KAS_CONTAINER=$RUNNER_TEMP/kas-container
           echo "KAS_CONTAINER=$KAS_CONTAINER" >> $GITHUB_ENV
-          LATEST=$(git ls-remote --tags --refs --sort="v:refname" https://github.com/siemens/kas | tail -n1 | sed 's/.*\///')
-          wget -qO ${KAS_CONTAINER} https://raw.githubusercontent.com/siemens/kas/refs/tags/$LATEST/kas-container
+          wget -qO ${KAS_CONTAINER} https://github.com/siemens/kas/raw/refs/heads/master/kas-container
           chmod +x ${KAS_CONTAINER}
 
       - uses: actions/checkout@v6
