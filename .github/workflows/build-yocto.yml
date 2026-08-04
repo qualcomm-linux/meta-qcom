@@ -191,8 +191,10 @@ jobs:
       # coverage: nodistro (including the nogl variant) covers the plain OE
       # configuration and qcom-distro-catchall enables a superset of the
       # qcom-distro DISTRO_FEATURES, so the remaining distro and kernel
-      # combinations only repeat already-covered world builds.
-      world: ${{ (startsWith(matrix.distro.name, 'nodistro') || matrix.distro.name == 'qcom-distro-catchall') && matrix.kernel.type == 'default' }}
+      # combinations only repeat already-covered world builds. qcom-armv7a has
+      # no qcom-distro-catchall variant, so its qcom-distro build is the
+      # distro-family world build for that machine.
+      world: ${{ (startsWith(matrix.distro.name, 'nodistro') || matrix.distro.name == 'qcom-distro-catchall' || (matrix.machine == 'qcom-armv7a' && matrix.distro.name == 'qcom-distro')) && matrix.kernel.type == 'default' }}
       machine: ${{matrix.machine}}
       distro_yaml: ${{matrix.distro.yamlfile}}
       distro_name: ${{matrix.distro.name}}
@@ -467,8 +469,10 @@ jobs:
       # coverage: nodistro (including the nogl variant) covers the plain OE
       # configuration and qcom-distro-catchall enables a superset of the
       # qcom-distro DISTRO_FEATURES, so the remaining distro and kernel
-      # combinations only repeat already-covered world builds.
-      world: ${{ (startsWith(matrix.distro.name, 'nodistro') || matrix.distro.name == 'qcom-distro-catchall') && matrix.kernel.type == 'default' }}
+      # combinations only repeat already-covered world builds. qcom-armv7a has
+      # no qcom-distro-catchall variant, so its qcom-distro build is the
+      # distro-family world build for that machine.
+      world: ${{ (startsWith(matrix.distro.name, 'nodistro') || matrix.distro.name == 'qcom-distro-catchall' || (matrix.machine == 'qcom-armv7a' && matrix.distro.name == 'qcom-distro')) && matrix.kernel.type == 'default' }}
       machine: ${{matrix.machine}}
       distro_yaml: ${{matrix.distro.yamlfile}}
       distro_name: ${{matrix.distro.name}}
