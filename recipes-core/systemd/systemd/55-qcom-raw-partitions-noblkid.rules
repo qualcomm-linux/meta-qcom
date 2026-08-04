@@ -1,0 +1,56 @@
+# Skip filesystem probing for Qualcomm raw GPT partitions.
+#
+# Qualcomm platforms can expose many bootloader, firmware, metadata, and modem
+# NV partitions during coldplug. These raw partitions do not contain
+# mountable filesystems, so probing them with blkid is wasted boot-time work.
+#
+# Match by GPT partition name instead of kernel disk name. Disk enumeration is
+# not stable across all boards, and some machines legitimately mount partitions
+# such as rootfs, system, userdata, persist, or an ESP from the same storage
+# device. Keep those partitions under the stock persistent-storage rules.
+#
+# 60-persistent-storage.rules creates partition metadata links after the blkid
+# import. Since this rule skips that import for raw partitions, emit those
+# links here from kernel-provided PARTNAME/PARTUUID properties.
+ACTION=="remove", GOTO="qcom_raw_noblkid_end"
+SUBSYSTEM!="block", GOTO="qcom_raw_noblkid_end"
+ENV{DEVTYPE}!="partition", GOTO="qcom_raw_noblkid_end"
+ENV{PARTNAME}=="", GOTO="qcom_raw_links"
+
+# Generate the match list below from a clean qcom-ptool checkout with:
+# scripts/generate_qcom_raw_partitions.py --qcom-ptool /path/to/qcom-ptool
+# Source repository: https://github.com/qualcomm-linux/qcom-ptool
+#
+# The generator keeps an explicit policy of reviewed raw partition families
+# and excludes legacy platform layouts. New qcom-ptool labels are not added
+# automatically: first verify that they cannot contain a mountable filesystem,
+# then update the policy and regenerate this section.
+# Variants used by fewer than two platforms require explicit pattern approval.
+# Do not edit the generated section directly.
+# BEGIN GENERATED QCOM RAW PARTITIONS
+# Source: qcom-ptool commit 2c1f6cdf6fc2bcbe3bb350e55950710767483773
+ENV{PARTNAME}=="abl_[ab]|ALIGN_TO_128K_*|aop_[ab]|aop_config_[ab]|apdp|apdp_[ab]|catecontentfv", GOTO="qcom_raw_noblkid"
+ENV{PARTNAME}=="cdt|cmnlib64_[ab]|cmnlib_[ab]|cpucp_[ab]|ddr|ddr_[ab]|devcfg_[ab]|devinfo", GOTO="qcom_raw_noblkid"
+ENV{PARTNAME}=="diag_log|dip|dtb_[ab]|emac|featenabler_[ab]|fsc|fsg|gearvm_[ab]|gvm_log", GOTO="qcom_raw_noblkid"
+ENV{PARTNAME}=="hyp_[ab]|imagefv_[ab]|keymaster_[ab]|limits|limits-cdsp|logdump|modemst1", GOTO="qcom_raw_noblkid"
+ENV{PARTNAME}=="modemst2|multiimgoem|multiimgoem_[ab]|multiimgqti|multiimgqti_[ab]|pvm_log", GOTO="qcom_raw_noblkid"
+ENV{PARTNAME}=="qmcs|quantumfv|quantumsdk|questdatafv|qupfw_[ab]|qweslicstore_[ab]", GOTO="qcom_raw_noblkid"
+ENV{PARTNAME}=="recoveryinfo|secdata|shrm_[ab]|softsku|splash|spunvm|storsec|storsec_[ab]", GOTO="qcom_raw_noblkid"
+ENV{PARTNAME}=="SYSFW_VERSION|toolsfv|tz_[ab]|TZAPPS|uefi_[ab]|uefisecapp_[ab]|vbmeta_[ab]", GOTO="qcom_raw_noblkid"
+ENV{PARTNAME}=="xbl_[ab]|xbl_config_[ab]|xbl_logs|xbl_ramdump_[ab]", GOTO="qcom_raw_noblkid"
+# END GENERATED QCOM RAW PARTITIONS
+GOTO="qcom_raw_noblkid_end"
+
+LABEL="qcom_raw_noblkid"
+ENV{UDEV_DISABLE_PERSISTENT_STORAGE_BLKID_FLAG}="1"
+
+LABEL="qcom_raw_links"
+# 60-persistent-storage.rules normally imports ID_PATH after this rule runs.
+ENV{ID_PATH}!="?*", IMPORT{parent}="ID_PATH"
+ENV{PARTUUID}=="?*", SYMLINK+="disk/by-partuuid/$env{PARTUUID}"
+ENV{PARTNAME}=="?*", OPTIONS+="string_escape=replace", SYMLINK+="disk/by-partlabel/$env{PARTNAME}"
+ENV{ID_PATH}=="?*", SYMLINK+="disk/by-path/$env{ID_PATH}-part/by-partnum/%n"
+ENV{ID_PATH}=="?*", ENV{PARTUUID}=="?*", SYMLINK+="disk/by-path/$env{ID_PATH}-part/by-partuuid/$env{PARTUUID}"
+ENV{ID_PATH}=="?*", ENV{PARTNAME}=="?*", OPTIONS+="string_escape=replace", SYMLINK+="disk/by-path/$env{ID_PATH}-part/by-partlabel/$env{PARTNAME}"
+
+LABEL="qcom_raw_noblkid_end"

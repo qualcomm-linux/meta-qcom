@@ -40,6 +40,12 @@ _is_dir(){
 _is_dir "$REPO_DIR"
 _is_dir "$WORK_DIR"
 
+# Run standalone unit tests before setting up the BitBake selftest environment.
+UNIT_TESTS_DIR="$REPO_DIR/scripts/tests"
+if [ -d "$UNIT_TESTS_DIR" ]; then
+    PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s "$UNIT_TESTS_DIR" -v
+fi
+
 # Auto-discover test modules if none specified
 if [ -z "$TEST_CASES" ]; then
     CASES_DIR="$REPO_DIR/lib/oeqa/selftest/cases"
