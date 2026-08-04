@@ -46,6 +46,9 @@ ALTERNATIVE_PRIORITY_${PN}-bl-vidc:shikra = "150"
 # On purwa, prioritize blacklisting unsupported iris_vpu to load qcom-iris.
 ALTERNATIVE_PRIORITY_${PN}-bl-vidc:purwa = "150"
 
+# On hamoa, prioritize blacklisting unsupported iris_vpu to load qcom-iris.
+ALTERNATIVE_PRIORITY_${PN}-bl-vidc:hamoa = "150"
+
 ALTERNATIVE:${PN}-bl-venus = "blacklist-video"
 ALTERNATIVE_TARGET_${PN}-bl-venus = "${sysconfdir}/modprobe.d/blacklist-video.conf.venus"
 ALTERNATIVE_PRIORITY_${PN}-bl-venus = "100"
