@@ -10,19 +10,25 @@ on:
   - cron: "22 0 * * *"
 
 permissions:
-  checks: write
-  pull-requests: write
   contents: read
-  packages: read
 
 jobs:
   build-nightly:
+    permissions:
+      contents: read
+      packages: read
+      actions: read
     uses: ./.github/workflows/build-yocto.yml
     with:
       skip_if_github_cached: true
     secrets: inherit
   test-nightly:
     if: needs.build-nightly.outputs.build_skipped != 'true'
+    permissions:
+      contents: read
+      actions: read
+      checks: write
+      pull-requests: write
     uses: ./.github/workflows/test.yml
     needs: build-nightly
     secrets: inherit
@@ -30,6 +36,12 @@ jobs:
       build_id: ${{ github.run_id }}
   publish-test-results:
     if: needs.build-nightly.outputs.build_skipped != 'true'
+    permissions:
+      contents: read
+      packages: read
+      actions: read
+      checks: write
+      pull-requests: write
     uses: ./.github/workflows/publish-results.yml
     needs: [build-nightly, test-nightly]
     secrets: inherit
