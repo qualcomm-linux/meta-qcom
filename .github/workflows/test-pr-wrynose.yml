@@ -9,15 +9,14 @@ on:
       - completed
 
 permissions:
-  checks: write
-  pull-requests: write
   contents: read
-  packages: read
-  actions: read
 
 jobs:
   determine-target-branch:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: read
     outputs:
       branch: ${{ steps.branch.outputs.value }}
     steps:
@@ -41,6 +40,11 @@ jobs:
   test-wrynose:
     needs: determine-target-branch
     if: github.event.workflow_run.conclusion == 'success' && needs.determine-target-branch.outputs.branch == 'wrynose'
+    permissions:
+      contents: read
+      actions: read
+      checks: write
+      pull-requests: write
     uses: qualcomm-linux/meta-qcom/.github/workflows/test.yml@wrynose
     secrets: inherit
     with:
@@ -51,6 +55,10 @@ jobs:
     needs: [test-wrynose]
     if: always() && (needs.test-wrynose.result == 'success')
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: read
+      pull-requests: write
     steps:
 
       - name: Download Result Summary
@@ -96,6 +104,12 @@ jobs:
           pr-number: ${{ steps.pr_comment_prep.outputs.pr_number }}
 
   publish-test-results:
+    permissions:
+      contents: read
+      packages: read
+      actions: read
+      checks: write
+      pull-requests: write
     uses: ./.github/workflows/publish-results.yml
     secrets: inherit
     needs: [test-wrynose]
