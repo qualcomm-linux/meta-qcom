@@ -1,6 +1,6 @@
 DEPENDS += "qtestsign-native optee-os-qcom u-boot-qcom"
 
-SRC_URI += "git://github.com/coreboot/qc_blobs.git;protocol=https;name=qc_blobs;subdir=qc_blobs;branch=main"
+SRC_URI:append:qcm6490 = " git://github.com/coreboot/qc_blobs.git;protocol=https;name=qc_blobs;subdir=qc_blobs;branch=main"
 SRCREV_qc_blobs = "16207f367ddbf280a0c2c8a3d3ee454a59710a25"
 
 LICENSE += "& LICENSE.qcom"
