@@ -243,6 +243,7 @@ jobs:
           - qcm6490-idp
           - qcom-armv8a
           - qcs615-ride
+          - qcs615-lyra-evk
           - qcs8300-ride-sx
           - qcs9100-ride-sx
           - rb1-core-kit
