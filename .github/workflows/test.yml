@@ -98,5 +98,9 @@ jobs:
     steps:
       - name: Summary IDs
         id: generate-summary
+        env:
+          NODISTRO_SUMMARY_ID: ${{ needs.test-nodistro.outputs.summary_id }}
+          QCOM_DISTRO_SUMMARY_ID: ${{ needs.test-qcom-distro.outputs.summary_id }}
+          QCOM_DISTRO_6_18_SUMMARY_ID: ${{ needs.test-qcom-distro_linux-qcom-6-18.outputs.summary_id }}
         run: |
-          echo "artifact_ids=${{ needs.test-nodistro.outputs.summary_id }},${{ needs.test-qcom-distro.outputs.summary_id }},${{ needs.test-qcom-distro_linux-qcom-6-18.outputs.summary_id }}" >> $GITHUB_OUTPUT
+          echo "artifact_ids=${NODISTRO_SUMMARY_ID},${QCOM_DISTRO_SUMMARY_ID},${QCOM_DISTRO_6_18_SUMMARY_ID}" >> $GITHUB_OUTPUT

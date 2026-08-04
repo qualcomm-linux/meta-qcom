@@ -99,11 +99,15 @@ jobs:
           lookup-only: true
 
       - name: Report github-cache-check decision
+        env:
+          SKIP_IF_CACHED: ${{ inputs.skip_if_github_cached }}
+          CACHE_HIT: ${{ steps.restore.outputs.cache-hit }}
+          RUN_HASH: ${{ steps.hash.outputs.run_hash }}
         run: |
-          if [ "${{ inputs.skip_if_github_cached }}" != "true" ]; then
+          if [ "${SKIP_IF_CACHED}" != "true" ]; then
             echo "skip_if_github_cached not set; build will run"
-          elif [ "${{ steps.restore.outputs.cache-hit }}" = "true" ]; then
-            echo "Run cache hit on key build-success, hash ${{ steps.hash.outputs.run_hash }}: skipping build matrix"
+          elif [ "${CACHE_HIT}" = "true" ]; then
+            echo "Run cache hit on key build-success, hash ${RUN_HASH}: skipping build matrix"
           else
             echo "No previous successful build run recorded in github cache for this hash: build will run"
           fi
