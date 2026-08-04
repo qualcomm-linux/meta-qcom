@@ -3,7 +3,11 @@ name: Test PR build
 run-name: "Tests triggered by PR: ${{ github.event.workflow_run.display_title }}"
 
 on:
-  workflow_run:
+  # workflow_run is the intended privilege separation: the build runs
+  # unprivileged on pull_request (fork token is read-only) and this chain
+  # runs in the base context to submit LAVA jobs and publish results,
+  # consuming the build's artifacts as data, never executing its code.
+  workflow_run: # zizmor: ignore[dangerous-triggers]
     workflows: ["Build on PR"]
     types:
       - completed

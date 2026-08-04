@@ -1,6 +1,10 @@
 name: Backport merged pull request
 on:
-  pull_request_target:
+  # pull_request_target is required here: the workflow must run with a write
+  # token after the pull request is closed. It only acts on merged pull
+  # requests (see the job condition) and checks out the base repository, so
+  # no pull-request-controlled code is ever executed.
+  pull_request_target: # zizmor: ignore[dangerous-triggers]
     types: [closed]
 permissions:
   contents: write # so it can comment
