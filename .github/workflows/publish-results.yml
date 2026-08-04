@@ -57,6 +57,12 @@ jobs:
         with:
           client-id: 2291458
           private-key: ${{ secrets.TEST_REPORTING_APP_TOKEN }}
+          # Scope the token to what publish-unit-test-result-action uses
+          # instead of inheriting every permission of the app installation
+          permission-checks: write
+          permission-pull-requests: write
+          permission-contents: read
+          permission-issues: read
 
       - name: Publish Test Results
         uses: EnricoMi/publish-unit-test-result-action@c950f6fb443cb5af20a377fd0dfaa78838901040 # v2.23.0
