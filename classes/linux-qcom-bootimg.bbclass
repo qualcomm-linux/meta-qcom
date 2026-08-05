@@ -73,7 +73,7 @@ python do_qcom_img_deploy() {
     with open(definitrd, "w") as f:
         f.write("This is not an initrd\n")
 
-    for dtbf in d.getVar("KERNEL_DEVICETREE").split():
+    def make_dtb_image(dtbf):
         dtb = os.path.basename(dtbf)
         dtb_name = dtb.rsplit('.', 1)[0]
 
@@ -138,6 +138,9 @@ python do_qcom_img_deploy() {
 
             if initrd:
                 make_initramfs_image("boot-sd-%s-%s-%s.img", rootfs, initrd, d.getVar("INITRAMFS_IMAGE"))
+
+    for dtbf in d.getVar("KERNEL_DEVICETREE").split():
+        make_dtb_image(dtbf)
 }
 
 do_qcom_img_deploy[depends] += "skales-native:do_populate_sysroot"
