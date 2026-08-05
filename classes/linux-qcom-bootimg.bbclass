@@ -20,6 +20,11 @@ QIMG_DEPLOYDIR = "${WORKDIR}/qcom_deploy-${PN}"
 python __anonymous () {
     if d.getVar('INITRAMFS_IMAGE') != '':
         d.appendVarFlag('do_qcom_img_deploy', 'depends', ' ${INITRAMFS_IMAGE}:do_image_complete')
+
+    providerdtb = d.getVar("PREFERRED_PROVIDER_virtual/dtb")
+    if providerdtb:
+        d.appendVarFlag('do_qcom_img_deploy', 'depends', ' virtual/dtb:do_populate_sysroot')
+        d.setVar('EXTERNAL_KERNEL_DEVICETREE', "${RECIPE_SYSROOT}/boot/devicetree")
 }
 
 python do_qcom_img_deploy() {
@@ -49,6 +54,7 @@ python do_qcom_img_deploy() {
     D = d.getVar("D")
     kernel_output_dir = d.getVar("KERNEL_OUTPUT_DIR")
     kernel_dtbdest = d.getVar("KERNEL_DTBDEST")
+    external_dtbdest = d.getVar("EXTERNAL_KERNEL_DEVICETREE")
     kernel = os.path.join(B, "kernel-dtb")
     definitrd = os.path.join(B, "initrd.img")
     mkbootimg = os.path.join(d.getVar("STAGING_BINDIR_NATIVE"), "skales", "mkbootimg")
@@ -73,7 +79,7 @@ python do_qcom_img_deploy() {
     with open(definitrd, "w") as f:
         f.write("This is not an initrd\n")
 
-    def make_dtb_image(dtbf):
+    def make_dtb_image(dtbf, external=False):
         dtb = os.path.basename(dtbf)
         dtb_name = dtb.rsplit('.', 1)[0]
 
@@ -113,10 +119,11 @@ python do_qcom_img_deploy() {
         consoles = ' '.join(map(lambda c: "console=%(tty)s,%(rate)sn8" % dict(zip(("rate", "tty"), c.split(';'))), getVarDTB("SERIAL_CONSOLES").split()))
 
         # prepare kernel image with appended dtb
+        dtbdest = external_dtbdest if external else kernel_dtbdest
         with open(kernel, 'wb') as wfd:
             with open(os.path.join(kernel_output_dir, kernel_name), 'rb') as rfd:
                 shutil.copyfileobj(rfd, wfd)
-            with open(os.path.join(D, kernel_dtbdest, dtb), 'rb') as rfd:
+            with open(os.path.join(D, dtbdest, dtb), 'rb') as rfd:
                 shutil.copyfileobj(rfd, wfd)
 
         rootfs = getVarDTB("QCOM_BOOTIMG_ROOTFS")
@@ -139,8 +146,16 @@ python do_qcom_img_deploy() {
             if initrd:
                 make_initramfs_image("boot-sd-%s-%s-%s.img", rootfs, initrd, d.getVar("INITRAMFS_IMAGE"))
 
-    for dtbf in d.getVar("KERNEL_DEVICETREE").split():
-        make_dtb_image(dtbf)
+    if not d.getVar("QCOM_BOOTIMG_DEVICETREE") and not d.getVar("KERNEL_DEVICETREE"):
+        bb.fatal("Either QCOM_BOOTIMG_DEVICETREE or KERNEL_DEVICETREE needed for linux-qcom-bootimg.bbclass")
+
+    if d.getVar("KERNEL_DEVICETREE"):
+        for dtbf in d.getVar("KERNEL_DEVICETREE").split():
+            make_dtb_image(dtbf)
+
+    if d.getVar("QCOM_BOOTIMG_DEVICETREE"):
+        for dtbf in d.getVar("QCOM_BOOTIMG_DEVICETREE").split():
+            make_dtb_image(dtbf, external=True)
 }
 
 do_qcom_img_deploy[depends] += "skales-native:do_populate_sysroot"
