@@ -26,4 +26,5 @@ SCRIPT=${SCRIPT#$TOPDIR/}
 # on ci the kas-container is not on the default path
 KAS_CONTAINER=${KAS_CONTAINER:-$(which kas-container)}
 
-exec $KAS_CONTAINER shell ${KAS_YAMLS:-$TOPDIR/ci/base.yml} --command "/repo/$SCRIPT /repo /work"
+# KAS_OPTS: extra kas-container options, e.g. --runtime-args --env=NAME=value
+exec $KAS_CONTAINER ${KAS_OPTS:-} shell ${KAS_YAMLS:-$TOPDIR/ci/base.yml} --command "/repo/$SCRIPT /repo /work"
