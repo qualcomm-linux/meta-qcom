@@ -444,16 +444,16 @@ jobs:
                 yamlfile: ":ci/linux-qcom-6.18.yml:ci/u-boot-qcom.yml"
           - machine: rb3gen2-core-kit-open-fw
             distro:
-                name: qcom-distro-kvm
-                yamlfile: ':ci/qcom-distro-kvm.yml'
+                name: qcom-distro
+                yamlfile: ':ci/qcom-distro.yml'
             kernel:
                 type: default
                 dirname: ""
                 yamlfile: ""
           - machine: iq-9075-evk-open-fw
             distro:
-                name: qcom-distro-kvm
-                yamlfile: ':ci/qcom-distro-kvm.yml'
+                name: qcom-distro
+                yamlfile: ':ci/qcom-distro.yml'
             kernel:
                 type: default
                 dirname: ""
