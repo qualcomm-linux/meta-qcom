@@ -43,3 +43,11 @@ local_conf_header:
     # through the atomically written git2_*.tar.gz tarballs in DL_DIR.
     GITDIR = "${TMPDIR}/git2"
     BB_GENERATE_MIRROR_TARBALLS = "1"
+  git-shallow-kernels: |
+    # Every job rebuilding a qcom kernel restores the same multi-gigabyte
+    # repository under one DL_DIR lock; nothing needs its history, so fetch
+    # it shallow. linux-yocto stays full, kern-tools needs its meta branches.
+    BB_GIT_SHALLOW:pn-linux-qcom = "1"
+    BB_GIT_SHALLOW:pn-linux-qcom-rt = "1"
+    BB_GIT_SHALLOW:pn-linux-qcom-next = "1"
+    BB_GIT_SHALLOW:pn-linux-qcom-next-rt = "1"
