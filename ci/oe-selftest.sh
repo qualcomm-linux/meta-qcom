@@ -79,4 +79,11 @@ if [ -n "$DL_DIR" ]; then
     echo "DL_DIR = \"$DL_DIR\"" >> conf/local.conf
 fi
 
+# Job-local git clone dirs, as ci/ci.yml sets for the CI image builds.
+# Opt-in, so local runs keep DL_DIR/git2 as their persistent clone cache.
+if [ -n "$GIT_CLONEDIR_JOB_LOCAL" ]; then
+    echo "GITDIR = \"\${TMPDIR}/git2\"" >> conf/local.conf
+    echo "BB_GENERATE_MIRROR_TARBALLS = \"1\"" >> conf/local.conf
+fi
+
 oe-selftest --run-tests "$TEST_CASES"

@@ -137,9 +137,12 @@ jobs:
 
       - name: Setup cache variables (used by oe-selftest)
         run: |
+          # Job-local git clone dirs, as in ci/ci.yml; passed via KAS_OPTS as
+          # kas-container only forwards a fixed set of environment variables.
           echo "DL_DIR=${CACHE_DIR}/downloads" >> $GITHUB_ENV
           # use a single shared sstate cache folder, cleaned up by mtime
           echo "SSTATE_DIR=${CACHE_DIR}/sstate-cache" >> $GITHUB_ENV
+          echo "KAS_OPTS=--runtime-args --env=GIT_CLONEDIR_JOB_LOCAL=1" >> $GITHUB_ENV
 
       - name: Run Yocto patchreview
         run: |
