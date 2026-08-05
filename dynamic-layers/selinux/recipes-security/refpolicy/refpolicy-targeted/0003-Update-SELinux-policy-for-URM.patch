@@ -1,0 +1,37 @@
+From 9beea5f87542e4c83cc1297a6c13a47a6f10c3d7 Mon Sep 17 00:00:00 2001
+From: Varun Singhal <varusing@qti.qualcomm.com>
+Date: Wed, 29 Jul 2026 11:36:32 +0530
+Subject: [PATCH] refpolicy: Update policies for Qualcomm URM
+
+Fix selinux avc denials for capabilities and process setsched for urm.
+
+Upstream-Status: Submitted [https://github.com/SELinuxProject/refpolicy/pull/1188]
+
+Signed-off-by: Varun Singhal <varusing@qti.qualcomm.com>
+---
+ policy/modules/services/urm.te | 9 +++++++++
+ 1 file changed, 9 insertions(+)
+
+diff --git a/policy/modules/services/urm.te b/policy/modules/services/urm.te
+index b7dae8bec..2a9759cde 100644
+--- a/policy/modules/services/urm.te
++++ b/policy/modules/services/urm.te
+@@ -38,6 +38,15 @@ allow urm_t urm_config_t:file rw_file_perms;
+ # under /run for client communication
+ allow urm_t urm_runtime_t:sock_file manage_sock_file_perms;
+ 
+++# Allow sys_ptrace and sys_admin capabilities
+++allow urm_t self:capability { sys_ptrace sys_admin };
+++
+++# Allow perfmon capability
+++allow urm_t self:capability2 { perfmon };
+++
+++# Allow setsched for all process domains
+++allow urm_t domain:process setsched;
++
+ # Create runtime socket transition under /run
+ files_runtime_filetrans(urm_t, urm_runtime_t, sock_file)
+ 
+-- 
+2.43.0
+
