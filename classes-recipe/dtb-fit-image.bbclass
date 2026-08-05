@@ -14,18 +14,14 @@ require conf/image-fitimage.conf
 LINUX_QCOM_FIT_DTB_COMPATIBLE ?= "conf/machine/include/fit-dtb-compatible.inc"
 require ${LINUX_QCOM_FIT_DTB_COMPATIBLE}
 
-DEPENDS += "\
-    u-boot-tools-native \
-"
-
 MKIMAGE ?= "${STAGING_BINDIR_NATIVE}/mkimage"
 
 QCOMFIT_DEPLOYDIR = "${WORKDIR}/qcom_fitimage_deploy-${PN}"
 
-do_generate_qcom_fitimage[depends] += "qcom-dtb-metadata:do_deploy"
+do_generate_qcom_fitimage[depends] += "qcom-dtb-metadata:do_deploy u-boot-tools-native:do_populate_sysroot"
 do_generate_qcom_fitimage[cleandirs] += "${QCOMFIT_DEPLOYDIR}"
 python do_generate_qcom_fitimage() {
-    import os, shutil
+    import os
     from qcom.dtb_only_fitimage import QcomItsNodeRoot
 
     fit_dir = d.getVar('QCOMFIT_DEPLOYDIR')
@@ -43,14 +39,16 @@ python do_generate_qcom_fitimage() {
     root_node.set_extra_opts(d.getVar("FIT_DTB_MKIMAGE_EXTRA_OPTS") or "")
 
     deploy_dir_image = d.getVar('DEPLOY_DIR_IMAGE')
-    dtb_dir = os.path.join(d.getVar('B'), "arch", d.getVar('ARCH'), "boot", "dts", "qcom")
+    # Consume the DTBs published by do_deploy: unlike ${B}, this location
+    # is also populated when do_deploy is restored from sstate.
+    dtb_dir = deploy_dir_image
+    if d.getVar('KERNEL_DEPLOYSUBDIR'):
+        dtb_dir = os.path.join(deploy_dir_image, d.getVar('KERNEL_DEPLOYSUBDIR'))
     os.makedirs(fit_dir, exist_ok=True)
 
     # Always include QCOM metadata first
-    qcom_meta_src = os.path.join(deploy_dir_image, 'qcom-metadata.dtb')
-    qcom_meta_dst = os.path.join(dtb_dir, 'qcom-metadata.dtb')
-    shutil.copy(qcom_meta_src, qcom_meta_dst)
-    root_node.fitimage_emit_section_dtb("qcom-metadata.dtb", qcom_meta_dst, compatible_str=None, dtb_type="qcom_metadata")
+    qcom_meta = os.path.join(deploy_dir_image, 'qcom-metadata.dtb')
+    root_node.fitimage_emit_section_dtb("qcom-metadata.dtb", qcom_meta, compatible_str=None, dtb_type="qcom_metadata")
 
     # KERNEL_DEVICETREE contains both .dtb and .dtbo
     files_set = {os.path.basename(x) for x in (d.getVar('KERNEL_DEVICETREE') or "").split()}
@@ -124,7 +122,7 @@ python do_generate_qcom_fitimage() {
 
     root_node.run_mkimage_assemble(itsfile, fitname)
 }
-addtask generate_qcom_fitimage after do_populate_sysroot do_packagedata before do_qcom_dtbbin_deploy
+addtask generate_qcom_fitimage after do_deploy before do_qcom_dtbbin_deploy
 
 # Setup sstate, see deploy.bbclass
 SSTATETASKS += "do_generate_qcom_fitimage"
