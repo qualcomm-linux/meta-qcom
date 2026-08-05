@@ -128,6 +128,7 @@ do_compile[depends] += "${@'${QCOM_BOOT_FIRMWARE}:do_deploy' if d.getVar('QCOM_B
 
 # Pull in the kernel DTB when capsule includes a dtb entry.
 do_compile[depends] += "${@'virtual/kernel:do_deploy' if 'dtb' in d.getVar('CAPSULE_ENTRIES').split() else ''}"
+do_compile[depends] += "${@'virtual/kernel:do_qcom_dtbbin_deploy' if 'dtb' in d.getVar('CAPSULE_ENTRIES').split() and 'linux-qcom-dtbbin' in (d.getVar('KERNEL_CLASSES') or '').split() else ''}"
 
 python generate_fvupdate() {
     """Generate FvUpdate.xml from CAPSULE_ENTRIES when the variable is set."""
