@@ -73,6 +73,7 @@ do_deploy() {
     find "${S}" -maxdepth 1 -name '*.melf' -exec install -m 0644 {} ${DEPLOYDIR}/${QCOM_BOOT_IMG_SUBDIR} \;
     find "${S}" -maxdepth 1 -name 'qsahara_*.xml' -exec install -m 0644 {} ${DEPLOYDIR}/${QCOM_BOOT_IMG_SUBDIR} \;
     find "${S}" -maxdepth 1 -name '*.xz' -exec install -m 0644 {} ${DEPLOYDIR}/${QCOM_BOOT_IMG_SUBDIR} \;
+    install -m 0644 ${D}${QCOM_BOOT_INFO_DIR}/*/build-info.txt ${DEPLOYDIR}/${QCOM_BOOT_IMG_SUBDIR}/
 
 }
 addtask deploy before do_build after do_install
