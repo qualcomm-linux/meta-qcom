@@ -15,22 +15,15 @@ inputs:
 runs:
   using: "composite"
   steps:
-    - name: Download kas lockfile
+    - name: Download kas
       uses: actions/download-artifact@v7
       with:
-        name: kas-lockfile
-        path: ci/
-
-    - name: Download kas-container
-      uses: actions/download-artifact@v7
-      with:
-         name: kas-container
-         path: ${{runner.temp}}
+        name: kas
 
     - name: Setting up kas-container
       shell: bash
       run: |
-        KAS_CONTAINER=$RUNNER_TEMP/kas-container
+        KAS_CONTAINER=$GITHUB_WORKSPACE/kas-container
         echo "KAS_CONTAINER=$KAS_CONTAINER" >> $GITHUB_ENV
         chmod +x $KAS_CONTAINER
 
@@ -84,11 +77,6 @@ runs:
             mv $KAS_WORK_DIR/build/buildstats* .
           fi
         fi
-
-    - uses: actions/upload-artifact@v6
-      with:
-        name: kas-build-${{ inputs.distro_name }}${{ inputs.kernel_dirname }}-${{ inputs.machine }}
-        path: kas-build.yml
 
     - name: Stage build artifacts for publishing
       shell: bash
