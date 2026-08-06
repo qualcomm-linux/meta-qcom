@@ -23,6 +23,10 @@ PREFERRED_PROVIDER_virtual/kernel ??= "linux-yocto"
 VIRTUAL-RUNTIME_qcom-capsule-firmware ?= ""
 MACHINE_EXTRA_RRECOMMENDS += "${VIRTUAL-RUNTIME_qcom-capsule-firmware}"
 
+# Install the boot firmware build metadata of the machine's boot firmware
+QCOM_BOOT_FIRMWARE ?= ""
+MACHINE_EXTRA_RRECOMMENDS += "${QCOM_BOOT_FIRMWARE}"
+
 # Device Trees specific to linux-qcom family of kernels
 LINUX_QCOM_KERNEL_DEVICETREE ??= ""
 KERNEL_DEVICETREE:append:pn-linux-qcom = " ${LINUX_QCOM_KERNEL_DEVICETREE}"
