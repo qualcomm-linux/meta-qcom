@@ -108,6 +108,24 @@ jobs:
           mkdir $KAS_WORK_DIR
           $KAS_CONTAINER dump --resolve-env --resolve-local --resolve-refs ${KAS_YAMLS} > kas-build.yml
 
+      - name: Sstate-cache cleanup
+        run: |
+          set -x
+          SSTATE_CACHE_MANAGEMENT="/work/oe-core/scripts/sstate-cache-management.py"
+          SSTATE_CACHE_MANAGEMENT+=" --jobs $(nproc) --cache-dir \\\$(bitbake-getvar --value SSTATE_DIR) --yes --debug"
+          SSTATE_CACHE_MANAGEMENT+=" --dry-run"
+
+          flock ${SSTATE_DIR}-lock --command " \
+            ${KAS_CONTAINER} shell ${KAS_YAMLS} --command \"$SSTATE_CACHE_MANAGEMENT --remove-duplicated \
+            | tee sstate-cache-management-duplicated.log \" \
+            "
+          flock ${SSTATE_DIR}-lock --command " \
+            ${KAS_CONTAINER} shell ${KAS_YAMLS} --command \"$SSTATE_CACHE_MANAGEMENT --remove-orphans \
+            | tee sstate-cache-management-orphans.log \" \
+            "
+          mv $KAS_WORK_DIR/build/sstate-cache-management* .
+          exit 1
+
       - name: Kas build world
         if:  inputs.world
         shell: bash
@@ -192,7 +210,7 @@ jobs:
             # Copy *.efi, *.efi and *.vfat as they are useful for debugging
             find $images_dir/ -maxdepth 1 -type f \( -name \*.efi -o -name \*.elf -o -name dtb-\*.vfat \) -exec cp -v {} $uploads_dir/ \;
           fi
-          cp -v buildstats* kas-build.yml $uploads_dir/
+          cp -v buildstats* kas-build.yml sstate-cache-management* $uploads_dir/
           if [ -d $sdk_dir ]; then
             cp -v $sdk_dir/* $uploads_dir/
           fi
