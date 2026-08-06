@@ -32,7 +32,7 @@ do_qcom_dtbbin_deploy() {
         mcopy -i "${DTBBIN_DEPLOYDIR}/dtb-multi-dtb-image.vfat" -vsmpQ ${DEPLOY_DIR_IMAGE}/qclinuxfitImage ::/qclinux_fit.img
     fi
 }
-addtask qcom_dtbbin_deploy after do_populate_sysroot do_packagedata before qcom_img_deploy do_deploy
+addtask qcom_dtbbin_deploy after do_populate_sysroot do_packagedata before do_deploy
 
 # Setup sstate, see deploy.bbclass
 SSTATETASKS += "do_qcom_dtbbin_deploy"
