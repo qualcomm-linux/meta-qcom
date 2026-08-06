@@ -1,0 +1,288 @@
+From c34ed95fa59b4a61882794f329f74a32a5b1f949 Mon Sep 17 00:00:00 2001
+From: Naga Bhavani Akella <naga.akella@oss.qualcomm.com>
+Date: Tue, 21 Apr 2026 17:01:47 +0530
+Subject: [PATCH] main.conf: Add Channel Sounding config parsing support
+
+Add support for parsing Channel Sounding (CS) configuration options
+from the configuration file.
+
+Add CAP_NET_RAW to CapabilityBoundingSet in bluetooth.service.
+bluetoothd requires CAP_NET_RAW to receive and process HCI LE events
+when running under a constrained systemd capability bounding set
+
+Upstream-Status: Backport [c34ed95fa59b4a61882794f329f74a32a5b1f949]
+Signed-off-by: Naga Bhavani Akella <naga.akella@oss.qualcomm.com>
+Signed-off-by: Prathibha Madugonde <prathibha.madugonde@oss.qualcomm.com>
+---
+ src/bluetooth.service.in |   2 +-
+ src/btd.h                |   7 +++
+ src/main.c               | 132 ++++++++++++++++++++++++++++++++++++++-
+ src/main.conf            |  24 +++++++
+ 4 files changed, 162 insertions(+), 3 deletions(-)
+
+diff --git a/src/bluetooth.service.in b/src/bluetooth.service.in
+index 8ebe89bec..8dcbde236 100644
+--- a/src/bluetooth.service.in
++++ b/src/bluetooth.service.in
+@@ -10,7 +10,7 @@ ExecStart=@PKGLIBEXECDIR@/bluetoothd
+ NotifyAccess=main
+ #WatchdogSec=10
+ #Restart=on-failure
+-CapabilityBoundingSet=CAP_NET_ADMIN CAP_NET_BIND_SERVICE
++CapabilityBoundingSet=CAP_NET_RAW CAP_NET_ADMIN CAP_NET_BIND_SERVICE
+ LimitNPROC=1
+ 
+ # Filesystem lockdown
+diff --git a/src/btd.h b/src/btd.h
+index c84a600d1..db2e81239 100644
+--- a/src/btd.h
++++ b/src/btd.h
+@@ -94,11 +94,18 @@ struct btd_le_defaults {
+ 	uint8_t		enable_advmon_interleave_scan;
+ };
+ 
++struct btd_le_bcs {
++	uint8_t role;
++	uint8_t cs_sync_ant_sel;
++	int8_t max_tx_power;
++};
++
+ struct btd_defaults {
+ 	uint16_t	num_entries;
+ 
+ 	struct btd_br_defaults br;
+ 	struct btd_le_defaults le;
++	struct btd_le_bcs bcs;
+ };
+ 
+ struct btd_csis {
+diff --git a/src/main.c b/src/main.c
+index 818f7c06e..9a3d2da25 100644
+--- a/src/main.c
++++ b/src/main.c
+@@ -156,6 +156,13 @@ static const char *gatt_options[] = {
+ 	NULL
+ };
+ 
++static const char *const bcs_options[] = {
++	"Role",
++	"CsSyncAntennaSel",
++	"MaxTxPower",
++	NULL
++};
++
+ static const char *csip_options[] = {
+ 	"SIRK",
+ 	"Encryption",
+@@ -183,7 +190,7 @@ static const char *advmon_options[] = {
+ 
+ static const struct group_table {
+ 	const char *name;
+-	const char **options;
++	const char * const *options;
+ } valid_groups[] = {
+ 	{ "General",	supported_options },
+ 	{ "BR",		br_options },
+@@ -193,6 +200,7 @@ static const struct group_table {
+ 	{ "CSIS",	csip_options },
+ 	{ "AVDTP",	avdtp_options },
+ 	{ "AVRCP",	avrcp_options },
++	{ "ChannelSounding",	bcs_options },
+ 	{ "AdvMon",	advmon_options },
+ 	{ }
+ };
+@@ -356,7 +364,7 @@ static enum jw_repairing_t parse_jw_repairing(const char *jw_repairing)
+ 
+ 
+ static void check_options(GKeyFile *config, const char *group,
+-						const char **options)
++						const char * const *options)
+ {
+ 	char **keys;
+ 	int i;
+@@ -492,6 +500,46 @@ static bool parse_config_int(GKeyFile *config, const char *group,
+ 	return true;
+ }
+ 
++static bool parse_config_signed_int(GKeyFile *config, const char *group,
++					const char *key, int8_t *val,
++					long min, long max)
++{
++	char *str = NULL;
++	char *endptr = NULL;
++	long tmp;
++	bool result = false;
++
++	str = g_key_file_get_string(config, group, key, NULL);
++	if (!str)
++		return false;
++
++	tmp = strtol(str, &endptr, 0);
++	if (!endptr || *endptr != '\0') {
++		warn("%s.%s = %s is not integer", group, key, str);
++		goto cleanup;
++	}
++
++	if (tmp < min) {
++		warn("%s.%s = %ld is out of range (< %ld)", group, key, tmp,
++			min);
++		goto cleanup;
++	}
++
++	if (tmp > max) {
++		warn("%s.%s = %ld is out of range (> %ld)", group, key, tmp,
++									max);
++		goto cleanup;
++	}
++
++	if (val)
++		*val = (int8_t) tmp;
++	result = true;
++
++cleanup:
++	g_free(str);
++	return result;
++}
++
+ struct config_param {
+ 	const char * const val_name;
+ 	void * const val;
+@@ -1184,6 +1232,81 @@ static void parse_csis(GKeyFile *config)
+ 					0, UINT8_MAX);
+ }
+ 
++static bool parse_cs_role(GKeyFile *config, const char *group,
++					const char *key, uint8_t *val)
++{
++	GError *err = NULL;
++	char *str = NULL;
++	char *endptr = NULL;
++	int numeric_val;
++
++	/* Try to read as string first */
++	str = g_key_file_get_string(config, group, key, &err);
++	if (err) {
++		if (err->code != G_KEY_FILE_ERROR_KEY_NOT_FOUND)
++			DBG("%s", err->message);
++		g_error_free(err);
++		return false;
++	}
++
++	DBG("%s.%s = %s", group, key, str);
++
++	/* Check if it's a string value */
++	if (!strcmp(str, "Initiator") || !strcmp(str, "initiator")) {
++		if (val)
++			*val = 1;
++		g_free(str);
++		return true;
++	} else if (!strcmp(str, "Reflector") || !strcmp(str, "reflector")) {
++		if (val)
++			*val = 2;
++		g_free(str);
++		return true;
++	} else if (!strcmp(str, "Both") || !strcmp(str, "both")) {
++		if (val)
++			*val = 3;
++		g_free(str);
++		return true;
++	}
++
++	/* Try to parse as numeric value */
++	numeric_val = strtol(str, &endptr, 0);
++
++	if (!endptr || *endptr != '\0') {
++		warn("%s.%s = %s is not a valid value. "
++			"Expected: 1/Initiator, 2/Reflector, or 3/Both",
++			group, key, str);
++		g_free(str);
++		return false;
++	}
++
++	if (numeric_val < 1 || numeric_val > 3) {
++		warn("%s.%s = %d is out of range. "
++			"Valid values: 1 (Initiator), 2 (Reflector), 3 (Both)",
++			group, key, numeric_val);
++		g_free(str);
++		return false;
++	}
++
++	if (val)
++		*val = numeric_val;
++
++	g_free(str);
++	return true;
++}
++
++static void parse_le_cs_config(GKeyFile *config)
++{
++	parse_cs_role(config, "ChannelSounding", "Role",
++			&btd_opts.defaults.bcs.role);
++	parse_config_u8(config, "ChannelSounding", "CsSyncAntennaSel",
++			&btd_opts.defaults.bcs.cs_sync_ant_sel,
++			0x01, 0xFF);
++	parse_config_signed_int(config, "ChannelSounding",
++			"MaxTxPower", &btd_opts.defaults.bcs.max_tx_power,
++			INT8_MIN, INT8_MAX);
++}
++
+ static void parse_avdtp_session_mode(GKeyFile *config)
+ {
+ 	char *str = NULL;
+@@ -1262,6 +1385,7 @@ static void parse_config(GKeyFile *config)
+ 	parse_csis(config);
+ 	parse_avdtp(config);
+ 	parse_avrcp(config);
++	parse_le_cs_config(config);
+ 	parse_advmon(config);
+ }
+ 
+@@ -1313,6 +1437,10 @@ static void init_defaults(void)
+ 
+ 	btd_opts.advmon.rssi_sampling_period = 0xFF;
+ 	btd_opts.csis.encrypt = true;
++
++	btd_opts.defaults.bcs.role = 0x03;
++	btd_opts.defaults.bcs.cs_sync_ant_sel = 0xFF;
++	btd_opts.defaults.bcs.max_tx_power = 0x14;
+ }
+ 
+ static void log_handler(const gchar *log_domain, GLogLevelFlags log_level,
+diff --git a/src/main.conf b/src/main.conf
+index d31dd1b8f..5846ef92d 100644
+--- a/src/main.conf
++++ b/src/main.conf
+@@ -291,6 +291,30 @@
+ # Default: read-only
+ #ExportClaimedServices = read-only
+
++[ChannelSounding]
++# Current role of the device
++# Possible values:
++#   1 or "Initiator" - CS Initiator role,
++#   Generally, CS Initiator acts as Client (Gatt role) and Central (Gap role)
++#   2 or "Reflector" - CS Reflector role,
++#   Generally, CS Reflector acts as Server (Gatt role) and Peripheral (Gap role)
++#   3 or "Both"      - Both Initiator and Reflector roles
++# Default: 3 (Both)
++#Role = 3
++
++# Antenna Identifier to be used
++# Possible values:
++# 0x01-0x04 (antenna identifier to be used),
++# 0xFE - Antennas to be used in repetitive order,
++# 0xFF - Host doesn't have recommendation
++# Default: 0xFF (Host doesn't have recommendation)
++#CsSyncAntennaSel = 0xFF
++
++# Maximum Transmit power
++# Possible values: 0x81-0x14 (-127dBm to 20dBm)
++# Default: 0x14 (Max Power possible)
++#MaxTxPower = 0x14
++
+ [CSIS]
+ # SIRK - Set Identification Resolution Key which is common for all the
+ # sets. They SIRK key is used to identify its sets. This can be any
+-- 
+2.34.1
+

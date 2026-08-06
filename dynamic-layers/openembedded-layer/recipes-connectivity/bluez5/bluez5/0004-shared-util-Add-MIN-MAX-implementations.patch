@@ -1,0 +1,49 @@
+From 023e57342a0791b586e336fecce627ecb6a2e46f Mon Sep 17 00:00:00 2001
+From: Bastien Nocera <hadess@hadess.net>
+Date: Tue, 31 Mar 2026 23:36:36 +0200
+Subject: [PATCH] shared/util: Add MIN/MAX implementations
+
+And remove it from src/sdpd-request.c to avoid a redefinition warning
+at compile-time.
+
+Upstream-Status: Backport [c34ed95fa59b4a61882794f329f74a32a5b1f949]
+Signed-off-by: Bastien Nocera <hadess@hadess.net>
+Signed-off-by: Prathibha Madugonde <prathibha.madugonde@oss.qualcomm.com>
+---
+ src/sdpd-request.c | 2 --
+ src/shared/util.h  | 6 ++++++
+ 2 files changed, 6 insertions(+), 2 deletions(-)
+
+diff --git a/src/sdpd-request.c b/src/sdpd-request.c
+index 1fc07e97b..7c632c2aa 100644
+--- a/src/sdpd-request.c
++++ b/src/sdpd-request.c
+@@ -40,8 +40,6 @@ typedef struct {
+ 
+ #define SDP_CONT_STATE_SIZE (sizeof(uint8_t) + sizeof(sdp_cont_state_t))
+ 
+-#define MIN(x, y) ((x) < (y)) ? (x): (y)
+-
+ typedef struct sdp_cont_info sdp_cont_info_t;
+ 
+ struct sdp_cont_info {
+diff --git a/src/shared/util.h b/src/shared/util.h
+index c480351d6..67629dddf 100644
+--- a/src/shared/util.h
++++ b/src/shared/util.h
+@@ -22,6 +22,12 @@
+ #define ARRAY_SIZE(arr) (sizeof(arr) / sizeof((arr)[0]))
+ #define BIT(n)  (1 << (n))
+ 
++#undef MIN
++#define MIN(a, b) ((a) < (b) ? (a) : (b))
++
++#undef MAX
++#define MAX(a, b) ((a) > (b) ? (a) : (b))
++
+ #if __BYTE_ORDER == __LITTLE_ENDIAN
+ #define le16_to_cpu(val) (val)
+ #define le32_to_cpu(val) (val)
+-- 
+2.34.1
+

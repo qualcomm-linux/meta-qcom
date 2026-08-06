@@ -1,0 +1,46 @@
+From e0f608c05f9a007b9867c53234465f2b1fb0d8fa Mon Sep 17 00:00:00 2001
+From: Pauli Virtanen <pav@iki.fi>
+Date: Sun, 17 May 2026 13:30:08 +0300
+Subject: [PATCH] shared/rap: fix use of uninitialized value
+
+Fix error handling in send_ras_segment_data
+
+Upstream-Status: Backport [e0f608c05f9a007b9867c53234465f2b1fb0d8fa]
+Signed-off-by: Pauli Virtanen <pav@iki.fi>
+Signed-off-by: Prathibha Madugonde <prathibha.madugonde@oss.qualcomm.com>
+---
+ src/shared/rap.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/src/shared/rap.c b/src/shared/rap.c
+index b554726b0..145da2060 100644
+--- a/src/shared/rap.c
++++ b/src/shared/rap.c
+@@ -1096,7 +1096,6 @@ static void send_ras_segment_data(struct bt_rap *rap,
+ 	uint16_t value_max;
+ 	const uint16_t header_len = ras_segment_header_size;
+ 	uint16_t raw_payload_size;
+-	bool ok;
+ 
+ 	if (!rap || !proc)
+ 		return;
+@@ -1128,6 +1127,7 @@ static void send_ras_segment_data(struct bt_rap *rap,
+ 		uint16_t seg_len;
+ 		uint8_t *seg;
+ 		uint16_t wr = 0;
++		bool ok = true;
+ 
+ 		if (index > total_len)
+ 			index = total_len;
+@@ -1180,7 +1180,7 @@ static void send_ras_segment_data(struct bt_rap *rap,
+ 						wr, bt_rap_get_att(rap));
+ 
+ 		/* Try sending to on-demand characteristic */
+-		if (ras->ondemand_chrc)
++		if (ras->ondemand_chrc && ok)
+ 			ok = gatt_db_attribute_notify(ras->ondemand_chrc, seg,
+ 						wr, bt_rap_get_att(rap));
+ 
+-- 
+2.34.1
+

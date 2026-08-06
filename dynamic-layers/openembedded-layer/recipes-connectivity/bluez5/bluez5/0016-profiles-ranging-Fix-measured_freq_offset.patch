@@ -1,0 +1,38 @@
+From 42b2c543a70c882ed12efa06334588b0c45ae0f3 Mon Sep 17 00:00:00 2001
+From: Prathibha Madugonde <prathibha.madugonde@oss.qualcomm.com>
+Date: Thu, 4 Jun 2026 15:32:33 +0530
+Subject: [PATCH] profiles/ranging: Fix measured_freq_offset
+
+As per Core spect it is 2 octects not 4.
+
+Upstream-Status: Backport [42b2c543a70c882ed12efa06334588b0c45ae0f3]
+Signed-off-by: Prathibha Madugonde <prathibha.madugonde@oss.qualcomm.com>
+---
+ profiles/ranging/rap_hci.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/profiles/ranging/rap_hci.c b/profiles/ranging/rap_hci.c
+index 8e65e5ef8..febe23384 100644
+--- a/profiles/ranging/rap_hci.c
++++ b/profiles/ranging/rap_hci.c
+@@ -601,7 +601,7 @@ static void parse_mode_zero_data(struct iovec *iov,
+ 				 struct cs_mode_zero_data *mode_data,
+ 				 uint8_t cs_role)
+ {
+-	uint32_t freq_offset;
++	uint16_t freq_offset;
+ 
+ 	if (iov->iov_len < 3) {
+ 		DBG("Mode 0: too short (<3)");
+@@ -614,7 +614,7 @@ static void parse_mode_zero_data(struct iovec *iov,
+ 	DBG("CS Step mode 0");
+ 
+ 	if (cs_role == CS_INITIATOR && iov->iov_len >= 4) {
+-		util_iov_pull_le32(iov, &freq_offset);
++		util_iov_pull_le16(iov, &freq_offset);
+ 		mode_data->init_measured_freq_offset = freq_offset;
+ 	}
+ }
+-- 
+2.34.1
+
