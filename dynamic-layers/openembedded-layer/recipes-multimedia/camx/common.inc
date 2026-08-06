@@ -103,7 +103,6 @@ FILES:chicdk-${PLATFORM} = "\
 "
 
 FILES:${PN} = "\
-    ${libdir}/libcamera_metadata_${PLATFORM}*${SOLIBS} \
     ${libdir}/camx/${PLATFORM}/*${SOLIBS} \
     ${libdir}/camx/${PLATFORM}/camera/components/com.qti.node.swregistration*${SOLIBS} \
     ${libdir}/camx/${PLATFORM}/camera/components/*${SOLIBS} \
