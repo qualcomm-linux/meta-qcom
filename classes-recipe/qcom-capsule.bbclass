@@ -36,19 +36,12 @@ CAPSULE_SUB_PUB  ?= ""
 # ---------------------------------------------------------------------------
 # XBLConfig DTB certificate injection
 # ---------------------------------------------------------------------------
-# The class automatically detects the post-DDR DTB by parsing the output of
-# xblconfig_parser.py dump (looks for the first entry matching post-ddr*.dtb).
-# Both the filename and the section index are extracted from the dump output.
-#
-# XBLCONFIG_DTB overrides auto-detection when set to an explicit filename.
-# XBLCONFIG_DTB_SECTION overrides the auto-detected section index.
-#
-# When a post-DDR DTB is found (auto or explicit), the class will:
-#   1. dump XBLConfig sections
-#   2. patch QcCapsuleRootCert in the DTB with the converted root cert
-#   3. re-pack the updated DTB back into xbl_config.elf
-XBLCONFIG_DTB         ?= ""
-XBLCONFIG_DTB_SECTION ?= ""
+# The class invokes QDTE (qdte --nogui) to disassemble xbl_config.elf,
+# patch QcCapsuleRootCert in the named DTB, and reassemble in one shot.
+# QDTE does not auto-detect which DTB inside xbl_config.elf carries the
+# property, so XBLCONFIG_DTB must be set to the filename of the post-DDR
+# DTB (e.g. "post-ddr-kodiak-1.0.dtb").
+XBLCONFIG_DTB ?= ""
 
 # ---------------------------------------------------------------------------
 # Boot binaries location
@@ -89,7 +82,8 @@ inherit python3native deploy
 CAPSULE_DIR = "${WORKDIR}/capsule_gen"
 
 do_compile[depends] += "cbsp-boot-utilities-native:do_populate_sysroot \
-                        edk2-basetools-native:do_populate_sysroot"
+                        edk2-basetools-native:do_populate_sysroot \
+                        qdte-native:do_populate_sysroot"
 do_compile[dirs] = "${CAPSULE_DIR}"
 do_compile[cleandirs] = "${CAPSULE_DIR}"
 
@@ -203,55 +197,61 @@ python generate_fvupdate() {
 
 do_compile[prefuncs] += "generate_fvupdate"
 
-# Inject the OEM root certificate into xbl_config.elf.
-# Dumps the config sections, auto-detects the post-DDR DTB (or uses
-# XBLCONFIG_DTB / XBLCONFIG_DTB_SECTION overrides), patches QcCapsuleRootCert
-# in that DTB, and repacks the updated DTB back into xbl_config.elf in place.
+# Inject the OEM root certificate into xbl_config.elf using QDTE.
+#
+# QDTE's --nogui mode disassembles xbl_config.elf into its constituent
+# DTBs, applies an EDIT_PROPERTY_VALUE op via --modify, then reassembles.
+# That collapses the three previous cbsp-boot-utilities steps (dump,
+# set-dtb-property, replace) into a single invocation -- but QDTE does
+# not auto-detect which DTB inside xbl_config.elf to patch, so the
+# integrator must set XBLCONFIG_DTB (e.g. "post-ddr-kodiak-1.0.dtb").
+#
+# The DER cert is converted directly into QDTE's --modify value syntax
+# via python3 (staged through python3-native, in PATH); cbsp-boot-utilities'
+# bin-to-hex is not on this path.
+#
 # $1 - path to xbl_config.elf (modified in place on success)
 patch_xblconfig_cert() {
     local xbl_config="$1"
     local staged_dir
     staged_dir=$(dirname "${xbl_config}")
 
-    XBL_DUMP_LOG="${CAPSULE_DIR}/xbl_dump.log"
-    qcom-capsule-tool parse-config \
-        "${xbl_config}" dump \
-        --out-dir "${staged_dir}" | tee "${XBL_DUMP_LOG}"
-
-    DTB_PATCH="${XBLCONFIG_DTB}"
-    DTB_SECTION="${XBLCONFIG_DTB_SECTION}"
-    if [ -z "${DTB_PATCH}" ]; then
-        # Parse a line like:
-        #   [+] config_item[6] -> PH# 8 -> './post-ddr-kodiak-1.0.dtb' (90280 bytes)
-        POST_DDR_LINE=$(grep -m1 "post-ddr.*\.dtb" "${XBL_DUMP_LOG}" || true)
-        if [ -n "${POST_DDR_LINE}" ]; then
-            DTB_PATCH=$(echo "${POST_DDR_LINE}" | sed "s|.* -> '||;s|'.*||" | xargs basename)
-            DTB_SECTION=$(echo "${POST_DDR_LINE}" | sed "s/.*PH# \([0-9]*\).*/\1/")
-        fi
+    if [ -z "${XBLCONFIG_DTB}" ]; then
+        bbfatal "XBLCONFIG_DTB must be set when using QDTE for cert injection."
     fi
 
-    if [ -n "${DTB_PATCH}" ]; then
-        ORIG_DTB="${staged_dir}/${DTB_PATCH}"
-        UPDATED_DTB="${staged_dir}/${DTB_PATCH%.dtb}-updated.dtb"
+    # QcCapsuleRootCert is stored in the DTB as FdtPropertyWords: a
+    # length-prefixed sequence of 32-bit big-endian unsigned integers.
+    # Verified via fdtdump on a reference post-DDR DTB:
+    #
+    #   QcCapsuleRootCert = <0x000003a6 0x308203a2 0x3082028a ... >;
+    #
+    # Word 0 is the cert length in bytes; subsequent words pack the DER
+    # cert four bytes at a time, big-endian, zero-padded to a multiple
+    # of 4 bytes.  QDTE's --modify splits on ';' and feeds each token to
+    # the property setter; word-typed properties expect uint32 hex
+    # literals (matching the existing property type).
+    QDTE_CERT_VALUE=$(python3 -c '
+import struct, sys
+data = open(sys.argv[1], "rb").read()
+pad = (-len(data)) % 4
+padded = data + b"\x00" * pad
+words = [len(data)] + list(struct.unpack(">%dI" % (len(padded) // 4), padded))
+print(";".join("0x%08x" % w for w in words))
+' "${CAPSULE_ROOT_CER}")
 
-        qcom-capsule-tool set-dtb-property \
-            "${ORIG_DTB}" \
-            /sw/uefi/uefiplat \
-            QcCapsuleRootCert \
-            "@list:${ROOT_INC}" \
-            "${UPDATED_DTB}"
+    local qdte_outdir="${CAPSULE_DIR}/qdte_out"
+    mkdir -p "${qdte_outdir}"
 
-        qcom-capsule-tool parse-config \
-            "${xbl_config}" replace \
-            "${DTB_SECTION}" \
-            "${UPDATED_DTB}" \
-            "${staged_dir}/xbl_config_patched.elf"
+    qdte --nogui \
+        --allow_unsigned \
+        --input_file  "${xbl_config}" \
+        --output_path "${qdte_outdir}" \
+        --output_file "xbl_config.elf" \
+        --modify "${XBLCONFIG_DTB}/sw/uefi/uefiplat/QcCapsuleRootCert=${QDTE_CERT_VALUE}"
 
-        mv "${staged_dir}/xbl_config_patched.elf" \
-           "${xbl_config}"
-
-        touch "${CAPSULE_DIR}/.xbl_with_oem_cert"
-    fi
+    install -m 0644 "${qdte_outdir}/xbl_config.elf" "${xbl_config}"
+    touch "${CAPSULE_DIR}/.xbl_with_oem_cert"
 }
 
 do_compile() {
@@ -278,9 +278,6 @@ do_compile() {
     fi
 
     cd "${CAPSULE_DIR}"
-
-    ROOT_INC="${CAPSULE_DIR}/QcFMPRoot.inc"
-    qcom-capsule-tool bin-to-hex "${CAPSULE_ROOT_CER}" "${ROOT_INC}"
 
     # Stage boot binaries so they are writable (XBLConfig patching modifies
     # xbl_config.elf in place)

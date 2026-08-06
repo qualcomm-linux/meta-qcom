@@ -1,0 +1,59 @@
+From 835fdad09596feb26edd903b41d43f59301e0b7c Mon Sep 17 00:00:00 2001
+From: Igor Opaniuk <igor.opaniuk@oss.qualcomm.com>
+Date: Sun, 14 Jun 2026 23:28:56 +0200
+Subject: [PATCH] dtwrapper: support upstream pyfdt's zero-arg to_dtb()
+
+DTWrapper._update_dtb calls self._fdt.to_dtb(self.dtb_mappings),
+passing an out-dict that the FDT serializer is expected to populate
+with byte-offset mappings for each node.  This signature exists in
+QDTE's expected pyfdt fork but not in the upstream PyPI release
+(pyfdt 0.3 by Neil Armstrong, the only published version):
+upstream defines `def to_dtb(self):` with no parameters.  Calling
+the upstream binding raises:
+
+  TypeError: Fdt.to_dtb() takes 1 positional argument but 2 were given
+
+The dtb_mappings dict is only read by hexview.HexWindow to highlight
+node offsets in the GUI hex viewer; it is never consumed in --nogui
+mode.  Probe both signatures so QDTE works whether the binding it
+finds is the upstream zero-arg form or the internal mapping-capable
+form.  When the upstream binding is in use, dtb_mappings stays empty
+and the hex viewer simply renders without offset highlights.
+
+Tested on PyPI pyfdt 0.3 packaged as python3-pyfdt-native in
+meta-qcom (Yocto wrynose), driving --nogui xbl_config.elf cert
+injection on RB3 Gen 2 / QCM6490.
+
+Upstream-Status: Submitted [https://github.com/qualcomm/DTE/pull/N]
+Signed-off-by: Igor Opaniuk <igor.opaniuk@oss.qualcomm.com>
+---
+ dtwrapper.py | 13 ++++++++++++-
+ 1 file changed, 12 insertions(+), 1 deletion(-)
+
+diff --git a/dtwrapper.py b/dtwrapper.py
+index 9071185..f0faf58 100644
+--- a/dtwrapper.py
++++ b/dtwrapper.py
+@@ -1006,7 +1006,18 @@ class DTWrapper:
+     def _update_dtb(self):
+         self.dtb_mappings = {}
+         if self._fdt is not None:
+-            self.dtb = self._fdt.to_dtb(self.dtb_mappings)
++            # Upstream PyPI pyfdt (0.3, the only released version) exposes
++            # `to_dtb(self)` with no parameters.  QDTE was developed against
++            # an internal fork whose `to_dtb()` accepts an out-dict that gets
++            # populated with byte-offset mappings for the GUI hex viewer.
++            # Probe both signatures so we work with either: pass the
++            # mappings dict if accepted, otherwise call the zero-arg form
++            # and leave `dtb_mappings` empty (the hex viewer simply will
++            # not highlight node offsets in that case).
++            try:
++                self.dtb = self._fdt.to_dtb(self.dtb_mappings)
++            except TypeError:
++                self.dtb = self._fdt.to_dtb()
+         else:
+             self.dtb = None
+ 
+-- 
+2.53.0
+

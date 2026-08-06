@@ -15,3 +15,8 @@ MACHINE_ESSENTIAL_EXTRA_RRECOMMENDS += " \
 MACHINE_EXTRA_RRECOMMENDS += " \
     packagegroup-qcom-boot-additional \
 "
+
+# Post-DDR DTB embedded inside xbl_config.elf for QCM6490 (Kodiak).
+# Used by qcom-capsule.bbclass to locate the DTB into which the OEM
+# capsule root certificate is injected at build time.
+XBLCONFIG_DTB ?= "post-ddr-kodiak-1.0.dtb"

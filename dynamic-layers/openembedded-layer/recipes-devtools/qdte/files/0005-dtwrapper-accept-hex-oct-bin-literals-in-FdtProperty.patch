@@ -1,0 +1,56 @@
+From f500d767cc9059746a9481d629c0e2c572661523 Mon Sep 17 00:00:00 2001
+From: Igor Opaniuk <igor.opaniuk@oss.qualcomm.com>
+Date: Sun, 14 Jun 2026 23:31:41 +0200
+Subject: [PATCH] dtwrapper: accept hex/oct/bin literals in FdtPropertyWords
+ --modify
+
+DTOperationEditPropVal.apply iterates the value list supplied by
+--modify and casts each string token to an integer with bare
+int(val), which only accepts base-10 literals.  Callers that wish
+to feed hexadecimal word values -- the natural format when mirroring
+fdtdump's <0x... 0x... 0x...> display, or when piping precomputed
+big-endian uint32 words from an external converter -- hit:
+
+  ValueError: invalid literal for int() with base 10: '0x000003a6'
+
+Switch to int(val, 0), which auto-detects the base from a literal
+prefix (0x / 0o / 0b, else decimal).  Decimal callers continue to
+work unchanged; hex and other prefixed literals now succeed.
+
+The use case that motivated this: injecting a length-prefixed,
+big-endian-packed DER certificate into a Qualcomm xbl_config DTB
+property via --modify; the natural output of a one-liner like:
+
+  python3 -c 'import struct; ...; print(";".join("0x%08x" % w ...))'
+
+Tested on PyPI pyfdt 0.3 packaged as python3-pyfdt-native in
+meta-qcom (Yocto wrynose), driving --nogui xbl_config.elf cert
+injection on RB3 Gen 2 / QCM6490.
+
+Upstream-Status: Submitted [https://github.com/qualcomm/DTE/pull/N]
+Signed-off-by: Igor Opaniuk <igor.opaniuk@oss.qualcomm.com>
+---
+ dtwrapper.py | 7 ++++++-
+ 1 file changed, 6 insertions(+), 1 deletion(-)
+
+diff --git a/dtwrapper.py b/dtwrapper.py
+index f0faf58..e75fc35 100644
+--- a/dtwrapper.py
++++ b/dtwrapper.py
+@@ -592,7 +592,12 @@ class DTOperationEditPropVal(DTOperation):
+             for val in self.val_new:
+                 #dtlogger.debug(type(val))
+                 if isinstance(val,type('')):
+-                   vals.append(int(val))
++                   # int(val, 0) auto-detects the base from a literal
++                   # prefix ('0x' hex, '0o' octal, '0b' binary, else
++                   # decimal).  Plain int(val) only accepts decimal and
++                   # rejects '0x...' tokens that callers naturally
++                   # supply when mirroring fdtdump output.
++                   vals.append(int(val, 0))
+                 else:
+                    vals.append(val)
+             #dtlogger.debug("new list is %s"%vals)
+-- 
+2.53.0
+
