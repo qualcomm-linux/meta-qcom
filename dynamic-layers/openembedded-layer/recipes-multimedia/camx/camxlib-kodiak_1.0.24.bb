@@ -20,7 +20,7 @@ SRC_URI[chicdk.sha256sum] = "8adc152ebdb6d0a105f9b4f8ccaae0bfde9f05058605ebcc07b
 
 S = "${UNPACKDIR}"
 
-DEPENDS += "glib-2.0 fastrpc protobuf-camx libxml2 qmi-framework sensinghub qcom-sensors-binaries"
+DEPENDS += "glib-2.0 fastrpc protobuf libxml2 qmi-framework sensinghub qcom-sensors-binaries"
 
 DEPENDS += " \
     ${@bb.utils.contains('DISTRO_FEATURES', 'opengl', 'virtual/egl virtual/libgles2', '', d)} \
