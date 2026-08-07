@@ -10,7 +10,7 @@ COMPATIBLE_MACHINE = "(qcom)"
 
 LINUX_QCOM_FIT_DTB_COMPATIBLE = "conf/machine/include/fit-dtb-compatible-linux-qcom.inc"
 
-LINUX_VERSION ?= "7.1"
+LINUX_VERSION ?= "7.1+7.2-rc3"
 
 PV = "${LINUX_VERSION}+git"
 
@@ -18,8 +18,8 @@ KERNEL_PAHOLE ?= '${@oe.utils.vartrue("DEBUG_BUILD", bb.utils.contains("BBFILE_C
 do_configure[depends] += '${@oe.utils.vartrue("KERNEL_PAHOLE", "pahole-native:do_populate_sysroot", "", d)}'
 EXTRA_OEMAKE += '${@oe.utils.vartrue("KERNEL_PAHOLE", "", "PAHOLE=false", d)}'
 
-# tag: qcom-next-7.1-20260708
-SRCREV ?= "947408df47978cb86ffcd180a6244379e03301bf"
+# tag: qcom-next-7.2-rc3-20260731
+SRCREV ?= "8d5dbc1b17adf8fe86a41adcda686785e73f5414"
 
 SRCBRANCH ?= "nobranch=1"
 SRCBRANCH:class-devupstream ?= "branch=qcom-next"
@@ -29,7 +29,6 @@ SRC_URI = "git://github.com/qualcomm-linux/kernel.git;${SRCBRANCH};protocol=http
 # Additional kernel configs.
 SRC_URI += " \
     file://configs/bsp-additions.cfg \
-    file://0001-PENDING-arm64-dts-qcom-talos-evk-add-QPS615-m.2-ethe.patch \
 "
 
 # To build tip of qcom-next branch set preferred
