@@ -14,7 +14,8 @@ repos:
     url: https://github.com/qualcomm-linux/meta-qcom-distro
 
   meta-openembedded:
-    url: https://github.com/openembedded/meta-openembedded
+    url: https://git.openembedded.org/meta-openembedded-contrib
+    branch: anujm/wrynose
     layers:
       meta-filesystems:
       meta-gnome:
