@@ -11,6 +11,9 @@ KERNEL_IMAGETYPES ?= "Image.gz"
 # For dtb.bin generation
 KERNEL_CLASSES += "linux-qcom-dtbbin"
 
+# Make every image build provide the dtb.bin vfat images
+EXTRA_IMAGEDEPENDS += "virtual/kernel:do_qcom_dtbbin_deploy"
+
 # QDL expects 4096 aligned ext4 image for flashing
 IMAGE_FSTYPES += "ext4"
 IMAGE_ROOTFS_ALIGNMENT = "4096"
