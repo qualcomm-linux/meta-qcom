@@ -14,6 +14,7 @@ SRC_URI = "git://github.com/qualcomm-linux/u-boot.git;${SRCBRANCH};protocol=http
 SRC_URI += " \
     file://disable-eficapsule-tool.cfg \
     file://efi-rt-volatile-store.cfg \
+    file://fw_env.config \
     ${@bb.utils.contains('MACHINE_FEATURES', 'optee', 'file://tfa-optee.cfg', '', d)} \
     ${@bb.utils.contains('MACHINE_FEATURES', 'kvm', 'file://gunyah-exit.cfg', '', d)} \
 "
