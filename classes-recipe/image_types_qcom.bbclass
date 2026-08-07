@@ -109,7 +109,8 @@ create_qcomflash_pkg() {
                 -name 'qsahara_*.xml' -o \
                 -name 'sec.dat' -o \
                 -name 'soccp*.bin' -o \
-                -name 'xbl_config_devprg.elf'` ; do
+                -name 'xbl_config_devprg.elf' -o \
+                -name 'build-info.txt'` ; do
             install -m 0644 ${bfw} .
         done
 
@@ -153,7 +154,8 @@ create_qcomflash_pkg() {
                        -name '*.mbn' -o \
                        -name '*.melf' -o \
                        -name '*.xz' -o \
-                       -name 'qsahara_*.xml' \) \
+                       -name 'qsahara_*.xml' -o \
+                       -name 'build-info.txt' \) \
                     ! -name 'uefi_dtbs*.xz'` ; do
                 install -m 0644 ${bfw} spinor
             done
