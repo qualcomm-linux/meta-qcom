@@ -68,8 +68,14 @@ jobs:
         shell: bash
         run: |
           KAS_CONTAINER=$RUNNER_TEMP/kas-container
-          echo "KAS_CONTAINER=$KAS_CONTAINER" >> $GITHUB_ENV
           chmod +x $KAS_CONTAINER
+          if [ -c /dev/kvm ]; then
+            KAS_CONTAINER="$KAS_CONTAINER --runtime-args --device=/dev/kvm"
+            # default mod of /dev/kvm is 0660 and this works well on the host when yhe user is on kvm group
+            # but the group id inside the container can be mapped to a diferent group
+            sudo chmod 0666 /dev/kvm
+          fi
+          echo "KAS_CONTAINER=$KAS_CONTAINER" >> $GITHUB_ENV
 
       - name: Setup build variables
         shell: bash
