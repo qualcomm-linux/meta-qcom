@@ -3,19 +3,19 @@ header:
 overrides:
     repos:
         oe-core:
-            commit: c2746a4a165fd99c2d1aafed17533555787f37ce
+            commit: f09a0f28aeb54ddd90415dd458338e1565bb5a49
         meta-lts-mixins:
             commit: 6ad95d00531b32ec01792ab496718943dc95277b
         bitbake:
-            commit: acfe02fa38b5da9e6a36c6cedcf91d4fcbefbfbd
+            commit: fae9db3168dbff1b8c76fe9c6726a9687ff97514
         meta-arm:
-            commit: caa36c53f796beb25d9b9f58b1b7a492e9987e15
+            commit: 0979b80429099f1a42dc0026c8c466cee780bc74
         meta-openembedded:
-            commit: d97b5602d7f64422c94b7311466cda7f6b1962d5
+            commit: 6bf0d8ad57b33950bab4c7f6c037e1ccb6f6e2eb
         meta-virtualization:
-            commit: 781735b97ae5013cacabbecd38e6da6b510cf3fb
+            commit: ff03b1e118c4788f17d7ae45b820b00e3194634a
         meta-audioreach:
-            commit: bb3f812fa666fa1a03279b77e2c75f529ee9d797
+            commit: ad92f6fc436575275d106eee264d62715735f66b
         meta-selinux:
             commit: 1c3a699f363167571ab39fecb0fe6f56691a4e20
         meta-updater:
@@ -23,4 +23,4 @@ overrides:
         meta-security:
             commit: c0d1d6200e7a84c39fb940cb1f22aad4b0b3d808
         meta-dpdk:
-            commit: ded70edc0937d939596a0c38b737af59afbb5e7b
+            commit: 6a59b0cd21084e33feb53b4f2d1310e49e1d4a83
