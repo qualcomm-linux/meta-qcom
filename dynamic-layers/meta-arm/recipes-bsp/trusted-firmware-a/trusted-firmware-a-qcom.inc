@@ -10,7 +10,7 @@ COMPATIBLE_MACHINE = "qcm6490|qcs9100"
 TFA_PLATFORM:qcm6490 = "rb3gen2"
 TFA_PLATFORM:qcs9100 = "lemans_evk"
 
-TFA_BUILD_TARGET = "bl2 fip"
+TFA_BUILD_TARGET = "bl2 bl31 fip"
 TFA_SPD = "opteed"
 
 EXTRA_OEMAKE:append = " \
