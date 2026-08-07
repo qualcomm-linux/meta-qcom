@@ -28,24 +28,22 @@ runs:
          path: ${{runner.temp}}
 
     - name: Setting up kas-container
+      id: kas-container
       shell: bash
       run: |
         KAS_CONTAINER=$RUNNER_TEMP/kas-container
-        echo "KAS_CONTAINER=$KAS_CONTAINER" >> $GITHUB_ENV
+        echo "kas_container=$KAS_CONTAINER" >> $GITHUB_OUTPUT
         chmod +x $KAS_CONTAINER
 
     - name: Setup build variables
+      id: build-vars
       shell: bash
       run: |
         # use a monthly sstate cache folder
-        echo "DL_DIR=${INPUTS_CACHE_DIR}/downloads" >> $GITHUB_ENV
-        echo "SSTATE_DIR=${INPUTS_CACHE_DIR}/sstate-cache-$(date '+%Y-%m')" >> $GITHUB_ENV
-        echo "KAS_WORK_DIR=${PWD}/../kas" >> $GITHUB_ENV
-        echo "KAS_YAMLS=ci/ci.yml:ci/${INPUTS_MACHINE}.yml${INPUTS_DISTRO_YAML}${INPUTS_KERNEL_YAML}" >> $GITHUB_ENV
-        echo "INPUTS_CACHE_DIR=${INPUTS_CACHE_DIR}" >> $GITHUB_ENV
-        echo "INPUTS_MACHINE=${INPUTS_MACHINE}" >> $GITHUB_ENV
-        echo "INPUTS_DISTRO_YAML=${INPUTS_DISTRO_YAML}" >> $GITHUB_ENV
-        echo "INPUTS_KERNEL_YAML=${INPUTS_KERNEL_YAML}" >> $GITHUB_ENV
+        echo "dl_dir=${INPUTS_CACHE_DIR}/downloads" >> $GITHUB_OUTPUT
+        echo "sstate_dir=${INPUTS_CACHE_DIR}/sstate-cache-$(date '+%Y-%m')" >> $GITHUB_OUTPUT
+        echo "kas_work_dir=${PWD}/../kas" >> $GITHUB_OUTPUT
+        echo "kas_yamls=ci/ci.yml:ci/${INPUTS_MACHINE}.yml${INPUTS_DISTRO_YAML}${INPUTS_KERNEL_YAML}" >> $GITHUB_OUTPUT
       env:
         INPUTS_CACHE_DIR: ${{inputs.cache_dir}}
         INPUTS_MACHINE: ${{ inputs.machine }}
@@ -57,6 +55,12 @@ runs:
       run: |
         mkdir $KAS_WORK_DIR
         $KAS_CONTAINER dump --resolve-env --resolve-local --resolve-refs ${KAS_YAMLS} > kas-build.yml
+      env:
+        KAS_CONTAINER: ${{ steps.kas-container.outputs.kas_container }}
+        KAS_WORK_DIR: ${{ steps.build-vars.outputs.kas_work_dir }}
+        KAS_YAMLS: ${{ steps.build-vars.outputs.kas_yamls }}
+        DL_DIR: ${{ steps.build-vars.outputs.dl_dir }}
+        SSTATE_DIR: ${{ steps.build-vars.outputs.sstate_dir }}
 
     - name: Kas qcom world build
       shell: bash
@@ -65,6 +69,12 @@ runs:
         ci/kas-container-shell-helper.sh ci/yocto-buildstats.sh
         rename.ul -va buildstats buildstats-world $KAS_WORK_DIR/build/buildstats*
         mv $KAS_WORK_DIR/build/buildstats* .
+      env:
+        KAS_CONTAINER: ${{ steps.kas-container.outputs.kas_container }}
+        KAS_WORK_DIR: ${{ steps.build-vars.outputs.kas_work_dir }}
+        KAS_YAMLS: ${{ steps.build-vars.outputs.kas_yamls }}
+        DL_DIR: ${{ steps.build-vars.outputs.dl_dir }}
+        SSTATE_DIR: ${{ steps.build-vars.outputs.sstate_dir }}
 
     - name: Kas build images
       shell: bash
@@ -84,6 +94,15 @@ runs:
             mv $KAS_WORK_DIR/build/buildstats* .
           fi
         fi
+      env:
+        KAS_CONTAINER: ${{ steps.kas-container.outputs.kas_container }}
+        KAS_WORK_DIR: ${{ steps.build-vars.outputs.kas_work_dir }}
+        KAS_YAMLS: ${{ steps.build-vars.outputs.kas_yamls }}
+        DL_DIR: ${{ steps.build-vars.outputs.dl_dir }}
+        SSTATE_DIR: ${{ steps.build-vars.outputs.sstate_dir }}
+        INPUTS_MACHINE: ${{ inputs.machine }}
+        INPUTS_DISTRO_YAML: ${{ inputs.distro_yaml }}
+        INPUTS_KERNEL_YAML: ${{ inputs.kernel_yaml }}
 
     - uses: actions/upload-artifact@v6
       with:

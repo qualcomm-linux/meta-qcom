@@ -90,7 +90,7 @@ runs:
             echo "jobmatrix=''" >> $GITHUB_OUTPUT
             PROJECT="${INPUTS_PROJECT}"
           fi
-          echo "JOBS_OUT_PATH=${JOBS_OUT_PATH}" >> $GITHUB_ENV
+          echo "jobs_out_path=${JOBS_OUT_PATH}" >> $GITHUB_OUTPUT
           mkdir -p "${VARS_OUT_PATH}"
           mkdir -p "${JOBS_OUT_PATH}"
           echo "PROJECT_NAME=${PROJECT}" >> "${VARS_OUT_PATH}/gh-variables.ini"
@@ -197,5 +197,5 @@ runs:
         uses: actions/upload-artifact@v6
         with:
           name: ${{ inputs.prefix }}-${{ inputs.distro_name }}
-          path: ${{ env.JOBS_OUT_PATH }}/**
+          path: ${{ steps.lava-test-plans.outputs.jobs_out_path }}/**
 
