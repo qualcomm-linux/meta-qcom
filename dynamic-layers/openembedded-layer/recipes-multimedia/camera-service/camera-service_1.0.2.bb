@@ -19,8 +19,8 @@ inherit cmake pkgconfig systemd
 DEPENDS += "\
     camxcommon-headers \
     gtest \
-    protobuf-camx \
-    protobuf-camx-native \
+    protobuf \
+    protobuf-native \
 "
 
 SYSTEMD_SERVICE:${PN} = "cam-server.service"

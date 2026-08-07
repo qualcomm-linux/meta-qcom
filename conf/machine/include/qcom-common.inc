@@ -1,6 +1,7 @@
 require conf/machine/include/soc-family.inc
 MACHINEOVERRIDES =. "qcom:"
 
+require conf/machine/include/qcom-common-binary.inc
 require conf/machine/include/qcom-u-boot-common.inc
 
 # Set a default set of MACHINE_FEATURES, indivudual MACHINEs can append it

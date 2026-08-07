@@ -8,7 +8,7 @@ SRCREV = "c08dcfa05a39aaf7d9b7f3241f612d29a2df1073"
 
 SRC_URI = "git://github.com/qualcomm/sensinghub.git;protocol=https;branch=main;tag=v${PV}"
 
-DEPENDS = "protobuf-camx protobuf-camx-native glib-2.0"
+DEPENDS = "protobuf protobuf-native glib-2.0"
 
 inherit autotools pkgconfig
 
