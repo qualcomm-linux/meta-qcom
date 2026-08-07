@@ -45,12 +45,9 @@ python do_qcom_img_deploy() {
         if not initrd:
             bb.fatal("Could not find initramfs image %s for bundling" % d.getVar("INITRAMFS_IMAGE"))
 
-    B = d.getVar("B")
-    D = d.getVar("D")
-    kernel_output_dir = d.getVar("KERNEL_OUTPUT_DIR")
-    kernel_dtbdest = d.getVar("KERNEL_DTBDEST")
-    kernel = os.path.join(B, "kernel-dtb")
-    definitrd = os.path.join(B, "initrd.img")
+    workdir = d.getVar("WORKDIR")
+    kernel = os.path.join(workdir, "kernel-dtb")
+    definitrd = os.path.join(workdir, "initrd.img")
     mkbootimg = os.path.join(d.getVar("STAGING_BINDIR_NATIVE"), "skales", "mkbootimg")
     kernel_image_name = d.getVar("KERNEL_IMAGE_NAME")
     kernel_link_name = d.getVar("KERNEL_IMAGE_LINK_NAME")
@@ -64,6 +61,11 @@ python do_qcom_img_deploy() {
         kernel_name = "Image.gz"
     else:
         bb.fatal("Unuspported ARCH %s" % arch)
+
+    # Consume the kernel image and DTBs published by do_deploy: unlike
+    # ${B} and ${D}, DEPLOY_DIR_IMAGE is also populated when do_deploy
+    # is restored from sstate.
+    kernel_src = os.path.join(image_dir, kernel_name)
 
     if os.path.exists(output_img):
         os.unlink(output_img)
@@ -114,9 +116,9 @@ python do_qcom_img_deploy() {
 
         # prepare kernel image with appended dtb
         with open(kernel, 'wb') as wfd:
-            with open(os.path.join(kernel_output_dir, kernel_name), 'rb') as rfd:
+            with open(kernel_src, 'rb') as rfd:
                 shutil.copyfileobj(rfd, wfd)
-            with open(os.path.join(D, kernel_dtbdest, dtb), 'rb') as rfd:
+            with open(os.path.join(image_dir, dtb), 'rb') as rfd:
                 shutil.copyfileobj(rfd, wfd)
 
         rootfs = getVarDTB("QCOM_BOOTIMG_ROOTFS")
@@ -143,7 +145,7 @@ python do_qcom_img_deploy() {
 do_qcom_img_deploy[depends] += "skales-native:do_populate_sysroot"
 do_qcom_img_deploy[vardeps] = "QCOM_BOOTIMG_PAGE_SIZE QCOM_BOOTIMG_KERNEL_BASE KERNEL_CMDLINE_EXTRA QCOM_BOOTIMG_ROOTFS"
 
-addtask qcom_img_deploy after do_populate_sysroot do_packagedata do_bundle_initramfs before do_deploy
+addtask qcom_img_deploy after do_deploy before do_build
 
 # Setup sstate, see deploy.bbclass
 SSTATETASKS += "do_qcom_img_deploy"
@@ -154,7 +156,7 @@ python do_qcom_img_deploy_setscene () {
     sstate_setscene(d)
 }
 addtask do_qcom_img_deploy_setscene
-do_qcom_img_deploy[dirs] = "${QIMG_DEPLOYDIR} ${B}"
+do_qcom_img_deploy[dirs] = "${QIMG_DEPLOYDIR}"
 do_qcom_img_deploy[cleandirs] = "${QIMG_DEPLOYDIR}"
 do_qcom_img_deploy[stamp-extra-info] = "${MACHINE_ARCH}"
 
