@@ -1,8 +1,8 @@
-name: Monthly job
+name: Monthly job - pre-poulate cache
 
 on:
   schedule:
-  - cron: "22 10 5 * *"   # montly job - at "random" time - top of hour can be busy in github
+  - cron: "22 10 28 * *"   # montly job - at "random" time - top of hour can be busy in github
 
 jobs:
   sstate-cache-cleanup:
@@ -10,6 +10,10 @@ jobs:
     runs-on: [self-hosted, qcom-sm-u2404, sm-amd64]
     timeout-minutes: 720
     steps:
+      - name: Setup Sstate-cache for upcoming month
+        run: |
+          NEXT_MONTH=$(date -d "$(date +%Y-%m-01) +1 month" +%Y-%m)
+          cp -r -v /efs/qli/meta-qcom/sstate-cache-$(date +%Y-%m)/* /efs/qli/meta-qcom/sstate-cache-${NEXT_MONTH}
       - name: Clean up the persistant sstate-cache dir
         run: |
-          rm -rf $(find /efs/qli/meta-qcom -name 'sstate-cache-*' -maxdepth 1 -type d -ctime +30)
+          rm -rf $(find /efs/qli/meta-qcom/sstate-cache-${NEXT_MONTH}/ -maxdepth 2 -type d -ctime +30 -name '*')
