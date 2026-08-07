@@ -1,0 +1,33 @@
+From 97b3072a20f21b0ec523e788d318b912c2153fa2 Mon Sep 17 00:00:00 2001
+From: Dmitry Baryshkov <dmitry.baryshkov@oss.qualcomm.com>
+Date: Mon, 3 Aug 2026 23:50:21 +0300
+Subject: [meta-selinux][PATCH 2/2] libselinux: enable nativesdk
+
+Enable nativesdk class extension, letting libselinux to satisfy
+dependencies of nativesdk-rpm if SELinux is enabled by the distro. The
+binaries are not necessary for the SDK, so they are explicitly dropped.
+
+Signed-off-by: Dmitry Baryshkov <dmitry.baryshkov@oss.qualcomm.com>
+Upstream-Status: Submitted [https://lore.kernel.org/yocto-patches/20260804114749.625810-2-dmitry.baryshkov@oss.qualcomm.com/]
+---
+ recipes-security/selinux/libselinux_3.10.bb | 7 ++++++-
+ 1 file changed, 6 insertions(+), 1 deletion(-)
+
+diff --git a/recipes-security/selinux/libselinux_3.10.bb b/recipes-security/selinux/libselinux_3.10.bb
+index 86c9168a002d..94f3fcdf861d 100644
+--- a/recipes-security/selinux/libselinux_3.10.bb
++++ b/recipes-security/selinux/libselinux_3.10.bb
+@@ -32,4 +32,9 @@ EXTRA_OEMAKE:append:libc-musl = " FTS_LDLIBS=-lfts"
+ # sections which are not affected by -ffile-prefix-map, causing buildpaths QA failure
+ LTO = ""
+ 
+-BBCLASSEXTEND = "native"
++BBCLASSEXTEND = "native nativesdk"
++
++do_install:append:class-nativesdk() {
++    # /sbin is hardcoded in the Makefile
++    rm -r ${D}${prefix}/sbin
++}
+-- 
+2.47.3
+
