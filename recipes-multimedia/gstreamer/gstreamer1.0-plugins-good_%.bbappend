@@ -10,4 +10,6 @@ SRC_URI:append:qcom = " \
     file://0007-v4l2-Drop-empty-bytesused-0-buffers.patch \
     file://0008-v4l2-Handle-GAP-buffer-in-encoder.patch \
     file://0010-v4l2-Add-support-for-V4L2_PIX_FMT_QC10C-format.patch \
+    file://0011-pulse-NULL-check-before-de-reference.patch \
+    file://0012-pulse-add-pulsedirectsink-element.patch \
 "
