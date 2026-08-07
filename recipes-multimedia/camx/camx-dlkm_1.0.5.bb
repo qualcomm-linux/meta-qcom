@@ -7,7 +7,7 @@ SRC_URI = " \
     git://github.com/qualcomm-linux/camera-driver.git;protocol=https;branch=camera-kernel.qclinux.0.0;tag=v${PV} \
 "
 
-SRCREV = "f073e13d7a310df5c1551f2136199f85c85db6d8"
+SRCREV = "0f16924ff6a7f9bb56a7e958016da2ed8a174f2f"
 
 inherit module
 
