@@ -1,0 +1,49 @@
+From ceedf895c7f1f5cf6239de1f129bf23d337e6ed2 Mon Sep 17 00:00:00 2001
+From: Khalid Faisal Ansari <khalid.ansari@oss.qualcomm.com>
+Date: Wed, 8 Jul 2026 18:40:44 +0530
+Subject: [PATCH] tpm2: allow tpm2-abrmd D-Bus chat with initrc_t for adbd
+
+On Qualcomm platforms adbd (Android Debug Bridge daemon) runs as
+initrc_t, confirmed on IQ-9075 EVK:
+
+  # ps -eZ | grep adbd
+  system_u:system_r:initrc_t:s0  1649  ?  00:00:00 adbd
+
+tpm2-tools invoked from an ADB shell session run in initrc_t context.
+Without tpm2_dbus_chat_abrmd(initrc_t), tpm2_abrmd_t cannot send the
+D-Bus reply back to initrc_t -- the reply is silently dropped and the
+caller times out with 'Timeout was reached'. No AVC is logged for the
+dropped reply, making it non-obvious to diagnose.
+
+This rule was submitted to upstream refpolicy but rejected as
+platform-specific. The upstream reviewer stated:
+'we are not handling this in refpolicy. The rule will need to remain in
+your downstream policy until an adbd domain is added here.'
+
+Upstream-Status: Inappropriate [platform-specific: adbd runs as initrc_t
+on Qualcomm platforms; upstream will accept this only when a proper
+adbd_t domain is contributed to refpolicy]
+
+Tested-by: Khalid Faisal Ansari <khalid.ansari@oss.qualcomm.com>
+Signed-off-by: Khalid Faisal Ansari <khalid.ansari@oss.qualcomm.com>
+---
+ policy/modules/system/init.te | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/policy/modules/system/init.te b/policy/modules/system/init.te
+index c8a1e508a..02d7ef658 100644
+--- a/policy/modules/system/init.te
++++ b/policy/modules/system/init.te
+@@ -1505,6 +1505,9 @@ optional_policy(`
+ 
+ 	# bash tries ioctl for some reason
+ 	files_dontaudit_ioctl_all_runtime_files(initrc_t)
++
++	# adb access for tpm
++	tpm2_dbus_chat_abrmd(initrc_t)
+ ')
+ 
+ optional_policy(`
+-- 
+2.34.1
+
