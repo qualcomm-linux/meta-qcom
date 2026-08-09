@@ -72,10 +72,6 @@ do_install:append() {
         install -m 0644 ${S}/usr/share/doc/${BPN}/LICENSE.QCOM-2.txt \
             ${D}${datadir}/doc/chicdk-${PLATFORM}
     fi
-
-    # Symlinks kept for backward compatibility
-    ln -sr ${D}${libdir}/libcamx_hardware_${PLATFORM}.so.1 ${D}${libdir}/libcamera_hardware_${PLATFORM}.so.0
-    ln -sr ${D}${libdir}/libcamx_metadata_${PLATFORM}.so.1 ${D}${libdir}/libcamera_metadata_${PLATFORM}.so.0
 }
 
 
@@ -84,7 +80,6 @@ RDEPENDS:${PN} += "chicdk-${PLATFORM}"
 RDEPENDS:${PN}-dev += "camxcommon-headers-dev"
 
 FILES:camx-${PLATFORM} = "\
-    ${libdir}/libcamera_hardware_${PLATFORM}*${SOLIBS} \
     ${libdir}/libcamx_hardware_${PLATFORM}*${SOLIBS} \
     ${libdir}/libcamxexternalformatutils_${PLATFORM}*${SOLIBS} \
     ${libdir}/camx/${PLATFORM}/hw/camera.qcom*${SOLIBS} \
@@ -109,7 +104,6 @@ FILES:chicdk-${PLATFORM} = "\
 "
 
 FILES:${PN} = "\
-    ${libdir}/libcamera_metadata_${PLATFORM}*${SOLIBS} \
     ${libdir}/libcamx_metadata_${PLATFORM}*${SOLIBS} \
     ${libdir}/camx/${PLATFORM}/*${SOLIBS} \
     ${libdir}/camx/${PLATFORM}/camera/components/com.qti.node.swregistration*${SOLIBS} \
