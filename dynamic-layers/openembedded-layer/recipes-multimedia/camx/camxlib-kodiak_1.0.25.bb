@@ -86,10 +86,6 @@ do_install:append() {
         install -m 0644 ${S}/usr/share/doc/chicdk-kodiak/NOTICE ${D}${datadir}/doc/chicdk-kodiak
         install -m 0644 ${S}/usr/share/doc/${BPN}/LICENSE.QCOM-2.txt ${D}${datadir}/doc/chicdk-kodiak
     fi
-
-    # Symlinks kept for backward compatibility
-    ln -sr ${D}${libdir}/libcamx_hardware_kodiak.so.1 ${D}${libdir}/libcamera_hardware_kodiak.so.0
-    ln -sr ${D}${libdir}/libcamx_metadata_kodiak.so.1 ${D}${libdir}/libcamera_metadata_kodiak.so.0
 }
 
 PACKAGE_BEFORE_PN += "camx-kodiak chicdk-kodiak ${PN}-skel"
@@ -98,7 +94,6 @@ RDEPENDS:${PN}-dev += "camxcommon-headers-dev"
 RRECOMMENDS:${PN} += "${@bb.utils.contains('DISTRO_FEATURES', 'opencl', 'virtual-opencl-icd', '', d)} sensinghub qcom-sensors-binaries"
 
 FILES:camx-kodiak = "\
-    ${libdir}/libcamera_hardware_kodiak*${SOLIBS} \
     ${libdir}/libcamx_hardware_kodiak*${SOLIBS} \
     ${libdir}/libcamxexternalformatutils_kodiak*${SOLIBS} \
     ${libdir}/camx/kodiak/libchilog*${SOLIBS} \
@@ -133,7 +128,6 @@ FILES:${PN}-skel = "\
     ${datadir}/qcom \
     "
 FILES:${PN} = "\
-    ${libdir}/libcamera_metadata_kodiak*${SOLIBS} \
     ${libdir}/libcamx_metadata_kodiak*${SOLIBS} \
     ${libdir}/camx/kodiak/*${SOLIBS} \
     ${libdir}/camx/kodiak/hw/*${SOLIBS} \
