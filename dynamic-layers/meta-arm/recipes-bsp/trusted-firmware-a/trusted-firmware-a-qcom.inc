@@ -1,6 +1,6 @@
 require recipes-bsp/trusted-firmware-a/trusted-firmware-a.inc
 
-DEPENDS += "qtestsign-native optee-os-qcom u-boot-qcom"
+DEPENDS += "qtestsign-native u-boot-qcom"
 
 PV = "2.15.0-qcom+git"
 
