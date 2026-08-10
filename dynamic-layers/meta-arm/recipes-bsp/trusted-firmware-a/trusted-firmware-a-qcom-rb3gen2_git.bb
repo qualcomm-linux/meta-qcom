@@ -1,5 +1,7 @@
 require trusted-firmware-a-qcom.inc
 
+DEPENDS += "optee-os-qcom-kodiak"
+
 TFA_PLATFORM = "rb3gen2"
 QTISECLIB_SOC = "sc7280"
 FIP_ELF_ADDR = "0x9fc00000"

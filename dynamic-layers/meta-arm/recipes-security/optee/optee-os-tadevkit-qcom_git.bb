@@ -1,4 +1,5 @@
-require optee-os-qcom_git.bb
+require optee-os-qcom.inc
+require optee-qcom.inc
 
 SUMMARY = "OP-TEE Trusted OS TA devkit"
 DESCRIPTION = "OP-TEE TA devkit for build TAs"
