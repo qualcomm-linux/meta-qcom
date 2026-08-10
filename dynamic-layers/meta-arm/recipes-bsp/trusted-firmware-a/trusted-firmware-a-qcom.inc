@@ -10,7 +10,8 @@ SRCREV_tfa = "10ecf7dcc641e8453e2e2ea2f21c13c7a867ffe0"
 
 LIC_FILES_CHKSUM += "file://docs/license.rst;md5=6ed7bace7b0bc63021c6eba7b524039e"
 
-COMPATIBLE_MACHINE = "qcm6490|qcs9100"
+COMPATIBLE_MACHINE = "^$"
+COMPATIBLE_MACHINE:aarch64 = "(qcom)"
 
 python () {
     if not d.getVar('FIP_ELF_ADDR'):
