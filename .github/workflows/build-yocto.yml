@@ -239,6 +239,7 @@ jobs:
           - iq-x5121-evk
           - iq-x7181-evk
           - kaanapali-mtp
+          - mahua-crd
           - qcm6490-idp
           - qcom-armv8a
           - qcs615-ride
@@ -292,6 +293,12 @@ jobs:
                 name: qcom-distro
             kernel:
                 type: default
+          - machine: mahua-crd
+            kernel:
+                type: 6.18
+          - machine: mahua-crd
+            kernel:
+                type: rt-6.18-distro-kvm
           - machine: qcom-armv8a
             distro:
                 name: nodistro
