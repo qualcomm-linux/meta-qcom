@@ -5,9 +5,9 @@ DEPENDS += "bc-native dtc-native gnutls-native python3-pyelftools-native qtestsi
 
 COMPATIBLE_MACHINE:aarch64 = "(qcom)"
 
-PV = "2026.07+git"
+PV = "2026.07+2026.10-rc1+git"
 
-SRCREV = "e35d929347b19b66db87995724f0fd94be057ff4"
+SRCREV = "7588f73ca1883188e422eadc0f8620da446cecb1"
 SRCBRANCH = "nobranch=1"
 
 SRC_URI = "git://github.com/qualcomm-linux/u-boot.git;${SRCBRANCH};protocol=https;name=uboot"
