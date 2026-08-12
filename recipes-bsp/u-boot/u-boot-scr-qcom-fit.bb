@@ -8,9 +8,11 @@ SRC_URI = "file://boot.cmd.in"
 
 INHIBIT_DEFAULT_DEPS = "1"
 
-inherit kernel-arch deploy nopackages
+inherit deploy nopackages
 
 PACKAGE_ARCH = "${MACHINE_ARCH}"
+
+UBOOT_ARCH = "${@oe.kernel.map_uboot_arch(d)}"
 
 S = "${UNPACKDIR}"
 
