@@ -1,0 +1,82 @@
+/dts-v1/;
+
+/ {
+	description = "TFA + OP-TEE + U-Boot FIT Image for SPL";
+	#address-cells = <1>;
+
+	images {
+
+		/* ------------------------ */
+		/*  BL31 (ARM Trusted FW)   */
+		/* ------------------------ */
+		tfa {
+			description = "ARM Trusted Firmware";
+			data = /incbin/("bl31.bin");
+			type = "firmware";
+			arch = "arm64";
+			os = "arm-trusted-firmware";
+			compression = "none";
+			load = <0x1c200000>;
+			entry = <0x1c200000>;
+
+			hash-1 {
+				algo = "sha256";
+			};
+		};
+
+		/* ------------------------ */
+		/*  BL32 (OP-TEE)           */
+		/* ------------------------ */
+		optee {
+			description = "OP-TEE Secure OS";
+			data = /incbin/("tee-raw.bin");
+			type = "tee";
+			arch = "arm64";
+			os = "tee";
+			compression = "none";
+			load = <0x1c300000>;
+			entry = <0x1c300000>;
+
+			hash-1 {
+				algo = "sha256";
+			};
+		};
+
+		/* ------------------------ */
+		/*  BL33 (U-Boot)           */
+		/* ------------------------ */
+		uboot {
+			description = "U-Boot Bootloader";
+			data = /incbin/("u-boot.bin");
+			type = "standalone";
+			arch = "arm64";
+			os = "u-boot";
+			compression = "none";
+			load = <0xaf400000>;
+			entry = <0xaf400000>;
+
+			hash-1 {
+				algo = "sha256";
+			};
+		};
+	};
+
+	/* ---------------------------- */
+	/*  CONFIGURATION               */
+	/* ---------------------------- */
+	configurations {
+		default = "config-1";
+
+		config-1 {
+			description = "TFA + OP-TEE + U-Boot Configuration";
+			firmware = "tfa";
+			loadables = "uboot", "optee";
+
+			signature-1 {
+				algo = "sha256,rsa2048";
+				key-name-hint = "dev";
+				sign-images = "firmware", "loadables";
+			};
+		};
+	};
+};
