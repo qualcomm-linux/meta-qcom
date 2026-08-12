@@ -4,7 +4,7 @@ PACKAGE_INSTALL = " \
     systemd-boot \
 "
 
-inherit image uki uki-esp-image features_check
+inherit image uki uki-esp-image efi-volatile-vars features_check
 
 require esp-qcom-common.inc
 
