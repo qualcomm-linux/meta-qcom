@@ -1,0 +1,51 @@
+From 23012375bfb1e9d8d5baf3096f5cc109336a90a0 Mon Sep 17 00:00:00 2001
+From: Jerry Bae <jbae@qti.qualcomm.com>
+Date: Sat, 8 Aug 2026 02:16:52 -0700
+Subject: [PATCH 1/2] msm: camera: lrme: fix context leak on cam-server crash
+
+__cam_lrme_ctx_release_dev_in_activated() returned early when
+stop_dev failed, skipping the cam_context_release_dev_to_hw() call.
+This leaves the LRME HW context slot in ACTIVATED state permanently.
+
+When cam-server crashes with in-flight requests, stop_dev fails
+because flush/sync operations encounter orphaned request state
+(session already torn down by cam_req_mgr_handle_core_shutdown()).
+Repeating the crash exhausts all 8 LRME HW slots, causing every
+subsequent cam-server start to fail until reboot.
+
+Fix: fall through to release_dev_to_hw even when stop_dev fails,
+matching the existing behavior of ICP (__cam_icp_release_dev_in_ready)
+and ISP (__cam_isp_ctx_release_dev_in_activated), which both continue
+to release the HW slot regardless of stop failure.
+
+Change-Id: If3543f280c7e4cfbb592318cb8f91aa566c853f0
+Signed-off-by: Jerry Bae <jbae@qti.qualcomm.com>
+Upstream-Status: Inappropriate [Yocto specific]
+---
+ camera_kt/drivers/cam_lrme/cam_lrme_context.c | 10 ++++++++--
+ 1 file changed, 8 insertions(+), 2 deletions(-)
+
+diff --git a/camera_kt/drivers/cam_lrme/cam_lrme_context.c b/camera_kt/drivers/cam_lrme/cam_lrme_context.c
+index b2a35e9a7..cb06c9359 100644
+--- a/camera_kt/drivers/cam_lrme/cam_lrme_context.c
++++ b/camera_kt/drivers/cam_lrme/cam_lrme_context.c
+@@ -141,8 +141,14 @@ static int __cam_lrme_ctx_release_dev_in_activated(struct cam_context *ctx,
+ 
+ 	rc = __cam_lrme_ctx_stop_dev_in_activated(ctx, NULL);
+ 	if (rc) {
+-		CAM_ERR(CAM_LRME, "Failed to stop");
+-		return rc;
++		CAM_ERR(CAM_LRME,
++			"Failed to stop ctx %d (rc=%d), forcing hw release to avoid context leak",
++			ctx->ctx_id, rc);
++		/* Fall through: always release the HW slot even if stop fails.
++		 * When cam-server crashes with in-flight requests, stop_dev fails
++		 * because flush/sync operations encounter orphaned request state.
++		 * Skipping release_dev_to_hw here permanently leaks the LRME HW
++		 * context slot, exhausting all 8 slots after 4 crash cycles. */
+ 	}
+ 
+ 	rc = cam_context_release_dev_to_hw(ctx, cmd);
+-- 
+2.34.1
+

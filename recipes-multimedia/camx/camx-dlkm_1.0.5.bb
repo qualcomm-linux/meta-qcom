@@ -9,6 +9,11 @@ SRC_URI = " \
 
 SRCREV = "0f16924ff6a7f9bb56a7e958016da2ed8a174f2f"
 
+SRC_URI += " \
+    file://0001-msm-camera-lrme-fix-context-leak-on-cam-server-crash.patch \
+    file://0002-msm-camera-lrme-fix-LRME-HW-context-leak-on-cam-serv.patch \
+"
+
 inherit module
 
 MAKE_TARGETS = "modules"

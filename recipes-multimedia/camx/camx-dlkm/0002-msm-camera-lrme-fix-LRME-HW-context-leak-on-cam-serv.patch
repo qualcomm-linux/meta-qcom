@@ -1,0 +1,73 @@
+From 1ab59c2aa13fe11e64258ef24bde6a580ce8c14c Mon Sep 17 00:00:00 2001
+From: Jerry Bae <jbae@qti.qualcomm.com>
+Date: Sat, 8 Aug 2026 17:05:31 -0700
+Subject: [PATCH 2/2] msm: camera: lrme: fix LRME HW context leak on cam-server
+ crash
+
+Two bugs conspire to leak LRME HW contexts when cam-server crashes:
+
+1. cam_lrme_dev_close_internal (cam_lrme_dev.c):
+   CRM calls cam_node_shutdown via sd_handler exactly once, but
+   cam-server opens the LRME subdev multiple times (once per context
+   acquisition). open_cnt never reaches 0 from a single CRM-driven
+   call, so cam_node_shutdown is silently skipped and all contexts
+   remain ACTIVATED, exhausting all 8 (CAM_CTX_MAX) slots after
+   repeated crash cycles.
+
+   Fix: detect cam_req_mgr_is_shutdown() and force cam_node_shutdown
+   unconditionally, resetting open_cnt to 0.
+
+2. __cam_lrme_ctx_release_dev_in_activated (cam_lrme_context.c):
+   The function returned early when stop_dev failed, skipping
+   release_dev_to_hw entirely. When cam-server crashes with in-flight
+   requests, stop_dev fails because the session was already torn down
+   by cam_req_mgr_handle_core_shutdown(). The HW slot was never freed.
+
+   Fix: fall through to release_dev_to_hw even when stop_dev fails,
+   matching the existing behavior of ICP (__cam_icp_release_dev_in_ready)
+   and ISP (__cam_isp_ctx_release_dev_in_activated).
+
+Change-Id: I05a57cdc94c9753a8ab791a0223b9b0a5f547eea
+Signed-off-by: Jerry Bae <jbae@qti.qualcomm.com>
+Upstream-Status: Inappropriate [Yocto specific]
+---
+ camera_kt/drivers/cam_lrme/cam_lrme_dev.c | 22 +++++++++++++++++++++-
+ 1 file changed, 21 insertions(+), 1 deletion(-)
+
+diff --git a/camera_kt/drivers/cam_lrme/cam_lrme_dev.c b/camera_kt/drivers/cam_lrme/cam_lrme_dev.c
+index 243f682ae..cf84b10c2 100644
+--- a/camera_kt/drivers/cam_lrme/cam_lrme_dev.c
++++ b/camera_kt/drivers/cam_lrme/cam_lrme_dev.c
+@@ -105,8 +105,28 @@ static int cam_lrme_dev_close_internal(struct v4l2_subdev *sd,
+ 		goto end;
+ 	}
+ 
+-	if (lrme_dev->open_cnt == 0)
++	/*
++	 * During a system-wide shutdown (process crash), CRM calls
++	 * cam_node_shutdown exactly once via sd_handler, but cam-server may
++	 * have opened the LRME subdev multiple times (once per context
++	 * acquisition). open_cnt therefore never reaches 0 from the single
++	 * CRM-driven call, so cam_node_shutdown would be silently skipped and
++	 * all LRME HW contexts remain ACTIVATED, exhausting all 8 (CAM_CTX_MAX)
++	 * slots after repeated crash cycles.
++	 *
++	 * Fix: when CRM is in shutdown state, call cam_node_shutdown
++	 * unconditionally and reset open_cnt to 0 so subsequent stale close
++	 * calls from the same cleanup pass are no-ops.
++	 */
++	if (cam_req_mgr_is_shutdown()) {
++		CAM_WARN(CAM_LRME,
++			"CRM shutdown: forcing node shutdown (open_cnt was %d)",
++			lrme_dev->open_cnt + 1);
++		lrme_dev->open_cnt = 0;
+ 		cam_node_shutdown(node);
++	} else if (lrme_dev->open_cnt == 0) {
++		cam_node_shutdown(node);
++	}
+ 
+ end:
+ 	mutex_unlock(&lrme_dev->lock);
+-- 
+2.34.1
+
