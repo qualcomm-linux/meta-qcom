@@ -1,6 +1,11 @@
 require recipes-bsp/trusted-firmware-a/trusted-firmware-a.inc
 
-DEPENDS += "qtestsign-native u-boot-qcom"
+DEPENDS += "qtestsign-native"
+
+# u-boot-qcom is only needed to pull u-boot.bin into the FIP. The SPL FIT flow
+# builds no FIP, and u-boot-qcom depends on this recipe for bl31.bin, so keeping
+# the dependency both ways would make bitbake reject the task graph.
+DEPENDS += "${@bb.utils.contains('QCOM_UBOOT_SPL_FIT', '1', '', 'u-boot-qcom', d)}"
 
 PV = "2.15.0-qcom+git"
 
@@ -18,7 +23,7 @@ python () {
         bb.fatal('FIP_ELF_ADDR must be set by the device recipe')
 }
 
-TFA_BUILD_TARGET = "bl2 bl31 fip"
+TFA_BUILD_TARGET = "${@bb.utils.contains('QCOM_UBOOT_SPL_FIT', '1', 'bl31', 'bl2 bl31 fip', d)}"
 TFA_SPD = "opteed"
 
 EXTRA_OEMAKE:append = " \
@@ -26,9 +31,14 @@ EXTRA_OEMAKE:append = " \
     BL33=${DEPLOY_DIR_IMAGE}/u-boot.bin \
    "
 
-do_compile[depends] += " u-boot-qcom:do_deploy"
+do_compile[depends] += "${@bb.utils.contains('QCOM_UBOOT_SPL_FIT', '1', '', 'u-boot-qcom:do_deploy', d)}"
 
 do_install:append() {
+    # Nothing to wrap and sign without a FIP.
+    if [ "${QCOM_UBOOT_SPL_FIT}" = "1" ]; then
+        return
+    fi
+
     export CRYPTOGRAPHY_OPENSSL_NO_LEGACY=1
 
     ${OBJCOPY} -I binary -B aarch64 -O elf64-littleaarch64 ${D}${FIRMWARE_DIR}/fip.bin ${D}${FIRMWARE_DIR}/fip.o
