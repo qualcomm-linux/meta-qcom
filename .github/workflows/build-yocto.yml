@@ -43,9 +43,12 @@ jobs:
         run: |
           KAS_CONTAINER=$GITHUB_WORKSPACE/kas-container
           echo "KAS_CONTAINER=$KAS_CONTAINER" >> $GITHUB_ENV
+          docker create --name kas ${KAS_CONTAINER_IMAGE}
+          docker cp kas:/usr/local/bin/kas-container $KAS_CONTAINER
           LATEST=$(git ls-remote --tags --refs --sort="v:refname" https://github.com/siemens/kas | tail -n1 | sed 's/.*\///')
-          wget -qO ${KAS_CONTAINER} https://raw.githubusercontent.com/siemens/kas/refs/tags/$LATEST/kas-container
-          chmod +x ${KAS_CONTAINER}
+          if ! grep -q "KAS_CONTAINER_SCRIPT_VERSION=\"${LATEST}\"" $KAS_CONTAINER ; then
+            echo "Version "${LATEST}" of kas is available, please update "KAS_CONTAINER_IMAGE: $KAS_CONTAINER_IMAGE""
+          fi
 
       - name: Run kas lock
         run: |
