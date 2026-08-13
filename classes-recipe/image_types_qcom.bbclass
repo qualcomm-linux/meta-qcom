@@ -10,6 +10,10 @@ QCOM_CDT_FIRMWARE ?= ""
 PREFERRED_PROVIDER_virtual/qcom-capsule-firmware ?= ""
 QCOM_CAPSULE_FIRMWARE ?= "${PREFERRED_PROVIDER_virtual/qcom-capsule-firmware}"
 
+QCOM_UBOOT_SPL_FIT ?= "0"
+QCOM_UBOOT_SPL_IMAGE ?= "u-boot-spl-${UBOOT_CONFIG_DEFAULT}.mbn"
+QCOM_UBOOT_FIT_IMAGE ?= "u-boot-fitImage"
+
 QCOM_ESP_IMAGE ?= "${@bb.utils.contains("MACHINE_FEATURES", "efi", "esp-qcom-image", "", d)}"
 QCOM_ESP_FILE ?= "${@'${DEPLOY_DIR_IMAGE}/${QCOM_ESP_IMAGE}-${MACHINE}${IMAGE_NAME_SUFFIX}.vfat' if d.getVar('QCOM_ESP_IMAGE') else ''}"
 
@@ -130,7 +134,14 @@ create_qcomflash_pkg() {
         bootloader_provider='${PREFERRED_PROVIDER_virtual/bootloader}'
         case "$bootloader_provider" in
             u-boot*)
-                bootloader_bin="${DEPLOY_DIR_IMAGE}/u-boot-${UBOOT_CONFIG_DEFAULT}.mbn"
+                if [ "${QCOM_UBOOT_SPL_FIT}" = "1" ]; then
+                    bootloader_bin="${DEPLOY_DIR_IMAGE}/${QCOM_UBOOT_FIT_IMAGE}"
+                    if [ -f "${DEPLOY_DIR_IMAGE}/${QCOM_UBOOT_SPL_IMAGE}" ]; then
+                        install -m 0644 "${DEPLOY_DIR_IMAGE}/${QCOM_UBOOT_SPL_IMAGE}" tz.mbn
+                    fi
+                else
+                    bootloader_bin="${DEPLOY_DIR_IMAGE}/u-boot-${UBOOT_CONFIG_DEFAULT}.mbn"
+                fi
                 ;;
         esac
         if [ -f "${bootloader_bin}" ]; then
