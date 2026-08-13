@@ -24,3 +24,5 @@ overrides:
             commit: ded70edc0937d939596a0c38b737af59afbb5e7b
         meta-ai:
             commit: 60e38e2015f19058b467febd044f49bf70c4528f
+        meta-yocto:
+            commit: 366fa2f21bfb0d9c4de492e0204a0dd38ce241ab

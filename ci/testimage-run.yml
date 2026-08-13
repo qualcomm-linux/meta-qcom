@@ -1,0 +1,26 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/siemens/kas/master/kas/schema-kas.json
+
+header:
+  version: 14
+  includes:
+  - ci/testimage.yml
+
+local_conf_header:
+  test: |
+    # running tests automatically
+    TESTIMAGE_AUTO = "1"
+    # change qemu defaults
+    TEST_QEMUBOOT_TIMEOUT = "180"
+    TEST_RUNQEMUPARAMS = "snapshot slirp nographic"
+    # ptests are expected to fail
+    PTEST_EXPECT_FAILURE = '1'
+    # RESULTS - ptest.PtestRunnerTest.test_ptestrunner_expectfail: EXPECTEDFAIL (9633.62s)
+    #TEST_SUITES:remove = "ptest"
+    # RESULTS - systemd.SystemdBasicTests.test_systemd_failed: FAILED (3.17s)
+    #TEST_SUITES:remove = "systemd"
+    # minimal test suite
+    #TEST_SUITES = "ping ssh parselogs"
+
+# NOTE: to run specific PKG ptest
+#target:
+#  - core-image-ptest-[PKG]
