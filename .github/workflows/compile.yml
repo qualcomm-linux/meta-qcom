@@ -41,6 +41,7 @@ on:
 
 env:
   KAS_CLONE_DEPTH: 1
+  KAS_CONTAINER_IMAGE: ghcr.io/siemens/kas/kas:5.5
 
 jobs:
   reusable_compile_job:
