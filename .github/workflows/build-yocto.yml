@@ -331,6 +331,30 @@ jobs:
                 type: default
                 dirname: ""
                 yamlfile: ""
+          - machine: iq-615-evk
+            distro:
+                name: qcom-distro-gunyah
+                yamlfile: ':ci/qcom-distro.yml:ci/gunyah.yml'
+            kernel:
+                type: default
+                dirname: ""
+                yamlfile: ""
+          - machine: iq-8275-evk
+            distro:
+                name: qcom-distro-gunyah
+                yamlfile: ':ci/qcom-distro.yml:ci/gunyah.yml'
+            kernel:
+                type: default
+                dirname: ""
+                yamlfile: ""
+          - machine: iq-9075-evk
+            distro:
+                name: qcom-distro-gunyah
+                yamlfile: ':ci/qcom-distro.yml:ci/gunyah.yml'
+            kernel:
+                type: default
+                dirname: ""
+                yamlfile: ""
           - machine: rb3gen2-core-kit
             distro:
                 name: qcom-distro-kvm
