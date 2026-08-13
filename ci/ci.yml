@@ -4,6 +4,7 @@ header:
   version: 14
   includes:
   - ci/mirror.yml
+  - ci/ccache.yml
 
 local_conf_header:
   ci: |
