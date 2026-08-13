@@ -93,7 +93,9 @@ jobs:
             version: 14
           local_conf_header:
             build-id: |
-              BUILD_ID = "${BUILD_ID}"
+              GITHUB_ID = "${BUILD_ID}"
+              BUILD_ID = "\${GITHUB_ID}"
+              BUILD_ID[vardepsexclude] = "GITHUB_ID"
           EOF
         env:
           INPUTS_CACHE_DIR: ${{inputs.cache_dir}}
