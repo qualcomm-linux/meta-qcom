@@ -11,3 +11,21 @@ local_conf_header:
     # required to build '-native' target
     HOSTTOOLS += "ccache"
     ASSUME_PROVIDED += "ccache-native"
+
+  ccache-recipe-contol: |
+    # disable all recipes
+    CCACHE_DISABLE = "1"
+    # table with enabled recipes
+    CCACHE_DISABLE:pn-clang = "0"
+    CCACHE_DISABLE:pn-clang-native = "0"
+    CCACHE_DISABLE:pn-gcc = "0"
+    CCACHE_DISABLE:pn-gcc-cross-aarch64 = "0"
+    CCACHE_DISABLE:pn-gcc-cross-arm = "0"
+    CCACHE_DISABLE:pn-glibc = "0"
+    CCACHE_DISABLE:pn-llvm = "0"
+    CCACHE_DISABLE:pn-llvm-native = "0"
+    CCACHE_DISABLE:pn-linux-qcom = "0"
+    CCACHE_DISABLE:pn-linux-qcom-next = "0"
+    CCACHE_DISABLE:pn-linux-yocto = "0"
+    CCACHE_DISABLE:pn-rust = "0"
+    CCACHE_DISABLE:pn-rust-native = "0"
