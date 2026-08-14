@@ -415,6 +415,14 @@ jobs:
                 type: default
                 dirname: ""
                 yamlfile: ""
+          - machine: iq-9075-evk-open-fw-spl
+            distro:
+                name: qcom-distro-kvm
+                yamlfile: ':ci/qcom-distro-kvm.yml'
+            kernel:
+                type: kernel-fit
+                dirname: "_kernel-fit"
+                yamlfile: ":ci/kernel-fit-image.yml"
           - machine: rb3gen2-core-kit
             distro:
                 name: nodistro
