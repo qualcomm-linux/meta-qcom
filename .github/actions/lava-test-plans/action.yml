@@ -91,8 +91,8 @@ runs:
           echo "AUDIO_CLIPS_BASE_DIR=/home/AudioClips/" >> "${VARS_OUT_PATH}/gh-variables.ini"
           echo "BUILD_NUMBER=${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}" >> "${VARS_OUT_PATH}/gh-variables.ini"
           echo "DOCKER_IMAGE_POSTPROCESS=ghcr.io/foundriesio/lava-lmp-sign:main" >> "${VARS_OUT_PATH}/gh-variables.ini"
-          echo "AUTH_HEADER_NAME=Authorization" >> "${VARS_OUT_PATH}/gh-variables.ini"
-          echo "AUTH_HEADER_TOKEN=Q_S3_TOKEN" >> "${VARS_OUT_PATH}/gh-variables.ini"
+          echo "AUTH_HEADER_NAME=QLIAuthorization" >> "${VARS_OUT_PATH}/gh-variables.ini"
+          echo "AUTH_HEADER_TOKEN=Q_QLI_S3_TOKEN" >> "${VARS_OUT_PATH}/gh-variables.ini"
           echo "TEST_DEFINITIONS_REPOSITORY=https://github.com/qualcomm-linux/qcom-linux-testkit/" >> "${VARS_OUT_PATH}/gh-variables.ini"
           if [ -n "${INPUTS_TESTKIT_REF}" ]; then
             echo "TEST_DEFINITIONS_REVISION=${INPUTS_TESTKIT_REF}" >> "${VARS_OUT_PATH}/gh-variables.ini"
