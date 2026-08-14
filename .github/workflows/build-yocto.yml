@@ -34,33 +34,30 @@ jobs:
     if: github.repository_owner == 'qualcomm-linux'
     runs-on: [self-hosted, qcom-u2404, amd64]
     steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
       - name: Setting up kas-container
         run: |
-          KAS_CONTAINER=$RUNNER_TEMP/kas-container
+          KAS_CONTAINER=$GITHUB_WORKSPACE/kas-container
           echo "KAS_CONTAINER=$KAS_CONTAINER" >> $GITHUB_ENV
           LATEST=$(git ls-remote --tags --refs --sort="v:refname" https://github.com/siemens/kas | tail -n1 | sed 's/.*\///')
           wget -qO ${KAS_CONTAINER} https://raw.githubusercontent.com/siemens/kas/refs/tags/$LATEST/kas-container
           chmod +x ${KAS_CONTAINER}
 
-      - uses: actions/checkout@v6
-        with:
-          persist-credentials: false
-
       - name: Run kas lock
         run: |
           ${KAS_CONTAINER} lock ci/base.yml:ci/qcom-distro.yml:ci/meta-arm.yml
 
-      - name: Upload kas lockfile
+      - name: Upload kas
         uses: actions/upload-artifact@v6
         with:
-          name: kas-lockfile
-          path: ci/*.lock.yml
-
-      - name: Upload kas-container
-        uses: actions/upload-artifact@v6
-        with:
-          name: kas-container
-          path: ${{ env.KAS_CONTAINER }}
+          name: kas
+          if-no-files-found: error
+          path: |
+            ci/*.lock.yml
+            kas-container
 
   github-cache-check:
     needs: kas-setup
@@ -74,11 +71,10 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Download kas lockfile
+      - name: Download kas
         uses: actions/download-artifact@v7
         with:
-          name: kas-lockfile
-          path: ci
+          name: kas
 
       - name: Compute build input hash
         id: hash
@@ -123,21 +119,14 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Download kas lockfile
+      - name: Download kas
         uses: actions/download-artifact@v7
         with:
-          name: kas-lockfile
-          path: ci
-
-      - name: Download kas-container
-        uses: actions/download-artifact@v7
-        with:
-          name: kas-container
-          path: ${{ runner.temp }}
+          name: kas
 
       - name: Setting up kas-container
         run: |
-          KAS_CONTAINER=$RUNNER_TEMP/kas-container
+          KAS_CONTAINER=$GITHUB_WORKSPACE/kas-container
           echo "KAS_CONTAINER=$KAS_CONTAINER" >> $GITHUB_ENV
           chmod +x $KAS_CONTAINER
 
