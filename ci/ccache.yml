@@ -8,3 +8,11 @@ local_conf_header:
     INHERIT += "ccache"
     CCACHE_MAXSIZE = "200G"
     CCACHE_TOP_DIR = "${SSTATE_DIR}/ccache"
+    CCACHE_DISABLE = "1"
+    # table with enabled recipes
+    CCACHE_DISABLE:pn-clang = "0"
+    CCACHE_DISABLE:pn-gcc = "0"
+    CCACHE_DISABLE:pn-glibc = "0"
+    CCACHE_DISABLE:pn-llvm = "0"
+    CCACHE_DISABLE:pn-linux-yocto = "0"
+    CCACHE_DISABLE:pn-rust = "0"
