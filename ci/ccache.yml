@@ -14,5 +14,5 @@ local_conf_header:
     CCACHE_DISABLE:pn-gcc = "0"
     CCACHE_DISABLE:pn-glibc = "0"
     CCACHE_DISABLE:pn-llvm = "0"
-    CCACHE_DISABLE:pn-linux-yocto = "0"
+    #CCACHE_DISABLE:pn-linux-yocto = "0"
     CCACHE_DISABLE:pn-rust = "0"
