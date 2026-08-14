@@ -18,8 +18,8 @@ repos:
       meta:
 
   meta-lts-mixins:
-    url: https://git.yoctoproject.org/meta-lts-mixins
-    branch: wrynose/linux-firmware
+    url: https://github.com/quaresmajose/meta-lts-mixins
+    branch: wrynose/linux-firmware-next
 
   bitbake:
     url: https://github.com/openembedded/bitbake
