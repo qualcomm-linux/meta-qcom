@@ -8,15 +8,15 @@ LICENSE = "LICENSE.qcom-2"
 LIC_FILES_CHKSUM = "file://usr/share/doc/${BPN}/LICENSE.QCOM-2.txt;md5=165287851294f2fb8ac8cbc5e24b02b0 \
                     file://usr/share/doc/${BPN}/NOTICE;md5=04facc2e07e3d41171a931477be0c690"
 
-PBT_BUILD_DATE = "260617"
+PBT_BUILD_DATE = "260817"
 SRC_URI = " \
-   https://qartifactory-edge.qualcomm.com/artifactory/qsc_releases/software/chip/component/camx.qclinux.0.0/${PBT_BUILD_DATE}/prebuilt_yocto/${BPN}_${PV}_armv8-2a.tar.gz;name=camxlib \
-   https://qartifactory-edge.qualcomm.com/artifactory/qsc_releases/software/chip/component/camx.qclinux.0.0/${PBT_BUILD_DATE}/prebuilt_yocto/camx-kodiak_${PV}_armv8-2a.tar.gz;name=camx \
-   https://qartifactory-edge.qualcomm.com/artifactory/qsc_releases/software/chip/component/camx.qclinux.0.0/${PBT_BUILD_DATE}/prebuilt_yocto/chicdk-kodiak_${PV}_armv8-2a.tar.gz;name=chicdk \
+   https://qartifactory-edge.qualcomm.com/artifactory/qsc_releases/software/chip/component/camx.qclinux.0.0.r1/${PBT_BUILD_DATE}/prebuilt_yocto/${BPN}_${PV}_armv8-2a.tar.gz;name=camxlib \
+   https://qartifactory-edge.qualcomm.com/artifactory/qsc_releases/software/chip/component/camx.qclinux.0.0.r1/${PBT_BUILD_DATE}/prebuilt_yocto/camx-kodiak_${PV}_armv8-2a.tar.gz;name=camx \
+   https://qartifactory-edge.qualcomm.com/artifactory/qsc_releases/software/chip/component/camx.qclinux.0.0.r1/${PBT_BUILD_DATE}/prebuilt_yocto/chicdk-kodiak_${PV}_armv8-2a.tar.gz;name=chicdk \
    "
-SRC_URI[camxlib.sha256sum] = "25972b1932bb3dc06c73c5261c16ce047645e7ed95162810f4bb243c1816a025"
-SRC_URI[camx.sha256sum] = "e83ad33e4c2dc823339ac9512d45a02dfe7f316cb60d34f27aea5637f9c80b0e"
-SRC_URI[chicdk.sha256sum] = "8adc152ebdb6d0a105f9b4f8ccaae0bfde9f05058605ebcc07b7057dfcc55c61"
+SRC_URI[camxlib.sha256sum] = "9cd57ba2730240b1c7ca304890b413ef989b869fbc104de988ab922239214201"
+SRC_URI[camx.sha256sum] = "bb39fe9d0bf163b2ac1fec9692425eada865c2676fcec0cbb6e664bc23ee100e"
+SRC_URI[chicdk.sha256sum] = "ea1bcaee7441716324d6d80834baecea86918708c44010f154b637a18ed03f93"
 
 S = "${UNPACKDIR}"
 
@@ -137,6 +137,16 @@ FILES:${PN}-dev = "\
     ${libdir}/*${SOLIBSDEV} \
     "
 FILES:${PN}-staticdev = "${libdir}/camx/kodiak/*.a"
+
+# Install lib_algo_rgbir.so to /usr/lib/camx/kodiak/ for dlopen compatibility
+# The chi-node uses LibMap("lib_algo_rgbir", "/usr/lib/camx/kodiak/") which needs lib_algo_rgbir.so
+
+# Move unversioned .so from -dev to main runtime package
+FILES:${PN} += "/usr/lib/camx/kodiak/lib_algo_rgbir.so"
+FILES:${PN}-dev:remove = "/usr/lib/camx/kodiak/lib_algo_rgbir.so"
+
+# Skip dev-elf QA check: lib_algo_rgbir.so is a runtime-loaded library, not a dev symlink
+INSANE_SKIP:${PN}-dev += "dev-elf"
 
 # Preserve ${PN},${PN}-skel naming to avoid ambiguity in package identification.
 DEBIAN_NOAUTONAME:${PN} = "1"
