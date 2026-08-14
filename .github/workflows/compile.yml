@@ -41,6 +41,7 @@ on:
 
 env:
   KAS_CLONE_DEPTH: 1
+  KAS_CONTAINER: ${{ github.workspace }}/kas-container
   KAS_CONTAINER_IMAGE: ghcr.io/siemens/kas/kas:5.5
 
 jobs:
@@ -61,12 +62,7 @@ jobs:
       - name: Setting up kas-container
         shell: bash
         run: |
-          KAS_CONTAINER=$GITHUB_WORKSPACE/kas-container
           chmod +x $KAS_CONTAINER
-          if [ -c /dev/kvm ]; then
-            KAS_CONTAINER="$KAS_CONTAINER --kvm"
-          fi
-          echo "KAS_CONTAINER=$KAS_CONTAINER" >> $GITHUB_ENV
 
       - name: Setup build variables
         shell: bash
@@ -123,6 +119,9 @@ jobs:
         if:  inputs.target
         shell: bash
         run: |
+          if [ -c /dev/kvm ]; then
+            KAS_CONTAINER="$KAS_CONTAINER --kvm"
+          fi
           $KAS_CONTAINER build ${KAS_YAMLS}
 
       - name: Kas build images (buildstats)

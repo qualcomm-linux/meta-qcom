@@ -28,6 +28,7 @@ concurrency:
 env:
   CACHE_DIR: /efs/qli/meta-qcom
   KAS_CLONE_DEPTH: 1
+  KAS_CONTAINER: ${{ github.workspace }}/kas-container
   KAS_CONTAINER_IMAGE: ghcr.io/siemens/kas/kas:5.5
 
 jobs:
@@ -41,8 +42,6 @@ jobs:
 
       - name: Setting up kas-container
         run: |
-          KAS_CONTAINER=$GITHUB_WORKSPACE/kas-container
-          echo "KAS_CONTAINER=$KAS_CONTAINER" >> $GITHUB_ENV
           docker create --name kas ${KAS_CONTAINER_IMAGE}
           docker cp kas:/usr/local/bin/kas-container $KAS_CONTAINER
           LATEST=$(git ls-remote --tags --refs --sort="v:refname" https://github.com/siemens/kas | tail -n1 | sed 's/.*\///')
@@ -134,8 +133,6 @@ jobs:
 
       - name: Setting up kas-container
         run: |
-          KAS_CONTAINER=$GITHUB_WORKSPACE/kas-container
-          echo "KAS_CONTAINER=$KAS_CONTAINER" >> $GITHUB_ENV
           chmod +x $KAS_CONTAINER
 
       - name: Setup cache variables (used by oe-selftest)
