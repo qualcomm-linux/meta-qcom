@@ -1,0 +1,52 @@
+From 3d8998917a7012d01fb6452b2d66e4b59b75121d Mon Sep 17 00:00:00 2001
+From: Ricardo Salveti <ricardo.salveti@oss.qualcomm.com>
+Date: Sun, 16 Aug 2026 16:39:58 +0000
+Subject: [PATCH] redis: fix build of the bundled xxHash with -Og
+
+redis 8.8 started bundling a post-0.8.3 xxHash snapshot in deps/xxhash,
+which is built and linked into redis-server. Its XXH3 accumulate and
+scramble routines are marked always_inline but are only ever reached
+through function pointers, so the compiler has to resolve the indirect
+call before it can honour the attribute.
+
+xxHash drops those inline hints on its own when __NO_INLINE__ is
+defined, which covers -O0 and -fno-inline, but nothing covers -Og.
+Recent GCC no longer resolves the indirect calls at that optimisation
+level, so every build with DEBUG_BUILD = "1" fails:
+
+  xxhash.h:5476:1: error: inlining failed in call to 'always_inline'
+  'XXH3_scrambleAcc_neon': function not considered for inlining
+  make[2]: *** [Makefile:108: xxhash] Error 2
+  ld: cannot find ../deps/xxhash/libxxhash.a: No such file or directory
+
+Upstream xxHash closed this as not fixable in code (Cyan4973/xxHash#943)
+and instead documents XXH_NO_INLINE_HINTS as the supported way to
+compile with -Og. Define it when -Og is the selected optimisation,
+leaving regular builds untouched so xxHash keeps its inline hints there.
+
+AI-Generated: Uses Claude Code
+Signed-off-by: Ricardo Salveti <ricardo.salveti@oss.qualcomm.com>
+Upstream-Status: Submitted [https://lists.openembedded.org/g/openembedded-devel/message/129176]
+---
+ meta-oe/recipes-extended/redis/redis_8.8.1.bb | 8 ++++++++
+ 1 file changed, 8 insertions(+)
+
+diff --git a/meta-oe/recipes-extended/redis/redis_8.8.1.bb b/meta-oe/recipes-extended/redis/redis_8.8.1.bb
+index 6176dc45be..3edaa9155c 100644
+--- a/meta-oe/recipes-extended/redis/redis_8.8.1.bb
++++ b/meta-oe/recipes-extended/redis/redis_8.8.1.bb
+@@ -43,6 +43,14 @@ EXTRA_OEMAKE += "${PACKAGECONFIG_CONFARGS}"
+ 
+ TARGET_LDFLAGS:append = " ${DEBUG_PREFIX_MAP}"
+ 
++# The bundled xxHash marks its XXH3 vector paths always_inline but only reaches
++# them through function pointers. It drops the inline hints on its own when
++# __NO_INLINE__ is defined (-O0, -fno-inline) but never for -Og, and recent GCC
++# no longer resolves those indirect calls at -Og, so deps/xxhash fails to
++# build. Upstream xxHash closed this as not fixable in code and documents
++# XXH_NO_INLINE_HINTS as the supported way to compile with -Og.
++CFLAGS:append = "${@' -DXXH_NO_INLINE_HINTS' if '-Og' in (d.getVar('SELECTED_OPTIMIZATION') or '') else ''}"
++
+ do_compile:prepend() {
+     oe_runmake -C deps hdr_histogram fpconv hiredis lua linenoise
+ }
