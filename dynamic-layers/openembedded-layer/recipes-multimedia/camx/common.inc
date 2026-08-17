@@ -22,7 +22,7 @@ SRC_URI = " \
     https://qartifactory-edge.qualcomm.com/artifactory/qsc_releases/software/chip/component/camx.qclinux.0.0/${PBT_BUILD_DATE}/prebuilt_yocto_${PBT_BRANCH}/camx-${PLATFORM}_${PV}_armv8-2a.tar.gz;name=camx \
     https://qartifactory-edge.qualcomm.com/artifactory/qsc_releases/software/chip/component/camx.qclinux.0.0/${PBT_BUILD_DATE}/prebuilt_yocto_${PBT_BRANCH}/chicdk-${PLATFORM}_${PV}_armv8-2a.tar.gz;name=chicdk \
     https://qartifactory-edge.qualcomm.com/artifactory/qsc_releases/software/chip/component/camx.qclinux.0.0/${PBT_BUILD_DATE}/prebuilt_yocto_${PBT_BRANCH}/camxcommon-${PLATFORM}_${PV}_armv8-2a.tar.gz;name=camxcommon \
-    https://qartifactory-edge.qualcomm.com/artifactory/qsc_releases/software/chip/component/camx.qclinux.0.0/${PBT_BUILD_DATE}/prebuilt_yocto_${PBT_BRANCH}/camxtest-${PLATFORM}_${PV}_armv8-2a.tar.gz;name=camxtest \
+    https://qartifactory-edge.qualcomm.com/artifactory/qsc_releases/software/chip/component/camx.qclinux.0.0/${PBT_BUILD_DATE}/prebuilt_yocto_${PBT_BRANCH}/camxtest-${PLATFORM}_1.0.38_armv8-2a.tar.gz;name=camxtest \
 "
 
 S = "${UNPACKDIR}"
