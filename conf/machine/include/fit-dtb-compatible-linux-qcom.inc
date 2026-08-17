@@ -32,29 +32,29 @@ FIT_DTB_COMPATIBLE[qcom_hamoa-evk-camx-el2kvm] = "hamoa-iot-evk hamoa-evk-camx x
 
 # ---------- kodiak ----------
 FIT_DTB_COMPATIBLE[qcom_qcm6490-idp-staging] = "qcm6490-idp kodiak-staging"
-FIT_DTB_COMPATIBLE[qcom_qcm6490-idp-el2kvm] = "qcm6490-idp kodiak-el2"
+FIT_DTB_COMPATIBLE[qcom_qcm6490-idp] = "qcm6490-idp kodiak-el2"
 
-FIT_DTB_COMPATIBLE[qcom_qcs5430-iot-el2kvm] = \
+FIT_DTB_COMPATIBLE[qcom_qcs5430-iot] = \
     "qcs6490-rb3gen2 kodiak-el2"
-FIT_DTB_COMPATIBLE[qcom_qcs6490-iot-el2kvm] = \
+FIT_DTB_COMPATIBLE[qcom_qcs6490-iot] = \
     "qcs6490-rb3gen2 kodiak-el2"
 FIT_DTB_COMPATIBLE[qcom_qcs5430-iot-staging] = \
     "qcs6490-rb3gen2 kodiak-staging qcs6490-rb3gen2-staging"
 FIT_DTB_COMPATIBLE[qcom_qcs6490-iot-staging] = \
     "qcs6490-rb3gen2 kodiak-staging qcs6490-rb3gen2-staging"
 
-FIT_DTB_COMPATIBLE[qcom_qcs5430-iot-subtype9-el2kvm] = \
+FIT_DTB_COMPATIBLE[qcom_qcs5430-iot-subtype9] = \
     "qcs6490-rb3gen2 qcs6490-rb3gen2-industrial-mezzanine kodiak-el2"
-FIT_DTB_COMPATIBLE[qcom_qcs6490-iot-subtype9-el2kvm] = \
+FIT_DTB_COMPATIBLE[qcom_qcs6490-iot-subtype9] = \
     "qcs6490-rb3gen2 qcs6490-rb3gen2-industrial-mezzanine kodiak-el2"
 FIT_DTB_COMPATIBLE[qcom_qcs5430-iot-subtype9-staging] = \
     "qcs6490-rb3gen2 qcs6490-rb3gen2-industrial-mezzanine kodiak-staging qcs6490-rb3gen2-industrial-mezzanine-staging"
 FIT_DTB_COMPATIBLE[qcom_qcs6490-iot-subtype9-staging] = \
     "qcs6490-rb3gen2 qcs6490-rb3gen2-industrial-mezzanine kodiak-staging qcs6490-rb3gen2-industrial-mezzanine-staging"
 
-FIT_DTB_COMPATIBLE[qcom_qcs5430-iot-subtype2-el2kvm] = \
+FIT_DTB_COMPATIBLE[qcom_qcs5430-iot-subtype2] = \
     "qcs6490-rb3gen2 qcs6490-rb3gen2-vision-mezzanine kodiak-el2"
-FIT_DTB_COMPATIBLE[qcom_qcs6490-iot-subtype2-el2kvm] = \
+FIT_DTB_COMPATIBLE[qcom_qcs6490-iot-subtype2] = \
     "qcs6490-rb3gen2 qcs6490-rb3gen2-vision-mezzanine kodiak-el2"
 FIT_DTB_COMPATIBLE[qcom_qcs5430-iot-subtype2-staging] = \
     "qcs6490-rb3gen2 qcs6490-rb3gen2-vision-mezzanine kodiak-staging"
@@ -62,20 +62,12 @@ FIT_DTB_COMPATIBLE[qcom_qcs6490-iot-subtype2-staging] = \
     "qcs6490-rb3gen2 qcs6490-rb3gen2-vision-mezzanine kodiak-staging"
 
 FIT_DTB_COMPATIBLE[qcom_qcs5430-iot-camx] = \
-    "qcs6490-rb3gen2 qcs5430-fps-camx"
+    "qcs6490-rb3gen2 qcs5430-fps-camx kodiak-el2"
 FIT_DTB_COMPATIBLE[qcom_qcs5430-iot-subtype2-camx] = \
-    "qcs6490-rb3gen2 qcs5430-fps-camx"
+    "qcs6490-rb3gen2 qcs5430-fps-camx kodiak-el2"
 FIT_DTB_COMPATIBLE[qcom_qcs6490-iot-camx] = \
-    "qcs6490-rb3gen2 qcs6490-rb3gen2-vision-mezzanine-camx"
-FIT_DTB_COMPATIBLE[qcom_qcs6490-iot-subtype2-camx] = \
-    "qcs6490-rb3gen2 qcs6490-rb3gen2-vision-mezzanine-camx"
-FIT_DTB_COMPATIBLE[qcom_qcs5430-iot-camx-el2kvm] = \
-    "qcs6490-rb3gen2 qcs5430-fps-camx kodiak-el2"
-FIT_DTB_COMPATIBLE[qcom_qcs5430-iot-subtype2-camx-el2kvm] = \
-    "qcs6490-rb3gen2 qcs5430-fps-camx kodiak-el2"
-FIT_DTB_COMPATIBLE[qcom_qcs6490-iot-camx-el2kvm] = \
     "qcs6490-rb3gen2 qcs6490-rb3gen2-vision-mezzanine-camx kodiak-el2"
-FIT_DTB_COMPATIBLE[qcom_qcs6490-iot-subtype2-camx-el2kvm] = \
+FIT_DTB_COMPATIBLE[qcom_qcs6490-iot-subtype2-camx] = \
     "qcs6490-rb3gen2 qcs6490-rb3gen2-vision-mezzanine-camx kodiak-el2"
 FIT_DTB_COMPATIBLE[qcom_qcs5430-iot-camx-staging] = \
     "qcs6490-rb3gen2 qcs5430-fps-camx kodiak-staging"
@@ -85,6 +77,31 @@ FIT_DTB_COMPATIBLE[qcom_qcs6490-iot-camx-staging] = \
     "qcs6490-rb3gen2 qcs6490-rb3gen2-vision-mezzanine-camx kodiak-staging"
 FIT_DTB_COMPATIBLE[qcom_qcs6490-iot-subtype2-camx-staging] = \
     "qcs6490-rb3gen2 qcs6490-rb3gen2-vision-mezzanine-camx kodiak-staging"
+
+# ---- kodiak gunyah (el2gh) ----
+FIT_DTB_COMPATIBLE[qcom_qcm6490-idp-el2gh] = "qcm6490-idp"
+
+FIT_DTB_COMPATIBLE[qcom_qcs5430-iot-el2gh] = "qcs6490-rb3gen2"
+FIT_DTB_COMPATIBLE[qcom_qcs6490-iot-el2gh] = "qcs6490-rb3gen2"
+
+FIT_DTB_COMPATIBLE[qcom_qcs5430-iot-subtype9-el2gh] = \
+    "qcs6490-rb3gen2 qcs6490-rb3gen2-industrial-mezzanine"
+FIT_DTB_COMPATIBLE[qcom_qcs6490-iot-subtype9-el2gh] = \
+    "qcs6490-rb3gen2 qcs6490-rb3gen2-industrial-mezzanine"
+
+FIT_DTB_COMPATIBLE[qcom_qcs5430-iot-subtype2-el2gh] = \
+    "qcs6490-rb3gen2 qcs6490-rb3gen2-vision-mezzanine"
+FIT_DTB_COMPATIBLE[qcom_qcs6490-iot-subtype2-el2gh] = \
+    "qcs6490-rb3gen2 qcs6490-rb3gen2-vision-mezzanine"
+
+FIT_DTB_COMPATIBLE[qcom_qcs5430-iot-camx-el2gh] = \
+    "qcs6490-rb3gen2 qcs5430-fps-camx"
+FIT_DTB_COMPATIBLE[qcom_qcs5430-iot-subtype2-camx-el2gh] = \
+    "qcs6490-rb3gen2 qcs5430-fps-camx"
+FIT_DTB_COMPATIBLE[qcom_qcs6490-iot-camx-el2gh] = \
+    "qcs6490-rb3gen2 qcs6490-rb3gen2-vision-mezzanine-camx"
+FIT_DTB_COMPATIBLE[qcom_qcs6490-iot-subtype2-camx-el2gh] = \
+    "qcs6490-rb3gen2 qcs6490-rb3gen2-vision-mezzanine-camx"
 
 # ---------- lemans ----------
 FIT_DTB_COMPATIBLE[qcom_qcs9075-iot] = \
