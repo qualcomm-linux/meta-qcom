@@ -10,6 +10,20 @@ QCOM_CDT_FIRMWARE ?= ""
 PREFERRED_PROVIDER_virtual/qcom-capsule-firmware ?= ""
 QCOM_CAPSULE_FIRMWARE ?= "${PREFERRED_PROVIDER_virtual/qcom-capsule-firmware}"
 
+# SPL FIT boot flow (see conf/machine/include/qcom-uboot-spl-fit.inc): flash the
+# signed U-Boot SPL to tz_a (tz.mbn) and the signed U-Boot FIT to uefi_a
+# (uefi.elf). Source artifact names are overridable.
+QCOM_UBOOT_SPL_FIT ?= "0"
+QCOM_UBOOT_SPL_IMAGE ?= "u-boot-spl-${UBOOT_CONFIG_DEFAULT}.mbn"
+QCOM_UBOOT_FIT_IMAGE ?= "u-boot-fitImage"
+
+# xbl_config.elf embeds a pre-DDR "uboot_spl" flag that tells the Qualcomm XBL
+# whether to hand off to the U-Boot SPL (tz partition) instead of the legacy
+# loader. The stock boot-firmware ships it disabled; the SPL FIT flow flashes a
+# pre-signed variant with the flag enabled (see conf/machine/include/
+# qcom-uboot-spl-fit.inc). Empty leaves the stock xbl_config untouched.
+QCOM_XBLCONFIG_SPL_FILE ?= ""
+
 QCOM_ESP_IMAGE ?= "${@bb.utils.contains("MACHINE_FEATURES", "efi", "esp-qcom-image", "", d)}"
 QCOM_ESP_FILE ?= "${@'${DEPLOY_DIR_IMAGE}/${QCOM_ESP_IMAGE}-${MACHINE}${IMAGE_NAME_SUFFIX}.vfat' if d.getVar('QCOM_ESP_IMAGE') else ''}"
 
@@ -125,12 +139,32 @@ create_qcomflash_pkg() {
             install -m 0644 "${DEPLOY_DIR_IMAGE}/${QCOM_BOOT_FILES_SUBDIR}/${QCOM_XBL_CONFIG}" xbl_config.elf
         fi
 
+        # SPL FIT flow: replace the stock xbl_config with the pre-signed variant
+        # that has the pre-DDR "uboot_spl" flag enabled, so the XBL hands off to
+        # the U-Boot SPL (tz partition) instead of the legacy loader. It is
+        # shipped pre-generated (re-signed with Qualcomm sectools v2, which is not
+        # yet public and cannot run in the build); see QCOM_XBLCONFIG_SPL_FILE.
+        if [ "${QCOM_UBOOT_SPL_FIT}" = "1" ] && [ -f "${QCOM_XBLCONFIG_SPL_FILE}" ]; then
+            install -m 0644 "${QCOM_XBLCONFIG_SPL_FILE}" xbl_config.elf
+        fi
+
         # bootloader selection
         bootloader_bin="${DEPLOY_DIR_IMAGE}/${QCOM_BOOT_FILES_SUBDIR}/uefi.elf"
         bootloader_provider='${PREFERRED_PROVIDER_virtual/bootloader}'
         case "$bootloader_provider" in
             u-boot*)
-                bootloader_bin="${DEPLOY_DIR_IMAGE}/u-boot-${UBOOT_CONFIG_DEFAULT}.mbn"
+                if [ "${QCOM_UBOOT_SPL_FIT}" = "1" ]; then
+                    # SPL FIT flow: the signed U-Boot FIT is flashed to uefi_a
+                    # (uefi.elf), where the SPL reads it; the signed SPL replaces
+                    # the TZ image in tz_a (tz.mbn), overriding the proprietary
+                    # tz.mbn copied by the boot-firmware glob above.
+                    bootloader_bin="${DEPLOY_DIR_IMAGE}/${QCOM_UBOOT_FIT_IMAGE}"
+                    if [ -f "${DEPLOY_DIR_IMAGE}/${QCOM_UBOOT_SPL_IMAGE}" ]; then
+                        install -m 0644 "${DEPLOY_DIR_IMAGE}/${QCOM_UBOOT_SPL_IMAGE}" tz.mbn
+                    fi
+                else
+                    bootloader_bin="${DEPLOY_DIR_IMAGE}/u-boot-${UBOOT_CONFIG_DEFAULT}.mbn"
+                fi
                 ;;
         esac
         if [ -f "${bootloader_bin}" ]; then

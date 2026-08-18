@@ -12,6 +12,12 @@ UBOOT_INITIAL_ENV = ""
 UBOOT_CONFIG[iq-615-evk] = "qcom_qcs615_defconfig"
 UBOOT_CONFIG[iq-8275-evk] = "qcom_qcs8300_defconfig"
 UBOOT_CONFIG[iq-9075-evk] = "qcom_lemans_defconfig"
+# Builds a U-Boot SPL next to U-Boot proper, for boards that boot through the
+# SPL. Only usable together with conf/machine/include/qcom-uboot-spl-fit.inc,
+# which is why it is not listed in qcom-armv8a.conf: U-Boot proper is carried
+# inside the FIT rather than flashed to the uefi partition, so this
+# configuration builds no U-Boot ELF to sign on its own.
+UBOOT_CONFIG[iq-9075-evk-spl] = "qcom_lemans_spl_defconfig"
 UBOOT_CONFIG[qcs9100-ride-sx] = "qcom_lemans_defconfig"
 UBOOT_CONFIG[qcs615-ride] = "qcom_qcs615_defconfig"
 UBOOT_CONFIG[qcs6490-rb3gen2] = "qcm6490_defconfig"
@@ -22,6 +28,7 @@ UBOOT_CONFIG[shikra-evk] = "qcom_shikra_defconfig"
 BOARD_MBN_HEADER[iq-615-evk] = "v6"
 BOARD_MBN_HEADER[iq-8275-evk] = "v6"
 BOARD_MBN_HEADER[iq-9075-evk] = "v6"
+BOARD_MBN_HEADER[iq-9075-evk-spl] = "v6"
 BOARD_MBN_HEADER[qcs9100-ride-sx] = "v6"
 BOARD_MBN_HEADER[qcs615-ride] = "v6"
 BOARD_MBN_HEADER[qcs6490-rb3gen2] = "v6"
