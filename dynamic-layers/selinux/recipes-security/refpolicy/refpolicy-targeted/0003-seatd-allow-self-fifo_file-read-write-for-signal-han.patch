@@ -1,0 +1,31 @@
+From a7e7df1b5bb6b98297c3306bc5b1832a5d86a47a Mon Sep 17 00:00:00 2001
+From: fangwu <fangwu@qti.qualcomm.com>
+Date: Tue, 28 Jul 2026 21:17:19 +0800
+Subject: [PATCH] seatd: allow self fifo_file read/write for signal handling
+
+seatd uses a self-pipe trick to deliver signals to its event loop.
+The signal handler writes '\0' to signal_fds[1] (a pipe) to wake up
+ppoll() in the main loop. Without permission to write to its own
+fifo_file, SELinux denies the write with EACCES, preventing seatd
+from processing SIGTERM during shutdown and causing a 90s reboot delay.
+
+Upstream-Status: Backport [https://github.com/SELinuxProject/refpolicy/commit/a7e7df1b5bb6b98297c3306bc5b1832a5d86a47a]
+Signed-off-by: fangwu <fang.wu@oss.qualcomm.com>
+---
+ policy/modules/services/seatd.te | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/policy/modules/services/seatd.te b/policy/modules/services/seatd.te
+index d539dc446..5f76a1719 100644
+--- a/policy/modules/services/seatd.te
++++ b/policy/modules/services/seatd.te
+@@ -23,6 +23,7 @@ files_runtime_file(seatd_runtime_t)
+ #
+
+ allow seatd_t self:capability { chown dac_override sys_admin sys_tty_config };
++allow seatd_t self:fifo_file rw_fifo_file_perms;
+ allow seatd_t self:unix_stream_socket { accept listen };
+
+ allow seatd_t seatd_runtime_t:sock_file manage_sock_file_perms;
+--
+2.43.0
