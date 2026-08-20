@@ -46,8 +46,21 @@ FIT_DTB_COMPATIBLE[qcom_hamoa-evk] = \
 FIT_DTB_COMPATIBLE[qcom_hamoa-evk-el2kvm] = \
     "hamoa-iot-evk hamoa-iot-evk-camera-imx577 x1-el2"
 
-# ---------- purwa ----------
-FIT_DTB_COMPATIBLE[qcom_purwa-evk-el2kvm] = "purwa-iot-evk x1-el2"
+# ---------- kodiak ----------
+FIT_DTB_COMPATIBLE[qcom_qcm6490-idp] = "qcm6490-idp"
+
+FIT_DTB_COMPATIBLE[qcom_qcs5430-iot] = "qcs6490-rb3gen2"
+FIT_DTB_COMPATIBLE[qcom_qcs6490-iot] = "qcs6490-rb3gen2"
+
+FIT_DTB_COMPATIBLE[qcom_qcs5430-iot-subtype9] = \
+    "qcs6490-rb3gen2 qcs6490-rb3gen2-industrial-mezzanine"
+FIT_DTB_COMPATIBLE[qcom_qcs6490-iot-subtype9] = \
+    "qcs6490-rb3gen2 qcs6490-rb3gen2-industrial-mezzanine"
+
+FIT_DTB_COMPATIBLE[qcom_qcs5430-iot-subtype2] = \
+    "qcs6490-rb3gen2 qcs6490-rb3gen2-vision-mezzanine"
+FIT_DTB_COMPATIBLE[qcom_qcs6490-iot-subtype2] = \
+    "qcs6490-rb3gen2 qcs6490-rb3gen2-vision-mezzanine"
 
 # ---------- lemans ----------
 FIT_DTB_COMPATIBLE[qcom_qcs9075-iot] = \
@@ -65,6 +78,9 @@ FIT_DTB_COMPATIBLE[qcom_qcs8275-iot] = \
 
 FIT_DTB_COMPATIBLE[qcom_qcs8300-adp] = "qcs8300-ride"
 
+# ---------- purwa ----------
+FIT_DTB_COMPATIBLE[qcom_purwa-evk-el2kvm] = "purwa-iot-evk x1-el2"
+
 # ---------- shikra ----------
 FIT_DTB_COMPATIBLE[qcom_shikracqm-itp] = "shikra-cqm-evk shikra-cqm-evk-imx577-camera"
 FIT_DTB_COMPATIBLE[qcom_shikracqs-itp] = "shikra-cqs-evk shikra-cqm-evk-imx577-camera"
@@ -75,19 +91,3 @@ FIT_DTB_COMPATIBLE[qcom_qcs615-adp] = "qcs615-ride"
 FIT_DTB_COMPATIBLE[qcom_qcs615-iot] = "talos-evk talos-evk-camera-imx577"
 FIT_DTB_COMPATIBLE[qcom_talos-evk-lvds-auo_g133han01] = \
     "talos-evk talos-evk-lvds-auo_g133han01"
-
-# ---------- kodiak ----------
-FIT_DTB_COMPATIBLE[qcom_qcm6490-idp] = "qcm6490-idp"
-
-FIT_DTB_COMPATIBLE[qcom_qcs5430-iot] = "qcs6490-rb3gen2"
-FIT_DTB_COMPATIBLE[qcom_qcs6490-iot] = "qcs6490-rb3gen2"
-
-FIT_DTB_COMPATIBLE[qcom_qcs5430-iot-subtype9] = \
-    "qcs6490-rb3gen2 qcs6490-rb3gen2-industrial-mezzanine"
-FIT_DTB_COMPATIBLE[qcom_qcs6490-iot-subtype9] = \
-    "qcs6490-rb3gen2 qcs6490-rb3gen2-industrial-mezzanine"
-
-FIT_DTB_COMPATIBLE[qcom_qcs5430-iot-subtype2] = \
-    "qcs6490-rb3gen2 qcs6490-rb3gen2-vision-mezzanine"
-FIT_DTB_COMPATIBLE[qcom_qcs6490-iot-subtype2] = \
-    "qcs6490-rb3gen2 qcs6490-rb3gen2-vision-mezzanine"
