@@ -1,0 +1,29 @@
+From f3f4669d6624e552eb876b7449e090740af9e9d7 Mon Sep 17 00:00:00 2001
+From: Bala Sai Kosuri <bkosuri@qti.qualcomm.com>
+Date: Tue, 28 Jul 2026 14:42:05 +0530
+Subject: [PATCH] pulse: NULL check before de-reference
+
+Upstream-Status: Submitted [https://gitlab.freedesktop.org/gstreamer/gstreamer/-/merge_requests/12144]
+
+Signed-off-by: Bala Sai Kosuri <bkosuri@qti.qualcomm.com>
+---
+ ext/pulse/pulseutil.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/ext/pulse/pulseutil.c b/ext/pulse/pulseutil.c
+index 588b882..64f9533 100644
+--- a/ext/pulse/pulseutil.c
++++ b/ext/pulse/pulseutil.c
+@@ -188,7 +188,8 @@ gst_pulse_fill_format_info (GstAudioRingBufferSpec * spec, pa_format_info ** f,
+     goto fail;
+ 
+   *f = format;
+-  *channels = GST_AUDIO_INFO_CHANNELS (ainfo);
++  if (channels)
++    *channels = GST_AUDIO_INFO_CHANNELS (ainfo);
+ 
+   return TRUE;
+ 
+-- 
+2.34.1
+
