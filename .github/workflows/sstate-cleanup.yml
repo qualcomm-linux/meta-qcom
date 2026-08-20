@@ -1,0 +1,21 @@
+name: Sstate cache cleanup
+
+on:
+  workflow_dispatch:
+  schedule:
+  - cron: "22 10 * * 6"   # weekly job - at "random" time - top of hour can be busy in github
+
+permissions: {}
+
+jobs:
+  sstate-cache-cleanup:
+    if: github.repository_owner == 'qualcomm-linux'
+    runs-on: [self-hosted, qcom-sm-u2404, sm-amd64]
+    timeout-minutes: 720
+    steps:
+      - name: Expire unused files from the shared sstate-cache dir
+        run: |
+          # bitbake refreshes the mtime of every sstate file a build uses, so
+          # a file older than 15 days was not used by any build in 15 days
+          find /efs/qli/meta-qcom/sstate-cache -type f -mtime +15 -delete
+          find /efs/qli/meta-qcom/sstate-cache -mindepth 1 -type d -empty -delete

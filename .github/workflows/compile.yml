@@ -67,9 +67,9 @@ jobs:
       - name: Setup build variables
         shell: bash
         run: |
-          # use a monthly sstate cache folder
           echo "DL_DIR=${INPUTS_CACHE_DIR}/downloads" >> $GITHUB_ENV
-          echo "SSTATE_DIR=${INPUTS_CACHE_DIR}/sstate-cache-$(date '+%Y-%m')" >> $GITHUB_ENV
+          # use a single shared sstate cache folder, cleaned up by mtime
+          echo "SSTATE_DIR=${INPUTS_CACHE_DIR}/sstate-cache" >> $GITHUB_ENV
           echo "KAS_WORK_DIR=${PWD}/../kas" >> $GITHUB_ENV
           echo "KAS_YAMLS=ci/ci.yml:ci/${INPUTS_MACHINE}.yml${INPUTS_DISTRO_YAML}${INPUTS_KERNEL_YAML}:ci/build-id.yml" >> $GITHUB_ENV
           echo "INPUTS_CACHE_DIR=${INPUTS_CACHE_DIR}" >> $GITHUB_ENV

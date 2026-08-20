@@ -137,7 +137,8 @@ jobs:
       - name: Setup cache variables (used by oe-selftest)
         run: |
           echo "DL_DIR=${CACHE_DIR}/downloads" >> $GITHUB_ENV
-          echo "SSTATE_DIR=${CACHE_DIR}/sstate-cache-$(date '+%Y-%m')" >> $GITHUB_ENV
+          # use a single shared sstate cache folder, cleaned up by mtime
+          echo "SSTATE_DIR=${CACHE_DIR}/sstate-cache" >> $GITHUB_ENV
 
       - name: Run Yocto patchreview
         run: |
