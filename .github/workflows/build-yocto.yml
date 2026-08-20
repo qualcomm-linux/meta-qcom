@@ -262,9 +262,9 @@ jobs:
           - type: 6.18
             dirname: "_linux-qcom-6.18"
             yamlfile: ":ci/linux-qcom-6.18.yml"
-          - type: rt-6.18-distro-kvm
-            dirname: "_linux-qcom-rt-6.18_qcom-distro-kvm"
-            yamlfile: ":ci/linux-qcom-rt-6.18.yml:ci/qcom-distro-kvm.yml"
+          - type: rt-6.18
+            dirname: "_linux-qcom-rt-6.18"
+            yamlfile: ":ci/linux-qcom-rt-6.18.yml"
         exclude:
           # Exclude jobs from compile_warm_up
           - machine: glymur-crd
@@ -331,10 +331,34 @@ jobs:
                 type: default
                 dirname: ""
                 yamlfile: ""
+          - machine: iq-615-evk
+            distro:
+                name: qcom-distro-gunyah
+                yamlfile: ':ci/qcom-distro.yml:ci/gunyah.yml'
+            kernel:
+                type: default
+                dirname: ""
+                yamlfile: ""
+          - machine: iq-8275-evk
+            distro:
+                name: qcom-distro-gunyah
+                yamlfile: ':ci/qcom-distro.yml:ci/gunyah.yml'
+            kernel:
+                type: default
+                dirname: ""
+                yamlfile: ""
+          - machine: iq-9075-evk
+            distro:
+                name: qcom-distro-gunyah
+                yamlfile: ':ci/qcom-distro.yml:ci/gunyah.yml'
+            kernel:
+                type: default
+                dirname: ""
+                yamlfile: ""
           - machine: rb3gen2-core-kit
             distro:
-                name: qcom-distro-kvm
-                yamlfile: ':ci/qcom-distro-kvm.yml'
+                name: qcom-distro-gunyah
+                yamlfile: ':ci/qcom-distro.yml:ci/gunyah.yml'
             kernel:
                 type: default
                 dirname: ""
@@ -405,16 +429,16 @@ jobs:
                 yamlfile: ":ci/linux-qcom-6.18.yml:ci/u-boot-qcom.yml"
           - machine: rb3gen2-core-kit-open-fw
             distro:
-                name: qcom-distro-kvm
-                yamlfile: ':ci/qcom-distro-kvm.yml'
+                name: qcom-distro
+                yamlfile: ':ci/qcom-distro.yml'
             kernel:
                 type: default
                 dirname: ""
                 yamlfile: ""
           - machine: iq-9075-evk-open-fw
             distro:
-                name: qcom-distro-kvm
-                yamlfile: ':ci/qcom-distro-kvm.yml'
+                name: qcom-distro
+                yamlfile: ':ci/qcom-distro.yml'
             kernel:
                 type: default
                 dirname: ""
