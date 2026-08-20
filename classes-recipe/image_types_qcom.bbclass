@@ -17,7 +17,6 @@ QCOM_DTB_FILE ?= "dtb.bin"
 
 QCOM_BOOT_FILES_SUBDIR ?= ""
 QCOM_PARTITION_FILES_SUBDIR ??= "${QCOM_BOOT_FILES_SUBDIR}"
-QCOM_PARTITION_FILES_SUBDIR_SPINOR ??= ""
 
 QCOM_PARTITION_CONF ?= "qcom-partition-conf"
 
@@ -173,11 +172,6 @@ create_qcomflash_pkg() {
                     ! -name 'uefi_dtbs*.xz'` ; do
                 install -m 0644 ${bfw} spinor
             done
-
-            # partition bins/xml files
-            if [ -n "${QCOM_PARTITION_FILES_SUBDIR_SPINOR}" ]; then
-                deploy_partition_files ${DEPLOY_DIR_IMAGE}/${QCOM_PARTITION_FILES_SUBDIR_SPINOR} spinor
-            fi
 
             # cdt file
             if [ -n "${QCOM_CDT_FILE}" ]; then
