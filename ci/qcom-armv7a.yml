@@ -5,7 +5,4 @@ header:
   includes:
   - ci/base.yml
 
-local_conf_header:
-  qcomflash: |
-
 machine: qcom-armv7a
