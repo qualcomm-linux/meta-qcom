@@ -17,7 +17,6 @@ QCOM_DTB_FILE ?= "dtb.bin"
 
 QCOM_BOOT_FILES_SUBDIR ?= ""
 QCOM_PARTITION_FILES_SUBDIR ??= "${QCOM_BOOT_FILES_SUBDIR}"
-QCOM_PARTITION_FILES_SUBDIR_SPINOR ??= ""
 
 QCOM_PARTITION_CONF ?= "qcom-partition-conf"
 
@@ -88,8 +87,22 @@ create_qcomflash_pkg() {
     install -m 0644 ${IMGDEPLOYDIR}/${IMAGE_LINK_NAME}.${IMAGE_QCOMFLASH_FS_TYPE} rootfs.img
 
     # partition bins/xml files
+    # QCOM_PARTITION_FILES_SUBDIR may list more than one subdir for machines
+    # that build partition files for multiple storage targets. The first
+    # entry's files land in the package root (legacy behavior); any further
+    # entries land in a subdir named after their basename.
     if [ -n "${QCOM_PARTITION_FILES_SUBDIR}" ]; then
-        deploy_partition_files ${DEPLOY_DIR_IMAGE}/${QCOM_PARTITION_FILES_SUBDIR} .
+        first_subdir="true"
+        for subdir in ${QCOM_PARTITION_FILES_SUBDIR}; do
+            if [ "${first_subdir}" = "true" ]; then
+                dest_dir="."
+                first_subdir="false"
+            else
+                dest_dir="$(basename "${subdir}")"
+                install -d "${dest_dir}"
+            fi
+            deploy_partition_files ${DEPLOY_DIR_IMAGE}/${subdir} "${dest_dir}"
+        done
     fi
 
     if [ -n "${QCOM_BOOT_FILES_SUBDIR}" ]; then
@@ -159,11 +172,6 @@ create_qcomflash_pkg() {
                     ! -name 'uefi_dtbs*.xz'` ; do
                 install -m 0644 ${bfw} spinor
             done
-
-            # partition bins/xml files
-            if [ -n "${QCOM_PARTITION_FILES_SUBDIR_SPINOR}" ]; then
-                deploy_partition_files ${DEPLOY_DIR_IMAGE}/${QCOM_PARTITION_FILES_SUBDIR_SPINOR} spinor
-            fi
 
             # cdt file
             if [ -n "${QCOM_CDT_FILE}" ]; then
