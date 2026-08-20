@@ -4,6 +4,7 @@ SRC_URI:append:qcom = " \
     file://0001-freedreno-Add-support-for-A704.patch \
     file://0001-freedreno-layout-tu-Fix-UBWC-block-sizes-for-PIPE_FO.patch \
     file://0001-freedreno-Modify-reg_size_vec4-for-a608-and-a612-to-32.patch \
+    file://0001-freedreno-Add-chip-id-support-for-A830v1.patch \
 "
 
 # Enable freedreno driver
