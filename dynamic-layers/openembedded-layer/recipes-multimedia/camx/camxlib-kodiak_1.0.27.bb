@@ -8,25 +8,20 @@ LICENSE = "LicenseRef-LICENSE.qcom-2"
 LIC_FILES_CHKSUM = "file://usr/share/doc/${BPN}/LICENSE.QCOM-2.txt;md5=165287851294f2fb8ac8cbc5e24b02b0 \
                     file://usr/share/doc/${BPN}/NOTICE;md5=04facc2e07e3d41171a931477be0c690"
 
-PBT_BUILD_DATE = "260708"
+PBT_BUILD_DATE = "260814"
 PBT_BRANCH = "master"
 SRC_URI = " \
    https://qartifactory-edge.qualcomm.com/artifactory/qsc_releases/software/chip/component/camx.qclinux.0.0/${PBT_BUILD_DATE}/prebuilt_yocto_${PBT_BRANCH}/${BPN}_${PV}_armv8-2a.tar.gz;name=camxlib \
    https://qartifactory-edge.qualcomm.com/artifactory/qsc_releases/software/chip/component/camx.qclinux.0.0/${PBT_BUILD_DATE}/prebuilt_yocto_${PBT_BRANCH}/camx-kodiak_${PV}_armv8-2a.tar.gz;name=camx \
    https://qartifactory-edge.qualcomm.com/artifactory/qsc_releases/software/chip/component/camx.qclinux.0.0/${PBT_BUILD_DATE}/prebuilt_yocto_${PBT_BRANCH}/chicdk-kodiak_${PV}_armv8-2a.tar.gz;name=chicdk \
    "
-SRC_URI[camxlib.sha256sum] = "c8bc1baab12d2002a3a614b28c045868693a3a59a003b25b8a9236a0df7e941e"
-SRC_URI[camx.sha256sum] = "46a1d3d0682beb931e44cccdd47834b59a54004908441e4597ad11ced4f5d0c8"
-SRC_URI[chicdk.sha256sum] = "386f7cb21feffeb9ede8430e58c837f47ed988bc3980b3a7f2430dfbc67ae785"
+SRC_URI[camxlib.sha256sum] = "21ea26416fc9887e9719ce47fbc18828398d8b71ad4d98af4570d17399f22bdb"
+SRC_URI[camx.sha256sum] = "964b2e2fa59feda7e2d2d2b35223fccee8685c24f38ad48f66740dcbdc7c4b74"
+SRC_URI[chicdk.sha256sum] = "fa8652340bb2fe5403c1cb64c84398e96ebb8591a1369d4735ded0612b6814bc"
 
 S = "${UNPACKDIR}"
 
 DEPENDS += "glib-2.0 fastrpc protobuf libxml2 qmi-framework sensinghub qcom-sensors-binaries"
-
-DEPENDS += " \
-    ${@bb.utils.contains('DISTRO_FEATURES', 'opengl', 'virtual/egl virtual/libgles2', '', d)} \
-    ${@bb.utils.contains('DISTRO_FEATURES', 'opencl', 'virtual/libopencl1', '', d)} \
-"
 
 # This package is currently only used and tested on ARMv8 (aarch64) machines.
 # Therefore, builds for other architectures are not necessary and are explicitly excluded.
@@ -41,19 +36,6 @@ do_install:append() {
     install -d ${D}${datadir}/doc/chicdk-kodiak
 
     cp -r ${S}/usr/lib/* ${D}${libdir}
-
-    # Remove OpenCL-dependent libraries when opencl is not enabled.
-    if ${@bb.utils.contains('DISTRO_FEATURES', 'opencl', 'false', 'true', d)}; then
-        rm -f ${D}${libdir}/camx/kodiak/*.cl
-        rm -f ${D}${libdir}/camx/kodiak/lib_algo_svhdr*
-        rm -f ${D}${libdir}/camx/kodiak/camera/components/libshdr3*
-        rm -f ${D}${libdir}/camx/kodiak/camera/components/libbanding_correction*
-    fi
-
-    # Remove OpenGL/EGL-dependent libraries when opengl is not enabled.
-    if ${@bb.utils.contains('DISTRO_FEATURES', 'opengl', 'false', 'true', d)}; then
-        rm -f ${D}${libdir}/camx/kodiak/camera/components/libiwarp*
-    fi
 
     # copy Deep Learning based binary
     cp -r ${S}/usr/share/camx ${D}${datadir}
@@ -91,7 +73,8 @@ do_install:append() {
 PACKAGE_BEFORE_PN += "camx-kodiak chicdk-kodiak ${PN}-skel"
 RDEPENDS:${PN} += "chicdk-kodiak ${PN}-skel"
 RDEPENDS:${PN}-dev += "camxcommon-headers-dev"
-RRECOMMENDS:${PN} += "${@bb.utils.contains('DISTRO_FEATURES', 'opencl', 'virtual-opencl-icd', '', d)} sensinghub qcom-sensors-binaries"
+RRECOMMENDS:${PN} += "${@bb.utils.contains('DISTRO_FEATURES', 'opencl', 'virtual-opencl-icd', '', d)} sensinghub qcom-sensors-binaries \
+     ${@bb.utils.contains('DISTRO_FEATURES', 'opengl', 'libglvnd', '', d)}"
 
 FILES:camx-kodiak = "\
     ${libdir}/libcamx_hardware_kodiak*${SOLIBS} \
@@ -121,6 +104,7 @@ FILES:chicdk-kodiak = "\
     ${libdir}/camx/kodiak/camera/*.bin \
     ${libdir}/camx/kodiak/camera/com.qti.sensor*${SOLIBS} \
     ${libdir}/camx/kodiak/hw/com.qti.chi.*${SOLIBS} \
+    ${libdir}/libcamxchiofflinepostproclib_kodiak*${SOLIBS} \
     ${bindir}/ \
     "
 FILES:${PN}-skel = "\
@@ -132,7 +116,6 @@ FILES:${PN} = "\
     ${libdir}/camx/kodiak/*${SOLIBS} \
     ${libdir}/camx/kodiak/hw/*${SOLIBS} \
     ${libdir}/camx/kodiak/camera/components/*${SOLIBS} \
-    ${@bb.utils.contains('DISTRO_FEATURES', 'opencl', '${libdir}/camx/kodiak/*.cl', '', d)} \
     "
 FILES:${PN}-dev = "\
     ${libdir}/*${SOLIBSDEV} \
