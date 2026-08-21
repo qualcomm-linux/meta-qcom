@@ -7,7 +7,12 @@ LIC_FILES_CHKSUM = "file://LICENSE.txt;md5=2998c54c288b081076c9af987bdf4838"
 DEPENDS += "dtc-native"
 
 SRC_URI = "git://github.com/qualcomm-linux/qcom-dtb-metadata.git;branch=main;protocol=https;tag=v${PV}"
+SRC_URI:append = " file://0001-Add-nord-support.patch"
 
+# Nord SoC variants (nord and qam8x97p) have no entries in the upstream
+# qcom-dtb-metadata repository yet. This pending patch registers their
+# msm-ids so the kernel FIT image can be built. Drop once Nord support
+# lands upstream.
 SRCREV = "7fc788a9758b572cbbbea312332b6621823d55c0"
 
 INHIBIT_DEFAULT_DEPS = "1"
