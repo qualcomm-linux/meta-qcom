@@ -7,7 +7,7 @@ HOMEPAGE = "https://github.com/qualcomm/camera-service"
 
 SRC_URI = "git://github.com/qualcomm/camera-service;protocol=https;nobranch=1;tag=${PV}"
 
-SRCREV = "9f50e49824ed112593e6643a9197e03922cbc807"
+SRCREV = "1c3bc85b8cd35502b29895cc875c51bbcb2cb68f"
 
 # Limit this recipe to ARMv8 (aarch64) only, because it depends
 # on camxcommon-headers which is explicitly restricted to ARMv8 (aarch64).
@@ -23,7 +23,7 @@ DEPENDS += "\
     protobuf-native \
 "
 
-SYSTEMD_SERVICE:${PN} = "cam-server.service"
+SYSTEMD_SERVICE:${PN} = "qti-cam-server.service"
 
 # Split the recipe output into logical subpackages.
 PACKAGE_BEFORE_PN = " \
