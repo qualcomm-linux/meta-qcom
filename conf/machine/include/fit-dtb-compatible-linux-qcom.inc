@@ -21,10 +21,12 @@ require conf/machine/include/fit-dtb-compatible.inc
 FIT_DTB_COMPATIBLE[qcom_hamoa-evk-camx] = "hamoa-iot-evk hamoa-evk-camx"
 FIT_DTB_COMPATIBLE[qcom_hamoa-evk-camx-staging] = "hamoa-iot-evk hamoa-evk-camx hamoa-staging"
 FIT_DTB_COMPATIBLE[qcom_hamoa-evk-camx-el2kvm] = "hamoa-iot-evk hamoa-evk-camx x1-el2 hamoa-camx-el2"
+FIT_DTB_COMPATIBLE[qcom_hamoa-evk-edp] = "hamoa-iot-evk hamoa-iot-evk-edp"
 
 # ---------- purwa -----------
 FIT_DTB_COMPATIBLE[qcom_purwa-evk-camx] = "purwa-iot-evk purwa-evk-camx"
 FIT_DTB_COMPATIBLE[qcom_purwa-evk-camx-el2kvm] = "purwa-iot-evk purwa-evk-camx x1-el2 purwa-camx-el2"
+FIT_DTB_COMPATIBLE[qcom_purwa-evk-edp] = "purwa-iot-evk purwa-iot-evk-edp"
 
 # ---------- lemans ----------
 
