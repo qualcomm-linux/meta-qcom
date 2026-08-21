@@ -51,9 +51,6 @@ local_conf_header:
     "
   cmdline: |
     KERNEL_CMDLINE_EXTRA:append = " qcom_scm.download_mode=1"
-  qcomflash: |
-    IMAGE_CLASSES += "image_types_qcom"
-    IMAGE_FSTYPES += "qcomflash"
   extra: |
     DISTRO_FEATURES:append = " efi pam pni-names"
     EXTRA_IMAGE_FEATURES += "allow-empty-password empty-root-password allow-root-login"
