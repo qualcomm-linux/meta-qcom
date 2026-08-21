@@ -20,6 +20,9 @@ repos:
       redis-xxhash-og:
         repo: meta-qcom
         path: patches/meta-oe/0001-redis-fix-build-of-the-bundled-xxHash-with-Og.patch
+      redis-install-prefix:
+        repo: meta-qcom
+        path: patches/meta-oe/0002-redis-fix-the-install-prefix-with-8.10.0.patch
     layers:
       meta-filesystems:
       meta-gnome:
