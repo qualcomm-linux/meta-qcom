@@ -9,9 +9,9 @@ inherit cmake features_check pkgconfig gobject-introspection
 
 REQUIRED_DISTRO_FEATURES = "opengl"
 
-SRC_URI = "git://github.com/qualcomm/gst-plugins-imsdk;protocol=https;nobranch=1;tag=${PV}"
+SRC_URI = "git://github.com/qualcomm/qimsdk;protocol=https;nobranch=1;tag=${PV}"
 
-SRCREV = "806ad865287c418d2aac380506b7ad44b5a11319"
+SRCREV = "fa161fea87cd827a39fb4a428ffab3d34bff1339"
 
 DEPENDS += "\
     gstreamer1.0 \
