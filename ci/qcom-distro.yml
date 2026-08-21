@@ -16,6 +16,13 @@ repos:
 
   meta-openembedded:
     url: https://github.com/openembedded/meta-openembedded
+    patches:
+      redis-xxhash-og:
+        repo: meta-qcom
+        path: patches/meta-oe/0001-redis-fix-build-of-the-bundled-xxHash-with-Og.patch
+      redis-install-prefix:
+        repo: meta-qcom
+        path: patches/meta-oe/0002-redis-fix-the-install-prefix-with-8.10.0.patch
     layers:
       meta-filesystems:
       meta-gnome:
@@ -44,6 +51,9 @@ repos:
       libselinux-nativesdk:
         repo: meta-qcom
         path: patches/selinux/0002-libselinux-enable-nativesdk.patch
+      libselinux-python-swig-4.5:
+        repo: meta-qcom
+        path: patches/selinux/0003-libselinux-python-fix-the-build-against-swig-4.5.0.patch
 
   meta-updater:
     url: https://github.com/uptane/meta-updater

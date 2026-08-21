@@ -1,0 +1,97 @@
+From 7ae827214cfe0efe6758109eadc530517d786c4b Mon Sep 17 00:00:00 2001
+From: Ricardo Salveti <ricardo.salveti@oss.qualcomm.com>
+Date: Sun, 16 Aug 2026 22:00:00 +0000
+Subject: [PATCH] libselinux-python: fix the build against swig 4.5.0
+
+swig 4.5.0 removed the Python 2 C API compatibility macros from its
+pyhead.swg runtime header, and libselinux 3.10 still calls
+PyString_FromString() from selinuxswig_python.i, so the generated
+wrapper no longer compiles:
+
+  selinuxswig_python_wrap.c:11583:34: error: passing argument 3 of
+  'PyList_SetItem' makes pointer from integer without a cast
+
+Backport the upstream fix, which switches the three call sites to
+PyUnicode_FromString().
+
+Signed-off-by: Ricardo Salveti <ricardo.salveti@oss.qualcomm.com>
+Upstream-Status: Backport [https://github.com/SELinuxProject/selinux/commit/fb518ff492cd6a286f35b415cbd7fd0f6e3faedb]
+---
+ .../selinux/libselinux-python_3.10.bb         |  1 +
+ ...e-PyString_FromString-with-PyUnicode.patch | 55 +++++++++++++++++++
+ 2 files changed, 56 insertions(+)
+ create mode 100644 recipes-security/selinux/libselinux/0004-libselinux-Replace-PyString_FromString-with-PyUnicode.patch
+
+diff --git a/recipes-security/selinux/libselinux-python_3.10.bb b/recipes-security/selinux/libselinux-python_3.10.bb
+index 139e6df..e0fcb4b 100644
+--- a/recipes-security/selinux/libselinux-python_3.10.bb
++++ b/recipes-security/selinux/libselinux-python_3.10.bb
+@@ -15,6 +15,7 @@ SRC_URI += "\
+         file://0001-Makefile-fix-python-modules-install-path-for-multili.patch;patchdir=.. \
+         file://0002-Do-not-use-PYCEXT-and-rely-on-the-installed-file-nam.patch;patchdir=.. \
+         file://0003-libselinux-restore-drop-the-obsolete-LSF-transitiona.patch;patchdir=.. \
++        file://0004-libselinux-Replace-PyString_FromString-with-PyUnicode.patch;patchdir=.. \
+         "
+ 
+ S = "${UNPACKDIR}/${BP}/libselinux"
+diff --git a/recipes-security/selinux/libselinux/0004-libselinux-Replace-PyString_FromString-with-PyUnicode.patch b/recipes-security/selinux/libselinux/0004-libselinux-Replace-PyString_FromString-with-PyUnicode.patch
+new file mode 100644
+index 0000000..3c3738f
+--- /dev/null
++++ b/recipes-security/selinux/libselinux/0004-libselinux-Replace-PyString_FromString-with-PyUnicode.patch
+@@ -0,0 +1,55 @@
++From fb518ff492cd6a286f35b415cbd7fd0f6e3faedb Mon Sep 17 00:00:00 2001
++From: Petr Lautrbach <lautrbach@redhat.com>
++Date: Thu, 6 Aug 2026 16:30:44 +0200
++Subject: [PATCH] libselinux: Replace PyString_FromString with
++ PyUnicode_FromString for SWIG 4.5.0 compatibility
++MIME-Version: 1.0
++Content-Type: text/plain; charset=UTF-8
++Content-Transfer-Encoding: 8bit
++
++SWIG 4.5.0 removed Python 2 C API compatibility macros (PyInt_*,
++PyString_*, SWIG_Python_str_*) from its runtime header pyhead.swg.
++These macros previously mapped deprecated Python 2 C API names to their
++Python 3 equivalents.
++
++Fixes: https://github.com/SELinuxProject/selinux/issues/538
++Authored-by: Jitka Plesníková <jplesnik@redhat.com>
++Upstream-Status: Backport [https://github.com/SELinuxProject/selinux/commit/fb518ff492cd6a286f35b415cbd7fd0f6e3faedb]
++
++Signed-off-by: Petr Lautrbach <lautrbach@redhat.com>
++Acked-by: Stephen Smalley <stephen.smalley.work@gmail.com>
++---
++ libselinux/src/selinuxswig_python.i | 6 +++---
++ 1 file changed, 3 insertions(+), 3 deletions(-)
++
++diff --git a/libselinux/src/selinuxswig_python.i b/libselinux/src/selinuxswig_python.i
++index c8c08a407..74d923e42 100644
++--- a/libselinux/src/selinuxswig_python.i
+++++ b/libselinux/src/selinuxswig_python.i
++@@ -69,7 +69,7 @@ def install(src, dest):
++ 	PyObject* list = PyList_New(*$2);
++ 	int i;
++ 	for (i = 0; i < *$2; i++) {
++-		PyList_SetItem(list, i, PyString_FromString((*$1)[i]));
+++		PyList_SetItem(list, i, PyUnicode_FromString((*$1)[i]));
++ 	}
++ 	$result = SWIG_AppendOutput($result, list);
++ }
++@@ -123,7 +123,7 @@ def install(src, dest):
++ 			len++;
++ 		plist = PyList_New(len);
++ 		for (i = 0; i < len; i++) {
++-			PyList_SetItem(plist, i, PyString_FromString((*$1)[i]));
+++			PyList_SetItem(plist, i, PyUnicode_FromString((*$1)[i]));
++ 		}
++ 	} else {
++ 		plist = PyList_New(0);
++@@ -140,7 +140,7 @@ def install(src, dest):
++ 	if (*$1) {
++ 		plist = PyList_New(result);
++ 		for (i = 0; i < result; i++) {
++-			PyList_SetItem(plist, i, PyString_FromString((*$1)[i]));
+++			PyList_SetItem(plist, i, PyUnicode_FromString((*$1)[i]));
++ 		}
++ 	} else {
++ 		plist = PyList_New(0);

@@ -1,0 +1,56 @@
+From 0c9a1b5bea190ac00a59ae73aaa294abba9754df Mon Sep 17 00:00:00 2001
+From: Ricardo Salveti <ricardo.salveti@oss.qualcomm.com>
+Date: Fri, 21 Aug 2026 20:46:15 +0000
+Subject: [PATCH] backend-drm: only put overlay planes on the per-output plane
+ list
+
+drm_output_find_plane_for_paint_node() asserts that every plane on
+output->plane_handle_list is an overlay, but drm_output_init_planes()
+puts every plane usable by the CRTC on that list, minus only the ones it
+selects as the scanout and cursor planes. On hardware that advertises
+more than one primary or cursor plane per CRTC, the spare ones stay on
+the list and the assert fires as soon as a paint node becomes a
+candidate for a hardware plane:
+
+  state-propose.c:874: Assertion plane->type == WDRM_PLANE_TYPE_OVERLAY
+  (1 == 2) failed!
+
+A QCS9100 (SA8775P) Ride SX hits this on every EGL client. The DPU
+driving its display exposes eight planes, six primary and two cursor,
+all usable by every one of its six CRTCs, and no overlay planes at all.
+With a single output enabled, five primary planes and one cursor plane
+are left on the list, and the compositor aborts as soon as a client
+posts a buffer.
+
+The assert came with 96e9f4e4 ("drm: Remove switch in state-propose"),
+which dropped the "case WDRM_PLANE_TYPE_PRIMARY: continue" that used to
+skip these planes, on the grounds that only overlay planes are on the
+list. Make that true. The spare primary and cursor planes go unused,
+exactly as they did before 96e9f4e4.
+
+Fixes: 96e9f4e4 ("drm: Remove switch in state-propose")
+Signed-off-by: Ricardo Salveti <ricardo.salveti@oss.qualcomm.com>
+Upstream-Status: Pending
+---
+ libweston/backend-drm/drm.c | 8 ++++++++
+ 1 file changed, 8 insertions(+)
+
+diff --git a/libweston/backend-drm/drm.c b/libweston/backend-drm/drm.c
+index c01cf387..d05db66a 100644
+--- a/libweston/backend-drm/drm.c
++++ b/libweston/backend-drm/drm.c
+@@ -2666,6 +2666,14 @@ drm_output_init_planes(struct drm_output *output)
+ 			output->cursor_handle = handle;
+ 			continue;
+ 		}
++
++		/* drm_output_find_plane_for_paint_node() asserts that every
++		 * plane on this list is an overlay, so keep the rest off it. */
++		if (plane->type != WDRM_PLANE_TYPE_OVERLAY) {
++			drm_plane_destroy_handle(handle);
++			continue;
++		}
++
+ 		wl_list_insert(&output->plane_handle_list, &handle->link);
+ 	}
+ 
