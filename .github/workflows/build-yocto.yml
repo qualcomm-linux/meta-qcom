@@ -260,6 +260,15 @@ jobs:
             dirname: "_linux-qcom-rt-6.18_qcom-distro-kvm"
             yamlfile: ":ci/linux-qcom-rt-6.18.yml:ci/qcom-distro-kvm.yml"
         exclude:
+          # 6.18 RT selects qcom-distro by default, remove others
+          - distro:
+                name: nodistro
+            kernel:
+                type: rt-6.18-distro-kvm
+          - distro:
+                name: qcom-distro-catchall
+            kernel:
+                type: rt-6.18-distro-kvm
           # Exclude jobs from compile_warm_up
           - machine: glymur-crd
             distro:
