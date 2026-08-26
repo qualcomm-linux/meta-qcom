@@ -29,6 +29,8 @@ SRC_URI = "git://github.com/qualcomm-linux/kernel.git;${SRCBRANCH};protocol=http
 # Additional kernel configs.
 SRC_URI += " \
     file://configs/bsp-additions.cfg \
+    file://0001-PENDING-arm64-dts-qcom-talos-evk-add-QPS615-m.2-ethe.patch \
+    file://0001-arm64-dts-qcom-Add-Lemans-IoT-SoM-platform.patch \
 "
 
 # To build tip of qcom-next branch set preferred
