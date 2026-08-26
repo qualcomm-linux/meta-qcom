@@ -6,7 +6,7 @@ on:
       profile:
         required: false
         type: string
-        default: "full" # values: pr | full
+        default: "full" # values: pr | full | weekly
       skip_if_github_cached:
         required: false
         type: boolean
@@ -255,8 +255,10 @@ jobs:
             yamlfile: ':ci/qcom-distro-catchall.yml'
           - name: debug
             yamlfile: ':ci/qcom-distro-catchall.yml:ci/debug.yml'
+            profile: full
           - name: performance
             yamlfile: ':ci/qcom-distro-catchall.yml:ci/performance.yml'
+            profile: full
         kernel:
           - type: default
             dirname: ""
@@ -465,7 +467,12 @@ jobs:
     uses: ./.github/workflows/compile.yml
     with:
       name: ${{ matrix.machine }}/${{ matrix.distro.name }}${{ matrix.kernel.dirname }}
-      enabled: ${{inputs.profile != 'pr' || (matrix.distro.name != 'debug' && matrix.distro.name != 'performance')}}
+      # Which profiles build this entry. Entries without distro.profile are
+      # built by every profile; an entry marked with distro.profile is built by
+      # that profile and by the wider ones above it, ordered pr < full (push
+      # and nightly) < weekly. Add "profile: weekly" to the distro entry of a
+      # target that is too expensive to build every night.
+      enabled: ${{ (matrix.distro.profile || 'any') == 'any' || (matrix.distro.profile == 'full' && inputs.profile != 'pr') || (matrix.distro.profile == 'weekly' && inputs.profile == 'weekly') }}
       # One world build per machine and distro family is enough for compile
       # coverage: nodistro (including the nogl variant) covers the plain OE
       # configuration and qcom-distro-catchall enables a superset of the
