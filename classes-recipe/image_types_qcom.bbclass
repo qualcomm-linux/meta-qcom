@@ -85,7 +85,7 @@ create_qcomflash_pkg() {
         install -m 0644 "${DEPLOY_DIR_IMAGE}/boot-${MACHINE}.img" boot.img
 
     # rootfs image
-    install -m 0644 ${IMGDEPLOYDIR}/${IMAGE_LINK_NAME}.${IMAGE_QCOMFLASH_FS_TYPE} rootfs.img
+    cp -l -L ${IMGDEPLOYDIR}/${IMAGE_LINK_NAME}.${IMAGE_QCOMFLASH_FS_TYPE} rootfs.img
 
     # partition bins/xml files
     if [ -n "${QCOM_PARTITION_FILES_SUBDIR}" ]; then
