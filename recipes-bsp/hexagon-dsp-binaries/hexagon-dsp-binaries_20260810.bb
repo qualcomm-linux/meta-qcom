@@ -70,6 +70,9 @@ PACKAGE_BEFORE_PN =+ "\
     ${PN}-qcom-sa8775p-ride-gdsp \
     ${PN}-qcom-sdm845-hdk-adsp \
     ${PN}-qcom-sdm845-hdk-cdsp \
+    ${PN}-qcom-shikra-cqm-evk-cdsp \
+    ${PN}-qcom-shikra-cqs-evk-cdsp \
+    ${PN}-qcom-shikra-iqs-evk-cdsp \
     ${PN}-qcom-sm8750-mtp-adsp \
     ${PN}-qcom-sm8750-mtp-cdsp \
     ${PN}-radxa-dragon-q6a-adsp \
@@ -87,14 +90,6 @@ PACKAGE_BEFORE_PN =+ "\
     ${PN}-thundercomm-rb5-sdsp \
     ${PN}-thundercomm-rubikpi3-adsp \
     ${PN}-thundercomm-rubikpi3-cdsp \
-"
-# Dependent packages are only available from the lts-linux-firmware-mixins
-# layer and thus can't be enabled by default. Enable it for Qualcomm machines,
-# which also force enable the updated linux-firmware version.
-PACKAGES:append:qcom = " \
-    ${PN}-qcom-shikra-cqm-evk-cdsp \
-    ${PN}-qcom-shikra-cqs-evk-cdsp \
-    ${PN}-qcom-shikra-iqs-evk-cdsp \
 "
 
 LICENSE:${PN} = "dspso-WHENCE"
