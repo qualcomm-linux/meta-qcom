@@ -1,0 +1,66 @@
+From 9e3ce788d41254ed7b2936a94f95177ffdebd0a0 Mon Sep 17 00:00:00 2001
+From: Dmitry Baryshkov <dmitry.baryshkov@oss.qualcomm.com>
+Date: Tue, 25 Aug 2026 23:34:47 +0300
+Subject: [PATCH] qcom/sa8775p: update signature on cdsp1 firmware
+
+The CDSP1 firmwre from the commit 0b1b0d6f1623 ("qcom: Update DSP
+firmware for sa8775p platform") didn't contain the correct test
+signature, which made TZ reject it. Change it to the file with the
+correct signature.
+
+Fixes: 0b1b0d6f1623 ("qcom: Update DSP firmware for sa8775p platform")
+Upstream-Status: Backport [https://gitlab.com/kernel-firmware/linux-firmware/-/commit/9e3ce788d41254ed7b2936a94f95177ffdebd0a0]
+Signed-off-by: Dmitry Baryshkov <dmitry.baryshkov@oss.qualcomm.com>
+---
+ qcom/sa8775p/cdsp1.mbn | Bin 3170304 -> 3174400 bytes
+ 1 file changed, 0 insertions(+), 0 deletions(-)
+
+diff --git a/qcom/sa8775p/cdsp1.mbn b/qcom/sa8775p/cdsp1.mbn
+index a92dca82e68de3a4b829cec8d7fa00408db91b3c..a2ea2424e985beaa620f2286132e522d4832ac4b 100644
+GIT binary patch
+delta 2684
+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
+
+delta 337
+zcmW;Ey)Q#i00r=SUt3zLUR8^hzSc(-EoU}JCl-SUB4YFhNK6_-V>s4ccW9KMX+%nh
+zNPPqY4}S%V(b%~buTFA)Inyb8+p_R#%i>m~<`SY+Cx$SEkgb(ac}rGQ*)keZJ;#lP
+zOMS(qP)$oFbW~bW=vhZoZ~X7P<B~2r7WI>3MSnWx>P;C5ctq>GbaRpkshnG9%sr?%
+z^M2*_XW?<pzB>+uSI-aKRp0JM?Z8TJUngGzmy6ZZg{YstzisXu{brX-_LW548>|=)
+z=6r13zYjtZ2H_&ygokJ&+6gb=BRYsq!cTM&0iv5Qi6GHKgos`uOhkx2qMsNbqC|`s
+oB!-AMVG#);NemMs#3(UFq=<1MO-vAz#1xSsvcxnoa|Y!80OZtU2><{9
+
+-- 
+2.43.0
+

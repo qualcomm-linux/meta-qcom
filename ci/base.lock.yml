@@ -3,17 +3,17 @@ header:
 overrides:
     repos:
         oe-core:
-            commit: f09a0f28aeb54ddd90415dd458338e1565bb5a49
+            commit: ef022bf82d79015802309d14c28b13373ebe53f5
         meta-lts-mixins:
-            commit: 6ad95d00531b32ec01792ab496718943dc95277b
+            commit: 8bfc4ae8cf7fc835a23d7a27830f866617d9808f
         bitbake:
-            commit: fae9db3168dbff1b8c76fe9c6726a9687ff97514
+            commit: 0ad6c1c34a5e07a5f8dd66ab248c1e7b37b69fa9
         meta-arm:
             commit: 0979b80429099f1a42dc0026c8c466cee780bc74
         meta-openembedded:
-            commit: 6bf0d8ad57b33950bab4c7f6c037e1ccb6f6e2eb
+            commit: 14282a02be9c74a1276a7cda7d6c89e054699a11
         meta-virtualization:
-            commit: ff03b1e118c4788f17d7ae45b820b00e3194634a
+            commit: aab9c1a0dd6b48776c9f372a32c32486c560b9c9
         meta-audioreach:
             commit: 3f673ee6f52bfeda69205078a99e89cd501015b4
         meta-selinux:
