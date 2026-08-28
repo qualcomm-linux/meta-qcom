@@ -78,6 +78,9 @@ runs:
           do
               JOB_ID=$(cat "$TESTJOB" | jq ".id")
               JOB_URL="https://lava.infra.foundries.io/results/$JOB_ID"
+              # the job log renders every line as <code id="L<n>">, so a test
+              # result can be linked straight to the line it was logged on
+              JOB_LOG_URL="https://lava.infra.foundries.io/scheduler/job/$JOB_ID"
               JOB_DETAILS=$(curl -s "https://lava.infra.foundries.io/api/v0.2/jobs/$JOB_ID/")
               JOB_HEALTH=$(echo "$JOB_DETAILS" | jq -r ".health")
               JOB_STATE=$(echo "$JOB_DETAILS" | jq -r ".state")
@@ -97,7 +100,12 @@ runs:
                           SUITE_ID=$(echo "$SUITE" | jq -r ".id")
                           SUITE_TESTS=$(curl -s "https://lava.infra.foundries.io/api/v0.2/jobs/$JOB_ID/suites/$SUITE_ID/tests/")
                           if [ "$SUITE_NAME" != "lava" ]; then
-                              echo "$SUITE_TESTS" | jq ".results[] | {(.name): {result: .result, url: .resource_uri}} | to_entries | .[]"
+                              # link to the log line the result was reported on
+                              # rather than to the API resource of the test case
+                              echo "$SUITE_TESTS" | jq --arg log "$JOB_LOG_URL" '.results[]
+                                  | {(.name): {result: .result,
+                                               url: (if .start_log_line then "\($log)#L\(.start_log_line)" else $log end)}}
+                                  | to_entries | .[]'
                           fi
                       fi
                   else
@@ -107,7 +115,9 @@ runs:
                           TEST_RESULT_BOOT="fail"
                       fi
                       TEST_NAME="boot"
-                      TEST_URL="${JOB_URL}"
+                      # a boot job has no test case to point at, so link to the
+                      # log itself, which is what a boot failure is read from
+                      TEST_URL="${JOB_LOG_URL}"
                       TEST_RESULT_OBJ=$(jq --arg url "$TEST_URL" --arg result "$TEST_RESULT_BOOT" -n -c '$ARGS.named')
                       jq -n -c --arg key "$TEST_NAME" --argjson value "$TEST_RESULT_OBJ" '$ARGS.named'
                   fi
