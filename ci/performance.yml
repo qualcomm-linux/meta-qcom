@@ -3,4 +3,4 @@ header:
 
 local_conf_header:
   cmdline-perf: |
-    KERNEL_CMDLINE_EXTRA:append = " quiet systemd.tty.term.console=linux"
+    KERNEL_CMDLINE_EXTRA:append = " quiet systemd.tty.term.console=linux ${@bb.utils.contains('DISTRO_FEATURES', 'sota', '', 'systemd.gpt_auto=no', d)}"
