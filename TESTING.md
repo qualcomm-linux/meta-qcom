@@ -175,7 +175,10 @@ python3 .github/scripts/apply-known-failures.py --validate
 
 ## Reproducing a failure
 
-Every entry of the summary table links to its LAVA job. The job page holds the
-serial console log, the test suite results and the exact job definition, which
-is the fastest way to tell a real regression from lab flakiness. A job can be
-resubmitted from that page to check whether a failure is reproducible.
+Every entry of the summary table links into the log of its LAVA job, at the
+line the result was reported on. The surrounding lines hold the output of the
+test itself, and the rest of the page the serial console log and the exact job
+definition, which is the fastest way to tell a real regression from lab
+flakiness. A boot entry links to the top of the log, there being no test case
+to point at. A job can be resubmitted from that page to check whether a failure
+is reproducible.
