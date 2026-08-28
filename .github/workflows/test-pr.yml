@@ -151,3 +151,5 @@ jobs:
       event_file: artifacts/Event File/event.json
       event_name: ${{ github.event.workflow_run.event }}
       workflow_id: ${{ github.event.workflow_run.id }}
+      known_failures_repository: ${{ github.event.workflow_run.head_repository.full_name }}
+      known_failures_ref: ${{ github.event.workflow_run.head_sha }}

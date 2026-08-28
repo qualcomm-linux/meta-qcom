@@ -50,6 +50,10 @@ known for that variant.
 
 ## How the list is used
 
+Two consumers apply the list.
+
+### The test job summary
+
 `.github/actions/test-job-summary` applies the list when it renders the summary
 table of a build variant:
 
@@ -70,9 +74,24 @@ section below the table.
 The summary also reports the result of the boot test under the name `boot`, so
 `boot` can be listed here like any other test name.
 
+### The "Test Results" check
+
+`.github/workflows/publish-results.yml` publishes the JUnit XML files that LAVA
+produced for every test job. Before they are published,
+`.github/scripts/apply-known-failures.py` rewrites them in place: a known
+failure becomes a skipped test, so it no longer fails the check, and a test
+that passes while it is listed becomes a failure. The comment of the entry is
+appended to the message of the rewritten test, so the issue is one click away
+in the check report. The script maps a result file to a variant and a device
+through the file name, which lava-test-plans builds as
+`<prefix>-<variant>-<device>-<job>.yaml`.
+
+The XML files only contain the tests that ran inside a LAVA job, so a `boot`
+entry has no effect on this check.
+
 ## Which lists are used
 
-The list that is applied is the one of the pull request under test, not the one
+Both consumers apply the lists of the pull request under test, not the ones
 already merged, so a pull request that fixes a listed failure removes the entry
 in the same change, and a pull request that hits a new one can list it right
 away.
@@ -81,9 +100,40 @@ The test chain of a pull request runs on the `workflow_run` event, so its own
 checkout is the base branch. It therefore checks this directory out a second
 time from the branch or fork the pull request is built from, into
 `known-failures-pr/`, with a sparse checkout that fetches nothing else. Those
-lists are only ever read as data: everything the chain runs still comes from
-the base branch. A fork that is no longer reachable falls back to the list of
-the base branch, and the run log says which of the two was applied.
+lists are only ever read as data: the scripts applying them, and everything
+else the chain runs, still come from the base branch.
 
-A push, a nightly build and a manual run have no pull request to take a list
-from and simply use the one of their own checkout.
+Before they are applied to the "Test Results" check the lists are checked with
+`--validate --syntax-only`, i.e. for their syntax alone - which variants exist
+is a property of the base branch, and it is `known-failures.yml`, running on
+the pull request itself, that checks the lists against them. A list that does
+not parse, or a fork that is no longer reachable, falls back to the lists of
+the base branch. The run log says which lists were applied.
+
+A push, a nightly build and a manual run have no pull request to take lists
+from and simply use the ones of their own checkout.
+
+## Validation
+
+`.github/workflows/known-failures.yml` validates the lists on every change to
+this directory, to the script, or to the test workflow. It rejects:
+
+* a file that is not valid YAML, or that does not follow the format above,
+* a test listed twice for the same device,
+* a file whose name is not one of the build variants tested by
+  `.github/workflows/test.yml`, and a variant that has no file at all,
+* a device that the variant does not test.
+
+The last two matter because such an entry is not an error at test time, it is
+simply never applied - the list would look like it suppresses a failure while
+the check stays red. An entry without a comment is reported as a warning.
+
+Run the same check locally with:
+
+```shell
+python3 .github/scripts/apply-known-failures.py --validate
+```
+
+Add `--syntax-only` to check the format of the lists without checking them
+against the build variants of this branch. That is what the test chain uses on
+the lists it takes from a pull request.
