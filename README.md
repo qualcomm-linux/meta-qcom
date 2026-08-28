@@ -104,6 +104,13 @@ For a manual build without KAS, refer to the [Yocto Project Quick Build](https:/
 For instructions on building the QDL tool, preparing the board, and flashing
 images over USB (EDL mode), see [Flashing images](docs/flashing.md).
 
+## Testing
+
+Images are booted and tested on real hardware in a LAVA lab on every pull
+request, on every push to `master` and nightly. See [Testing](TESTING.md) for
+the tested build variants and devices, where the results are reported, and how
+to use the known failures lists.
+
 ## Security recommendations for production
 
 Please refer to the security recommendations for production builds documented here:
