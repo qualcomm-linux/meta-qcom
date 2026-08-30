@@ -1,0 +1,85 @@
+From 09969c3f88b8eb796f7ab52725974abf6e6bd4d8 Mon Sep 17 00:00:00 2001
+From: Ricardo Salveti <ricardo.salveti@oss.qualcomm.com>
+Date: Sat, 29 Aug 2026 16:24:27 +0000
+Subject: [PATCH 2/2] gst-plugin-qmmfsrc: probe camera service for P010 HEIF
+ support
+
+The P010 HEIF snapshot path added for 10bit 8K HEIC encode relies on
+the kP010HEIF image format, which only exists in recent camera service
+releases, so the plugin no longer compiles against older ones.
+
+Probe for qmmf::recorder::ImageFormat::kP010HEIF at configure time,
+following the existing check_cxx_source_compiles pattern used for the
+camera metadata tags, and guard its use with the resulting definition.
+When the camera service predates the format, plain P010 snapshots keep
+working and a HEIF subformat request fails with a clear error instead.
+
+Upstream-Status: Submitted [https://github.com/qualcomm/qimsdk/pull/11]
+Assisted-by: Claude Code:claude-fable-5
+Signed-off-by: Ricardo Salveti <ricardo.salveti@oss.qualcomm.com>
+---
+ gstreamer/gst-plugin-qmmfsrc/CMakeLists.txt     | 17 +++++++++++++++++
+ .../gst-plugin-qmmfsrc/camera_source_context.cc |  9 +++++++++
+ 2 files changed, 26 insertions(+)
+
+diff --git a/gstreamer/gst-plugin-qmmfsrc/CMakeLists.txt b/gstreamer/gst-plugin-qmmfsrc/CMakeLists.txt
+index fbeb217e..24286c57 100644
+--- a/gstreamer/gst-plugin-qmmfsrc/CMakeLists.txt
++++ b/gstreamer/gst-plugin-qmmfsrc/CMakeLists.txt
+@@ -76,6 +76,22 @@ int main()
+ check_cxx_source_compiles("${SRC_MAX_RES_CONFIG}"
+   HAS_ANDROID_SCALER_AVAILABLE_STREAM_CONFIGURATIONS_MAXIMUM_RESOLUTION)
+ 
++# Check whether the camera service supports the P010 HEIF image format
++set(SRC_P010_HEIF
++"
++#include <qmmf-sdk/qmmf_recorder_params.h>
++int main()
++{
++    auto format = ::qmmf::recorder::ImageFormat::kP010HEIF;
++    (void) format;
++    return 0;
++}")
++
++set(CMAKE_REQUIRED_FLAGS "-Wno-error")
++check_cxx_source_compiles("${SRC_P010_HEIF}"
++  HAS_QMMF_IMAGE_FORMAT_P010HEIF)
++unset(CMAKE_REQUIRED_FLAGS)
++
+ # GStreamer plugin.
+ set(GST_CAMSRC_PLUGIN gstqticamsrc)
+ 
+@@ -93,6 +109,7 @@ target_compile_definitions(${GST_CAMSRC_PLUGIN} PRIVATE
+   $<$<BOOL:${HAS_ANDROID_SENSOR_OPAQUE_RAW_SIZE_MAXIMUM_RESOLUTION}>:HAS_ANDROID_SENSOR_OPAQUE_RAW_SIZE_MAXIMUM_RESOLUTION>
+   $<$<BOOL:${HAS_ANDROID_REQUEST_AVAILABLE_CAPABILITIES_ULTRA_HIGH_RESOLUTION_SENSOR}>:HAS_ANDROID_REQUEST_AVAILABLE_CAPABILITIES_ULTRA_HIGH_RESOLUTION_SENSOR>
+   $<$<BOOL:${HAS_ANDROID_SCALER_AVAILABLE_STREAM_CONFIGURATIONS_MAXIMUM_RESOLUTION}>:HAS_ANDROID_SCALER_AVAILABLE_STREAM_CONFIGURATIONS_MAXIMUM_RESOLUTION>
++  $<$<BOOL:${HAS_QMMF_IMAGE_FORMAT_P010HEIF}>:HAS_QMMF_IMAGE_FORMAT_P010HEIF>
+ )
+ 
+ target_include_directories(${GST_CAMSRC_PLUGIN} PRIVATE
+diff --git a/gstreamer/gst-plugin-qmmfsrc/camera_source_context.cc b/gstreamer/gst-plugin-qmmfsrc/camera_source_context.cc
+index 9826e29d..525e2a43 100644
+--- a/gstreamer/gst-plugin-qmmfsrc/camera_source_context.cc
++++ b/gstreamer/gst-plugin-qmmfsrc/camera_source_context.cc
+@@ -2467,9 +2467,18 @@ gst_qmmf_context_create_image_stream (GstQmmfContext * context, GstPad * pad)
+         imgparam.format = ::qmmf::recorder::ImageFormat::kNV12UBWC;
+         break;
+       case GST_VIDEO_FORMAT_P010_10LE:
++#ifdef HAS_QMMF_IMAGE_FORMAT_P010HEIF
+         imgparam.format = (ipad->subformat == GST_IMAGE_SUBFORMAT_HEIF) ?
+             ::qmmf::recorder::ImageFormat::kP010HEIF :
+             ::qmmf::recorder::ImageFormat::kP010;
++#else
++        if (ipad->subformat == GST_IMAGE_SUBFORMAT_HEIF) {
++          GST_ERROR ("P010 HEIF is not supported by the camera service!");
++          GST_QMMFSRC_IMAGE_PAD_UNLOCK (ipad);
++          return FALSE;
++        }
++        imgparam.format = ::qmmf::recorder::ImageFormat::kP010;
++#endif // HAS_QMMF_IMAGE_FORMAT_P010HEIF
+         break;
+       case GST_VIDEO_FORMAT_NV12_Q10LE32C:
+         imgparam.format = ::qmmf::recorder::ImageFormat::kTP10UBWC;
+-- 
+2.43.0
+

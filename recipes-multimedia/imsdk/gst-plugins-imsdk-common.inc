@@ -9,9 +9,13 @@ inherit cmake features_check pkgconfig gobject-introspection
 
 REQUIRED_DISTRO_FEATURES = "opengl"
 
-SRC_URI = "git://github.com/qualcomm/qimsdk;protocol=https;nobranch=1;tag=${PV}"
+SRC_URI = "\
+    git://github.com/qualcomm/qimsdk;protocol=https;nobranch=1;tag=${PV} \
+    file://0001-smartvencbin-support-both-smart-venc-package-namings.patch \
+    file://0002-gst-plugin-qmmfsrc-probe-camera-service-for-P010-HEI.patch \
+"
 
-SRCREV = "fa161fea87cd827a39fb4a428ffab3d34bff1339"
+SRCREV = "11f7b5b10f3d8f85d94f80e0069af4ed849463b9"
 
 DEPENDS += "\
     gstreamer1.0 \
@@ -25,9 +29,8 @@ COMPATIBLE_MACHINE:aarch64 = "(.*)"
 
 PACKAGECONFIG[base]         = "-DENABLE_GST_PLUGIN_BASE=ON, -DENABLE_GST_PLUGIN_BASE=OFF, json-glib virtual/egl virtual/libgbm virtual/libgles2 virtual/libgles3"
 PACKAGECONFIG[builder-cpp]  = "-DENABLE_APP_BUILDER_CPP=1, -DENABLE_APP_BUILDER_CPP=0, yaml-cpp"
-PACKAGECONFIG[camera]       = "-DENABLE_GST_PLUGIN_CAMERA_BASE=ON -DENABLE_GST_PLUGIN_QMMFSRC=1 -DVHDR_MODES_ENABLE=ON -DEIS_MODES_ENABLE=ON \
-                               -DFEATURE_OFFLINE_IFE_SUPPORT=ON -DENABLE_GST_PLUGIN_JPEGENC=1, -DENABLE_GST_PLUGIN_CAMERA_BASE=OFF -DENABLE_GST_PLUGIN_QMMFSRC=0 \
-                               -DVHDR_MODES_ENABLE=OFF -DEIS_MODES_ENABLE=OFF -DFEATURE_OFFLINE_IFE_SUPPORT=OFF -DENABLE_GST_PLUGIN_JPEGENC=0, camera-service"
+PACKAGECONFIG[camera]       = "-DENABLE_GST_PLUGIN_CAMERA_BASE=ON -DENABLE_GST_PLUGIN_QMMFSRC=1 -DENABLE_GST_PLUGIN_JPEGENC=1, \
+                               -DENABLE_GST_PLUGIN_CAMERA_BASE=OFF -DENABLE_GST_PLUGIN_QMMFSRC=0 -DENABLE_GST_PLUGIN_JPEGENC=0, camera-service"
 PACKAGECONFIG[camera-apps]  = "-DENABLE_GST_SAMPLE_APPS_CAMERA=1, -DENABLE_GST_SAMPLE_APPS_CAMERA=0, camera-service"
 PACKAGECONFIG[messaging]    = "-DENABLE_GST_MESSAGING_PLUGINS=1, -DENABLE_GST_MESSAGING_PLUGINS=0, librdkafka mosquitto"
 PACKAGECONFIG[ml]           = "-DENABLE_GST_ML_PLUGINS=1, -DENABLE_GST_ML_PLUGINS=0, cairo json-glib libeigen opencv"

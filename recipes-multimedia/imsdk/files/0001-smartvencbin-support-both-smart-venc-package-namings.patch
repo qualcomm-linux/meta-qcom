@@ -1,0 +1,90 @@
+From 83469cf699f206bff46943ad5d9d9bb130e2b945 Mon Sep 17 00:00:00 2001
+From: Ricardo Salveti <ricardo.salveti@oss.qualcomm.com>
+Date: Sat, 29 Aug 2026 16:23:08 +0000
+Subject: [PATCH 1/2] smartvencbin: support both smart-venc package namings
+
+The Smart Video Encoder Control Algorithm prebuilt package was renamed
+from qcom-video-ctrl (libVideoCtrl.so, iot-core-algs/videoctrl.h) to
+qimsdk-smartvenc (libqimsdk-smartvenc.so, qimsdk-smartvenc/videoctrl.h),
+and the plugin now only builds against the new naming, while the
+prebuilts currently published still ship the old one.
+
+Probe for the qimsdk-smartvenc pkg-config module first and fall back to
+qcom-video-ctrl, propagating the result as the HAVE_QIMSDK_SMARTVENC
+compile definition that selects the matching header include path and
+dlopen library name, so the plugin builds and runs against either
+package generation.
+
+Upstream-Status: Submitted [https://github.com/qualcomm/qimsdk/pull/11]
+Assisted-by: Claude Code:claude-fable-5
+Signed-off-by: Ricardo Salveti <ricardo.salveti@oss.qualcomm.com>
+---
+ gstreamer/gst-plugin-smartvencbin/CMakeLists.txt  | 15 +++++++++++++--
+ .../gst-plugin-smartvencbin/smart-codec-engine.cc |  8 +++++++-
+ 2 files changed, 20 insertions(+), 3 deletions(-)
+
+diff --git a/gstreamer/gst-plugin-smartvencbin/CMakeLists.txt b/gstreamer/gst-plugin-smartvencbin/CMakeLists.txt
+index 612f2ec3..b7fb54f9 100644
+--- a/gstreamer/gst-plugin-smartvencbin/CMakeLists.txt
++++ b/gstreamer/gst-plugin-smartvencbin/CMakeLists.txt
+@@ -17,7 +17,17 @@ pkg_check_modules(GST REQUIRED gstreamer-1.0>=${GST_VERSION_REQUIRED})
+ pkg_check_modules(GST_ALLOC REQUIRED gstreamer-allocators-1.0>=${GST_VERSION_REQUIRED})
+ pkg_check_modules(GST_VIDEO REQUIRED gstreamer-video-1.0>=${GST_VERSION_REQUIRED})
+ pkg_check_modules(GST_PBUTILS REQUIRED gstreamer-pbutils-1.0>=${GST_VERSION_REQUIRED})
+-pkg_check_modules(QCOM_VIDEO_CTRL REQUIRED qimsdk-smartvenc)
++# The Smart Video Encoder Control Algorithm package was renamed from
++# qcom-video-ctrl (libVideoCtrl.so, iot-core-algs/videoctrl.h) to
++# qimsdk-smartvenc (libqimsdk-smartvenc.so, qimsdk-smartvenc/videoctrl.h).
++# Probe for the new name first and fall back to the old one, so the plugin
++# builds against either package generation.
++pkg_check_modules(QIMSDK_SMARTVENC qimsdk-smartvenc)
++if (QIMSDK_SMARTVENC_FOUND)
++  set(QCOM_VIDEO_CTRL_VERSION ${QIMSDK_SMARTVENC_VERSION})
++else()
++  pkg_check_modules(QCOM_VIDEO_CTRL REQUIRED qcom-video-ctrl)
++endif()
+ pkg_check_modules(GST_QCOM_VIDEO REQUIRED gstreamer-qcom-oss-video-1.0>=1.0.0)
+ 
+ # Generate configuration header file with plugin describing definitions
+@@ -54,9 +64,10 @@ target_link_libraries(${GST_SMART_VENC_BIN} PRIVATE
+ 
+ string(REGEX MATCH "^[0-9]+" QCOM_VIDEO_CTRL_VERSION_MAJOR ${QCOM_VIDEO_CTRL_VERSION})
+ 
+-# Pass the VideoCtrl library version as a macro
++# Pass the VideoCtrl library version and package generation as macros
+ target_compile_definitions(${GST_SMART_VENC_BIN} PRIVATE
+   VIDEO_CTRL_VERSION_MAJOR="${QCOM_VIDEO_CTRL_VERSION_MAJOR}"
++  $<$<BOOL:${QIMSDK_SMARTVENC_FOUND}>:HAVE_QIMSDK_SMARTVENC>
+ )
+ 
+ install(
+diff --git a/gstreamer/gst-plugin-smartvencbin/smart-codec-engine.cc b/gstreamer/gst-plugin-smartvencbin/smart-codec-engine.cc
+index 22bb8336..22ce53ad 100644
+--- a/gstreamer/gst-plugin-smartvencbin/smart-codec-engine.cc
++++ b/gstreamer/gst-plugin-smartvencbin/smart-codec-engine.cc
+@@ -9,7 +9,13 @@
+ #include <dlfcn.h>
+ #include <mutex>
+ 
++#ifdef HAVE_QIMSDK_SMARTVENC
+ #include <qimsdk-smartvenc/videoctrl.h>
++#define VIDEO_CTRL_LIBNAME "libqimsdk-smartvenc.so"
++#else
++#include <iot-core-algs/videoctrl.h>
++#define VIDEO_CTRL_LIBNAME "libVideoCtrl.so"
++#endif
+ 
+ struct _SmartCodecEngine {
+   std::mutex           engine_lock;
+@@ -45,7 +51,7 @@ gst_smartcodec_engine_new ()
+   SmartCodecEngine *engine = NULL;
+   ::videoctrl::NewIEngine NewVideoCtrlEngine;
+ 
+-  std::string libname = "libqimsdk-smartvenc.so." + std::string(VIDEO_CTRL_VERSION_MAJOR);
++  std::string libname = VIDEO_CTRL_LIBNAME "." + std::string(VIDEO_CTRL_VERSION_MAJOR);
+ 
+   engine = g_new0 (SmartCodecEngine, 1);
+   g_return_val_if_fail (engine != NULL, NULL);
+-- 
+2.43.0
+
