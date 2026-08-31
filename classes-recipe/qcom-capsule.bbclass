@@ -34,21 +34,15 @@ CAPSULE_ROOT_PUB ?= ""
 CAPSULE_SUB_PUB  ?= ""
 
 # ---------------------------------------------------------------------------
-# XBLConfig DTB certificate injection
+# OEM root certificate injection
 # ---------------------------------------------------------------------------
-# The class automatically detects the post-DDR DTB by parsing the output of
-# xblconfig_parser.py dump (looks for the first entry matching post-ddr*.dtb).
-# Both the filename and the section index are extracted from the dump output.
-#
-# XBLCONFIG_DTB overrides auto-detection when set to an explicit filename.
-# XBLCONFIG_DTB_SECTION overrides the auto-detected section index.
-#
-# When a post-DDR DTB is found (auto or explicit), the class will:
-#   1. dump XBLConfig sections
-#   2. patch QcCapsuleRootCert in the DTB with the converted root cert
-#   3. re-pack the updated DTB back into xbl_config.elf
-XBLCONFIG_DTB         ?= ""
-XBLCONFIG_DTB_SECTION ?= ""
+# QcCapsuleRootCert is injected into the boot config ELFs by
+# firmware-qcom-oem-cert (classes-recipe/qcom-oem-cert.bbclass), not here.
+# It has to happen there because the certificate must be in place before
+# the config ELFs are signed, and this recipe runs after the boot firmware
+# has already been deployed.  This class consumes the result: the
+# cert-bearing copies are staged over the pristine boot binaries so the
+# capsule firmware volume is built from the same images the device runs.
 
 # ---------------------------------------------------------------------------
 # Boot binaries location
@@ -88,7 +82,8 @@ inherit python3native deploy
 
 CAPSULE_DIR = "${WORKDIR}/capsule_gen"
 
-do_compile[depends] += "cbsp-boot-utilities-native:do_populate_sysroot"
+do_compile[depends] += "cbsp-boot-utilities-native:do_populate_sysroot \
+                        firmware-qcom-oem-cert:do_deploy"
 do_compile[dirs] = "${CAPSULE_DIR}"
 do_compile[cleandirs] = "${CAPSULE_DIR}"
 
@@ -203,57 +198,6 @@ python generate_fvupdate() {
 
 do_compile[prefuncs] += "generate_fvupdate"
 
-# Inject the OEM root certificate into xbl_config.elf.
-# Dumps the config sections, auto-detects the post-DDR DTB (or uses
-# XBLCONFIG_DTB / XBLCONFIG_DTB_SECTION overrides), patches QcCapsuleRootCert
-# in that DTB, and repacks the updated DTB back into xbl_config.elf in place.
-# $1 - path to xbl_config.elf (modified in place on success)
-patch_xblconfig_cert() {
-    local xbl_config="$1"
-    local staged_dir
-    staged_dir=$(dirname "${xbl_config}")
-
-    XBL_DUMP_LOG="${CAPSULE_DIR}/xbl_dump.log"
-    qcom-capsule-tool parse-config \
-        "${xbl_config}" dump \
-        --out-dir "${staged_dir}" | tee "${XBL_DUMP_LOG}"
-
-    DTB_PATCH="${XBLCONFIG_DTB}"
-    DTB_SECTION="${XBLCONFIG_DTB_SECTION}"
-    if [ -z "${DTB_PATCH}" ]; then
-        # Parse a line like:
-        #   [+] config_item[6] -> PH# 8 -> './post-ddr-kodiak-1.0.dtb' (90280 bytes)
-        POST_DDR_LINE=$(grep -m1 "post-ddr.*\.dtb" "${XBL_DUMP_LOG}" || true)
-        if [ -n "${POST_DDR_LINE}" ]; then
-            DTB_PATCH=$(echo "${POST_DDR_LINE}" | sed "s|.* -> '||;s|'.*||" | xargs basename)
-            DTB_SECTION=$(echo "${POST_DDR_LINE}" | sed "s/.*PH# \([0-9]*\).*/\1/")
-        fi
-    fi
-
-    if [ -n "${DTB_PATCH}" ]; then
-        ORIG_DTB="${staged_dir}/${DTB_PATCH}"
-        UPDATED_DTB="${staged_dir}/${DTB_PATCH%.dtb}-updated.dtb"
-
-        qcom-capsule-tool set-dtb-property \
-            "${ORIG_DTB}" \
-            /sw/uefi/uefiplat \
-            QcCapsuleRootCert \
-            "@list:${ROOT_INC}" \
-            "${UPDATED_DTB}"
-
-        qcom-capsule-tool parse-config \
-            "${xbl_config}" replace \
-            "${DTB_SECTION}" \
-            "${UPDATED_DTB}" \
-            "${staged_dir}/xbl_config_patched.elf"
-
-        mv "${staged_dir}/xbl_config_patched.elf" \
-           "${xbl_config}"
-
-        touch "${CAPSULE_DIR}/.xbl_with_oem_cert"
-    fi
-}
-
 do_compile() {
     CBSP_DATA="${STAGING_DATADIR_NATIVE}/cbsp-boot-utilities"
 
@@ -269,9 +213,6 @@ do_compile() {
     fi
 
     cd "${CAPSULE_DIR}"
-
-    ROOT_INC="${CAPSULE_DIR}/QcFMPRoot.inc"
-    qcom-capsule-tool bin-to-hex "${CAPSULE_ROOT_CER}" "${ROOT_INC}"
 
     # Stage boot binaries so they are writable (XBLConfig patching modifies
     # xbl_config.elf in place)
@@ -289,10 +230,12 @@ do_compile() {
             "${BOOTBINS_STAGED}/dtb.bin"
     fi
 
-    # Inject OEM root cert into xbl_config.elf when present.  Platforms
-    # without xbl_config.elf (e.g. hamoa) skip this step.
-    if [ -f "${BOOTBINS_STAGED}/xbl_config.elf" ]; then
-        patch_xblconfig_cert "${BOOTBINS_STAGED}/xbl_config.elf"
+    # Overlay the cert-bearing config ELFs deployed by
+    # firmware-qcom-oem-cert, so the capsule firmware volume carries the
+    # same images the device boots.  Optional: hamoa has no xbl_config.elf.
+    if [ -f "${DEPLOY_DIR_IMAGE}/xbl_config-with-oem-cert.elf" ]; then
+        install -m 0644 "${DEPLOY_DIR_IMAGE}/xbl_config-with-oem-cert.elf" \
+            "${BOOTBINS_STAGED}/${QCOM_XBL_CONFIG}"
     fi
 
     qcom-capsule-tool sysfw-version-create \
@@ -336,14 +279,6 @@ FILES:${PN} = "${nonarch_base_libdir}/firmware/efi/${PN}.cap"
 do_deploy() {
     install -d "${DEPLOYDIR}"
     install -m 0644 "${CAPSULE_DIR}/${PN}.cap" "${DEPLOYDIR}/"
-
-    # When XBLConfig was injected with the OEM root cert, deploy the updated
-    # binary under a distinct name to avoid a deploy-manifest conflict with
-    # firmware-qcom-bootbins (which already owns xbl_config.elf).
-    if [ -f "${CAPSULE_DIR}/.xbl_with_oem_cert" ]; then
-        install -m 0644 "${CAPSULE_DIR}/bootbins/xbl_config.elf" \
-            "${DEPLOYDIR}/xbl_config-with-oem-cert.elf"
-    fi
 }
 addtask deploy before do_build after do_compile
 
