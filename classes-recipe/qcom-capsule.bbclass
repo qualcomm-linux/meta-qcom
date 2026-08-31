@@ -88,8 +88,7 @@ inherit python3native deploy
 
 CAPSULE_DIR = "${WORKDIR}/capsule_gen"
 
-do_compile[depends] += "cbsp-boot-utilities-native:do_populate_sysroot \
-                        edk2-basetools-native:do_populate_sysroot"
+do_compile[depends] += "cbsp-boot-utilities-native:do_populate_sysroot"
 do_compile[dirs] = "${CAPSULE_DIR}"
 do_compile[cleandirs] = "${CAPSULE_DIR}"
 
@@ -257,15 +256,6 @@ patch_xblconfig_cert() {
 
 do_compile() {
     CBSP_DATA="${STAGING_DATADIR_NATIVE}/cbsp-boot-utilities"
-    EDK2_BASETOOLS="${STAGING_DATADIR_NATIVE}/edk2-basetools"
-
-    # GenFfs/GenFv are staged to ${STAGING_BINDIR_NATIVE} (in PATH) by
-    # upstream meta-arm's edk2-basetools-native and resolved by
-    # qcom-capsule-tool via shutil.which. GenerateCapsule.py and its
-    # Common/ Python package live under ${EDK2_BASETOOLS}; add that to
-    # PYTHONPATH so `import Common` works when we invoke the script
-    # directly below.
-    export PYTHONPATH="${EDK2_BASETOOLS}${PYTHONPATH:+:$PYTHONPATH}"
 
     # Use a board-specific FvUpdate.xml if provided via SRC_URI:append or
     # generated from CAPSULE_ENTRIES, otherwise fall back to the default
@@ -327,7 +317,7 @@ do_compile() {
         -oc "${CAPSULE_SUB_PUB}" \
         -g  "${CAPSULE_GUID}"
 
-    python3 "${EDK2_BASETOOLS}/GenerateCapsule.py" \
+    qcom-capsule-tool generate-capsule \
         -e \
         -j config.json \
         -o "${PN}.cap" \
