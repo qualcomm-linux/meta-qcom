@@ -223,7 +223,11 @@ jobs:
       cache_dir: ${{ needs.compile-env.outputs.CACHE_DIR }}
       profile: ${{ inputs.profile }}
 
-  compile:
+  # The full compile matrix exceeds the 256-configuration limit for a single
+  # reusable-workflow strategy, so it is split into two batches by machine.
+  # Every exclude/include entry below pins to one specific machine, so
+  # partitioning by machine preserves exact coverage across both batches.
+  compile_batch1:
     needs: [github-cache-check, compile_warm_up, compile-env]
     if: |
       github.repository_owner == 'qualcomm-linux' &&
@@ -240,14 +244,6 @@ jobs:
           - iq-x7181-evk
           - kaanapali-mtp
           - qcm6490-idp
-          - qcom-armv8a
-          - qcs615-ride
-          - qcs8300-ride-sx
-          - qcs9100-ride-sx
-          - rb1-core-kit
-          - rb3gen2-core-kit
-          - shikra-evk
-          - sm8750-mtp
         distro:
           - name: nodistro
             yamlfile: ""
@@ -292,6 +288,139 @@ jobs:
                 name: qcom-distro
             kernel:
                 type: default
+        include:
+          # Additional builds for specific machines
+          - machine: iq-9075-evk
+            distro:
+                name: qcom-distro
+                yamlfile: ':ci/qcom-distro.yml'
+            kernel:
+                type: qcom-next-rt
+                dirname: "_linux-qcom-next-rt"
+                yamlfile: ":ci/linux-qcom-next-rt.yml"
+          - machine: iq-9075-evk
+            distro:
+                name: qcom-distro-dpdk
+                yamlfile: ':ci/qcom-distro.yml:ci/dpdk.yml'
+            kernel:
+                type: default
+                dirname: ""
+                yamlfile: ""
+          - machine: qcom-armv7a
+            distro:
+                name: nodistro
+                yamlfile: ''
+            kernel:
+                type: default
+                dirname: ""
+                yamlfile: ""
+          - machine: qcom-armv7a
+            distro:
+                name: qcom-distro
+                yamlfile: ':ci/qcom-distro-multimedia-image.yml'
+            kernel:
+                type: default
+                dirname: ""
+                yamlfile: ""
+          - machine: iq-9075-evk
+            distro:
+                name: qcom-distro
+                yamlfile: ':ci/qcom-distro.yml'
+            kernel:
+                type: u-boot-qcom-6.18
+                dirname: "_linux-qcom-6.18_u-boot-qcom"
+                yamlfile: ":ci/linux-qcom-6.18.yml:ci/u-boot-qcom.yml"
+          - machine: iq-615-evk
+            distro:
+                name: qcom-distro
+                yamlfile: ':ci/qcom-distro.yml'
+            kernel:
+                type: u-boot-qcom-6.18
+                dirname: "_linux-qcom-6.18_u-boot-qcom"
+                yamlfile: ":ci/linux-qcom-6.18.yml:ci/u-boot-qcom.yml"
+          - machine: iq-8275-evk
+            distro:
+                name: qcom-distro
+                yamlfile: ':ci/qcom-distro.yml'
+            kernel:
+                type: u-boot-qcom-6.18
+                dirname: "_linux-qcom-6.18_u-boot-qcom"
+                yamlfile: ":ci/linux-qcom-6.18.yml:ci/u-boot-qcom.yml"
+          - machine: iq-9075-evk-open-fw
+            distro:
+                name: qcom-distro-kvm
+                yamlfile: ':ci/qcom-distro-kvm.yml'
+            kernel:
+                type: default
+                dirname: ""
+                yamlfile: ""
+          - machine: sdx75-idp
+            distro:
+                name: nodistro
+                yamlfile: ""
+            kernel:
+                type: default
+                dirname: ""
+                yamlfile: ""
+    uses: ./.github/workflows/compile.yml
+    with:
+      name: ${{ matrix.machine }}/${{ matrix.distro.name }}${{ matrix.kernel.dirname }}
+      enabled: ${{inputs.profile != 'pr' || (matrix.distro.name != 'debug' && matrix.distro.name != 'performance')}}
+      # One world build per machine and distro family is enough for compile
+      # coverage: nodistro (including the nogl variant) covers the plain OE
+      # configuration and qcom-distro-catchall enables a superset of the
+      # qcom-distro DISTRO_FEATURES, so the remaining distro and kernel
+      # combinations only repeat already-covered world builds. qcom-armv7a has
+      # no qcom-distro-catchall variant, so its qcom-distro build is the
+      # distro-family world build for that machine.
+      world: ${{ (startsWith(matrix.distro.name, 'nodistro') || matrix.distro.name == 'qcom-distro-catchall' || (matrix.machine == 'qcom-armv7a' && matrix.distro.name == 'qcom-distro')) && matrix.kernel.type == 'default' }}
+      machine: ${{matrix.machine}}
+      distro_yaml: ${{matrix.distro.yamlfile}}
+      distro_name: ${{matrix.distro.name}}
+      kernel_yaml: ${{matrix.kernel.yamlfile}}
+      kernel_dirname: ${{matrix.kernel.dirname}}
+      cache_dir: ${{ needs.compile-env.outputs.CACHE_DIR }}
+
+  compile_batch2:
+    needs: [github-cache-check, compile_warm_up, compile-env]
+    if: |
+      github.repository_owner == 'qualcomm-linux' &&
+      (inputs.skip_if_github_cached != true || needs.github-cache-check.outputs.cache_hit != 'true')
+    strategy:
+      fail-fast: false
+      matrix:
+        machine:
+          - qcom-armv8a
+          - qcs615-ride
+          - qcs8300-ride-sx
+          - qcs9100-ride-sx
+          - rb1-core-kit
+          - rb3gen2-core-kit
+          - shikra-evk
+          - sm8750-mtp
+        distro:
+          - name: nodistro
+            yamlfile: ""
+          - name: qcom-distro
+            yamlfile: ':ci/qcom-distro.yml'
+          - name: qcom-distro-catchall
+            yamlfile: ':ci/qcom-distro-catchall.yml'
+          - name: debug
+            yamlfile: ':ci/qcom-distro-catchall.yml:ci/debug.yml'
+          - name: performance
+            yamlfile: ':ci/qcom-distro-catchall.yml:ci/performance.yml'
+        kernel:
+          - type: default
+            dirname: ""
+            yamlfile: ""
+          - type: 6.18
+            dirname: "_linux-qcom-6.18"
+            yamlfile: ":ci/linux-qcom-6.18.yml"
+          - type: rt-6.18-distro-kvm
+            dirname: "_linux-qcom-rt-6.18_qcom-distro-kvm"
+            yamlfile: ":ci/linux-qcom-rt-6.18.yml:ci/qcom-distro-kvm.yml"
+        exclude:
+          # Exclude jobs from compile_warm_up
           - machine: qcom-armv8a
             distro:
                 name: nodistro
@@ -330,42 +459,10 @@ jobs:
                 type: additional
                 dirname: "_linux-yocto-dev"
                 yamlfile: ":ci/linux-yocto-dev.yml"
-          - machine: iq-9075-evk
-            distro:
-                name: qcom-distro
-                yamlfile: ':ci/qcom-distro.yml'
-            kernel:
-                type: qcom-next-rt
-                dirname: "_linux-qcom-next-rt"
-                yamlfile: ":ci/linux-qcom-next-rt.yml"
-          - machine: iq-9075-evk
-            distro:
-                name: qcom-distro-dpdk
-                yamlfile: ':ci/qcom-distro.yml:ci/dpdk.yml'
-            kernel:
-                type: default
-                dirname: ""
-                yamlfile: ""
           - machine: rb3gen2-core-kit
             distro:
                 name: qcom-distro-kvm
                 yamlfile: ':ci/qcom-distro-kvm.yml'
-            kernel:
-                type: default
-                dirname: ""
-                yamlfile: ""
-          - machine: qcom-armv7a
-            distro:
-                name: nodistro
-                yamlfile: ''
-            kernel:
-                type: default
-                dirname: ""
-                yamlfile: ""
-          - machine: qcom-armv7a
-            distro:
-                name: qcom-distro
-                yamlfile: ':ci/qcom-distro-multimedia-image.yml'
             kernel:
                 type: default
                 dirname: ""
@@ -386,22 +483,6 @@ jobs:
                 type: u-boot-qcom-6.18
                 dirname: "_linux-qcom-6.18_u-boot-qcom"
                 yamlfile: ":ci/linux-qcom-6.18.yml:ci/u-boot-qcom.yml"
-          - machine: iq-9075-evk
-            distro:
-                name: qcom-distro
-                yamlfile: ':ci/qcom-distro.yml'
-            kernel:
-                type: u-boot-qcom-6.18
-                dirname: "_linux-qcom-6.18_u-boot-qcom"
-                yamlfile: ":ci/linux-qcom-6.18.yml:ci/u-boot-qcom.yml"
-          - machine: iq-615-evk
-            distro:
-                name: qcom-distro
-                yamlfile: ':ci/qcom-distro.yml'
-            kernel:
-                type: u-boot-qcom-6.18
-                dirname: "_linux-qcom-6.18_u-boot-qcom"
-                yamlfile: ":ci/linux-qcom-6.18.yml:ci/u-boot-qcom.yml"
           - machine: shikra-evk
             distro:
                 name: qcom-distro
@@ -410,23 +491,7 @@ jobs:
                 type: u-boot-qcom-6.18
                 dirname: "_linux-qcom-6.18_u-boot-qcom"
                 yamlfile: ":ci/linux-qcom-6.18.yml:ci/u-boot-qcom.yml"
-          - machine: iq-8275-evk
-            distro:
-                name: qcom-distro
-                yamlfile: ':ci/qcom-distro.yml'
-            kernel:
-                type: u-boot-qcom-6.18
-                dirname: "_linux-qcom-6.18_u-boot-qcom"
-                yamlfile: ":ci/linux-qcom-6.18.yml:ci/u-boot-qcom.yml"
           - machine: rb3gen2-core-kit-open-fw
-            distro:
-                name: qcom-distro-kvm
-                yamlfile: ':ci/qcom-distro-kvm.yml'
-            kernel:
-                type: default
-                dirname: ""
-                yamlfile: ""
-          - machine: iq-9075-evk-open-fw
             distro:
                 name: qcom-distro-kvm
                 yamlfile: ':ci/qcom-distro-kvm.yml'
@@ -458,14 +523,6 @@ jobs:
                 type: u-boot-qcom-fit-6.18
                 dirname: "_linux-qcom-6.18_u-boot-qcom-fit"
                 yamlfile: ":ci/linux-qcom-6.18.yml:ci/u-boot-qcom.yml:ci/kernel-fit-image.yml"
-          - machine: sdx75-idp
-            distro:
-                name: nodistro
-                yamlfile: ""
-            kernel:
-                type: default
-                dirname: ""
-                yamlfile: ""
     uses: ./.github/workflows/compile.yml
     with:
       name: ${{ matrix.machine }}/${{ matrix.distro.name }}${{ matrix.kernel.dirname }}
@@ -492,7 +549,7 @@ jobs:
       profile: ${{ inputs.profile }}
 
   publish_summary:
-    needs: [github-cache-check, compile, compile_sdk]
+    needs: [github-cache-check, compile_batch1, compile_batch2, compile_sdk]
     if: |
       always() && github.repository_owner == 'qualcomm-linux' &&
       (inputs.skip_if_github_cached != true || needs.github-cache-check.outputs.cache_hit != 'true')
@@ -508,12 +565,13 @@ jobs:
           pattern: build-url*
 
   github-cache-save:
-    needs: [github-cache-check, compile, compile_sdk]
+    needs: [github-cache-check, compile_batch1, compile_batch2, compile_sdk]
     if: |
       github.repository_owner == 'qualcomm-linux' &&
       inputs.skip_if_github_cached == true &&
       needs.github-cache-check.outputs.cache_hit != 'true' &&
-      needs.compile.result == 'success'
+      needs.compile_batch1.result == 'success' &&
+      needs.compile_batch2.result == 'success'
     runs-on: ubuntu-latest
     steps:
       - name: Create build success marker
@@ -527,7 +585,7 @@ jobs:
 
   build_successful:
     if: github.repository_owner == 'qualcomm-linux'
-    needs: [compile, compile_sdk]
+    needs: [compile_batch1, compile_batch2, compile_sdk]
     runs-on: ubuntu-latest
     steps:
       - name: Build completed successfully
