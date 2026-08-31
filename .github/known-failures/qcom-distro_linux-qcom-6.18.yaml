@@ -14,3 +14,9 @@
 # "*":
 #   - test: test_failing_everywhere
 #     comment: "flaky since the 6.18 kernel uprev, issue #1235"
+
+rb3gen2-core-kit:
+  - test: Camera_RDI_FrameCapture
+    comment: ""
+  - test: Libcamera_cam
+    comment: ""

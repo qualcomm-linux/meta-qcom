@@ -14,3 +14,17 @@
 # "*":
 #   - test: test_failing_everywhere
 #     comment: "flaky since the 6.18 kernel uprev, issue #1235"
+
+iq-x7181-evk:
+  - test: AudioRecord
+    comment: ""
+  - test: Ethernet
+    comment: ""
+  - test: GStreamer_Video_Decode_h264_480p
+    comment: ""
+  - test: GStreamer_Video_Decode_h265_480p
+    comment: ""
+  - test: GStreamer_Video_Encode_h264_480p
+    comment: ""
+  - test: GStreamer_Video_Encode_h265_480p
+    comment: ""
