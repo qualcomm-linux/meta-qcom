@@ -3,11 +3,11 @@ DESCRIPTION = "Provides prebuilt binaries for the Smart Video Encoder Control Al
 LICENSE = "LicenseRef-LICENSE.qcom-2"
 LIC_FILES_CHKSUM = "file://${UNPACKDIR}/usr/share/doc/qcom-video-ctrl/LICENSE.qcom-2;md5=165287851294f2fb8ac8cbc5e24b02b0"
 
-PBT_BUILD_DATE = "260709"
+PBT_BUILD_DATE = "260814"
 
 SRC_URI = "https://softwarecenter.qualcomm.com/nexus/generic/software/chip/component/iot-core-algs.lnx.0.0/${PBT_BUILD_DATE}/prebuilt_yocto/qcom-video-ctrl_${PV}_armv8a.tar.gz"
 
-SRC_URI[sha256sum] = "72fd2cbe5ab1e12c718d67f9a0a9687063b7b22a1c2c5c4bad1eca6d2eedfe14"
+SRC_URI[sha256sum] = "6d4eec53be35c145231b5e38fe38561753dda124eec14470adf77822f6dea8f3"
 
 S = "${UNPACKDIR}"
 
