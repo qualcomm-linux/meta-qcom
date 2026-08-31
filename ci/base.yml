@@ -18,9 +18,6 @@ repos:
       fix-igt-pause:
         repo: meta-qcom
         path: patches/oe-core/0001-igt-gpu-tools-fix-build-on-non-x86-platforms.patch
-      scons-variables-revert:
-        repo: meta-qcom
-        path: patches/oe-core/0002-python3-scons-backport-revert-of-the-4.11.0-Variables.patch
       revert-python3-pycairo:
         repo: meta-qcom
         path: patches/oe-core/0001-Revert-python3-pycairo-inherit-python3-dir-not-pytho.patch
