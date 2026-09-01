@@ -46,7 +46,7 @@ on:
 env:
   KAS_CLONE_DEPTH: 1
   KAS_CONTAINER: ${{ github.workspace }}/kas-container
-  KAS_CONTAINER_IMAGE: ghcr.io/siemens/kas/kas:5.5
+  KAS_CONTAINER_IMAGE: ghcr.io/siemens/kas/kas@sha256:4b210b0be3c887875973c4f4c35470b4ecf3edd2346c9de1bdd33feae5b86e94 # 5.5
 
 jobs:
   reusable_compile_job:
