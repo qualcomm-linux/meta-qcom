@@ -19,6 +19,6 @@ RRECOMMENDS:${PN}-firmware = " \
 
 # Purwa IoT EVK and Hamoa IoT EVK share the same Hexagon DSP binaries.
 RDEPENDS:${PN}-hexagon-dsp-binaries = " \
-    hexagon-dsp-binaries-qcom-hamoa-iot-evk-adsp \
-    hexagon-dsp-binaries-qcom-hamoa-iot-evk-cdsp \
+    hexagon-dsp-binaries-qcom-purwa-iot-evk-adsp \
+    hexagon-dsp-binaries-qcom-purwa-iot-evk-cdsp \
 "
