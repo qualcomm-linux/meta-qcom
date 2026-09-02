@@ -4,11 +4,11 @@ HOMEPAGE = "https://github.com/qualcomm/sensinghub"
 LICENSE = "BSD-3-Clause-Clear"
 LIC_FILES_CHKSUM = "file://LICENSE.txt;md5=9701d0ef17353f1d05d7b74c8712ebbd"
 
-SRCREV = "c08dcfa05a39aaf7d9b7f3241f612d29a2df1073"
+SRCREV = "6d7e56b85a518a514585efddec5e4a349e13d37d"
 
 SRC_URI = "git://github.com/qualcomm/sensinghub.git;protocol=https;branch=main;tag=v${PV}"
 
-DEPENDS = "protobuf protobuf-native glib-2.0"
+DEPENDS = "protobuf protobuf-native glib-2.0 nanopb-runtime nanopb-generator-native"
 
 inherit autotools pkgconfig
 
