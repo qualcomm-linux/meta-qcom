@@ -169,7 +169,7 @@ jobs:
             # ESP (efi.bin) and vmlinux, so skip their standalone copies when
             # the tarball is published (uncompress or extract them if needed)
             if compgen -G "$images_dir/*.qcomflash.tar.gz" > /dev/null; then
-              exclude+=( ! -name '*.rootfs.ext4' ! -name 'esp-qcom-image-*.vfat' ! -name 'vmlinux' )
+              exclude+=( ! -name '*.rootfs.ext4' ! -name '*.rootfs.ota-ext4' ! -name '*.rootfs.ota-esp' ! -name 'esp-qcom-image-*.vfat' ! -name 'vmlinux' )
             fi
             # The world build deploys the same initramfs images for every
             # machine, so publish them only from the generic machines
