@@ -1,0 +1,68 @@
+From d125e1de795ddc1d538670cd8927af935d669f34 Mon Sep 17 00:00:00 2001
+From: GargiQcom <gmisra@qti.qualcomm.com>
+Date: Wed, 2 Sep 2026 12:25:29 +0530
+Subject: [PATCH] systemd: allow usr symlink reads for early boot helpers
+
+Address AVC denials during boot for systemd_logind_t, systemd_modules_load_t, systemd_resolved_t, systemd_sysctl_t and systemd_tmpfiles_t when accessing /usr symlinks.
+
+Also allow systemd_modules_load_t to read cgroup files used by module-load generator paths.
+
+Use existing refpolicy interfaces to keep policy scope minimal.
+
+Upstream-Status: Submitted [qli lsm-policy-skill]
+
+Signed-off-by: GargiQcom <gmisra@qti.qualcomm.com>
+---
+ policy/modules/system/systemd.te | 6 ++++++
+ 1 file changed, 6 insertions(+)
+
+diff --git a/policy/modules/system/systemd.te b/policy/modules/system/systemd.te
+index f57e8bb80..1d111dc06 100644
+--- a/policy/modules/system/systemd.te
++++ b/policy/modules/system/systemd.te
+@@ -1138,6 +1138,7 @@ domain_obj_id_change_exemption(systemd_logind_t)
+ 
+ files_check_write_runtime_dirs(systemd_logind_t)
+ files_read_etc_runtime_files(systemd_logind_t)
++files_read_usr_symlinks(systemd_logind_t)
+ files_search_runtime(systemd_logind_t)
+ # Getattr all shm segments as part of cleaning up the
+ # segments of deleted ephemeral users.
+@@ -1434,8 +1435,10 @@ dev_read_sysfs(systemd_modules_load_t)
+ 
+ files_mmap_read_kernel_modules(systemd_modules_load_t)
+ files_read_etc_files(systemd_modules_load_t)
++files_read_usr_symlinks(systemd_modules_load_t)
+ 
+ fs_getattr_all_fs(systemd_modules_load_t)
++fs_read_cgroup_files(systemd_modules_load_t)
+ fs_search_all(systemd_modules_load_t)
+ 
+ modutils_domtrans(systemd_modules_load_t)
+@@ -2005,6 +2008,7 @@ auth_use_nsswitch(systemd_resolved_t)
+ files_watch_root_dirs(systemd_resolved_t)
+ files_watch_runtime_dirs(systemd_resolved_t)
+ files_list_runtime(systemd_resolved_t)
++files_read_usr_symlinks(systemd_resolved_t)
+ 
+ fs_getattr_all_fs(systemd_resolved_t)
+ fs_getattr_nsfs_files(systemd_resolved_t)
+@@ -2106,6 +2110,7 @@ kernel_rw_all_sysctls(systemd_sysctl_t)
+ kernel_dontaudit_getattr_proc(systemd_sysctl_t)
+ 
+ files_read_etc_files(systemd_sysctl_t)
++files_read_usr_symlinks(systemd_sysctl_t)
+ 
+ fs_getattr_all_fs(systemd_sysctl_t)
+ fs_search_cgroup_dirs(systemd_sysctl_t)
+@@ -2263,6 +2268,7 @@ files_relabel_all_runtime_dirs(systemd_tmpfiles_t)
+ files_relabel_all_tmp_dirs(systemd_tmpfiles_t)
+ files_relabel_var_dirs(systemd_tmpfiles_t)
+ files_relabel_var_lib_dirs(systemd_tmpfiles_t)
++files_read_usr_symlinks(systemd_tmpfiles_t)
+ files_relabelfrom_home(systemd_tmpfiles_t)
+ files_relabelto_home(systemd_tmpfiles_t)
+ files_relabelto_etc_dirs(systemd_tmpfiles_t)
+-- 
+2.43.0
+
