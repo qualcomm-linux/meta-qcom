@@ -48,6 +48,10 @@ on:
       summary_id:
         description: "ID of the test summary artifact"
         value: ${{ jobs.publish-test-summary.outputs.summary_id }}
+    secrets:
+      LAVATOKEN:
+        required: true
+        description: "Token used to submit jobs to the LAVA lab"
 
 jobs:
   prepare-boot-jobs:

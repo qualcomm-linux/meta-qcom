@@ -1,19 +1,22 @@
-DEPENDS += "qtestsign-native optee-os-qcom u-boot-qcom"
+require recipes-bsp/trusted-firmware-a/trusted-firmware-a.inc
 
-SRCREV_FORMAT_qcom ?= ""
+DEPENDS += "qtestsign-native u-boot-qcom"
 
-SRC_URI:append:qcm6490 = " git://github.com/coreboot/qc_blobs.git;protocol=https;name=qc-blobs;subdir=qc_blobs;branch=main"
-SRCREV_qc-blobs = "16207f367ddbf280a0c2c8a3d3ee454a59710a25"
-SRCREV_FORMAT_qcom:qcm6490 = "_qc-blobs"
+PV = "2.15.0-qcom+git"
 
-SRCREV_FORMAT .= "${SRCREV_FORMAT_qcom}"
+SRC_TAG = "tag=qcom-next-2.15-20260804"
+SRC_URI = "git://github.com/qualcomm-linux/trusted-firmware-a.git;protocol=https;name=tfa;nobranch=1;${SRC_TAG}"
+SRCREV_tfa = "10ecf7dcc641e8453e2e2ea2f21c13c7a867ffe0"
 
-LICENSE += "AND LicenseRef-LICENSE.qcom"
-LIC_FILES_CHKSUM:qcm6490 += "file://${UNPACKDIR}/qc_blobs/sc7280/qtiseclib/LICENSE;md5=fa83f30385e617b56ef0934f13645621"
+LIC_FILES_CHKSUM += "file://docs/license.rst;md5=6ed7bace7b0bc63021c6eba7b524039e"
 
-COMPATIBLE_MACHINE = "qcm6490|qcs9100"
-TFA_PLATFORM:qcm6490 = "rb3gen2"
-TFA_PLATFORM:qcs9100 = "lemans_evk"
+COMPATIBLE_MACHINE = "^$"
+COMPATIBLE_MACHINE:aarch64 = "(qcom)"
+
+python () {
+    if not d.getVar('FIP_ELF_ADDR'):
+        bb.fatal('FIP_ELF_ADDR must be set by the device recipe')
+}
 
 TFA_BUILD_TARGET = "bl2 bl31 fip"
 TFA_SPD = "opteed"
@@ -23,14 +26,7 @@ EXTRA_OEMAKE:append = " \
     BL33=${DEPLOY_DIR_IMAGE}/u-boot.bin \
    "
 
-EXTRA_OEMAKE:append:qcm6490 = " \
-    QTISECLIB_PATH=${UNPACKDIR}/qc_blobs/sc7280/qtiseclib/libqtisec.a \
-   "
-
 do_compile[depends] += " u-boot-qcom:do_deploy"
-
-FIP_ELF_ADDR:qcm6490 = "0x9fc00000"
-FIP_ELF_ADDR:qcs9100 = "0xaf000000"
 
 do_install:append() {
     export CRYPTOGRAPHY_OPENSSL_NO_LEGACY=1

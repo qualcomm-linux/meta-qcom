@@ -3,7 +3,11 @@ name: Test PR build
 run-name: "Tests triggered by PR: ${{ github.event.workflow_run.display_title }}"
 
 on:
-  workflow_run:
+  # workflow_run is the intended privilege separation: the build runs
+  # unprivileged on pull_request (fork token is read-only) and this chain
+  # runs in the base context to submit LAVA jobs and publish results,
+  # consuming the build's artifacts as data, never executing its code.
+  workflow_run: # zizmor: ignore[dangerous-triggers]
     workflows: ["Build on PR"]
     types:
       - completed
@@ -18,15 +22,14 @@ concurrency:
   cancel-in-progress: true
 
 permissions:
-  checks: write
-  pull-requests: write
   contents: read
-  packages: read
-  actions: read
 
 jobs:
   determine-target-branch:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: read
     outputs:
       branch: ${{ steps.branch.outputs.value }}
       pr_number: ${{ steps.branch.outputs.pr_number }}
@@ -60,6 +63,11 @@ jobs:
   test:
     needs: determine-target-branch
     if: github.event.workflow_run.conclusion == 'success' && needs.determine-target-branch.outputs.branch == 'master'
+    permissions:
+      contents: read
+      actions: read
+      checks: write
+      pull-requests: write
     uses: ./.github/workflows/test.yml
     secrets: inherit
     with:
@@ -71,6 +79,10 @@ jobs:
     name: "Comment on PR"
     needs: test
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: read
+      pull-requests: write
     steps:
 
       - name: Download Result Summary
@@ -120,6 +132,12 @@ jobs:
           comment-tag: test-results
 
   publish-test-results:
+    permissions:
+      contents: read
+      packages: read
+      actions: read
+      checks: write
+      pull-requests: write
     uses: ./.github/workflows/publish-results.yml
     secrets: inherit
     needs: [test]

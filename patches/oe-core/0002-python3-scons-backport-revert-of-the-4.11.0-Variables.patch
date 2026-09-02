@@ -1,0 +1,91 @@
+From 9a81ef60d58fa52c1e2f6f7a3b3d325a1b9b8215 Mon Sep 17 00:00:00 2001
+From: Ricardo Salveti <ricardo.salveti@oss.qualcomm.com>
+Date: Wed, 26 Aug 2026 19:58:32 +0000
+Subject: [PATCH] python3-scons: backport revert of the 4.11.0 Variables()
+ change
+
+scons 4.11.0 resolves a saved-variables file through a File node, which
+creates a node for a file that does not exist. That breaks gpsd's install
+step, which fails unlinking a path that is not there, and makes Glob()
+return phantom entries for other projects (SCons issues #4894 and #4893,
+both regressions from 4.10.1). Upstream reverted it for 4.11.1, so
+backport that revert until the release is available.
+
+AI-Generated: Uses Claude Code
+Signed-off-by: Ricardo Salveti <ricardo.salveti@oss.qualcomm.com>
+Upstream-Status: Submitted [https://lists.openembedded.org/g/openembedded-core/message/244414]
+---
+ ...evert-a-breaking-change-to-Variables.patch | 48 +++++++++++++++++++
+ .../python/python3-scons_4.11.0.bb            |  1 +
+ 2 files changed, 49 insertions(+)
+ create mode 100644 meta/recipes-devtools/python/python3-scons/0001-Revert-a-breaking-change-to-Variables.patch
+
+diff --git a/meta/recipes-devtools/python/python3-scons/0001-Revert-a-breaking-change-to-Variables.patch b/meta/recipes-devtools/python/python3-scons/0001-Revert-a-breaking-change-to-Variables.patch
+new file mode 100644
+index 0000000000..b11de965c3
+--- /dev/null
++++ b/meta/recipes-devtools/python/python3-scons/0001-Revert-a-breaking-change-to-Variables.patch
+@@ -0,0 +1,48 @@
++From efa7ab507067e31b71ced010097e6f92cf71030f Mon Sep 17 00:00:00 2001
++From: Mats Wichmann <mats@linux.com>
++Date: Wed, 19 Aug 2026 14:21:44 -0600
++Subject: [PATCH] Revert a breaking change to Variables()
++
++In 4.11.0, via PR #4875, a saved-Variables file was looked up through
++a File node. This change is (temporarily) reverted due to side effects;
++Variables returns to reading the file directly with open/read.
++
++Upstream-Status: Backport [https://github.com/SCons/scons/commit/efa7ab507067e31b71ced010097e6f92cf71030f]
++Signed-off-by: Mats Wichmann <mats@linux.com>
++---
++ SCons/Variables/__init__.py | 12 +++++-------
++ 1 file changed, 5 insertions(+), 7 deletions(-)
++
++diff --git a/SCons/Variables/__init__.py b/SCons/Variables/__init__.py
++index c8ce37c84..dea36ddd0 100644
++--- a/SCons/Variables/__init__.py
+++++ b/SCons/Variables/__init__.py
++@@ -271,20 +271,18 @@ class Variables:
++ 
++         # next set the values specified in any saved-variables script(s)
++         for filename in self.files:
++-            # Resolve the saved-variables file through the File() node so it
++-            # is found in the source directory (or a repository) as well as
++-            # the build directory, e.g. when using a variant dir (issue #816).
++-            node = env.File(filename)
++-            contents = node.get_text_contents()
++-            if contents:
+++            # TODO: issue #816 use Node to access saved-variables file?
+++            if os.path.exists(filename):
++                 # issue #4645: don't exec directly into values,
++                 #   so we can iterate through for unknown variables.
++                 temp_values = {}
++-                dirname = os.path.split(node.get_abspath())[0]
+++                dirname = os.path.split(os.path.abspath(filename))[0]
++                 if dirname:
++                     sys.path.insert(0, dirname)
++                 try:
++                     temp_values['__name__'] = filename
+++                    with open(filename) as f:
+++                        contents = f.read()
++                     exec(contents, {}, temp_values)
++                 finally:
++                     if dirname:
++-- 
++2.43.0
++
+diff --git a/meta/recipes-devtools/python/python3-scons_4.11.0.bb b/meta/recipes-devtools/python/python3-scons_4.11.0.bb
+index 585cad271c..491ff4d10f 100644
+--- a/meta/recipes-devtools/python/python3-scons_4.11.0.bb
++++ b/meta/recipes-devtools/python/python3-scons_4.11.0.bb
+@@ -4,6 +4,7 @@ SECTION = "devel/python"
+ LICENSE = "MIT"
+ LIC_FILES_CHKSUM = "file://LICENSE;md5=d903b0b8027f461402bac9b5169b36f7"
+ 
++SRC_URI += "file://0001-Revert-a-breaking-change-to-Variables.patch"
+ SRC_URI[sha256sum] = "5ba48f9e2eb6b9178cabdc9893792418e6970c84f43f4b027e4468e20616a89c"
+ 
+ inherit pypi python_setuptools_build_meta
+-- 
+2.43.0
+

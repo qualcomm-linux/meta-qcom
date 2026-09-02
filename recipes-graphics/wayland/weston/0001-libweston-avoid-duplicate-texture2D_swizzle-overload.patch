@@ -1,4 +1,4 @@
-From 67790ddaa6a8d97ba776dbc72b8e6a5b12743fe9 Mon Sep 17 00:00:00 2001
+From 733890e5870dba1beaf0ae3a032527b95d2e7bbf Mon Sep 17 00:00:00 2001
 From: Mahesh Angadi <mangadi@qti.qualcomm.com>
 Date: Mon, 20 Apr 2026 10:17:33 +0530
 Subject: [PATCH 1/2] libweston: avoid duplicate texture2D_swizzle overloads by
@@ -29,12 +29,15 @@ should be dropped in favor of the upstream shader design.
 
 Upstream-Status: Inappropriate [Temporary work around]
 Signed-off-by: Mahesh Angadi <mangadi@qti.qualcomm.com>
+---
+ libweston/renderer-gl/fragment.glsl | 39 ++++++++++++++++-------------
+ 1 file changed, 21 insertions(+), 18 deletions(-)
 
 diff --git a/libweston/renderer-gl/fragment.glsl b/libweston/renderer-gl/fragment.glsl
-index 5eb21136..b75e59a8 100644
+index 56668bd..bfc0640 100644
 --- a/libweston/renderer-gl/fragment.glsl
 +++ b/libweston/renderer-gl/fragment.glsl
-@@ -166,12 +166,23 @@ uniform HIGHPRECISION mat3 cvd_correction_matrix;
+@@ -185,12 +185,23 @@ uniform parametric_curve_t fb_store_curve_par;
   * to draw call.
   */
  vec4
@@ -60,8 +63,8 @@ index 5eb21136..b75e59a8 100644
 +	    color = texture2D(tex2, coord);
  
  	/* Swizzle components. */
- 	color = vec4(color[swizzle_idx[unit].x],
-@@ -184,14 +195,6 @@ texture2D_swizzle(sampler2D sampler, int unit, vec2 coord)
+ 	if (c_need_swizzle_idx) {
+@@ -205,14 +216,6 @@ texture2D_swizzle(sampler2D sampler, int unit, vec2 coord)
  #endif
  }
  
@@ -76,7 +79,7 @@ index 5eb21136..b75e59a8 100644
  vec4
  sample_input_texture()
  {
-@@ -204,21 +207,21 @@ sample_input_texture()
+@@ -225,21 +228,21 @@ sample_input_texture()
  
  	if (c_variant == SHADER_VARIANT_EXTERNAL ||
  	    c_variant == SHADER_VARIANT_RGBA)
@@ -105,6 +108,3 @@ index 5eb21136..b75e59a8 100644
  
  	} else {
  		/* Never reached, bad variant value. */
--- 
-2.34.1
-

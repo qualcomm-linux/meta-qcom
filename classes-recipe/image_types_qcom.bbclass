@@ -32,6 +32,8 @@ do_image_qcomflash[depends] += "${@ ['', '${QCOM_PARTITION_CONF}:do_deploy'][d.g
                                 ${@ ['', '${QCOM_CDT_FIRMWARE}:do_deploy'][d.getVar('QCOM_CDT_FIRMWARE') != '']} \
                                 ${@ ['', '${QCOM_CAPSULE_FIRMWARE}:do_deploy'][d.getVar('QCOM_CAPSULE_FIRMWARE') != '']} \
                                 pigz-native:do_populate_sysroot virtual/kernel:do_deploy \
+				${@'virtual/kernel:do_qcom_dtbbin_deploy' if 'linux-qcom-dtbbin' in (d.getVar('KERNEL_CLASSES') or '').split() else ''} \
+				${@'virtual/kernel:do_qcom_img_deploy' if 'linux-qcom-bootimg' in (d.getVar('KERNEL_CLASSES') or '').split() else ''} \
 				${@'virtual/bootloader:do_deploy' if d.getVar('PREFERRED_PROVIDER_virtual/bootloader') else  ''} \
 				${@'${QCOM_ESP_IMAGE}:do_image_complete' if d.getVar('QCOM_ESP_IMAGE') != '' else  ''} \
 				${@'abl2esp:do_deploy' if d.getVar('ABL_SIGNATURE_VERSION') else  ''}"
@@ -83,7 +85,7 @@ create_qcomflash_pkg() {
         install -m 0644 "${DEPLOY_DIR_IMAGE}/boot-${MACHINE}.img" boot.img
 
     # rootfs image
-    install -m 0644 ${IMGDEPLOYDIR}/${IMAGE_LINK_NAME}.${IMAGE_QCOMFLASH_FS_TYPE} rootfs.img
+    cp -l -L ${IMGDEPLOYDIR}/${IMAGE_LINK_NAME}.${IMAGE_QCOMFLASH_FS_TYPE} rootfs.img
 
     # partition bins/xml files
     if [ -n "${QCOM_PARTITION_FILES_SUBDIR}" ]; then
@@ -199,7 +201,7 @@ create_qcomflash_pkg() {
     ln -rsf ${QCOMFLASH_DIR} ${IMGDEPLOYDIR}/${IMAGE_LINK_NAME}.qcomflash
 
     # Create qcomflash tarball
-    ${IMAGE_CMD_TAR} --numeric-owner --transform="s,^\./,${IMAGE_BASENAME}-${MACHINE}/," -cf- . | pigz -p ${BB_NUMBER_THREADS} -9 -n --rsyncable > ${IMGDEPLOYDIR}/${IMAGE_NAME}.qcomflash.tar.gz
+    ${IMAGE_CMD_TAR} --numeric-owner --transform="s,^\./,${IMAGE_BASENAME}-${MACHINE}/," -cf- . | pigz -p ${BB_NUMBER_THREADS} -6 -n --rsyncable > ${IMGDEPLOYDIR}/${IMAGE_NAME}.qcomflash.tar.gz
     ln -sf ${IMAGE_NAME}.qcomflash.tar.gz ${IMGDEPLOYDIR}/${IMAGE_LINK_NAME}.qcomflash.tar.gz
 }
 

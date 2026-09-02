@@ -1,0 +1,46 @@
+From 86033d1d370f630f0515ba8765a21bbb5673aa1a Mon Sep 17 00:00:00 2001
+From: Ricardo Salveti <ricardo.salveti@oss.qualcomm.com>
+Date: Fri, 21 Aug 2026 15:34:03 +0000
+Subject: [PATCH] redis: fix the install prefix with 8.10.0
+
+redis 8.10.0 replaced the top level Makefile with one that dispatches
+through scripts/ and no longer passes an environment PREFIX down to the
+recursive make in src/, so everything lands in the default /usr/local
+instead of ${D}:
+
+  install: cannot create regular file '/usr/local/bin/redis-server': \
+      Permission denied
+  make[1]: *** [Makefile:576: install] Error 1
+
+This reproduces outside of bitbake: with PREFIX exported, "make install"
+from the top level installs to /usr/local/bin, while "make -C src
+install" honours it. Passing PREFIX as a make command line variable
+works in both cases, because command line variables are propagated to
+sub-makes.
+
+Set it on the oe_runmake command line instead of exporting it.
+
+AI-Generated: Uses Claude Code
+Signed-off-by: Ricardo Salveti <ricardo.salveti@oss.qualcomm.com>
+Upstream-Status: Submitted [https://lists.openembedded.org/g/openembedded-devel/message/129474]
+---
+ meta-oe/recipes-extended/redis/redis_8.10.1.bb | 3 +--
+ 1 file changed, 1 insertion(+), 2 deletions(-)
+
+diff --git a/meta-oe/recipes-extended/redis/redis_8.10.1.bb b/meta-oe/recipes-extended/redis/redis_8.10.1.bb
+index 7c017e957..d0220d228 100644
+--- a/meta-oe/recipes-extended/redis/redis_8.10.1.bb
++++ b/meta-oe/recipes-extended/redis/redis_8.10.1.bb
+@@ -65,8 +65,7 @@ do_compile() {
+ }
+ 
+ do_install() {
+-    export PREFIX=${D}/${prefix}
+-    oe_runmake install
++    oe_runmake install PREFIX=${D}${prefix}
+     install -d ${D}/${sysconfdir}/redis
+     install -m 0644 ${UNPACKDIR}/redis.conf ${D}/${sysconfdir}/redis/redis.conf
+     install -d ${D}/${sysconfdir}/init.d
+-- 
+2.43.0
+

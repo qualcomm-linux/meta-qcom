@@ -11,3 +11,28 @@ local_conf_header:
     FIRMWARE_COMPRESSION:qcom-armv8a = "zst"
     # Workaround needed due https://bugzilla.yoctoproject.org/show_bug.cgi?id=16010
     PACKAGE_CLASSES = "package_rpm"
+  parallelism: |
+    # Size the builds for the runners' memory, not just for their core count.
+    #
+    # The runners have 16 vCPUs and 64 GB of RAM, so bitbake defaults to 16
+    # concurrent tasks each running make with -j 16. That is fine while the
+    # sstate cache is warm, but the cache goes cold every month and every
+    # base.lock update moves the toolchain forward, and then the tail of an
+    # image build has clang, clang-native, gcc, rust, opencv, onnxruntime and
+    # the kernel compiling at the same time. Up to 256 compiler processes do
+    # not fit in memory: the build is killed and the job fails with exit code
+    # 137, and because the same recipes are killed on every attempt they never
+    # reach sstate, so re-running never helps.
+    #
+    # Leave the number of tasks alone, as warm builds are dominated by setscene
+    # and packaging tasks and lowering it would slow every build down, and cap
+    # the compilation instead: at most 8 recipes compiling at once with 4 make
+    # jobs each, which keeps the 16 cores busy while bounding the build to 32
+    # compiler processes (2 GB each). do_compile is restored from sstate on a
+    # warm build, so neither setting costs anything there.
+    #
+    # PARALLEL_MAKE is in BB_BASEHASH_IGNORE_VARS and number_threads is in
+    # BB_SIGNATURE_EXCLUDE_FLAGS, so none of this changes task signatures.
+    BB_PRESSURE_MAX_MEMORY = "15000"
+    PARALLEL_MAKE = "-j 4"
+    do_compile[number_threads] = "8"

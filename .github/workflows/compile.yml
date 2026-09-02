@@ -5,6 +5,10 @@ on:
         required: false
         type: boolean
         default: true
+      profile:
+        required: false
+        type: string
+        default: "full" # values: pr | full | weekly
       sdk:
         required: false
         type: boolean
@@ -41,6 +45,8 @@ on:
 
 env:
   KAS_CLONE_DEPTH: 1
+  KAS_CONTAINER: ${{ github.workspace }}/kas-container
+  KAS_CONTAINER_IMAGE: ghcr.io/siemens/kas/kas:5.5
 
 jobs:
   reusable_compile_job:
@@ -52,31 +58,22 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Download kas lockfile
+      - name: Download kas
         uses: actions/download-artifact@v7
         with:
-          name: kas-lockfile
-          path: ci/
-
-      - name: Download kas-container
-        uses: actions/download-artifact@v7
-        with:
-          name: kas-container
-          path: ${{runner.temp}}
+          name: kas
 
       - name: Setting up kas-container
         shell: bash
         run: |
-          KAS_CONTAINER=$RUNNER_TEMP/kas-container
-          echo "KAS_CONTAINER=$KAS_CONTAINER" >> $GITHUB_ENV
           chmod +x $KAS_CONTAINER
 
       - name: Setup build variables
         shell: bash
         run: |
-          # use a monthly sstate cache folder
           echo "DL_DIR=${INPUTS_CACHE_DIR}/downloads" >> $GITHUB_ENV
-          echo "SSTATE_DIR=${INPUTS_CACHE_DIR}/sstate-cache-$(date '+%Y-%m')" >> $GITHUB_ENV
+          # use a single shared sstate cache folder, cleaned up by mtime
+          echo "SSTATE_DIR=${INPUTS_CACHE_DIR}/sstate-cache" >> $GITHUB_ENV
           echo "KAS_WORK_DIR=${PWD}/../kas" >> $GITHUB_ENV
           echo "KAS_YAMLS=ci/ci.yml:ci/${INPUTS_MACHINE}.yml${INPUTS_DISTRO_YAML}${INPUTS_KERNEL_YAML}:ci/build-id.yml" >> $GITHUB_ENV
           echo "INPUTS_CACHE_DIR=${INPUTS_CACHE_DIR}" >> $GITHUB_ENV
@@ -126,6 +123,9 @@ jobs:
         if:  inputs.target
         shell: bash
         run: |
+          if [ -c /dev/kvm ]; then
+            KAS_CONTAINER="$KAS_CONTAINER --kvm"
+          fi
           $KAS_CONTAINER build ${KAS_YAMLS}
 
       - name: Kas build images (buildstats)
@@ -151,11 +151,6 @@ jobs:
           rename.ul -av buildstats buildstats-sdk $KAS_WORK_DIR/build/buildstats*
           mv $KAS_WORK_DIR/build/buildstats* .
 
-      - uses: actions/upload-artifact@v6
-        with:
-          name: kas-build-${{ inputs.distro_name }}${{ inputs.kernel_dirname }}-${{ inputs.machine }}
-          path: kas-build.yml
-
       - name: Stage build artifacts for publishing
         shell: bash
         run: |
@@ -178,7 +173,7 @@ jobs:
             # ESP (efi.bin) and vmlinux, so skip their standalone copies when
             # the tarball is published (uncompress or extract them if needed)
             if compgen -G "$images_dir/*.qcomflash.tar.gz" > /dev/null; then
-              exclude+=( ! -name '*.rootfs.ext4' ! -name 'esp-qcom-image-*.vfat' ! -name 'vmlinux' )
+              exclude+=( ! -name '*.rootfs.ext4' ! -name '*.rootfs.ota-ext4' ! -name '*.rootfs.ota-esp' ! -name 'esp-qcom-image-*.vfat' ! -name 'vmlinux' )
             fi
             # The world build deploys the same initramfs images for every
             # machine, so publish them only from the generic machines
@@ -208,6 +203,9 @@ jobs:
           elif [[ "$GITHUB_EVENT_NAME" = "push" ]]; then
             echo "OBJECT_TAG=retention=15d" >> $GITHUB_ENV
             echo "BUILD_TYPE=buildType=PUSH" >> $GITHUB_ENV
+          elif [[ "${INPUTS_PROFILE}" = "weekly" ]]; then
+            echo "OBJECT_TAG=retention=15d" >> $GITHUB_ENV
+            echo "BUILD_TYPE=buildType=WEEKLY" >> $GITHUB_ENV
           elif [[ "$GITHUB_WORKFLOW" == *"Nightly Build"* ]]; then
             echo "OBJECT_TAG=retention=15d" >> $GITHUB_ENV
             echo "BUILD_TYPE=buildType=NIGHTLY" >> $GITHUB_ENV
@@ -215,6 +213,8 @@ jobs:
             echo "OBJECT_TAG=retention=15d" >> $GITHUB_ENV
             echo "BUILD_TYPE=buildType=OTHER" >> $GITHUB_ENV
           fi
+        env:
+          INPUTS_PROFILE: ${{ inputs.profile }}
       
       - name: Upload artifacts to S3 bucket
         uses: qualcomm-linux/upload-private-artifact-action@aws-v5
@@ -234,12 +234,13 @@ jobs:
           KERNEL_DIRNAME="${INPUTS_KERNEL_DIRNAME}"
           BUILDNAME="${INPUTS_MACHINE}_${INPUTS_DISTRO_NAME}${KERNEL_DIRNAME}"
           FILENAME="build-url_${BUILDNAME}"
-          echo "${{ steps.upload_s3_artifacts.outputs.url }}" > "${FILENAME}"
+          echo "${UPLOAD_URL}" > "${FILENAME}"
           echo "filename=${FILENAME}" >> $GITHUB_OUTPUT
         env:
           INPUTS_KERNEL_DIRNAME: ${{ inputs.kernel_dirname }}
           INPUTS_MACHINE: ${{ inputs.machine }}
           INPUTS_DISTRO_NAME: ${{ inputs.distro_name }}
+          UPLOAD_URL: ${{ steps.upload_s3_artifacts.outputs.url }}
       - name: Upload build URL
         uses: actions/upload-artifact@v6
         with:

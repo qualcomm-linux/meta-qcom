@@ -1,4 +1,4 @@
-From e816852afe4bc190154f091f6cad017a0661eb1b Mon Sep 17 00:00:00 2001
+From bf33b3d095153f8bada9354deb56323ac904b674 Mon Sep 17 00:00:00 2001
 From: Raja Ganapathi Busam <rbusam@qti.qualcomm.com>
 Date: Mon, 19 Jan 2026 14:55:27 +0530
 Subject: [PATCH] v4l2: Add support for V4L2_PIX_FMT_QC10C format
@@ -10,37 +10,25 @@ Upstream-Status: Denied [Same reason as 8-bit compressed format, denied by upstr
 
 Signed-off-by: Raja Ganapathi Busam <rbusam@qti.qualcomm.com>
 ---
- sys/v4l2/gstv4l2object.c | 10 ++++++++++
- 1 file changed, 10 insertions(+)
+ sys/v4l2/gstv4l2object.c | 5 +++++
+ 1 file changed, 5 insertions(+)
 
 diff --git a/sys/v4l2/gstv4l2object.c b/sys/v4l2/gstv4l2object.c
-index 692f152..58ecd59 100644
+index 4f526f3..a265094 100644
 --- a/sys/v4l2/gstv4l2object.c
 +++ b/sys/v4l2/gstv4l2object.c
-@@ -183,6 +183,7 @@ static GstV4L2FormatDesc gst_v4l2_formats[] = {
-   {MAP_FMT (NV12M_8L128, NV12_8L128),           MAP_DRM (INVALID, INVALID),         GST_V4L2_RAW},
-   {MAP_FMT (NV12M_10BE_8L128, NV12_10BE_8L128), MAP_DRM (INVALID, INVALID),         GST_V4L2_RAW},
+@@ -225,6 +225,7 @@ static GstV4L2FormatDesc gst_v4l2_formats[] = {
+   {MAP_FMT (NV12M_8L128, NV12_8L128),           MAP_DRM (INVALID, INVALID),         GST_V4L2_RAW | GST_V4L2_MPLANE},
+   {MAP_FMT (NV12M_10BE_8L128, NV12_10BE_8L128), MAP_DRM (INVALID, INVALID),         GST_V4L2_RAW | GST_V4L2_MPLANE},
    {MAP_FMT (QC08C, NV12_Q08C),                  MAP_DRM (NV12, QCOM_COMPRESSED),    GST_V4L2_RAW},
 +  {MAP_FMT (QC10C, NV12_Q10LE32C),              KNOWN_DRM_MAP,                      GST_V4L2_RAW},
-   {MAP_FMT (NV21M, NV21),                       KNOWN_DRM_MAP,                      GST_V4L2_RAW},
+   {MAP_FMT (NV21M, NV21),                       KNOWN_DRM_MAP,                      GST_V4L2_RAW | GST_V4L2_MPLANE},
    {MAP_FMT (NV21, NV21),                        KNOWN_DRM_MAP,                      GST_V4L2_RAW},
-   {MAP_FMT (NV16M, NV16),                       KNOWN_DRM_MAP,                      GST_V4L2_RAW},
-@@ -2017,6 +2018,11 @@ gst_v4l2_object_get_caps_info (GstV4l2Object * v4l2object, GstCaps * caps,
-       fourcc_nc = 0;
-       fourcc = V4L2_PIX_FMT_QC08C;
-     }
-+
-+    if (fourcc_nc == V4L2_PIX_FMT_QC10C) {
-+      fourcc_nc = 0;
-+      fourcc = V4L2_PIX_FMT_QC10C;
-+    }
-   } else if (g_str_equal (mimetype, "video/mpegts")) {
-     fourcc = V4L2_PIX_FMT_MPEG;
-   } else if (g_str_equal (mimetype, "video/x-dv")) {
-@@ -3632,6 +3638,10 @@ gst_v4l2_object_save_format (GstV4l2Object * v4l2object,
+   {MAP_FMT (NV16M, NV16),                       KNOWN_DRM_MAP,                      GST_V4L2_RAW | GST_V4L2_MPLANE},
+@@ -3664,6 +3665,10 @@ gst_v4l2_object_save_format (GstV4l2Object * v4l2object,
      padded_width = format->fmt.pix.width;
    }
-
+ 
 +  /* For Q10C format, padded width should be represented in pixels */
 +  if (GST_VIDEO_INFO_FORMAT (&info->vinfo) == GST_VIDEO_FORMAT_NV12_Q10LE32C)
 +    padded_width = (padded_width * 3) / 4;
@@ -48,6 +36,3 @@ index 692f152..58ecd59 100644
    if (padded_width < format->fmt.pix.width)
      GST_WARNING_OBJECT (v4l2object->dbg_obj,
          "Driver bug detected, stride (%d) is too small for the width (%d)",
---
-2.34.1
-

@@ -1,4 +1,4 @@
-From dd51eaf49bb5732fb603af29a518d0d6c46118dd Mon Sep 17 00:00:00 2001
+From cf0d6c681b20b8c75a79766264f084e2dc70c150 Mon Sep 17 00:00:00 2001
 From: Raja Ganapathi Busam <rbusam@qti.qualcomm.com>
 Date: Tue, 13 Jan 2026 17:58:26 +0530
 Subject: [PATCH] v4l2: Add support for V4L2_PIX_FMT_QC08C format
@@ -10,32 +10,18 @@ Upstream-Status: Denied [Adding NV12_Q08C format is denied by upstream, for comp
 
 Signed-off-by: Raja Ganapathi Busam <rbusam@qti.qualcomm.com>
 ---
- sys/v4l2/gstv4l2object.c | 6 ++++++
- 1 file changed, 6 insertions(+)
+ sys/v4l2/gstv4l2object.c | 1 +
+ 1 file changed, 1 insertion(+)
 
 diff --git a/sys/v4l2/gstv4l2object.c b/sys/v4l2/gstv4l2object.c
-index 99ed48b..ab37526 100644
+index 53f4e08..257fa75 100644
 --- a/sys/v4l2/gstv4l2object.c
 +++ b/sys/v4l2/gstv4l2object.c
-@@ -182,6 +182,7 @@ static GstV4L2FormatDesc gst_v4l2_formats[] = {
-   {MAP_FMT (NV12_16L16, UNKNOWN),               MAP_DRM (NV12, SAMSUNG_16_16_TILE), GST_V4L2_RAW},
-   {MAP_FMT (NV12M_8L128, NV12_8L128),           MAP_DRM (INVALID, INVALID),         GST_V4L2_RAW},
-   {MAP_FMT (NV12M_10BE_8L128, NV12_10BE_8L128), MAP_DRM (INVALID, INVALID),         GST_V4L2_RAW},
+@@ -224,6 +224,7 @@ static GstV4L2FormatDesc gst_v4l2_formats[] = {
+   {MAP_FMT (NV12_16L16, UNKNOWN),               MAP_DRM (NV12, SAMSUNG_16_16_TILE), GST_V4L2_RAW | GST_V4L2_MPLANE},
+   {MAP_FMT (NV12M_8L128, NV12_8L128),           MAP_DRM (INVALID, INVALID),         GST_V4L2_RAW | GST_V4L2_MPLANE},
+   {MAP_FMT (NV12M_10BE_8L128, NV12_10BE_8L128), MAP_DRM (INVALID, INVALID),         GST_V4L2_RAW | GST_V4L2_MPLANE},
 +  {MAP_FMT (QC08C, NV12_Q08C),                  MAP_DRM (NV12, QCOM_COMPRESSED),    GST_V4L2_RAW},
-   {MAP_FMT (NV21M, NV21),                       KNOWN_DRM_MAP,                      GST_V4L2_RAW},
+   {MAP_FMT (NV21M, NV21),                       KNOWN_DRM_MAP,                      GST_V4L2_RAW | GST_V4L2_MPLANE},
    {MAP_FMT (NV21, NV21),                        KNOWN_DRM_MAP,                      GST_V4L2_RAW},
-   {MAP_FMT (NV16M, NV16),                       KNOWN_DRM_MAP,                      GST_V4L2_RAW},
-@@ -2003,6 +2004,11 @@ gst_v4l2_object_get_caps_info (GstV4l2Object * v4l2object, GstCaps * caps,
-       fourcc_nc = desc->v4l2_format;
-     if (fallback_desc)
-       fourcc = fallback_desc->v4l2_format;
-+
-+    if (fourcc_nc == V4L2_PIX_FMT_QC08C) {
-+      fourcc_nc = 0;
-+      fourcc = V4L2_PIX_FMT_QC08C;
-+    }
-   } else if (g_str_equal (mimetype, "video/mpegts")) {
-     fourcc = V4L2_PIX_FMT_MPEG;
-   } else if (g_str_equal (mimetype, "video/x-dv")) {
---
-2.34.1
+   {MAP_FMT (NV16M, NV16),                       KNOWN_DRM_MAP,                      GST_V4L2_RAW | GST_V4L2_MPLANE},

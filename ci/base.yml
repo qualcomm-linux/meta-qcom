@@ -18,6 +18,9 @@ repos:
       fix-igt-pause:
         repo: meta-qcom
         path: patches/oe-core/0001-igt-gpu-tools-fix-build-on-non-x86-platforms.patch
+      scons-variables-revert:
+        repo: meta-qcom
+        path: patches/oe-core/0002-python3-scons-backport-revert-of-the-4.11.0-Variables.patch
     layers:
       meta:
 
@@ -51,9 +54,6 @@ local_conf_header:
     "
   cmdline: |
     KERNEL_CMDLINE_EXTRA:append = " qcom_scm.download_mode=1"
-  qcomflash: |
-    IMAGE_CLASSES += "image_types_qcom"
-    IMAGE_FSTYPES += "qcomflash"
   extra: |
     DISTRO_FEATURES:append = " efi pam pni-names"
     EXTRA_IMAGE_FEATURES += "allow-empty-password empty-root-password allow-root-login"

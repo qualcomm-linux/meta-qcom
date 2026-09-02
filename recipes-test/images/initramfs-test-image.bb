@@ -21,7 +21,6 @@ PACKAGE_INSTALL += " \
     e2fsprogs-resize2fs \
     e2fsprogs-tune2fs \
     ethtool \
-    gptfdisk \
     i2c-tools \
     iw \
     libdrm-tests \
@@ -30,6 +29,7 @@ PACKAGE_INSTALL += " \
     pciutils \
     strace \
     usbutils \
+    util-linux-fdisk \
     util-linux-lscpu \
     util-linux-taskset \
     wpa-supplicant \

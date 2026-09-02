@@ -18,6 +18,7 @@ DEPENDS = " \
 SRC_URI = "git://github.com/onnxruntime/onnxruntime-qnn.git;protocol=https;nobranch=1;tag=v${PV};name=ort-qnn \
     git://github.com/dcleblanc/SafeInt.git;protocol=https;nobranch=1;name=safeint;tag=3.0.28;destsuffix=safeint \
     file://0001-cmake-Rename-pkg-config-output-to-libonnxruntime_pr.patch \
+    file://0002-QNN-EP-Fix-ORT-header-include-path-and-multiarch-li.patch \
 "
 
 SRCREV_FORMAT = "ort-qnn_safeint"
@@ -34,12 +35,6 @@ COMPATIBLE_MACHINE:aarch64 = "(.*)"
 # string literals embedded in the compiled libraries.
 CFLAGS:append   = " -ffile-prefix-map=${WORKDIR}=."
 CXXFLAGS:append = " -ffile-prefix-map=${WORKDIR}=."
-
-# onnxruntime headers are installed under usr/include/onnxruntime/ in the
-# sysroot, but the onnxruntime-qnn source includes them without that prefix
-# Add the subdirectory explicitly.
-CFLAGS:append   = " -I${STAGING_INCDIR}/onnxruntime"
-CXXFLAGS:append = " -I${STAGING_INCDIR}/onnxruntime"
 
 inherit cmake
 

@@ -1,4 +1,4 @@
-From bc75ba659e241dc2b0a56250788806626d92e7c3 Mon Sep 17 00:00:00 2001
+From bfd938977351a4c43591cbf813a1f7eef938bb8c Mon Sep 17 00:00:00 2001
 From: Mahesh Angadi <mangadi@qti.qualcomm.com>
 Date: Mon, 20 Apr 2026 10:43:58 +0530
 Subject: [PATCH 2/2] libweston: inline color pipeline and wireframe helpers in
@@ -23,12 +23,15 @@ design.
 
 Upstream-Status: Inappropriate [Temporary work around]
 Signed-off-by: Mahesh Angadi <mangadi@qti.qualcomm.com>
+---
+ libweston/renderer-gl/fragment.glsl | 120 ++++++++++------------------
+ 1 file changed, 43 insertions(+), 77 deletions(-)
 
 diff --git a/libweston/renderer-gl/fragment.glsl b/libweston/renderer-gl/fragment.glsl
-index b75e59a8..ae4d56ed 100644
+index bfc0640..34f0561 100644
 --- a/libweston/renderer-gl/fragment.glsl
 +++ b/libweston/renderer-gl/fragment.glsl
-@@ -439,53 +439,6 @@ color_mapping(vec3 color)
+@@ -460,74 +460,6 @@ color_mapping(vec3 color)
  		return vec3(1.0, 0.3, 1.0);
  }
  
@@ -47,7 +50,28 @@ index b75e59a8..ae4d56ed 100644
 -vec4
 -color_inversion(vec4 color)
 -{
+-	/**
+-	 * Ideally this should be done in linear space, but converting to linear
+-	 * and back is costly. Historically this also has been done in the
+-	 * electrical domain. Let's do in electrical, results are good enough.
+-	 */
 -	color.rgb = 1.0 - color.rgb;
+-
+-	return color;
+-}
+-
+-vec4
+-color_grayscale(vec4 color)
+-{
+-	float gray;
+-
+-	/**
+-	 * Ideally this should be done in linear space, but converting to linear
+-	 * and back is costly. Historically this also has been done in the
+-	 * electrical domain. Let's do in electrical, results are good enough.
+-	 */
+-	gray = dot(color.rgb, vec3(0.2126, 0.7152, 0.0722));
+-	color.rgb = vec3(gray);
 -
 -	return color;
 -}
@@ -79,10 +103,10 @@ index b75e59a8..ae4d56ed 100644
 -	return vec4(clamp(edge1 + edge2 + edge3, 0.0, 1.0));
 -}
 -
- void
- main()
+ vec4
+ fragment_input_color_premult()
  {
-@@ -503,12 +456,26 @@ main()
+@@ -545,14 +477,44 @@ fragment_input_color_premult()
  	}
  
  	/* For now color management and color effects do not coexist */
@@ -90,6 +114,8 @@ index b75e59a8..ae4d56ed 100644
 -		color = color_pipeline(color);
 -	else if (c_color_effect == SHADER_COLOR_EFFECT_INVERSION)
 -		color = color_inversion(color);
+-	else if (c_color_effect == SHADER_COLOR_EFFECT_GRAYSCALE)
+-		color = color_grayscale(color);
 -	else if (c_color_effect == SHADER_COLOR_EFFECT_CVD_CORRECTION)
 -		color = color_cvd_correction(color);
 +	if (c_need_color_pipeline) {
@@ -101,7 +127,25 @@ index b75e59a8..ae4d56ed 100644
 +					color_post_curve_par, color.rgb);
 +	}
 +	else if (c_color_effect == SHADER_COLOR_EFFECT_INVERSION) {
++		/**
++		 * Ideally this should be done in linear space, but converting
++		 * to linear and back is costly. Historically this also has been
++		 * done in the electrical domain. Let's do in electrical,
++		 * results are good enough.
++		 */
 +		color.rgb = 1.0 - color.rgb;
++	}
++	else if (c_color_effect == SHADER_COLOR_EFFECT_GRAYSCALE) {
++		float gray;
++
++		/**
++		 * Ideally this should be done in linear space, but converting
++		 * to linear and back is costly. Historically this also has been
++		 * done in the electrical domain. Let's do in electrical,
++		 * results are good enough.
++		 */
++		gray = dot(color.rgb, vec3(0.2126, 0.7152, 0.0722));
++		color.rgb = vec3(gray);
 +	}
 +	else if (c_color_effect == SHADER_COLOR_EFFECT_CVD_CORRECTION) {
 +		vec3 original;
@@ -115,7 +159,7 @@ index b75e59a8..ae4d56ed 100644
  
  	/* Ensure pre-multiplied for blending */
  	if (!c_input_is_premult || (c_input_is_premult && c_need_straight_alpha))
-@@ -520,7 +487,11 @@ main()
+@@ -564,7 +526,11 @@ fragment_input_color_premult()
  		color = color * vec4(1.0 - tint.a) + tint;
  
  	if (c_wireframe) {
@@ -128,6 +172,3 @@ index b75e59a8..ae4d56ed 100644
  		color = color * vec4(1.0 - src.a) + src;
  	}
  
--- 
-2.34.1
-

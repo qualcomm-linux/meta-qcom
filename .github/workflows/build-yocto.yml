@@ -6,7 +6,7 @@ on:
       profile:
         required: false
         type: string
-        default: "full" # values: pr | full
+        default: "full" # values: pr | full | weekly
       skip_if_github_cached:
         required: false
         type: boolean
@@ -28,39 +28,39 @@ concurrency:
 env:
   CACHE_DIR: /efs/qli/meta-qcom
   KAS_CLONE_DEPTH: 1
+  KAS_CONTAINER: ${{ github.workspace }}/kas-container
+  KAS_CONTAINER_IMAGE: ghcr.io/siemens/kas/kas:5.5
 
 jobs:
   kas-setup:
     if: github.repository_owner == 'qualcomm-linux'
     runs-on: [self-hosted, qcom-u2404, amd64]
     steps:
-      - name: Setting up kas-container
-        run: |
-          KAS_CONTAINER=$RUNNER_TEMP/kas-container
-          echo "KAS_CONTAINER=$KAS_CONTAINER" >> $GITHUB_ENV
-          LATEST=$(git ls-remote --tags --refs --sort="v:refname" https://github.com/siemens/kas | tail -n1 | sed 's/.*\///')
-          wget -qO ${KAS_CONTAINER} https://raw.githubusercontent.com/siemens/kas/refs/tags/$LATEST/kas-container
-          chmod +x ${KAS_CONTAINER}
-
       - uses: actions/checkout@v6
         with:
           persist-credentials: false
+
+      - name: Setting up kas-container
+        run: |
+          docker create --name kas ${KAS_CONTAINER_IMAGE}
+          docker cp kas:/usr/local/bin/kas-container $KAS_CONTAINER
+          LATEST=$(git ls-remote --tags --refs --sort="v:refname" https://github.com/siemens/kas | tail -n1 | sed 's/.*\///')
+          if ! grep -q "KAS_CONTAINER_SCRIPT_VERSION=\"${LATEST}\"" $KAS_CONTAINER ; then
+            echo "Version "${LATEST}" of kas is available, please update "KAS_CONTAINER_IMAGE: $KAS_CONTAINER_IMAGE""
+          fi
 
       - name: Run kas lock
         run: |
           ${KAS_CONTAINER} lock ci/base.yml:ci/qcom-distro.yml:ci/meta-arm.yml
 
-      - name: Upload kas lockfile
+      - name: Upload kas
         uses: actions/upload-artifact@v6
         with:
-          name: kas-lockfile
-          path: ci/*.lock.yml
-
-      - name: Upload kas-container
-        uses: actions/upload-artifact@v6
-        with:
-          name: kas-container
-          path: ${{ env.KAS_CONTAINER }}
+          name: kas
+          if-no-files-found: error
+          path: |
+            ci/*.lock.yml
+            kas-container
 
   github-cache-check:
     needs: kas-setup
@@ -74,11 +74,10 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Download kas lockfile
+      - name: Download kas
         uses: actions/download-artifact@v7
         with:
-          name: kas-lockfile
-          path: ci
+          name: kas
 
       - name: Compute build input hash
         id: hash
@@ -103,11 +102,15 @@ jobs:
           lookup-only: true
 
       - name: Report github-cache-check decision
+        env:
+          SKIP_IF_CACHED: ${{ inputs.skip_if_github_cached }}
+          CACHE_HIT: ${{ steps.restore.outputs.cache-hit }}
+          RUN_HASH: ${{ steps.hash.outputs.run_hash }}
         run: |
-          if [ "${{ inputs.skip_if_github_cached }}" != "true" ]; then
+          if [ "${SKIP_IF_CACHED}" != "true" ]; then
             echo "skip_if_github_cached not set; build will run"
-          elif [ "${{ steps.restore.outputs.cache-hit }}" = "true" ]; then
-            echo "Run cache hit on key build-success, hash ${{ steps.hash.outputs.run_hash }}: skipping build matrix"
+          elif [ "${CACHE_HIT}" = "true" ]; then
+            echo "Run cache hit on key build-success, hash ${RUN_HASH}: skipping build matrix"
           else
             echo "No previous successful build run recorded in github cache for this hash: build will run"
           fi
@@ -123,28 +126,20 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Download kas lockfile
+      - name: Download kas
         uses: actions/download-artifact@v7
         with:
-          name: kas-lockfile
-          path: ci
-
-      - name: Download kas-container
-        uses: actions/download-artifact@v7
-        with:
-          name: kas-container
-          path: ${{ runner.temp }}
+          name: kas
 
       - name: Setting up kas-container
         run: |
-          KAS_CONTAINER=$RUNNER_TEMP/kas-container
-          echo "KAS_CONTAINER=$KAS_CONTAINER" >> $GITHUB_ENV
           chmod +x $KAS_CONTAINER
 
       - name: Setup cache variables (used by oe-selftest)
         run: |
           echo "DL_DIR=${CACHE_DIR}/downloads" >> $GITHUB_ENV
-          echo "SSTATE_DIR=${CACHE_DIR}/sstate-cache-$(date '+%Y-%m')" >> $GITHUB_ENV
+          # use a single shared sstate cache folder, cleaned up by mtime
+          echo "SSTATE_DIR=${CACHE_DIR}/sstate-cache" >> $GITHUB_ENV
 
       - name: Run Yocto patchreview
         run: |
@@ -207,6 +202,7 @@ jobs:
       kernel_yaml: ${{matrix.kernel.yamlfile}}
       kernel_dirname: ${{matrix.kernel.dirname}}
       cache_dir: ${{ needs.compile-env.outputs.CACHE_DIR }}
+      profile: ${{ inputs.profile }}
 
   compile_sdk:
     needs: [github-cache-check, compile_warm_up, compile-env]
@@ -225,6 +221,7 @@ jobs:
       kernel_yaml: ''
       kernel_dirname: ''
       cache_dir: ${{ needs.compile-env.outputs.CACHE_DIR }}
+      profile: ${{ inputs.profile }}
 
   compile:
     needs: [github-cache-check, compile_warm_up, compile-env]
@@ -260,8 +257,10 @@ jobs:
             yamlfile: ':ci/qcom-distro-catchall.yml'
           - name: debug
             yamlfile: ':ci/qcom-distro-catchall.yml:ci/debug.yml'
+            profile: full
           - name: performance
             yamlfile: ':ci/qcom-distro-catchall.yml:ci/performance.yml'
+            profile: full
         kernel:
           - type: default
             dirname: ""
@@ -273,6 +272,15 @@ jobs:
             dirname: "_linux-qcom-rt-6.18_qcom-distro-kvm"
             yamlfile: ":ci/linux-qcom-rt-6.18.yml:ci/qcom-distro-kvm.yml"
         exclude:
+          # 6.18 RT selects qcom-distro by default, remove others
+          - distro:
+                name: nodistro
+            kernel:
+                type: rt-6.18-distro-kvm
+          - distro:
+                name: qcom-distro-catchall
+            kernel:
+                type: rt-6.18-distro-kvm
           # Exclude jobs from compile_warm_up
           - machine: glymur-crd
             distro:
@@ -402,6 +410,14 @@ jobs:
                 type: u-boot-qcom-6.18
                 dirname: "_linux-qcom-6.18_u-boot-qcom"
                 yamlfile: ":ci/linux-qcom-6.18.yml:ci/u-boot-qcom.yml"
+          - machine: iq-8275-evk
+            distro:
+                name: qcom-distro
+                yamlfile: ':ci/qcom-distro.yml'
+            kernel:
+                type: u-boot-qcom-6.18
+                dirname: "_linux-qcom-6.18_u-boot-qcom"
+                yamlfile: ":ci/linux-qcom-6.18.yml:ci/u-boot-qcom.yml"
           - machine: rb3gen2-core-kit-open-fw
             distro:
                 name: qcom-distro-kvm
@@ -453,7 +469,12 @@ jobs:
     uses: ./.github/workflows/compile.yml
     with:
       name: ${{ matrix.machine }}/${{ matrix.distro.name }}${{ matrix.kernel.dirname }}
-      enabled: ${{inputs.profile != 'pr' || (matrix.distro.name != 'debug' && matrix.distro.name != 'performance')}}
+      # Which profiles build this entry. Entries without distro.profile are
+      # built by every profile; an entry marked with distro.profile is built by
+      # that profile and by the wider ones above it, ordered pr < full (push
+      # and nightly) < weekly. Add "profile: weekly" to the distro entry of a
+      # target that is too expensive to build every night.
+      enabled: ${{ (matrix.distro.profile || 'any') == 'any' || (matrix.distro.profile == 'full' && inputs.profile != 'pr') || (matrix.distro.profile == 'weekly' && inputs.profile == 'weekly') }}
       # One world build per machine and distro family is enough for compile
       # coverage: nodistro (including the nogl variant) covers the plain OE
       # configuration and qcom-distro-catchall enables a superset of the
@@ -468,6 +489,7 @@ jobs:
       kernel_yaml: ${{matrix.kernel.yamlfile}}
       kernel_dirname: ${{matrix.kernel.dirname}}
       cache_dir: ${{ needs.compile-env.outputs.CACHE_DIR }}
+      profile: ${{ inputs.profile }}
 
   publish_summary:
     needs: [github-cache-check, compile, compile_sdk]

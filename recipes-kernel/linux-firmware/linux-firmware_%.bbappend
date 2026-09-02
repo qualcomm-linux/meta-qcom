@@ -3,6 +3,12 @@ FILESEXTRAPATHS:prepend := "${THISDIR}/${PN}:"
 ALTERNATIVES_CLASS = ""
 ALTERNATIVES_CLASS:qcom = "update-alternatives"
 
+PATCHTOOL:qcom = "git"
+
+SRC_URI:append:qcom = " \
+    file://0001-qcom-sa8775p-update-signature-on-cdsp1-firmware.patch \
+"
+
 inherit_defer ${ALTERNATIVES_CLASS}
 
 # firmware-ath6kl provides updated bdata.bin, which can not be accepted into main linux-firmware repo
