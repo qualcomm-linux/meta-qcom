@@ -109,7 +109,7 @@ jobs:
         if:  inputs.world
         shell: bash
         run: |
-          $KAS_CONTAINER build ${KAS_YAMLS}:ci/world.yml
+          $KAS_CONTAINER build ${KAS_YAMLS}:ci/world.yml -- -k
 
       - name: Kas build world (buildstats)
         if:  inputs.world
