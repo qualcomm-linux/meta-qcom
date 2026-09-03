@@ -71,7 +71,6 @@ jobs:
       - name: Setup build variables
         shell: bash
         run: |
-          echo "DL_DIR=${INPUTS_CACHE_DIR}/downloads" >> $GITHUB_ENV
           # use a single shared sstate cache folder, cleaned up by mtime
           echo "SSTATE_DIR=${INPUTS_CACHE_DIR}/sstate-cache" >> $GITHUB_ENV
           echo "KAS_WORK_DIR=${PWD}/../kas" >> $GITHUB_ENV
