@@ -15,6 +15,13 @@ inputs:
   summary_title:
     description: "Title for the summary part of the report"
     required: false
+  known_failures_file:
+    description: >
+      Path to the YAML file listing the known failures of the tested build
+      variant. Relative to the workspace. Missing file means no known failure.
+      See .github/known-failures/README.md for the file format.
+    required: false
+    default: ""
 outputs:
   artifact_id:
     description: "ID of the uploaded artifact"
@@ -43,6 +50,7 @@ runs:
           INPUTS_PREFIX: ${{ inputs.prefix }}
           INPUTS_SUMMARY_FILE_NAME: ${{ inputs.summary_file_name }}
           INPUTS_SUMMARY_TITLE: ${{ inputs.summary_title }}
+          INPUTS_KNOWN_FAILURES_FILE: ${{ inputs.known_failures_file }}
         run: |
           set -x
           # When a failed LAVA job is re-run, GitHub keeps the original failed
@@ -70,6 +78,9 @@ runs:
           do
               JOB_ID=$(cat "$TESTJOB" | jq ".id")
               JOB_URL="https://lava.infra.foundries.io/results/$JOB_ID"
+              # the job log renders every line as <code id="L<n>">, so a test
+              # result can be linked straight to the line it was logged on
+              JOB_LOG_URL="https://lava.infra.foundries.io/scheduler/job/$JOB_ID"
               JOB_DETAILS=$(curl -s "https://lava.infra.foundries.io/api/v0.2/jobs/$JOB_ID/")
               JOB_HEALTH=$(echo "$JOB_DETAILS" | jq -r ".health")
               JOB_STATE=$(echo "$JOB_DETAILS" | jq -r ".state")
@@ -89,7 +100,12 @@ runs:
                           SUITE_ID=$(echo "$SUITE" | jq -r ".id")
                           SUITE_TESTS=$(curl -s "https://lava.infra.foundries.io/api/v0.2/jobs/$JOB_ID/suites/$SUITE_ID/tests/")
                           if [ "$SUITE_NAME" != "lava" ]; then
-                              echo "$SUITE_TESTS" | jq ".results[] | {(.name): {result: .result, url: .resource_uri}} | to_entries | .[]"
+                              # link to the log line the result was reported on
+                              # rather than to the API resource of the test case
+                              echo "$SUITE_TESTS" | jq --arg log "$JOB_LOG_URL" '.results[]
+                                  | {(.name): {result: .result,
+                                               url: (if .start_log_line then "\($log)#L\(.start_log_line)" else $log end)}}
+                                  | to_entries | .[]'
                           fi
                       fi
                   else
@@ -99,7 +115,9 @@ runs:
                           TEST_RESULT_BOOT="fail"
                       fi
                       TEST_NAME="boot"
-                      TEST_URL="${JOB_URL}"
+                      # a boot job has no test case to point at, so link to the
+                      # log itself, which is what a boot failure is read from
+                      TEST_URL="${JOB_LOG_URL}"
                       TEST_RESULT_OBJ=$(jq --arg url "$TEST_URL" --arg result "$TEST_RESULT_BOOT" -n -c '$ARGS.named')
                       jq -n -c --arg key "$TEST_NAME" --argjson value "$TEST_RESULT_OBJ" '$ARGS.named'
                   fi
@@ -108,6 +126,57 @@ runs:
           # combine entries from boot jobs and pre-merge jobs
           done | jq -s -c 'reduce .[] as $i ({}; .[$i.key] = ((.[$i.key] // {}) + $i.value))')
           echo "$INPUT"
+
+          # Load the list of known failures of this build variant. Every build
+          # variant has its own list, see .github/known-failures/README.md.
+          # A missing or empty file simply means "no known failure".
+          # An entry is either a bare test name or a mapping with a "test" and an
+          # optional "comment" holding the issue it is tracked in. Both forms are
+          # normalised to {device: {test name: comment}}.
+          KNOWN_FAILURES="{}"
+          if [ -n "${INPUTS_KNOWN_FAILURES_FILE}" ]; then
+              if [ -f "${GITHUB_WORKSPACE}/${INPUTS_KNOWN_FAILURES_FILE}" ]; then
+                  KNOWN_FAILURES_RAW=$(yq -o=json -I=0 "${GITHUB_WORKSPACE}/${INPUTS_KNOWN_FAILURES_FILE}" | jq -c '. // {}')
+                  KNOWN_FAILURES=$(echo "${KNOWN_FAILURES_RAW}" | jq -c '
+                    with_entries(.value |= ((. // []) | map(
+                      if type == "string" then {key: ., value: ""}
+                      elif type == "object" and (.test | type) == "string" then {key: .test, value: (.comment // "" | tostring)}
+                      else empty
+                      end) | from_entries))')
+                  # entries that match neither form are dropped by the mapping above
+                  RAW_COUNT=$(echo "${KNOWN_FAILURES_RAW}" | jq '[.[] | (. // []) | length] | add // 0')
+                  KNOWN_COUNT=$(echo "${KNOWN_FAILURES}" | jq '[.[] | length] | add // 0')
+                  if [ "${RAW_COUNT}" != "${KNOWN_COUNT}" ]; then
+                      echo "::warning::${INPUTS_KNOWN_FAILURES_FILE}: ignored $((RAW_COUNT - KNOWN_COUNT)) malformed entry/entries"
+                  fi
+              else
+                  echo "::warning::known failures file ${INPUTS_KNOWN_FAILURES_FILE} not found"
+              fi
+          fi
+          echo "${KNOWN_FAILURES}"
+
+          # Turn the LAVA result of every test into the status that is reported.
+          # A failure that is on the known failures list is reported as "known
+          # failure" and counted as a pass. A test that passes while it is on
+          # the list is reported as "unexpected pass" and counted as a failure,
+          # so that stale entries get noticed and removed from the list. The
+          # comment of the entry is carried over so it can be reported too.
+          INPUT=$(echo "$INPUT" | jq -c --argjson known "${KNOWN_FAILURES}" '
+            with_entries(
+              # a device specific entry overrides the one listed for all devices
+              (($known["*"] // {}) + ($known[.key] // {})) as $known_tests
+              | .value |= with_entries(
+                  .key as $test
+                  | ($known_tests | has($test)) as $is_known
+                  | .value.status = (
+                      if .value.result == "fail" and $is_known then "known failure"
+                      elif .value.result == "pass" and $is_known then "unexpected pass"
+                      else .value.result
+                      end)
+                  | if $is_known then .value.comment = $known_tests[$test] else . end)
+            )')
+          echo "$INPUT"
+
           DEVICES=$(echo "$INPUT" | jq -r 'keys[]' | sort)
 
           RESULTS=$(echo "$INPUT" | jq -r '.[] | keys[]?' | sort -u)
@@ -115,14 +184,17 @@ runs:
           # Print collapsible box
           echo "<details>" >> "${INPUTS_SUMMARY_FILE_NAME}"
           # Print section summary
-          TOTAL_PASS=$(echo "${INPUT}" | jq '[.. | objects | select(.result? == "pass")] | length')
-          TOTAL_FAIL=$(echo "${INPUT}" | jq '[.. | objects | select(.result? == "fail")] | length')
+          TOTAL_PASS=$(echo "${INPUT}" | jq '[.. | objects | select(.status? == "pass")] | length')
+          TOTAL_KNOWN_FAIL=$(echo "${INPUT}" | jq '[.. | objects | select(.status? == "known failure")] | length')
+          # an unexpected pass counts as a failure: the known failures list is
+          # out of date and has to be updated
+          TOTAL_FAIL=$(echo "${INPUT}" | jq '[.. | objects | select(.status? == "fail" or .status? == "unexpected pass")] | length')
           TOTAL=$(echo "${INPUT}" | jq '[.. | objects | select(.result)] | length')
           SUMMARY_TITLE=""
           if [ "${INPUTS_SUMMARY_TITLE}" != "" ]; then
             SUMMARY_TITLE="${INPUTS_SUMMARY_TITLE}<br/>"
           fi
-          echo "<summary>${SUMMARY_TITLE}Pass: $TOTAL_PASS | Fail: $TOTAL_FAIL | Total: $TOTAL </summary>" >> "${INPUTS_SUMMARY_FILE_NAME}"
+          echo "<summary>${SUMMARY_TITLE}Pass: $TOTAL_PASS | Known failures: $TOTAL_KNOWN_FAIL | Fail: $TOTAL_FAIL | Total: $TOTAL </summary>" >> "${INPUTS_SUMMARY_FILE_NAME}"
           echo "" >> "${INPUTS_SUMMARY_FILE_NAME}"
           echo "" >> "${INPUTS_SUMMARY_FILE_NAME}"
 
@@ -151,10 +223,12 @@ runs:
             printf "| %s |" "$R" >> "${INPUTS_SUMMARY_FILE_NAME}"
 
             for D in $DEVICES; do
-              VALUE=$(echo "$INPUT" | jq -r --arg d "$D" --arg r "$R" '.[$d][$r].result // ""')
+              VALUE=$(echo "$INPUT" | jq -r --arg d "$D" --arg r "$R" '.[$d][$r].status // ""')
               URL=$(echo "$INPUT" | jq -r --arg d "$D" --arg r "$R" '.[$d][$r].url // ""')
               CHECKMARK=":white_check_mark:"
               if [ "${VALUE}" = "fail" ]; then CHECKMARK=":x:"; fi
+              if [ "${VALUE}" = "unexpected pass" ]; then CHECKMARK=":x:"; fi
+              if [ "${VALUE}" = "known failure" ]; then CHECKMARK=":ballot_box_with_check:"; fi
               if [ "${VALUE}" = "skip" ]; then CHECKMARK=":warning:"; fi
               if [ -z "${VALUE}" ]; then CHECKMARK=":no_entry_sign:"; fi
               printf " %s [%s](%s) |" "$CHECKMARK" "$VALUE" "$URL"
@@ -164,6 +238,24 @@ runs:
           done
           echo "" >> "${INPUTS_SUMMARY_FILE_NAME}"
           echo "</details>" >> "${INPUTS_SUMMARY_FILE_NAME}"
+
+          # Print the entries of the known failures list that were applied,
+          # together with the issue each one is annotated with
+          KNOWN_ROWS=$(echo "$INPUT" | jq -r '
+            to_entries[] | .key as $device | .value | to_entries[]
+            | select(.value.status == "known failure" or .value.status == "unexpected pass")
+            | "| \($device) | \(.key) | \(.value.status) | \(.value.comment // "") |"' | sort)
+          if [ -n "${KNOWN_ROWS}" ]; then
+            echo "<details>" >> "${INPUTS_SUMMARY_FILE_NAME}"
+            echo "<summary>Known failures ($TOTAL_KNOWN_FAIL)</summary>" >> "${INPUTS_SUMMARY_FILE_NAME}"
+            echo "" >> "${INPUTS_SUMMARY_FILE_NAME}"
+            echo "| Device | Test | Status | Comment |" >> "${INPUTS_SUMMARY_FILE_NAME}"
+            echo "| ---- | ---- | ---- | ---- |" >> "${INPUTS_SUMMARY_FILE_NAME}"
+            echo "${KNOWN_ROWS}" >> "${INPUTS_SUMMARY_FILE_NAME}"
+            echo "" >> "${INPUTS_SUMMARY_FILE_NAME}"
+            echo "</details>" >> "${INPUTS_SUMMARY_FILE_NAME}"
+          fi
+
           echo "<details>" >> "${INPUTS_SUMMARY_FILE_NAME}"
           echo "<summary>All jobs summary</summary>" >> "${INPUTS_SUMMARY_FILE_NAME}"
           echo "" >> "${INPUTS_SUMMARY_FILE_NAME}"
