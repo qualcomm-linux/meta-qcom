@@ -4,9 +4,11 @@ LIC_FILES_CHKSUM = "file://${UNPACKDIR}/${BOOTBINARIES}/LICENSE.qcom-2;md5=16528
 
 FW_ARTIFACTORY = "softwarecenter.qualcomm.com/nexus/generic/product/chip/tech-package/QCS8300_bootbinaries.1.0/qcs8300_bootbinaries.1.0-test-device-public"
 BOOTBINARIES = "QCS8300_bootbinaries"
+BOOTBINARIES_IMMUTABLE = "QCS8300_bootbinaries_immutable"
 
 SRC_URI = " \
     https://${FW_ARTIFACTORY}/${PV}/${BOOTBINARIES}_${PV}.zip;name=bootbinaries \
+    https://${FW_ARTIFACTORY}/${PV}/${BOOTBINARIES_IMMUTABLE}_${PV}.zip;name=bootbinaries-immutable \
     "
 
 QCOM_BOOT_IMG_SUBDIR = "qcs8300"

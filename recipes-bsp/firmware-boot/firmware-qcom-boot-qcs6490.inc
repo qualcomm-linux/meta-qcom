@@ -4,9 +4,11 @@ LIC_FILES_CHKSUM = "file://${UNPACKDIR}/${BOOTBINARIES}/LICENSE.qcom-2;md5=16528
 
 FW_ARTIFACTORY = "softwarecenter.qualcomm.com/nexus/generic/product/chip/tech-package/QCM6490_bootbinaries.1.0/qcm6490_bootbinaries.1.0-test-device-public"
 BOOTBINARIES = "QCM6490_bootbinaries"
+BOOTBINARIES_IMMUTABLE = "QCM6490_bootbinaries_immutable"
 
 SRC_URI = " \
     https://${FW_ARTIFACTORY}/${PV}/${BOOTBINARIES}_${PV}.zip;name=bootbinaries \
+    https://${FW_ARTIFACTORY}/${PV}/${BOOTBINARIES_IMMUTABLE}_${PV}.zip;name=bootbinaries-immutable \
     "
 
 QCOM_BOOT_IMG_SUBDIR = "qcm6490"
