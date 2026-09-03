@@ -1,12 +1,13 @@
 PLATFORM = "lemans"
-PBT_BUILD_DATE = "260708"
+PBT_BUILD_DATE = "260825"
 
 require common.inc
 
-SRC_URI[camxlib.sha256sum] = "b0ccf732368795b585f31779cdcf468e322a8480c763a209c8dc6566a60877a3"
-SRC_URI[camx.sha256sum] = "60a949a85590f6281fcae365bc30af0efc03c88716afae62e465add98b17ca8a"
-SRC_URI[chicdk.sha256sum] = "260b8522eeca0a1de4f658e424c343a35bc6855d0450d29c21252f5b29242f13"
-SRC_URI[camxcommon.sha256sum] = "1603dcb36647e9cd34d8c1c92cb653e7fb2de1b71744b4530054f2c9d690940d"
+SRC_URI[camxlib.sha256sum] = "d786afdae167643ad5feaad745ed14b741001060cf41e6174fe4f37cee8077f5"
+SRC_URI[camx.sha256sum] = "fd57a206aa1ae4dd6ac95f71ceb2812f995b5ebbf32322fe693186c7359b9770"
+SRC_URI[chicdk.sha256sum] = "31b7582c5c8f2f8a3412e9b99f3b689afda6b53efd1504d8864097ab73fd9c31"
+SRC_URI[camxcommon.sha256sum] = "e2a8645a8ae22182cd62e612ecbb1d098b7fcee4e75e42778b79a88b2587bcfb"
+SRC_URI[camxtest.sha256sum] = "628a94a198b5269812169e3bfbedf285b68cd3190e7102d9f076654fef3b9915"
 
 DEPENDS += "${@bb.utils.contains('DISTRO_FEATURES', 'opencl', 'virtual/libopencl1', '', d)}"
 DEPENDS += "${@bb.utils.contains('DISTRO_FEATURES', 'opengl', 'virtual/egl virtual/libgles2', '', d)}"

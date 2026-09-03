@@ -22,6 +22,7 @@ SRC_URI = " \
     https://qartifactory-edge.qualcomm.com/artifactory/qsc_releases/software/chip/component/camx.qclinux.0.0/${PBT_BUILD_DATE}/prebuilt_yocto_${PBT_BRANCH}/camx-${PLATFORM}_${PV}_armv8-2a.tar.gz;name=camx \
     https://qartifactory-edge.qualcomm.com/artifactory/qsc_releases/software/chip/component/camx.qclinux.0.0/${PBT_BUILD_DATE}/prebuilt_yocto_${PBT_BRANCH}/chicdk-${PLATFORM}_${PV}_armv8-2a.tar.gz;name=chicdk \
     https://qartifactory-edge.qualcomm.com/artifactory/qsc_releases/software/chip/component/camx.qclinux.0.0/${PBT_BUILD_DATE}/prebuilt_yocto_${PBT_BRANCH}/camxcommon-${PLATFORM}_${PV}_armv8-2a.tar.gz;name=camxcommon \
+    https://qartifactory-edge.qualcomm.com/artifactory/qsc_releases/software/chip/component/camx.qclinux.0.0/${PBT_BUILD_DATE}/prebuilt_yocto_${PBT_BRANCH}/camxtest-${PLATFORM}_1.0.38_armv8-2a.tar.gz;name=camxtest \
 "
 
 S = "${UNPACKDIR}"
@@ -44,6 +45,11 @@ do_install:append() {
     if [ -d "${S}${bindir}" ]; then
         install -d ${D}${bindir}
         cp -r ${S}/usr/bin/* ${D}${bindir}
+    fi
+    # Install camera-nhx files only if /usr/libexec exists in ${S}
+    if [ -d "${S}${libexecdir}" ]; then
+        install -d ${D}${libexecdir}
+        cp -r ${S}/usr/libexec/* ${D}${libexecdir}
     fi
     # Remove unnecessary development symlinks (.so) from the staged image
     rm -f ${D}${libdir}/camx/${PLATFORM}/*${SOLIBSDEV}
@@ -100,7 +106,7 @@ FILES:chicdk-${PLATFORM} = "\
     ${libdir}/camx/${PLATFORM}/camera/*.bin \
     ${libdir}/camx/${PLATFORM}/camera/com.qti.sensor*${SOLIBS} \
     ${libdir}/camx/${PLATFORM}/hw/com.qti.chi.*${SOLIBS} \
-    ${bindir}/camx \
+    ${libexecdir}/ \
 "
 
 FILES:${PN} = "\
