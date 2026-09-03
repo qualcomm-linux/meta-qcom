@@ -26,7 +26,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  CACHE_DIR: /efs/qli/meta-qcom
+  CACHE_DIR: /efsx/qli/meta-qcom
   KAS_CLONE_DEPTH: 1
   KAS_CONTAINER: ${{ github.workspace }}/kas-container
   KAS_CONTAINER_IMAGE: ghcr.io/siemens/kas/kas:5.5
