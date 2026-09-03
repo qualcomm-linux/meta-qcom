@@ -105,6 +105,20 @@ jobs:
           mkdir $KAS_WORK_DIR
           $KAS_CONTAINER dump --resolve-env --resolve-local --resolve-refs ${KAS_YAMLS} > kas-build.yml
 
+      - name: Fetch downloads locally
+        continue-on-error: true
+        if:  inputs.distro_yaml != ''
+        shell: bash
+        run: |
+          unset DL_DIR
+          $KAS_CONTAINER build ${KAS_YAMLS}:ci/world.yml -- --runonly do_fetch -k
+
+      - name: Update shared downloads cache
+        if:  inputs.distro_yaml != ''
+        shell: bash
+        run: |
+          rsync -va $KAS_WORK_DIR/build/downloads/ ${INPUTS_CACHE_DIR}/downloads/
+
       - name: Kas build world
         if:  inputs.world
         shell: bash
