@@ -20,5 +20,5 @@ jobs:
         run: |
           # bitbake refreshes the mtime of every sstate file a build uses, so
           # a file older than 15 days was not used by any build in 15 days
-          find "${CACHE_DIR}/sstate-cache" -type f -mtime +15 -delete
-          find "${CACHE_DIR}/sstate-cache" -mindepth 1 -type d -empty -delete
+          find "${CACHE_DIR}/sstate-cache" -not -path "*/ccache/*" -type f -mtime +15 -delete
+          find "${CACHE_DIR}/sstate-cache" -not -path "*/ccache/*" -mindepth 1 -type d -empty -delete
