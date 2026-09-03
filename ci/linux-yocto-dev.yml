@@ -4,3 +4,4 @@ header:
 local_conf_header:
   kernelprovider: |
     PREFERRED_PROVIDER_virtual/kernel = "linux-yocto-dev"
+    ERROR_QA:remove:pn-linux-yocto-dev = "version-going-backwards"
