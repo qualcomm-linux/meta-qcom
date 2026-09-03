@@ -105,6 +105,16 @@ jobs:
           mkdir $KAS_WORK_DIR
           $KAS_CONTAINER dump --resolve-env --resolve-local --resolve-refs ${KAS_YAMLS} > kas-build.yml
 
+      - name: Debug cache
+        if:  inputs.distro_yaml != ''
+        shell: bash
+        run: |
+          # still fail
+          # $KAS_CONTAINER build ${KAS_YAMLS} --target camxlib-hamoa --task do_cleanall
+          unset DL_DIR
+          $KAS_CONTAINER build ${KAS_YAMLS} --target camxlib-hamoa -- --runonly do_fetch
+          exit 1
+
       - name: Kas build world
         if:  inputs.world
         shell: bash
