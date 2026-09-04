@@ -1,0 +1,17 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/siemens/kas/master/kas/schema-kas.json
+
+header:
+  version: 14
+
+# By default, this YAML enables QuickBoot feature.
+# But, subsystems (Audio, Camera, Display) can be enabled individually.
+#
+# For example, set the variable as below
+# To enable display only      : QUICKBOOT_SUBSYSTEMS = "display"
+# To enable audio and display : QUICKBOOT_SUBSYSTEMS = "audio display"
+# To enable all               : QUICKBOOT_SUBSYSTEMS = "audio camera display"
+#
+local_conf_header:
+  quickboot_features: |
+    DISTRO_FEATURES:append = " quickboot"
+    QUICKBOOT_SUBSYSTEMS = " "
