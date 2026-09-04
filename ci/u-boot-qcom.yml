@@ -4,3 +4,5 @@ header:
 local_conf_header:
   bootloaderprovider: |
     PREFERRED_PROVIDER_virtual/bootloader = "u-boot-qcom"
+  libubootenv: |
+    IMAGE_INSTALL:append = " u-boot-fw-utils u-boot-qcom-env"

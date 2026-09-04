@@ -6,7 +6,7 @@
 UBOOT_CONFIG ?= ""
 UBOOT_CONFIG_DEFAULT ?= "${UBOOT_CONFIG}"
 
-UBOOT_INITIAL_ENV = ""
+UBOOT_INITIAL_ENV = "u-boot-initial-env"
 
 # Don't forget to add config to qcom-armv8a.conf when adding it here
 UBOOT_CONFIG[iq-615-evk] = "qcom_qcs615_defconfig"
