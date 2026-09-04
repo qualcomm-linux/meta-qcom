@@ -148,5 +148,46 @@ Signed-off-by: $(git config user.name) <$(git config user.email)>
 
 Never fabricate a name or email; always read them from `git config`.
 
+Trailer order matters: `Assisted-by` goes **before** `Signed-off-by`, so the
+sign-off is always the last trailer written by the author. A complete
+agent-assisted commit message looks like this:
+
+```text
+recipe-name: summary of the changes
+
+Explain the problem first, then the change, in plain English.
+
+Assisted-by: AGENT_NAME:MODEL_VERSION
+Signed-off-by: Author Name <author@example.com>
+```
+
+Do not append `Assisted-by` after `Signed-off-by` (for example with
+`git commit -s` followed by `git interpret-trailers --trailer Assisted-by=...`);
+write both trailers in the order above in a single commit message instead.
+
 Fixups within the same patch series are not allowed; changes should be
 corrected in the patch where they are introduced.
+
+## 8) Backporting to a release branch
+
+Fixes land on `master` first and are then backported to the release branch
+(currently `wrynose`). Merged pull requests labelled `backport wrynose` are
+backported automatically by `.github/workflows/backport.yml`; when a manual
+backport is needed (conflicts, or a change that only applies to the release
+branch), follow the same conventions the automation uses:
+
+1. Create a topic branch from the latest release branch, for example
+   `backport/<pr-number>-to-wrynose`.
+2. Cherry-pick the original commits with `git cherry-pick -x <sha>`, which
+   appends the `(cherry picked from commit <sha>)` line for you. Keep the
+   original subject, body, and trailers unchanged, and add your own
+   `Signed-off-by` after the cherry-pick line if it is not already present.
+3. Open the pull request against the release branch with the subject
+   prefixed by the target branch, for example
+   `[Backport wrynose] recipe-name: summary of the changes`, and link the
+   original pull request in the description.
+
+The `[Backport <branch>]` prefix belongs to the pull request subject only.
+The commits themselves are normal patches whose only backport marker is the
+`(cherry picked from commit ...)` line; never add the prefix to a commit
+subject.
