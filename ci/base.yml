@@ -18,6 +18,9 @@ repos:
       fix-igt-pause:
         repo: meta-qcom
         path: patches/oe-core/0001-igt-gpu-tools-fix-build-on-non-x86-platforms.patch
+      uboot-sign-spl-bss-padding:
+        repo: meta-qcom
+        path: patches/oe-core/0003-uboot-sign-keep-the-SPL-BSS-padding-when-reassembling.patch
       revert-python3-pycairo:
         repo: meta-qcom
         path: patches/oe-core/0001-Revert-python3-pycairo-inherit-python3-dir-not-pytho.patch

@@ -1,0 +1,67 @@
+From f77a45eda09e5326b1ba564fe348d82a06219120 Mon Sep 17 00:00:00 2001
+From: Ricardo Salveti <ricardo.salveti@oss.qualcomm.com>
+Date: Thu, 13 Aug 2026 02:38:23 +0000
+Subject: [PATCH] uboot-sign: keep the SPL BSS padding when reassembling the
+ SPL binary
+
+concat_spl_dtb() rebuilds the SPL as a plain concatenation of the nodtb
+image and the signed device tree. U-Boot only assembles it that way with
+SPL_SEPARATE_BSS; otherwise BSS is part of the image and it pads between
+the two, so that clearing BSS cannot overwrite the appended device tree.
+Platforms loading the SPL as one contiguous image, such as Qualcomm SoCs,
+need that layout: without the padding the device tree ends up inside BSS
+and spl_early_init() finds none, before the console is up.
+
+Reassemble at the offset U-Boot used, taken from its own image as
+SPL_WITH_DTB_BINARY, and fall back to the current behaviour when it did
+not pad.
+
+AI-Generated: Uses Claude Code
+
+Signed-off-by: Ricardo Salveti <ricardo.salveti@oss.qualcomm.com>
+Upstream-Status: Submitted [https://lists.openembedded.org/g/openembedded-core/message/245194]
+---
+ meta/classes-recipe/uboot-sign.bbclass | 20 +++++++++++++++++++-
+ 1 file changed, 19 insertions(+), 1 deletion(-)
+
+diff --git a/meta/classes-recipe/uboot-sign.bbclass b/meta/classes-recipe/uboot-sign.bbclass
+index 4da5d4c9f1..0e44f12d0e 100644
+--- a/meta/classes-recipe/uboot-sign.bbclass
++++ b/meta/classes-recipe/uboot-sign.bbclass
+@@ -58,6 +58,8 @@ SPL_DTB_SYMLINK ?= "u-boot-spl-${MACHINE}.dtb"
+ SPL_NODTB_IMAGE ?= "u-boot-spl-nodtb-${MACHINE}-${PV}-${PR}.bin"
+ SPL_NODTB_BINARY ?= "u-boot-spl-nodtb.bin"
+ SPL_NODTB_SYMLINK ?= "u-boot-spl-nodtb-${MACHINE}.bin"
++# The SPL image as assembled by U-Boot, before signing.
++SPL_WITH_DTB_BINARY ?= "u-boot-spl-dtb.bin"
+ 
+ # U-Boot fitImage description
+ UBOOT_FIT_DESC ?= "U-Boot fitImage for ${DISTRO_NAME}/${PV}/${MACHINE}"
+@@ -250,7 +252,23 @@ deploy_dtb() {
+ 
+ concat_spl_dtb() {
+ 	if [ -e "${SPL_DIR}/${SPL_NODTB_BINARY}" ] && [ -e "${SPL_DIR}/${SPL_DTB_BINARY}" ] ; then
+-		cat ${SPL_DIR}/${SPL_NODTB_BINARY} ${SPL_DIR}/${SPL_DTB_SIGNED} > "${SPL_BINARY}"
++		# U-Boot pads behind BSS before appending the device tree
++		# ($(SPL_BIN)-pad.bin in scripts/Makefile.xpl); keep that offset.
++		nodtb_size=$(stat -Lc %s ${SPL_DIR}/${SPL_NODTB_BINARY})
++		dtb_offset=${nodtb_size}
++
++		if [ -e "${SPL_DIR}/${SPL_WITH_DTB_BINARY}" ]; then
++			image_size=$(stat -Lc %s ${SPL_DIR}/${SPL_WITH_DTB_BINARY})
++			dtb_size=$(stat -Lc %s ${SPL_DIR}/${SPL_DTB_BINARY})
++			offset=$(expr ${image_size} - ${dtb_size})
++			if [ ${offset} -gt ${nodtb_size} ]; then
++				dtb_offset=${offset}
++			fi
++		fi
++
++		cp ${SPL_DIR}/${SPL_NODTB_BINARY} "${SPL_BINARY}"
++		truncate -s ${dtb_offset} "${SPL_BINARY}"
++		cat ${SPL_DIR}/${SPL_DTB_SIGNED} >> "${SPL_BINARY}"
+ 	else
+ 		bbwarn "Failure while adding public key to spl binary. Verified U-Boot boot won't be available."
+ 	fi
+-- 
+2.43.0
+
