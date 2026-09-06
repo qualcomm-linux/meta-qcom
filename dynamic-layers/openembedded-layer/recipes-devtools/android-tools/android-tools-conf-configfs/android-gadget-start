@@ -2,7 +2,8 @@
 
 set -e
 
-sleep 10
+# Wait before touching configfs, unless the unit tells us it is not needed.
+sleep "${ANDROID_GADGET_UDC_DELAY:-10}"
 
 # Speed-only selection:
 # 1) Pick UDC with highest maximum_speed
