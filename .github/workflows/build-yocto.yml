@@ -257,7 +257,7 @@ jobs:
             yamlfile: ':ci/qcom-distro-catchall.yml'
           - name: debug
             yamlfile: ':ci/qcom-distro-catchall.yml:ci/debug.yml'
-            profile: full
+            profile: weekly
           - name: performance
             yamlfile: ':ci/qcom-distro-catchall.yml:ci/performance.yml'
             profile: full
