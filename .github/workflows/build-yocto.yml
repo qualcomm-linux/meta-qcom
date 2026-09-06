@@ -281,6 +281,14 @@ jobs:
                 name: qcom-distro-catchall
             kernel:
                 type: rt-6.18-distro-kvm
+          - distro:
+                name: debug
+            kernel:
+                type: rt-6.18-distro-kvm
+          - distro:
+                name: performance
+            kernel:
+                type: rt-6.18-distro-kvm
           # Exclude jobs from compile_warm_up
           - machine: glymur-crd
             distro:
