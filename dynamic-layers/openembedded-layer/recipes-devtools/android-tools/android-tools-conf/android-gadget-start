@@ -17,11 +17,11 @@ GADGET_PATH="/sys/kernel/config/usb_gadget/adb"
 
 if [ ! -d "$UDC_FOLDER" ]; then
     echo "Error: UDC folder '$UDC_FOLDER' not found." >&2
-    return 1
+    exit 1
 fi
 if [ ! -d "$GADGET_PATH" ]; then
     echo "Error: Gadget path '$GADGET_PATH' does not exist." >&2
-    return 1
+    exit 1
 fi
 
 # Return a normalized rank for a speed string.
@@ -69,7 +69,7 @@ done
 
 if [ -z "$best_udc" ]; then
     echo "Error: No UDC controller found in $UDC_FOLDER" >&2
-    return 1
+    exit 1
 fi
 
 echo "Binding Gadget to UDC: $best_udc (maximum_speed='$(read_max_speed "$UDC_FOLDER/$best_udc")')" >&2
