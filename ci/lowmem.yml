@@ -1,0 +1,11 @@
+header:
+  version: 14
+  includes:
+   - ci/qcom-distro.yml
+
+target:
+  - qcom-lowmem-image
+
+local_conf_header:
+  lowmem-kernel: |
+    DISTRO_FEATURES:append = " lowmem"
