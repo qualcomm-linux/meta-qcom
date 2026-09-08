@@ -38,7 +38,9 @@ do_deploy() {
         # Some firmware releases ship a separate SAIL image, used to flash external NOR flash, in
         # its own subdirectory. When present Deploy it under a matching subdirectory of DEPLOYDIR.
         if [ -n "${QCOM_BOOT_SAIL_SUBDIR}" ] && [ -d "${bootdir}/${QCOM_BOOT_SAIL_SUBDIR}" ]; then
-            SAIL_FILES="gpt_backup0.bin gpt_main0.bin prog_firehose_ddr.elf patch0.xml rawprogram0.xml sailhyp.elf sailsw1.elf"
+            SAIL_FILES="gpt_backup0.bin gpt_main0.bin prog_firehose_ddr.elf patch0.xml rawprogram0.xml sailhyp.elf \
+                        sailsw1.elf rtsshyp.elf rtssjtagprogrammer.elf rtsssw1.elf rtsssw2.elf rtsssw3.elf sail_nor_dlp.bin \
+            "
 
             install -d ${DEPLOYDIR}/${QCOM_BOOT_IMG_SUBDIR}/${QCOM_BOOT_SAIL_SUBDIR}
             for sail_file in ${SAIL_FILES}; do
