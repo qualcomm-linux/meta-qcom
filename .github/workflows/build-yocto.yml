@@ -288,6 +288,7 @@ jobs:
           - iq-x7181-evk
           - kaanapali-mtp
           - mahua-crd
+          - nord-rrd
           - qcm6490-idp
           - qcom-armv8a
           - qcs615-ride
@@ -350,6 +351,9 @@ jobs:
             kernel:
                 type: default
           - machine: mahua-crd
+            kernel:
+                type: 6.18
+          - machine: nord-rrd
             kernel:
                 type: 6.18
           - machine: mahua-crd
