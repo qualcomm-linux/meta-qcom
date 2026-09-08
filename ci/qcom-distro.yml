@@ -53,6 +53,22 @@ repos:
 
   meta-security:
     url: https://git.yoctoproject.org/meta-security
+    patches:
+      trousers-openssl4:
+        repo: meta-qcom
+        path: patches/meta-security/0001-trousers-Fix-build-with-OpenSSL-4.x.patch
+      tpm2-openssl-openssl4:
+        repo: meta-qcom
+        path: patches/meta-security/0002-tpm2-openssl-Fix-build-with-OpenSSL-4.x.patch
+      tpm2-tools-5.8:
+        repo: meta-qcom
+        path: patches/meta-security/0003-tpm2-tools-Upgrade-5.7-5.8.patch
+      tpm2-pkcs11-1.10.1:
+        repo: meta-qcom
+        path: patches/meta-security/0004-tpm2-pkcs11-Upgrade-1.9.2-1.10.1.patch
+      tpm2-tss-engine-openssl4:
+        repo: meta-qcom
+        path: patches/meta-security/0005-packagegroup-security-tpm2-Remove-tpm2-tss-engine-fr.patch
     layers:
       .:
       meta-tpm:
