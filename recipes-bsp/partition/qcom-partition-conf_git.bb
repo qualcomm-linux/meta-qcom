@@ -3,6 +3,8 @@ DESCRIPTION = "GPT partition binaries and QDL scripts for Qualcomm reference dev
 
 require qcom-ptool.inc
 
+SRC_URI:append = " file://0001-platforms-add-partitioning-scheme-for-nord-rrd.patch"
+
 DEPENDS = "qcom-ptool-native"
 
 inherit deploy allarch
