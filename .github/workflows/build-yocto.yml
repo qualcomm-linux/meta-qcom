@@ -256,10 +256,10 @@ jobs:
           - name: qcom-distro-catchall
             yamlfile: ':ci/qcom-distro-catchall.yml'
           - name: debug
-            yamlfile: ':ci/qcom-distro-catchall.yml:ci/debug.yml'
+            yamlfile: ':ci/qcom-distro-catchall.yml:ci/debug.yml:ci/nospdx.yml'
             profile: weekly
           - name: performance
-            yamlfile: ':ci/qcom-distro-catchall.yml:ci/performance.yml'
+            yamlfile: ':ci/qcom-distro-catchall.yml:ci/performance.yml:ci/nospdx.yml'
             profile: full
         kernel:
           - type: default
