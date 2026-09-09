@@ -36,6 +36,10 @@ inputs:
     description: "Pull request URL. When set, it is added to the LAVA job metadata as PR_URL"
     required: false
     default: ""
+  distro:
+    description: "Distro name without the kernel suffix. Added to the LAVA job metadata"
+    required: false
+    default: ""
 
 outputs:
   jobmatrix:
@@ -65,6 +69,14 @@ runs:
           run-id: ${{ inputs.build_id }}
           pattern: build-url_*_${{ inputs.distro_name }}
 
+      - name: 'Download build metadata'
+        continue-on-error: true
+        uses: actions/download-artifact@v7
+        with:
+          github-token: ${{ inputs.gh_token }}
+          run-id: ${{ inputs.build_id }}
+          pattern: build-meta_*_${{ inputs.distro_name }}
+
       - name: Run lava-test-plans
         id: lava-test-plans
         shell: bash
@@ -78,6 +90,9 @@ runs:
           INPUTS_TESTKIT_REF: ${{ inputs.testkit_ref }}
           INPUTS_PR_NUMBER: ${{ inputs.pr_number }}
           INPUTS_PR_URL: ${{ inputs.pr_url }}
+          INPUTS_REF: ${{ inputs.ref }}
+          INPUTS_BUILD_ID: ${{ inputs.build_id }}
+          INPUTS_DISTRO: ${{ inputs.distro }}
         run: |
           set -euo pipefail
           cd lava-test-plans && pip install .
@@ -119,6 +134,32 @@ runs:
           echo "GITHUB_WORKFLOW_URL=${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}" >> "${VARS_OUT_PATH}/gh-variables.ini"
           echo "GITHUB_WORKFLOW_RUN_ID=${GITHUB_RUN_ID}" >> "${VARS_OUT_PATH}/gh-variables.ini"
           echo "GITHUB_WORKFLOW_RUN_ATTEMPT=${GITHUB_RUN_ATTEMPT}" >> "${VARS_OUT_PATH}/gh-variables.ini"
+          SOURCE_SHA="${GITHUB_SHA}"
+          SOURCE_BRANCH="${GITHUB_REF_NAME}"
+          BUILD_TYPE="${GITHUB_EVENT_NAME^^}"
+          if [ "${GITHUB_EVENT_NAME}" = "workflow_run" ]; then
+            BUILD_TYPE="PR"
+            if [ -f "${GITHUB_EVENT_PATH:-}" ]; then
+              # github.sha is the target branch here, not the built commit
+              SOURCE_SHA=$(jq -r '.workflow_run.head_sha // ""' "${GITHUB_EVENT_PATH}")
+              SOURCE_BRANCH=$(jq -r '.workflow_run.head_branch // ""' "${GITHUB_EVENT_PATH}")
+            fi
+          fi
+          COMMON_META="${VARS_OUT_PATH}/gh-metadata.ini"
+          {
+            echo "[EXTRA_METADATA]"
+            echo "build-type = \"${BUILD_TYPE}\""
+            echo "build-run-id = \"${INPUTS_BUILD_ID}\""
+            echo "source-repo = \"${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}\""
+            echo "source-branch = \"${SOURCE_BRANCH}\""
+            echo "source-sha = \"${SOURCE_SHA}\""
+            echo "distro = \"${INPUTS_DISTRO}\""
+            echo "build-config = \"${INPUTS_DISTRO_NAME}\""
+            echo "testplan = \"${INPUTS_TESTPLAN}\""
+            echo "testkit-ref = \"${INPUTS_TESTKIT_REF}\""
+            echo "lava-test-plans-ref = \"${INPUTS_REF}\""
+            echo "gh-workflow-name = \"${GITHUB_WORKFLOW}\""
+          } > "${COMMON_META}"
           IMAGE_TYPE="core-image-base"
           case "${INPUTS_DISTRO_NAME}" in
             "qcom-distro"*)
@@ -127,6 +168,7 @@ runs:
               echo "AUTO_LOGIN_PASSWORD=oelinux123" >> "${VARS_OUT_PATH}/gh-variables.ini"
               ;;
           esac
+          echo "image = \"${IMAGE_TYPE}\"" >> "${COMMON_META}"
 
           RESULT_JSON='{"target": []}'
           for machine in ${INPUTS_MACHINES//,/ }; do
@@ -134,15 +176,27 @@ runs:
             cp "${VARS_OUT_PATH}/gh-variables.ini" "${VARS_OUT_PATH}/${machine}.ini"
             echo "IMAGE_FILE_NAME=${IMAGE_TYPE}-${machine}.rootfs.qcomflash.tar.gz" >> "${VARS_OUT_PATH}/${machine}.ini"
             echo "DEVICE_TYPE=${machine}" >> "${VARS_OUT_PATH}/${machine}.ini"
+            # machines whose artifacts are published under a different build
+            ARTIFACT_MACHINE="${machine}"
+            case "${machine}" in
+              dragonboard-410c|dragonboard-820c) ARTIFACT_MACHINE="qcom-armv8a" ;;
+            esac
+            MACHINE_META="${VARS_OUT_PATH}/${machine}-metadata.ini"
+            cp "${COMMON_META}" "${MACHINE_META}"
+            echo "machine = \"${machine}\"" >> "${MACHINE_META}"
+            BUILD_META="${GITHUB_WORKSPACE}/build-meta_${ARTIFACT_MACHINE}_${INPUTS_DISTRO_NAME}/build-meta_${ARTIFACT_MACHINE}_${INPUTS_DISTRO_NAME}"
+            if [ -f "${BUILD_META}" ]; then
+              jq -r 'to_entries[]
+                     | select(.value | type == "string") | select(.value != "")
+                     | "\(.key) = \"\(.value)\""' \
+                "${BUILD_META}" >> "${MACHINE_META}"
+            else
+              echo "No build metadata for ${machine}"
+            fi
+
             export BUILD_URL=""
             # dir name and file name are the same as we're downloading multiple files
-            export BUILD_URL_FILE="$GITHUB_WORKSPACE/build-url_${machine}_${INPUTS_DISTRO_NAME}/build-url_${machine}_${INPUTS_DISTRO_NAME}"
-            if [ "${machine}" = "dragonboard-410c" ]; then
-              export BUILD_URL_FILE="$GITHUB_WORKSPACE/build-url_qcom-armv8a_${INPUTS_DISTRO_NAME}/build-url_qcom-armv8a_${INPUTS_DISTRO_NAME}"
-            fi
-            if [ "${machine}" = "dragonboard-820c" ]; then
-              export BUILD_URL_FILE="$GITHUB_WORKSPACE/build-url_qcom-armv8a_${INPUTS_DISTRO_NAME}/build-url_qcom-armv8a_${INPUTS_DISTRO_NAME}"
-            fi
+            export BUILD_URL_FILE="$GITHUB_WORKSPACE/build-url_${ARTIFACT_MACHINE}_${INPUTS_DISTRO_NAME}/build-url_${ARTIFACT_MACHINE}_${INPUTS_DISTRO_NAME}"
             echo "${BUILD_URL_FILE}"
             if [ -f "$BUILD_URL_FILE" ]; then
                 export BUILD_URL=$(cat "${BUILD_URL_FILE}")
@@ -158,19 +212,19 @@ runs:
             echo "ROOTFS_URL=${BUILD_URL}/${INPUTS_DISTRO_NAME}/${machine}/${IMAGE_TYPE}-${machine}.rootfs.qcomflash.tar.gz" >> "${VARS_OUT_PATH}/${machine}.ini"
 
             if [ "${machine}" = "dragonboard-410c" ]; then
-                echo "ROOTFS_IMG_FILE=${IMAGE_TYPE}-qcom-armv8a.rootfs.ext4" >> "${VARS_OUT_PATH}/${machine}.ini"
-                echo "BOOT_IMG_FILE=boot-apq8016-sbc-qcom-armv8a.img" >> "${VARS_OUT_PATH}/${machine}.ini"
+                echo "ROOTFS_IMG_FILE=${IMAGE_TYPE}-${ARTIFACT_MACHINE}.rootfs.ext4" >> "${VARS_OUT_PATH}/${machine}.ini"
+                echo "BOOT_IMG_FILE=boot-apq8016-sbc-${ARTIFACT_MACHINE}.img" >> "${VARS_OUT_PATH}/${machine}.ini"
                 echo "BUILD_OS=${INPUTS_DISTRO_NAME}${INPUTS_KERNEL}/" >> "${VARS_OUT_PATH}/${machine}.ini"
             fi
             if [ "${machine}" = "dragonboard-820c" ]; then
-                echo "ROOTFS_IMG_FILE=${IMAGE_TYPE}-qcom-armv8a.rootfs.ext4" >> "${VARS_OUT_PATH}/${machine}.ini"
-                echo "BOOT_IMG_FILE=boot-apq8096-db820c-qcom-armv8a.img" >> "${VARS_OUT_PATH}/${machine}.ini"
+                echo "ROOTFS_IMG_FILE=${IMAGE_TYPE}-${ARTIFACT_MACHINE}.rootfs.ext4" >> "${VARS_OUT_PATH}/${machine}.ini"
+                echo "BOOT_IMG_FILE=boot-apq8096-db820c-${ARTIFACT_MACHINE}.img" >> "${VARS_OUT_PATH}/${machine}.ini"
                 echo "BUILD_OS=${INPUTS_DISTRO_NAME}${INPUTS_KERNEL}/" >> "${VARS_OUT_PATH}/${machine}.ini"
             fi
 
-            cat "${VARS_OUT_PATH}/${machine}.ini"
+            cat "${VARS_OUT_PATH}/${machine}.ini" "${MACHINE_META}"
             # INPUTS_TESTPLAN contains distro name
-            lava-test-plans --dry-run --variables "${VARS_OUT_PATH}/${machine}.ini" --test-plan "${PROJECT}/${INPUTS_TESTPLAN}" --device-type "projects/${PROJECT}/devices/${machine}" --dry-run-path "${JOBS_OUT_PATH}/${machine}-${INPUTS_DISTRO_NAME}-${INPUTS_TESTPLAN}" || true
+            lava-test-plans --dry-run --variables "${VARS_OUT_PATH}/${machine}.ini" "${MACHINE_META}" --test-plan "${PROJECT}/${INPUTS_TESTPLAN}" --device-type "projects/${PROJECT}/devices/${machine}" --dry-run-path "${JOBS_OUT_PATH}/${machine}-${INPUTS_DISTRO_NAME}-${INPUTS_TESTPLAN}" || true
             # create the JSON file that is used for the job submission matrix
             find "${JOBS_OUT_PATH}/${machine}-${INPUTS_DISTRO_NAME}-${INPUTS_TESTPLAN}" -name "*.yaml"
             for JOB_PATH in $( find "${JOBS_OUT_PATH}/${machine}-${INPUTS_DISTRO_NAME}-${INPUTS_TESTPLAN}" -name "*.yaml");

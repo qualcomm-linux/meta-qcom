@@ -195,6 +195,34 @@ jobs:
           INPUTS_MACHINE: ${{ inputs.machine }}
           INPUTS_DISTRO_NAME: ${{ inputs.distro_name }}
           INPUTS_KERNEL_DIRNAME: ${{ inputs.kernel_dirname }}
+      - name: Extract build metadata from the image SBOM
+        id: build-metadata
+        if: inputs.target
+        shell: bash
+        env:
+          INPUTS_MACHINE: ${{ inputs.machine }}
+          INPUTS_DISTRO_NAME: ${{ inputs.distro_name }}
+          INPUTS_KERNEL_DIRNAME: ${{ inputs.kernel_dirname }}
+        run: |
+          set -euo pipefail
+          uploads_dir="./uploads/${INPUTS_DISTRO_NAME}${INPUTS_KERNEL_DIRNAME}/${INPUTS_MACHINE}"
+          FILENAME="build-meta_${INPUTS_MACHINE}_${INPUTS_DISTRO_NAME}${INPUTS_KERNEL_DIRNAME}"
+          echo "filename=${FILENAME}" >> "$GITHUB_OUTPUT"
+          SPDX=()
+          for f in "${uploads_dir}"/*.spdx.json; do
+            if [ -e "${f}" ]; then
+              SPDX+=("${f}")
+            fi
+          done
+          if [ "${#SPDX[@]}" -eq 0 ]; then
+            echo "::warning::no image SBOM found under ${uploads_dir}"
+            echo '{}' > "${FILENAME}"
+          elif ! python3 ci/build-metadata.py "${SPDX[@]}" > "${FILENAME}"; then
+            echo "::warning::could not read build metadata from ${uploads_dir}"
+            echo '{}' > "${FILENAME}"
+          fi
+          cat "${FILENAME}"
+
       - name: Set S3 object tag
         run: |
           if [[ "$GITHUB_EVENT_NAME" = "pull_request" ]]; then
@@ -247,4 +275,12 @@ jobs:
           overwrite: true
           name: ${{ steps.print-output.outputs.filename }}
           path: ${{ steps.print-output.outputs.filename }}
+
+      - name: Upload build metadata
+        if: inputs.target
+        uses: actions/upload-artifact@v6
+        with:
+          overwrite: true
+          name: ${{ steps.build-metadata.outputs.filename }}
+          path: ${{ steps.build-metadata.outputs.filename }}
 
