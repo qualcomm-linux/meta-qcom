@@ -51,7 +51,7 @@ jobs:
 
       - name: Run kas lock
         run: |
-          ${KAS_CONTAINER} lock ci/base.yml:ci/qcom-distro.yml:ci/meta-arm.yml
+          ${KAS_CONTAINER} lock ci/base.yml:ci/qcom-distro.yml:ci/meta-arm.yml:ci/meta-yocto.yml
 
       - name: Upload kas
         uses: actions/upload-artifact@v6
