@@ -13,6 +13,10 @@ repos:
   meta-qcom-distro:
     url: https://github.com/qualcomm-linux/meta-qcom-distro
     branch: main
+    patches:
+      qwes-openssl4:
+        repo: meta-qcom
+        path: patches/meta-qcom-distro/0001-qcom-multimedia-proprietary-image-drop-qwes-until-it.patch
 
   meta-openembedded:
     url: https://github.com/openembedded/meta-openembedded
