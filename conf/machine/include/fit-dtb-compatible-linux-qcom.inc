@@ -250,3 +250,9 @@ FIT_DTB_COMPATIBLE[qcom_qcs6490-iot-subtype2-camx-staging] = \
 # ---------- glymur ----------
 FIT_DTB_COMPATIBLE[qcom_glymur-crd-staging] = "glymur-crd glymur-staging"
 FIT_DTB_COMPATIBLE[qcom_glymur-crd-camx] = "glymur-crd glymur-crd-camx"
+
+# ---------- shikra ----------
+FIT_DTB_COMPATIBLE[qcom_shikracqm-itp-hdmi] = "shikra-cqm-evk shikra-cqm-cqs-evk-hdmi"
+FIT_DTB_COMPATIBLE[qcom_shikracqs-itp-hdmi] = "shikra-cqs-evk shikra-cqm-cqs-evk-hdmi"
+FIT_DTB_COMPATIBLE[qcom_shikraiqs-itp-dlc] = "shikra-iqs-evk shikra-iqs-evk-dlc-panel"
+FIT_DTB_COMPATIBLE[qcom_shikraiqs-itp-lvds] = "shikra-iqs-evk shikra-iqs-evk-lvds-auo_g133han01"
