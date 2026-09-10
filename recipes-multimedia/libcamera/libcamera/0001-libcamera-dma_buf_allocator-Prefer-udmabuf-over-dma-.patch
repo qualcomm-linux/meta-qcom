@@ -1,0 +1,41 @@
+From 49d57827bc17e4816315a4836eb44212f7597c9c Mon Sep 17 00:00:00 2001
+From: Wenmeng Liu <wenmeng.liu@oss.qualcomm.com>
+Date: Thu, 10 Sep 2026 12:22:08 +0800
+Subject: [PATCH] libcamera: dma_buf_allocator: Prefer udmabuf over dma-heaps
+
+Reorder the provider list so that /dev/udmabuf is tried before the
+CMA and system dma-heaps. Components that allow the udmabuf provider
+(software ISP, virtual pipeline) now use it whenever /dev/udmabuf is
+available, instead of falling back to it only when the dma-heaps can
+not be opened.
+
+Signed-off-by: Wenmeng Liu <wenmeng.liu@oss.qualcomm.com>
+Upstream-Status: Pending
+---
+ src/libcamera/dma_buf_allocator.cpp | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/src/libcamera/dma_buf_allocator.cpp b/src/libcamera/dma_buf_allocator.cpp
+index d8c62dd67..a18e6d7a5 100644
+--- a/src/libcamera/dma_buf_allocator.cpp
++++ b/src/libcamera/dma_buf_allocator.cpp
+@@ -41,6 +41,8 @@ struct DmaBufAllocatorInfo {
+ #endif
+ 
+ static constexpr std::array<DmaBufAllocatorInfo, 4> providerInfos = { {
++	/* Prefer udmabuf over the dma-heaps. */
++	{ DmaBufAllocator::DmaBufAllocatorFlag::UDmaBuf, "/dev/udmabuf" },
+ 	/*
+ 	 * /dev/dma_heap/linux,cma is the CMA dma-heap. When the cma heap size is
+ 	 * specified on the kernel command line, this gets renamed to "reserved".
+@@ -48,7 +50,6 @@ static constexpr std::array<DmaBufAllocatorInfo, 4> providerInfos = { {
+ 	{ DmaBufAllocator::DmaBufAllocatorFlag::CmaHeap, "/dev/dma_heap/linux,cma" },
+ 	{ DmaBufAllocator::DmaBufAllocatorFlag::CmaHeap, "/dev/dma_heap/reserved" },
+ 	{ DmaBufAllocator::DmaBufAllocatorFlag::SystemHeap, "/dev/dma_heap/system" },
+-	{ DmaBufAllocator::DmaBufAllocatorFlag::UDmaBuf, "/dev/udmabuf" },
+ } };
+ 
+ LOG_DEFINE_CATEGORY(DmaBufAllocator)
+-- 
+2.34.1
+
