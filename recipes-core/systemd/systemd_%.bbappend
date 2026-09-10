@@ -15,3 +15,6 @@ do_install:append:qcom() {
 }
 
 FILES:${PN}-udev-rules:append:qcom = " ${nonarch_libdir}/udev/rules.d/99-dma-heap.rules"
+
+# Install the machine-specific raw partition rules whenever udev is installed.
+RRECOMMENDS:udev:append:qcom = " qcom-raw-partitions-udev-rules"
