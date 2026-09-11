@@ -81,6 +81,7 @@ jobs:
           testkit_ref: ${{ inputs.testkit_ref }}
           pr_number: ${{ inputs.pr_number }}
           pr_url: ${{ inputs.pr_url }}
+          distro: ${{ inputs.distro_name }}
 
       - name: Print output ID
         env:
@@ -208,6 +209,7 @@ jobs:
           testkit_ref: ${{ inputs.testkit_ref }}
           pr_number: ${{ inputs.pr_number }}
           pr_url: ${{ inputs.pr_url }}
+          distro: ${{ inputs.distro_name }}
 
       - name: Print output ID
         env:
