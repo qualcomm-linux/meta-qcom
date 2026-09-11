@@ -1,0 +1,60 @@
+From f374d957ba30cd3107f1ab007712e7f27b07def9 Mon Sep 17 00:00:00 2001
+From: Salendarsingh Gaud <sgaud@qti.qualcomm.com>
+Date: Fri, 11 Sep 2026 10:00:00 +0530
+Subject: [PATCH] kgsl: fix governor.h include for backported devfreq header move
+
+Kernel commit "FROMGIT: PM / devfreq: Move governor.h to a public header
+location" (6df46fd1d1b5) was backported into qcom-6.18.y, moving
+drivers/devfreq/governor.h to include/linux/devfreq-governor.h.
+
+The existing version guard uses KERNEL_VERSION(6, 19, 0) as the boundary
+(since the move targets mainline 6.19), so on qcom-6.18.y the old
+#include "governor.h" path is taken — but that file no longer exists,
+causing a fatal build error:
+
+  governor_msm_adreno_tz.c:30:10: fatal error: governor.h: No such file or directory
+  governor_gpubw_mon.c:14:10: fatal error: governor.h: No such file or directory
+
+Replace the LINUX_VERSION_CODE check with __has_include() so the correct
+header is selected based on actual file presence, regardless of whether
+the move was backported into a stable branch.
+
+Fixes: f374d957ba30 ("kgsl: adapt to upstream UBWC API refactor in kernel v7.3")
+Signed-off-by: Salendarsingh Gaud <sgaud@qti.qualcomm.com>
+---
+ governor_gpubw_mon.c       | 4 ++--
+ governor_msm_adreno_tz.c   | 4 ++--
+ 2 files changed, 4 insertions(+), 4 deletions(-)
+
+diff --git a/governor_gpubw_mon.c b/governor_gpubw_mon.c
+index 1111111..2222222 100644
+--- a/governor_gpubw_mon.c
++++ b/governor_gpubw_mon.c
+@@ -8,9 +8,9 @@
+ #include <linux/slab.h>
+ #include <linux/version.h>
+ 
+-#if (KERNEL_VERSION(6, 19, 0) <= LINUX_VERSION_CODE)
++#if __has_include(<linux/devfreq-governor.h>)
+ #include <linux/devfreq-governor.h>
+ #else
+ #include "governor.h"
+ #endif
+ 
+diff --git a/governor_msm_adreno_tz.c b/governor_msm_adreno_tz.c
+index 3333333..4444444 100644
+--- a/governor_msm_adreno_tz.c
++++ b/governor_msm_adreno_tz.c
+@@ -24,9 +24,9 @@
+ #include <linux/firmware/qcom/qcom_scm_addon.h>
+ #endif
+ 
+-#if (KERNEL_VERSION(6, 19, 0) <= LINUX_VERSION_CODE)
++#if __has_include(<linux/devfreq-governor.h>)
+ #include <linux/devfreq-governor.h>
+ #else
+ #include "governor.h"
+ #endif
+ 
+-- 
+2.34.1

@@ -8,6 +8,7 @@ SRCREV = "f374d957ba30cd3107f1ab007712e7f27b07def9"
 SRC_URI = " \
     git://github.com/qualcomm-linux/kgsl.git;branch=gfx-kernel.le.0.0;protocol=https;tag=v${PV} \
     file://kgsl.rules \
+    file://0001-fix-governor-header-compat-for-backported-devfreq-mo.patch;patchdir=${S} \
 "
 
 do_install:append() {
