@@ -95,7 +95,8 @@ runs:
                           SUITE_ID=$(echo "$SUITE" | jq -r ".id")
                           SUITE_TESTS=$(curl -s "${LAVA_BASE}/api/v0.2/jobs/$JOB_ID/suites/$SUITE_ID/tests/")
                           if [ "$SUITE_NAME" != "lava" ]; then
-                              echo "$SUITE_TESTS" | jq ".results[] | {(.name): {result: .result, url: .resource_uri}} | to_entries | .[]"
+                              # resource_uri points to the REST API, link to the test case page instead
+                              echo "$SUITE_TESTS" | jq --arg base "${LAVA_BASE}" '.results[] | {(.name): {result: .result, url: "\($base)/results/testcase/\(.id)"}} | to_entries | .[]'
                           fi
                       fi
                   else
