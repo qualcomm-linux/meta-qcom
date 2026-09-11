@@ -1,14 +1,15 @@
 name: LAVA test job summary
+description: "Build a summary of LAVA test job results and upload it as a workflow artifact"
 inputs:
   build_id:
-    description: "ID of the workflow from which build URL will be downloaded"
+    description: "ID of the workflow run from which the test job artifacts are downloaded"
     required: true
   gh_token:
-    description: "Github token. It's required to download artifacts from the workflow"
+    description: "GitHub token. It's required to download artifacts from the workflow"
     required: true
   prefix:
-    description: "Prefix for the compressed file that is uploaded as workflow artifact"
-    default: test-job*
+    description: "Name pattern of the test job artifacts and of the job JSON files they contain"
+    default: "*test-job*"
   summary_file_name:
     description: "File name that is used to save test job summary"
     default: step-summary.txt
