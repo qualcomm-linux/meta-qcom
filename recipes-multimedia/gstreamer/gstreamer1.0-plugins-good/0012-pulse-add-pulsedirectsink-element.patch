@@ -1,0 +1,1556 @@
+From 07eedcc82d836fde5b941183c9ccc9a7844ab88b Mon Sep 17 00:00:00 2001
+From: Bala Sai Kosuri <bkosuri@qti.qualcomm.com>
+Date: Tue, 28 Jul 2026 14:47:25 +0530
+Subject: [PATCH] pulse: add pulsedirectsink element
+
+- Add a new PulseAudio sink built directly on GstBaseSink rather than
+  GstAudioBaseSink, using the PulseAudio extended-stream API
+  (pa_stream_new_extended / pa_format_info). Unlike pulsesink, which is
+  oriented around a PCM ringbuffer, pulsedirectsink writes encoded frames
+  straight to the server, making it suitable for DSP offload where the
+  sink, not the CPU, performs playout.
+
+- The element accepts MP3 (MPEG-1 Audio Layer III) only, mapping it to
+  PA_ENCODING_MPEG_IEC61937.
+
+- Playback is paced by basesink synchronisation against buffer timestamps,
+  since PulseAudio does not rate-limit an encoded passthrough stream via
+  writable-size flow control.
+
+Upstream-Status: Submitted [https://gitlab.freedesktop.org/gstreamer/gstreamer/-/merge_requests/12144]
+
+Signed-off-by: Bala Sai Kosuri <bkosuri@qti.qualcomm.com>
+---
+ ext/pulse/gstpulseelements.h    |    1 +
+ ext/pulse/meson.build           |    1 +
+ ext/pulse/plugin.c              |    1 +
+ ext/pulse/pulsedeviceprovider.c |    1 +
+ ext/pulse/pulsedirectsink.c     | 1395 +++++++++++++++++++++++++++++++
+ ext/pulse/pulsedirectsink.h     |   65 ++
+ 6 files changed, 1464 insertions(+)
+ create mode 100644 ext/pulse/pulsedirectsink.c
+ create mode 100644 ext/pulse/pulsedirectsink.h
+
+diff --git a/ext/pulse/gstpulseelements.h b/ext/pulse/gstpulseelements.h
+index d356242..39913c2 100644
+--- a/ext/pulse/gstpulseelements.h
++++ b/ext/pulse/gstpulseelements.h
+@@ -31,6 +31,7 @@ void pulse_element_init (GstPlugin * plugin);
+ 
+ GST_ELEMENT_REGISTER_DECLARE (pulsesink);
+ GST_ELEMENT_REGISTER_DECLARE (pulsesrc);
++GST_ELEMENT_REGISTER_DECLARE (pulsedirectsink);
+ 
+ GST_DEVICE_PROVIDER_REGISTER_DECLARE (pulsedeviceprovider);
+ 
+diff --git a/ext/pulse/meson.build b/ext/pulse/meson.build
+index feb3aac..28e34bd 100644
+--- a/ext/pulse/meson.build
++++ b/ext/pulse/meson.build
+@@ -3,6 +3,7 @@ pulse_sources = [
+   'plugin.c',
+   'pulsesink.c',
+   'pulsesrc.c',
++  'pulsedirectsink.c',
+   'pulsedeviceprovider.c',
+   'pulseutil.c',
+ ]
+diff --git a/ext/pulse/plugin.c b/ext/pulse/plugin.c
+index 59d8ab1..613835a 100644
+--- a/ext/pulse/plugin.c
++++ b/ext/pulse/plugin.c
+@@ -32,6 +32,7 @@ plugin_init (GstPlugin * plugin)
+ 
+   ret |= GST_ELEMENT_REGISTER (pulsesink, plugin);
+   ret |= GST_ELEMENT_REGISTER (pulsesrc, plugin);
++  ret |= GST_ELEMENT_REGISTER (pulsedirectsink, plugin);
+ 
+   ret |= GST_DEVICE_PROVIDER_REGISTER (pulsedeviceprovider, plugin);
+ 
+diff --git a/ext/pulse/pulsedeviceprovider.c b/ext/pulse/pulsedeviceprovider.c
+index b55b73b..edf20e9 100644
+--- a/ext/pulse/pulsedeviceprovider.c
++++ b/ext/pulse/pulsedeviceprovider.c
+@@ -31,6 +31,7 @@
+ 
+ #include "pulsesrc.h"
+ #include "pulsesink.h"
++#include "pulsedirectsink.h"
+ #include "pulseutil.h"
+ 
+ 
+diff --git a/ext/pulse/pulsedirectsink.c b/ext/pulse/pulsedirectsink.c
+new file mode 100644
+index 0000000..83c5ddf
+--- /dev/null
++++ b/ext/pulse/pulsedirectsink.c
+@@ -0,0 +1,1395 @@
++/*
++ * GStreamer
++ * Copyright (C) 2019, 2021 Linux Foundation. All rights reserved.
++ *
++ * This library is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU Lesser General Public
++ * License as published by the Free Software Foundation; either
++ * version 2.1 of the License, or (at your option) any later version.
++ *
++ * This library is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++ * Lesser General Public License for more details.
++ *
++ * You should have received a copy of the GNU Lesser General Public
++ * License along with this library; if not, write to the
++ * Free Software Foundation, Inc., 51 Franklin St, Fifth Floor,
++ * Boston, MA 02110-1301, USA.
++ */
++
++/**
++ * SECTION:element-pulsedirectsink
++ * @title: pulsedirectsink
++ * @see_also: pulsesink, pulsesrc
++ *
++ * This element outputs audio to a
++ * [PulseAudio sound server](http://www.pulseaudio.org).
++ *
++ * Unlike #pulsesink, this element is built directly on #GstBaseSink and uses
++ * the PulseAudio extended-stream API, writing encoded frames straight to the
++ * server. It handles compressed formats only (MP3 and AAC), making it suitable
++ * for IEC 61937 compressed passthrough and DSP offload, where playout happens
++ * on the sink rather than the CPU. For linear PCM playback use #pulsesink.
++ *
++ * ## Example pipelines
++ * |[
++ * gst-launch-1.0 -v filesrc location=example.mp3 ! mpegaudioparse ! pulsedirectsink
++ * ]| Play an mp3 file via compressed passthrough.
++ *
++ */
++
++#ifdef HAVE_CONFIG_H
++#include <config.h>
++#endif
++
++#include "gstpulseelements.h"
++#include "pulseutil.h"
++#include "pulsedirectsink.h"
++
++GST_DEBUG_CATEGORY_EXTERN (pulse_debug);
++#define GST_CAT_DEFAULT pulse_debug
++
++#define DEFAULT_SERVER          NULL
++#define DEFAULT_DEVICE          NULL
++#define DEFAULT_TLENGTH         -1
++#define DEFAULT_MINREQ          -1
++#define DEFAULT_MAXLENGTH       -1
++#define DEFAULT_PREBUF          -1
++
++enum
++{
++  PROP_0,
++  PROP_SERVER,
++  PROP_DEVICE,
++  PROP_TLENGTH,
++  PROP_MINREQ,
++  PROP_MAXLENGTH,
++  PROP_PREBUF,
++  PROP_STREAM_PROPERTIES,
++  PROP_LAST
++};
++
++/* the capabilities of the sink pad */
++static GstStaticPadTemplate sink_template = GST_STATIC_PAD_TEMPLATE ("sink",
++    GST_PAD_SINK,
++    GST_PAD_ALWAYS,
++    GST_STATIC_CAPS (PULSE_DIRECT_SINK_TEMPLATE_CAPS));
++
++static gboolean gst_pulsedirectsink_start (GstBaseSink * basesink);
++static gboolean gst_pulsedirectsink_stop (GstBaseSink * basesink);
++static gboolean gst_pulsedirectsink_set_caps (GstBaseSink * sink,
++    GstCaps * caps);
++static void gst_pulsedirectsink_set_property (GObject * object, guint prop_id,
++    const GValue * value, GParamSpec * pspec);
++static void gst_pulsedirectsink_get_property (GObject * object, guint prop_id,
++    GValue * value, GParamSpec * pspec);
++static void gst_pulsedirectsink_finalize (GObject * obj);
++static GstStateChangeReturn gst_pulsedirectsink_change_state (GstElement *
++    element, GstStateChange transition);
++static GstFlowReturn gst_pulsedirectsink_render (GstBaseSink * bsink,
++    GstBuffer * buffer);
++static GstFlowReturn gst_pulsedirectsink_unlock (GstBaseSink * bsink);
++static GstFlowReturn gst_pulsedirectsink_unlock_stop (GstBaseSink * bsink);
++static gboolean gst_pulsedirectsink_query (GstBaseSink * bsink,
++    GstQuery * query);
++static gboolean gst_pulsedirectsink_event (GstBaseSink * bsink,
++    GstEvent * event);
++static GstFlowReturn gst_pulsedirectsink_wait_event (GstBaseSink * bsink,
++    GstEvent * event);
++static void gst_pulsedirectsink_get_times (GstBaseSink * bsink,
++    GstBuffer * buffer, GstClockTime * start, GstClockTime * end);
++
++#define parent_class gst_pulsedirectsink_parent_class
++G_DEFINE_TYPE (GstPulseDirectSink, gst_pulsedirectsink, GST_TYPE_BASE_SINK);
++GST_ELEMENT_REGISTER_DEFINE_WITH_CODE (pulsedirectsink, "pulsedirectsink",
++    GST_RANK_MARGINAL, GST_TYPE_PULSEDIRECTSINK, pulse_element_init (plugin));
++
++/* initialize the pulsedirectsink's class */
++static void
++gst_pulsedirectsink_class_init (GstPulseDirectSinkClass * klass)
++{
++  GObjectClass *gobject_class = G_OBJECT_CLASS (klass);
++  GstElementClass *gstelement_class = GST_ELEMENT_CLASS (klass);
++  GstBaseSinkClass *gstbasesink_class = GST_BASE_SINK_CLASS (klass);
++
++  gobject_class->set_property = gst_pulsedirectsink_set_property;
++  gobject_class->get_property = gst_pulsedirectsink_get_property;
++  gobject_class->finalize = gst_pulsedirectsink_finalize;
++
++  gstelement_class->change_state =
++      GST_DEBUG_FUNCPTR (gst_pulsedirectsink_change_state);
++
++  gstbasesink_class->set_caps =
++      GST_DEBUG_FUNCPTR (gst_pulsedirectsink_set_caps);
++  gstbasesink_class->start = GST_DEBUG_FUNCPTR (gst_pulsedirectsink_start);
++  gstbasesink_class->stop = GST_DEBUG_FUNCPTR (gst_pulsedirectsink_stop);
++  gstbasesink_class->render = GST_DEBUG_FUNCPTR (gst_pulsedirectsink_render);
++  gstbasesink_class->unlock = GST_DEBUG_FUNCPTR (gst_pulsedirectsink_unlock);
++  gstbasesink_class->unlock_stop =
++      GST_DEBUG_FUNCPTR (gst_pulsedirectsink_unlock_stop);
++  gstbasesink_class->query = GST_DEBUG_FUNCPTR (gst_pulsedirectsink_query);
++  gstbasesink_class->event = GST_DEBUG_FUNCPTR (gst_pulsedirectsink_event);
++  gstbasesink_class->wait_event =
++      GST_DEBUG_FUNCPTR (gst_pulsedirectsink_wait_event);
++  gstbasesink_class->get_times =
++      GST_DEBUG_FUNCPTR (gst_pulsedirectsink_get_times);
++
++  /* Properties of pulsedirectsink */
++  g_object_class_install_property (gobject_class,
++      PROP_SERVER,
++      g_param_spec_string ("server", "Server",
++          "The PulseAudio server to connect to", DEFAULT_SERVER,
++          G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
++
++  g_object_class_install_property (gobject_class, PROP_DEVICE,
++      g_param_spec_string ("device", "Device",
++          "The PulseAudio sink device to connect to", DEFAULT_DEVICE,
++          G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
++
++  g_object_class_install_property (gobject_class, PROP_TLENGTH,
++      g_param_spec_uint ("tlength", "Target length",
++          "The target buffer level (total latency) to request (in bytes)",
++          0, G_MAXUINT32, DEFAULT_TLENGTH,
++          G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
++
++  g_object_class_install_property (gobject_class, PROP_MINREQ,
++      g_param_spec_uint ("minreq", "Minimum request size",
++          "The minimum amount of data that server will request (in bytes)",
++          0, G_MAXUINT32, DEFAULT_MINREQ,
++          G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
++
++  g_object_class_install_property (gobject_class, PROP_MAXLENGTH,
++      g_param_spec_uint ("maxlength", "Maximum buffer length",
++          "Maximum stream buffer size that the server should hold (in bytes)",
++          0, G_MAXUINT32, DEFAULT_MAXLENGTH,
++          G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
++
++  g_object_class_install_property (gobject_class, PROP_PREBUF,
++      g_param_spec_uint ("prebuf", "Prebuffering length",
++          "Minimum amount of data required for playback to start (in bytes)",
++          0, G_MAXUINT32, DEFAULT_PREBUF,
++          G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
++
++  g_object_class_install_property (gobject_class,
++      PROP_STREAM_PROPERTIES,
++      g_param_spec_boxed ("stream-properties", "stream properties",
++          "list of pulseaudio stream properties",
++          GST_TYPE_STRUCTURE, G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
++
++  gst_element_class_set_static_metadata (gstelement_class,
++      "PulseAudio Audio Direct Sink",
++      "Sink/Audio", "Plays compressed audio to a PulseAudio server",
++      "Santhosh S <sants@codeaurora.org>, Arun Raghavan <arunsr@codeaurora.org>");
++
++  gst_element_class_add_static_pad_template (gstelement_class, &sink_template);
++}
++
++static void
++gst_pulsedirectsink_init (GstPulseDirectSink * psink)
++{
++  psink->client_name = gst_pulse_client_name ();
++  psink->server = DEFAULT_SERVER;
++  psink->context = NULL;
++  psink->device = DEFAULT_DEVICE;
++  psink->stream = NULL;
++  psink->format = NULL;
++  psink->properties = NULL;
++
++  psink->tlength = DEFAULT_TLENGTH;
++  psink->minreq = DEFAULT_MINREQ;
++  psink->maxlength = DEFAULT_MAXLENGTH;
++  psink->prebuf = DEFAULT_PREBUF;
++
++  g_atomic_int_set (&psink->unlocked, 0);
++}
++
++static void
++gst_pulsedirectsink_set_property (GObject * object, guint prop_id,
++    const GValue * value, GParamSpec * pspec)
++{
++  GstPulseDirectSink *psink = GST_PULSEDIRECTSINK_CAST (object);
++
++  switch (prop_id) {
++    case PROP_SERVER:
++      g_free (psink->server);
++      psink->server = g_value_dup_string (value);
++      break;
++
++    case PROP_DEVICE:
++      g_free (psink->device);
++      psink->device = g_value_dup_string (value);
++      break;
++
++    case PROP_TLENGTH:
++      psink->tlength = g_value_get_uint (value);
++      break;
++
++    case PROP_MINREQ:
++      psink->minreq = g_value_get_uint (value);
++      break;
++
++    case PROP_MAXLENGTH:
++      psink->maxlength = g_value_get_uint (value);
++      break;
++
++    case PROP_PREBUF:
++      psink->prebuf = g_value_get_uint (value);
++      break;
++
++    case PROP_STREAM_PROPERTIES:
++    {
++      const GstStructure *s = gst_value_get_structure (value);
++      if (psink->properties)
++        gst_structure_free (psink->properties);
++      psink->properties = s ? gst_structure_copy (s) : NULL;
++      break;
++    }
++
++    default:
++      G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
++      break;
++  }
++}
++
++static void
++gst_pulsedirectsink_get_property (GObject * object, guint prop_id,
++    GValue * value, GParamSpec * pspec)
++{
++  GstPulseDirectSink *psink = GST_PULSEDIRECTSINK_CAST (object);
++
++  switch (prop_id) {
++    case PROP_SERVER:
++      g_value_set_string (value, psink->server);
++      break;
++
++    case PROP_DEVICE:
++      g_value_set_string (value, psink->device);
++      break;
++
++    case PROP_TLENGTH:
++      g_value_set_uint (value, psink->tlength);
++      break;
++
++    case PROP_MINREQ:
++      g_value_set_uint (value, psink->minreq);
++      break;
++
++    case PROP_MAXLENGTH:
++      g_value_set_uint (value, psink->maxlength);
++      break;
++
++    case PROP_PREBUF:
++      g_value_set_uint (value, psink->prebuf);
++      break;
++
++    case PROP_STREAM_PROPERTIES:
++      gst_value_set_structure (value, psink->properties);
++      break;
++
++    default:
++      G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
++      break;
++  }
++}
++
++static void
++gst_pulsedirectsink_finalize (GObject * obj)
++{
++  GstPulseDirectSink *psink = GST_PULSEDIRECTSINK_CAST (obj);
++
++  g_free (psink->server);
++  g_free (psink->device);
++  g_free (psink->client_name);
++
++  if (psink->properties)
++    gst_structure_free (psink->properties);
++
++  gst_caps_replace (&psink->caps, NULL);
++
++  G_OBJECT_CLASS (parent_class)->finalize (obj);
++}
++
++static void
++gst_pulsedirectsink_release_mainloop (GstPulseDirectSink * psink)
++{
++  if (!psink->mainloop)
++    return;
++
++  GST_DEBUG_OBJECT (psink, "terminating pa main loop thread");
++
++  pa_threaded_mainloop_stop (psink->mainloop);
++  pa_threaded_mainloop_free (psink->mainloop);
++
++  psink->mainloop = NULL;
++}
++
++static void
++gst_pulsedirectsink_stream_success_cb (pa_stream * s, int success,
++    void *userdata)
++{
++  GstPulseDirectSink *psink = GST_PULSEDIRECTSINK (userdata);
++
++  GST_LOG_OBJECT (psink, "Got success callback");
++
++  pa_threaded_mainloop_signal (psink->mainloop, 0);
++}
++
++/* Called with the mainloop locked */
++static void
++gst_pulsedirectsink_set_corked (GstPulseDirectSink * psink, gboolean corked)
++{
++  pa_operation *o;
++
++  if (psink->corked == corked)
++    return;
++
++  GST_DEBUG_OBJECT (psink, "%scorking stream", corked ? "" : "un");
++
++  if (!(o = pa_stream_cork (psink->stream, corked,
++              gst_pulsedirectsink_stream_success_cb, psink)))
++    goto cork_failed;
++
++  while (pa_operation_get_state (o) == PA_OPERATION_RUNNING) {
++    pa_threaded_mainloop_wait (psink->mainloop);
++  }
++
++  psink->corked = corked;
++
++cleanup:
++  if (o)
++    pa_operation_unref (o);
++
++  return;
++
++/* ERRORS */
++cork_failed:
++  {
++    GST_ELEMENT_ERROR (psink, RESOURCE, FAILED,
++        ("pa_stream_cork() failed: %s",
++            pa_strerror (pa_context_errno (psink->context))), (NULL));
++    goto cleanup;
++  }
++}
++
++static GstStateChangeReturn
++gst_pulsedirectsink_change_state (GstElement * element,
++    GstStateChange transition)
++{
++  GstPulseDirectSink *psink = GST_PULSEDIRECTSINK (element);
++  GstStateChangeReturn ret;
++
++  switch (transition) {
++    case GST_STATE_CHANGE_NULL_TO_READY:
++      GST_DEBUG_OBJECT (element, "creating a mainloop thread");
++
++      if (!(psink->mainloop = pa_threaded_mainloop_new ()))
++        goto mainloop_failed;
++
++      if (pa_threaded_mainloop_start (psink->mainloop) < 0) {
++        pa_threaded_mainloop_free (psink->mainloop);
++        goto mainloop_start_failed;
++      }
++
++      break;
++
++    default:
++      break;
++  }
++
++  ret = GST_ELEMENT_CLASS (parent_class)->change_state (element, transition);
++  if (ret == GST_STATE_CHANGE_FAILURE)
++    goto state_failure;
++
++  switch (transition) {
++    case GST_STATE_CHANGE_PAUSED_TO_PLAYING:
++      /* Uncork to start playback. The stream is created corked and we defer
++       * uncorking until we go to PLAYING so playout starts in sync with the
++       * pipeline rather than during preroll. */
++      if (psink->stream) {
++        pa_threaded_mainloop_lock (psink->mainloop);
++        gst_pulsedirectsink_set_corked (psink, FALSE);
++        pa_threaded_mainloop_unlock (psink->mainloop);
++      }
++      break;
++
++    case GST_STATE_CHANGE_PLAYING_TO_PAUSED:
++      pa_threaded_mainloop_lock (psink->mainloop);
++      gst_pulsedirectsink_set_corked (psink, TRUE);
++      pa_threaded_mainloop_unlock (psink->mainloop);
++      break;
++
++    case GST_STATE_CHANGE_PAUSED_TO_READY:
++      gst_caps_replace (&psink->caps, NULL);
++      break;
++
++    case GST_STATE_CHANGE_READY_TO_NULL:
++      gst_pulsedirectsink_release_mainloop (psink);
++      break;
++
++    default:
++      break;
++  }
++
++  return ret;
++
++  /* ERRORS */
++mainloop_failed:
++  {
++    GST_ELEMENT_ERROR (psink, RESOURCE, FAILED,
++        ("pa_threaded_mainloop_new() failed"), (NULL));
++    return GST_STATE_CHANGE_FAILURE;
++  }
++mainloop_start_failed:
++  {
++    GST_ELEMENT_ERROR (psink, RESOURCE, FAILED,
++        ("pa_threaded_mainloop_start() failed"), (NULL));
++    return GST_STATE_CHANGE_FAILURE;
++  }
++state_failure:
++  {
++    if (transition == GST_STATE_CHANGE_NULL_TO_READY) {
++      g_assert (psink->mainloop);
++      gst_pulsedirectsink_release_mainloop (psink);
++    }
++    return ret;
++  }
++}
++
++static GstFlowReturn
++gst_pulsedirectsink_render (GstBaseSink * bsink, GstBuffer * buf)
++{
++  GstPulseDirectSink *psink = GST_PULSEDIRECTSINK_CAST (bsink);
++  GstMapInfo info;
++  GstFlowReturn ret;
++  size_t available;
++
++  if (GST_BUFFER_PTS_IS_VALID (buf)) {
++    GstClockTime start = GST_BUFFER_PTS (buf);
++    GstClockTime stop = GST_BUFFER_DURATION_IS_VALID (buf) ?
++        start + GST_BUFFER_DURATION (buf) : start;
++
++    if (!gst_segment_clip (&bsink->segment, GST_FORMAT_TIME, start, stop,
++            NULL, NULL)) {
++      GST_DEBUG_OBJECT (psink, "buffer %" GST_TIME_FORMAT
++          " is outside the segment, dropping", GST_TIME_ARGS (start));
++      return GST_FLOW_OK;
++    }
++  }
++
++  gst_buffer_map (buf, &info, GST_MAP_READ);
++
++  GST_LOG_OBJECT (psink, "Writing %" G_GSIZE_FORMAT " bytes", info.size);
++
++  pa_threaded_mainloop_lock (psink->mainloop);
++
++  for (;;) {
++    if (bsink->flushing) {
++      GST_LOG_OBJECT (psink, "In flushing");
++      ret = GST_FLOW_FLUSHING;
++      goto unlock_and_done;
++    }
++
++    if ((available = pa_stream_writable_size (psink->stream)) == (size_t) -1)
++      goto writable_size_failed;
++
++    /* We have space to write now, let's do it */
++    if (available > 0)
++      break;
++
++    GST_LOG_OBJECT (psink, "Waiting for space, available = %" G_GSIZE_FORMAT,
++        available);
++
++    /* The buffer is full, let's wait till we're asked for more data */
++    pa_threaded_mainloop_wait (psink->mainloop);
++
++    if (g_atomic_int_get (&psink->unlocked)) {
++      /* We've been asked to unlock, wait until we can proceed */
++      pa_threaded_mainloop_unlock (psink->mainloop);
++      ret = gst_base_sink_wait_preroll (bsink);
++      pa_threaded_mainloop_lock (psink->mainloop);
++
++      if (ret != GST_FLOW_OK)
++        goto unlock_and_done;
++    }
++  }
++
++  if (pa_stream_write (psink->stream, info.data, info.size, NULL, 0,
++          PA_SEEK_RELATIVE) < 0) {
++    GST_ELEMENT_ERROR (psink, RESOURCE, WRITE,
++        ("pa_stream_write() failed: %s",
++            pa_strerror (pa_context_errno (psink->context))), (NULL));
++    ret = GST_FLOW_ERROR;
++    goto unlock_and_done;
++  }
++
++  ret = GST_FLOW_OK;
++
++unlock_and_done:
++  pa_threaded_mainloop_unlock (psink->mainloop);
++
++  gst_buffer_unmap (buf, &info);
++
++  return ret;
++
++  /* ERRORS */
++writable_size_failed:
++  {
++    GST_ELEMENT_ERROR (psink, RESOURCE, FAILED,
++        ("pa_stream_writable_size() failed: %s",
++            pa_strerror (pa_context_errno (psink->context))), (NULL));
++    ret = GST_FLOW_ERROR;
++    goto unlock_and_done;
++  }
++}
++
++static GstFlowReturn
++gst_pulsedirectsink_unlock (GstBaseSink * bsink)
++{
++  GstPulseDirectSink *psink = GST_PULSEDIRECTSINK (bsink);
++
++  GST_LOG_OBJECT (psink, "triggering unlock");
++
++  g_atomic_int_set (&psink->unlocked, 1);
++
++  pa_threaded_mainloop_lock (psink->mainloop);
++  pa_threaded_mainloop_signal (psink->mainloop, 0);
++  pa_threaded_mainloop_unlock (psink->mainloop);
++
++  return GST_FLOW_OK;
++}
++
++static GstFlowReturn
++gst_pulsedirectsink_unlock_stop (GstBaseSink * bsink)
++{
++  GstPulseDirectSink *psink = GST_PULSEDIRECTSINK (bsink);
++
++  GST_LOG_OBJECT (psink, "stopping unlock");
++
++  g_atomic_int_set (&psink->unlocked, 0);
++
++  return GST_FLOW_OK;
++}
++
++/* Called with the mainloop locked */
++static void
++gst_pulsedirectsink_destroy_stream (GstPulseDirectSink * psink)
++{
++  GST_DEBUG_OBJECT (psink, "destroying the stream");
++
++  if (psink->stream) {
++    if (psink->format) {
++      pa_format_info_free (psink->format);
++      psink->format = NULL;
++    }
++
++    pa_stream_disconnect (psink->stream);
++
++    /* Make sure we don't get any further callbacks */
++    pa_stream_set_state_callback (psink->stream, NULL, NULL);
++    pa_stream_set_write_callback (psink->stream, NULL, NULL);
++    pa_stream_set_underflow_callback (psink->stream, NULL, NULL);
++
++    pa_stream_unref (psink->stream);
++    psink->stream = NULL;
++  }
++}
++
++/* Called with the mainloop locked */
++static void
++gst_pulsedirectsink_destroy_context (GstPulseDirectSink * psink)
++{
++  GST_DEBUG_OBJECT (psink, "destroying the context");
++
++  gst_pulsedirectsink_destroy_stream (psink);
++
++  if (psink->context) {
++    pa_context_unref (psink->context);
++    psink->context = NULL;
++  }
++}
++
++static void
++gst_pulsedirectsink_context_state_cb (pa_context * c, void *userdata)
++{
++  pa_context_state_t state;
++  pa_threaded_mainloop *mainloop = (pa_threaded_mainloop *) userdata;
++
++  state = pa_context_get_state (c);
++
++  switch (state) {
++    case PA_CONTEXT_READY:
++    case PA_CONTEXT_TERMINATED:
++    case PA_CONTEXT_FAILED:
++      pa_threaded_mainloop_signal (mainloop, 0);
++      break;
++
++    case PA_CONTEXT_UNCONNECTED:
++    case PA_CONTEXT_CONNECTING:
++    case PA_CONTEXT_AUTHORIZING:
++    case PA_CONTEXT_SETTING_NAME:
++      break;
++  }
++}
++
++static void
++gst_pulsedirectsink_context_subscribe_cb (pa_context * c,
++    pa_subscription_event_type_t t, uint32_t idx, void *userdata)
++{
++  GST_LOG ("got subscription event");
++
++  if (t != (PA_SUBSCRIPTION_EVENT_SINK_INPUT | PA_SUBSCRIPTION_EVENT_CHANGE) &&
++      t != (PA_SUBSCRIPTION_EVENT_SINK_INPUT | PA_SUBSCRIPTION_EVENT_NEW))
++    return;
++
++  /* TODO: do we need to follow any subscription events? */
++}
++
++static gboolean
++gst_pulsedirectsink_open_device (GstPulseDirectSink * psink)
++{
++  pa_mainloop_api *api;
++
++  GST_INFO_OBJECT (psink, "opening device");
++
++  pa_threaded_mainloop_lock (psink->mainloop);
++
++  if (psink->context == NULL) {
++    api = pa_threaded_mainloop_get_api (psink->mainloop);
++
++    if (!(psink->context = pa_context_new (api, psink->client_name)))
++      goto create_failed;
++
++    /* register some essential callbacks */
++    pa_context_set_state_callback (psink->context,
++        gst_pulsedirectsink_context_state_cb, psink->mainloop);
++    pa_context_set_subscribe_callback (psink->context,
++        gst_pulsedirectsink_context_subscribe_cb, psink->context);
++
++    /* try to connect to the server and wait for completion, we don't want to
++     * autospawn a daemon */
++    GST_INFO_OBJECT (psink, "connect to server %s",
++        GST_STR_NULL (psink->server));
++    if (pa_context_connect (psink->context, psink->server,
++            PA_CONTEXT_NOAUTOSPAWN, NULL) < 0)
++      goto connect_failed;
++
++  }
++
++  /* context created or shared okay */
++  for (;;) {
++    pa_context_state_t state;
++
++    state = pa_context_get_state (psink->context);
++
++    GST_DEBUG_OBJECT (psink, "context state is now %d ", state);
++
++    if (!PA_CONTEXT_IS_GOOD (state))
++      goto connect_failed;
++
++    if (state == PA_CONTEXT_READY)
++      break;
++
++    /* Wait until the context is ready */
++    GST_LOG_OBJECT (psink, "waiting for context state change");
++    pa_threaded_mainloop_wait (psink->mainloop);
++  }
++
++  if (pa_context_get_server_protocol_version (psink->context) < 22) {
++    /* We need PulseAudio >= 1.0 on the server side for the extended API */
++    goto bad_server_version;
++  }
++
++  GST_LOG_OBJECT (psink, "opened the device");
++
++  pa_threaded_mainloop_unlock (psink->mainloop);
++  return TRUE;
++
++  /* ERRORS */
++unlock_and_fail:
++  {
++    gst_pulsedirectsink_destroy_context (psink);
++    pa_threaded_mainloop_unlock (psink->mainloop);
++    return FALSE;
++  }
++create_failed:
++  {
++    GST_ELEMENT_ERROR (psink, RESOURCE, FAILED, ("Failed to create context"),
++        (NULL));
++    goto unlock_and_fail;
++  }
++connect_failed:
++  {
++    GST_ELEMENT_ERROR (psink, RESOURCE, FAILED, ("Failed to connect: %s",
++            pa_strerror (pa_context_errno (psink->context))), (NULL));
++    goto unlock_and_fail;
++  }
++bad_server_version:
++  {
++    GST_ELEMENT_ERROR (psink, RESOURCE, FAILED,
++        ("PulseAudio server version is too old."), (NULL));
++    goto unlock_and_fail;
++  }
++}
++
++static gboolean
++gst_pulsedirectsink_start (GstBaseSink * basesink)
++{
++  GstPulseDirectSink *psink = GST_PULSEDIRECTSINK (basesink);
++
++  return gst_pulsedirectsink_open_device (psink);
++}
++
++static gboolean
++gst_pulsedirectsink_close_device (GstPulseDirectSink * psink)
++{
++  GST_LOG_OBJECT (psink, "closing device");
++
++  pa_threaded_mainloop_lock (psink->mainloop);
++
++  gst_pulsedirectsink_destroy_context (psink);
++
++  pa_threaded_mainloop_unlock (psink->mainloop);
++
++  return TRUE;
++}
++
++static gboolean
++gst_pulsedirectsink_stop (GstBaseSink * basesink)
++{
++  GstPulseDirectSink *psink = GST_PULSEDIRECTSINK (basesink);
++
++  return gst_pulsedirectsink_close_device (psink);
++}
++
++/* Called with the mainloop locked */
++static gboolean
++gst_pulsedirectsink_wait_for_stream_ready (GstPulseDirectSink * psink,
++    pa_stream * stream)
++{
++  pa_stream_state_t state;
++
++  GST_LOG_OBJECT (psink, "wait for stream ready");
++
++  for (;;) {
++    state = pa_stream_get_state (stream);
++
++    GST_LOG_OBJECT (psink, "stream state is now %d", state);
++
++    if (!PA_STREAM_IS_GOOD (state))
++      return FALSE;
++
++    if (state == PA_STREAM_READY)
++      return TRUE;
++
++    /* Wait until the stream is ready */
++    GST_LOG_OBJECT (psink, "buffer full, waiting");
++    pa_threaded_mainloop_wait (psink->mainloop);
++  }
++}
++
++static void
++gst_pulsedirect_stream_state_cb (pa_stream * s, void *userdata)
++{
++  GstPulseDirectSink *psink;
++  pa_stream_state_t state;
++
++  psink = GST_PULSEDIRECTSINK_CAST (userdata);
++
++  state = pa_stream_get_state (s);
++  GST_LOG_OBJECT (psink, "got new stream state %d", state);
++
++  switch (state) {
++    case PA_STREAM_READY:
++    case PA_STREAM_FAILED:
++    case PA_STREAM_TERMINATED:
++      pa_threaded_mainloop_signal (psink->mainloop, 0);
++      break;
++
++    case PA_STREAM_UNCONNECTED:
++    case PA_STREAM_CREATING:
++      break;
++  }
++}
++
++static void
++gst_pulsedirect_stream_request_cb (pa_stream * s, size_t length, void *userdata)
++{
++  GstPulseDirectSink *psink;
++  psink = GST_PULSEDIRECTSINK_CAST (userdata);
++
++  GST_LOG_OBJECT (psink, "Got request for %" G_GSIZE_FORMAT " bytes", length);
++
++  pa_threaded_mainloop_signal (psink->mainloop, 0);
++}
++
++static void
++gst_pulsedirect_stream_underflow_cb (pa_stream * s, void *userdata)
++{
++  GstPulseDirectSink *psink;
++  psink = GST_PULSEDIRECTSINK_CAST (userdata);
++
++  GST_WARNING_OBJECT (psink, "Got underflow");
++}
++
++static void
++gst_pulsedirect_stream_latency_cb (pa_stream * s, void *userdata)
++{
++  /* TODO */
++}
++
++static void
++gst_pulsedirect_stream_suspended_cb (pa_stream * p, void *userdata)
++{
++  GstPulseDirectSink *psink;
++  psink = GST_PULSEDIRECTSINK_CAST (userdata);
++
++  if (pa_stream_is_suspended (p))
++    GST_INFO_OBJECT (psink, "stream suspended");
++  else
++    GST_INFO_OBJECT (psink, "stream resumed");
++}
++
++static void
++gst_pulsedirect_stream_started_cb (pa_stream * p, void *userdata)
++{
++  GstPulseDirectSink *psink;
++  psink = GST_PULSEDIRECTSINK_CAST (userdata);
++
++  GST_LOG_OBJECT (psink, "stream started");
++}
++
++static void
++gst_pulsedirect_stream_event_cb (pa_stream * p, const char *name,
++    pa_proplist * pl, void *userdata)
++{
++  GstPulseDirectSink *psink;
++  psink = GST_PULSEDIRECTSINK_CAST (userdata);
++
++  if (!strcmp (name, PA_STREAM_EVENT_REQUEST_CORK)) {
++    /* the stream wants to PAUSE, post a message for the application. */
++    GST_DEBUG_OBJECT (psink, "got request for CORK");
++    gst_element_post_message (GST_ELEMENT_CAST (psink),
++        gst_message_new_request_state (GST_OBJECT_CAST (psink),
++            GST_STATE_PAUSED));
++
++  } else if (!strcmp (name, PA_STREAM_EVENT_REQUEST_UNCORK)) {
++    GST_DEBUG_OBJECT (psink, "got request for UNCORK");
++    gst_element_post_message (GST_ELEMENT_CAST (psink),
++        gst_message_new_request_state (GST_OBJECT_CAST (psink),
++            GST_STATE_PLAYING));
++  } else {
++    GST_DEBUG_OBJECT (psink, "got unknown event %s", name);
++  }
++}
++
++static gboolean
++gst_pulsedirectsink_parse_caps (GstAudioRingBufferSpec * spec, GstCaps * caps)
++{
++  const gchar *format;
++  GstStructure *structure;
++  GstAudioInfo info;
++
++  structure = gst_caps_get_structure (caps, 0);
++  gst_audio_info_init (&info);
++
++  format = gst_structure_get_name (structure);
++
++  if (g_str_equal (format, "audio/mpeg")) {
++    gint mpegversion, rate, channels;
++    const gchar *stream_format = NULL;
++
++    if (!gst_structure_get_int (structure, "mpegversion", &mpegversion))
++      goto parse_error;
++
++    stream_format = gst_structure_get_string (structure, "stream-format");
++    if (mpegversion > 1 && !stream_format)
++      goto parse_error;
++
++    switch (mpegversion) {
++      case 1:
++        spec->type = GST_AUDIO_RING_BUFFER_FORMAT_TYPE_MPEG;
++        break;
++
++      case 2:
++        if (g_str_equal (stream_format, "raw"))
++          spec->type = GST_AUDIO_RING_BUFFER_FORMAT_TYPE_MPEG2_AAC_RAW;
++        else
++          spec->type = GST_AUDIO_RING_BUFFER_FORMAT_TYPE_MPEG2_AAC;
++        break;
++
++      case 4:
++        if (g_str_equal (stream_format, "raw"))
++          spec->type = GST_AUDIO_RING_BUFFER_FORMAT_TYPE_MPEG4_AAC_RAW;
++        else
++          spec->type = GST_AUDIO_RING_BUFFER_FORMAT_TYPE_MPEG4_AAC;
++        break;
++
++      default:
++        g_assert_not_reached ();
++    }
++
++    if (!gst_structure_get_int (structure, "rate", &rate))
++      goto parse_error;
++    if (!gst_structure_get_int (structure, "channels", &channels))
++      goto parse_error;
++
++    info.rate = rate;
++    info.channels = channels;
++  } else {
++    GST_WARNING ("unsupported caps: %" GST_PTR_FORMAT, caps);
++    goto parse_error;
++  }
++
++  gst_caps_replace (&spec->caps, caps);
++
++  /* TODO: check for segsize segtotal and seglatency */
++  spec->info = info;
++
++  return TRUE;
++
++  /* ERRORS */
++parse_error:
++  {
++    GST_DEBUG ("could not parse caps");
++    return FALSE;
++  }
++}
++
++/* PulseAudio does not rate-limit an encoded passthrough stream via
++ * writable-size flow control -- the server/DSP accepts the frames as fast as
++ * we can write them. Report the buffer's timestamps so basesink synchronises
++ * against the pipeline clock and paces playback. */
++static void
++gst_pulsedirectsink_get_times (GstBaseSink * bsink, GstBuffer * buffer,
++    GstClockTime * start, GstClockTime * end)
++{
++  if (GST_BUFFER_PTS_IS_VALID (buffer)) {
++    *start = GST_BUFFER_PTS (buffer);
++    if (GST_BUFFER_DURATION_IS_VALID (buffer))
++      *end = *start + GST_BUFFER_DURATION (buffer);
++    else
++      *end = GST_CLOCK_TIME_NONE;
++  } else {
++    *start = GST_CLOCK_TIME_NONE;
++    *end = GST_CLOCK_TIME_NONE;
++  }
++}
++
++static gboolean
++gst_pulsedirectsink_fill_format_info (GstAudioRingBufferSpec * spec,
++    pa_format_info ** f, guint * channels)
++{
++  if (gst_pulse_fill_format_info (spec, f, channels)) {
++#if PA_CHECK_VERSION(3,99,0)
++    if (spec->type == GST_AUDIO_RING_BUFFER_FORMAT_TYPE_MPEG2_AAC ||
++        spec->type == GST_AUDIO_RING_BUFFER_FORMAT_TYPE_MPEG4_AAC)
++      pa_format_info_set_prop_string (*f, "stream-format", "adts");
++#endif
++    return TRUE;
++  }
++#if PA_CHECK_VERSION(3,99,0)
++  if (spec->type == GST_AUDIO_RING_BUFFER_FORMAT_TYPE_MPEG2_AAC_RAW ||
++      spec->type == GST_AUDIO_RING_BUFFER_FORMAT_TYPE_MPEG4_AAC_RAW) {
++    pa_format_info *format = pa_format_info_new ();
++
++    format->encoding = PA_ENCODING_MPEG2_AAC_IEC61937;
++    pa_format_info_set_prop_string (format, "stream-format", "raw");
++    pa_format_info_set_rate (format, GST_AUDIO_INFO_RATE (&spec->info));
++
++    if (!pa_format_info_valid (format)) {
++      pa_format_info_free (format);
++      return FALSE;
++    }
++
++    *f = format;
++    if (channels)
++      *channels = GST_AUDIO_INFO_CHANNELS (&spec->info);
++
++    return TRUE;
++  }
++#endif
++
++  return FALSE;
++}
++
++static gboolean
++gst_pulsedirectsink_create_stream (GstPulseDirectSink * psink)
++{
++  GstAudioRingBufferSpec spec = { 0 };
++  pa_operation *o = NULL;
++  pa_format_info *formats[1];
++  pa_stream_flags_t flags;
++  pa_buffer_attr wanted;
++  pa_proplist *proplist = NULL;
++
++  pa_threaded_mainloop_lock (psink->mainloop);
++
++  GST_DEBUG_OBJECT (psink, "creating a stream ");
++
++  /* enable event notifications */
++  o = pa_context_subscribe (psink->context, PA_SUBSCRIPTION_MASK_SINK_INPUT,
++      NULL, NULL);
++  if (!o)
++    goto subscribe_failed;
++
++  pa_operation_unref (o);
++
++  if (!gst_pulsedirectsink_parse_caps (&spec, psink->caps))
++    goto unlock_and_fail;
++
++  /* convert the gstreamer sample spec to the pulseaudio format */
++  if (!gst_pulsedirectsink_fill_format_info (&spec, &psink->format, NULL))
++    GST_LOG_OBJECT (psink, "Could not determine format");
++
++  formats[0] = psink->format;
++
++  if (psink->properties)
++    proplist = gst_pulse_make_proplist (psink->properties);
++
++  /* create a stream */
++  if (!(psink->stream =
++          pa_stream_new_extended (psink->context, "Playback Stream", formats,
++              1, proplist)))
++    goto stream_failed;
++
++  /* install essential callbacks */
++  pa_stream_set_state_callback (psink->stream, gst_pulsedirect_stream_state_cb,
++      psink);
++  pa_stream_set_write_callback (psink->stream,
++      gst_pulsedirect_stream_request_cb, psink);
++  pa_stream_set_underflow_callback (psink->stream,
++      gst_pulsedirect_stream_underflow_cb, psink);
++  pa_stream_set_latency_update_callback (psink->stream,
++      gst_pulsedirect_stream_latency_cb, psink);
++  pa_stream_set_suspended_callback (psink->stream,
++      gst_pulsedirect_stream_suspended_cb, psink);
++  pa_stream_set_started_callback (psink->stream,
++      gst_pulsedirect_stream_started_cb, psink);
++  pa_stream_set_event_callback (psink->stream, gst_pulsedirect_stream_event_cb,
++      psink);
++
++  flags = PA_STREAM_START_CORKED | PA_STREAM_ADJUST_LATENCY |
++      PA_STREAM_AUTO_TIMING_UPDATE | PA_STREAM_INTERPOLATE_TIMING;
++  psink->corked = TRUE;
++
++  memset (&wanted, 0, sizeof (wanted));
++  wanted.tlength = psink->tlength;
++  wanted.maxlength = psink->maxlength;
++  wanted.prebuf = psink->prebuf;
++  wanted.minreq = psink->minreq;
++
++  /* try to connect now */
++  GST_DEBUG_OBJECT (psink, "connect for playback to device %s",
++      GST_STR_NULL (psink->device));
++
++  if (pa_stream_connect_playback (psink->stream, psink->device, &wanted,
++          flags, NULL, NULL) < 0) {
++    goto connect_failed;
++  }
++
++  if (!gst_pulsedirectsink_wait_for_stream_ready (psink, psink->stream))
++    goto connect_failed;
++
++  g_free (psink->device);
++  psink->device = g_strdup (pa_stream_get_device_name (psink->stream));
++  GST_LOG_OBJECT (psink, "device name: %s", psink->device);
++
++  pa_threaded_mainloop_unlock (psink->mainloop);
++
++  if (proplist)
++    pa_proplist_free (proplist);
++
++  return TRUE;
++
++/* ERRORS */
++unlock_and_fail:
++  {
++    if (proplist)
++      pa_proplist_free (proplist);
++
++    gst_pulsedirectsink_destroy_stream (psink);
++    pa_threaded_mainloop_unlock (psink->mainloop);
++    return FALSE;
++  }
++subscribe_failed:
++  {
++    GST_ELEMENT_ERROR (psink, RESOURCE, FAILED,
++        ("pa_context_subscribe() failed: %s",
++            pa_strerror (pa_context_errno (psink->context))), (NULL));
++    goto unlock_and_fail;
++  }
++stream_failed:
++  {
++    GST_ELEMENT_ERROR (psink, RESOURCE, FAILED,
++        ("Failed to create stream: %s",
++            pa_strerror (pa_context_errno (psink->context))), (NULL));
++    goto unlock_and_fail;
++  }
++connect_failed:
++  {
++    int err = pa_context_errno (psink->context);
++    if (err == PA_ERR_NOENTITY) {
++      GST_WARNING_OBJECT (psink,
++          "Failed to connect stream: No such entity (device not found). "
++          "Listing available sinks to aid selection…");
++    }
++    GST_ELEMENT_ERROR (psink, RESOURCE, FAILED,
++        ("Failed to connect stream: %s",
++            pa_strerror (pa_context_errno (psink->context))), (NULL));
++    goto unlock_and_fail;
++  }
++}
++
++static GstCaps *
++gst_pulsedirectsink_query_getcaps (GstPulseDirectSink * psink, GstCaps * filter)
++{
++  GstCaps *ret = NULL;
++
++  if (!psink->stream) {
++    ret = gst_pad_get_pad_template_caps (GST_BASE_SINK_PAD (psink));
++    goto out;
++  }
++
++  ret = gst_caps_ref (psink->caps);
++
++out:
++  if (filter) {
++    GstCaps *tmp = gst_caps_intersect_full (filter, ret,
++        GST_CAPS_INTERSECT_FIRST);
++    gst_caps_unref (ret);
++    ret = tmp;
++  }
++
++  GST_LOG_OBJECT (psink, "returning caps caps %" GST_PTR_FORMAT, ret);
++
++  return ret;
++}
++
++static gboolean
++gst_pulsedirectsink_query (GstBaseSink * bsink, GstQuery * query)
++{
++  GstPulseDirectSink *psink = GST_PULSEDIRECTSINK_CAST (bsink);
++  gboolean ret = FALSE;
++
++  switch (GST_QUERY_TYPE (query)) {
++    case GST_QUERY_CAPS:
++    {
++      GstCaps *caps, *filter;
++
++      gst_query_parse_caps (query, &filter);
++      caps = gst_pulsedirectsink_query_getcaps (psink, filter);
++
++      if (caps) {
++        gst_query_set_caps_result (query, caps);
++        gst_caps_unref (caps);
++        ret = TRUE;
++      }
++
++      break;
++    }
++
++    case GST_QUERY_LATENCY:
++    {
++      GstClockTime min_latency, max_latency;
++      GstClockTime sink_latency = 0;
++      gboolean live, us_live;
++      pa_usec_t pa_latency;
++      int negative = 0;
++
++      if (psink->stream) {
++        pa_threaded_mainloop_lock (psink->mainloop);
++        if (pa_stream_get_latency (psink->stream, &pa_latency, &negative) >= 0
++            && !negative)
++          sink_latency = pa_latency * GST_USECOND;
++        pa_threaded_mainloop_unlock (psink->mainloop);
++      }
++
++      if (gst_base_sink_query_latency (GST_BASE_SINK (psink), &live, &us_live,
++              &min_latency, &max_latency)) {
++        min_latency += sink_latency;
++        if (max_latency != GST_CLOCK_TIME_NONE)
++          max_latency += sink_latency;
++        gst_query_set_latency (query, live, min_latency, max_latency);
++        ret = TRUE;
++      }
++      break;
++    }
++
++    default:
++      ret =
++          GST_BASE_SINK_CLASS (parent_class)->query (GST_BASE_SINK (psink),
++          query);
++      break;
++  }
++
++  return ret;
++}
++
++static gboolean
++gst_pulsedirectsink_event (GstBaseSink * bsink, GstEvent * event)
++{
++  GstPulseDirectSink *psink = GST_PULSEDIRECTSINK (bsink);
++  pa_operation *o;
++  gboolean ret = TRUE;
++
++  switch (GST_EVENT_TYPE (event)) {
++    case GST_EVENT_FLUSH_STOP:
++      GST_DEBUG_OBJECT (psink, "Flushing stream");
++
++      pa_threaded_mainloop_lock (psink->mainloop);
++
++      if (!(o = pa_stream_flush (psink->stream,
++                  gst_pulsedirectsink_stream_success_cb, psink))) {
++        GST_ERROR_OBJECT (psink, "pa_stream_flush(): %s",
++            pa_strerror (pa_context_errno (psink->context)));
++        pa_threaded_mainloop_unlock (psink->mainloop);
++        ret = FALSE;
++        break;
++      }
++
++      while (pa_operation_get_state (o) == PA_OPERATION_RUNNING) {
++        pa_threaded_mainloop_wait (psink->mainloop);
++      }
++
++      ret = pa_operation_get_state (o) == PA_OPERATION_DONE;
++      pa_operation_unref (o);
++
++      pa_threaded_mainloop_unlock (psink->mainloop);
++      break;
++
++    default:
++      break;
++  }
++
++  if (ret)
++    ret = GST_BASE_SINK_CLASS (parent_class)->event (bsink, event);
++
++  return ret;
++}
++
++static GstFlowReturn
++gst_pulsedirectsink_wait_event (GstBaseSink * bsink, GstEvent * event)
++{
++  GstPulseDirectSink *psink = GST_PULSEDIRECTSINK (bsink);
++  pa_operation *o;
++  GstFlowReturn ret;
++
++  switch (GST_EVENT_TYPE (event)) {
++    case GST_EVENT_EOS:
++      /* Force the stream to start */
++      GST_DEBUG_OBJECT (psink, "Forcing start if needed");
++
++      pa_threaded_mainloop_lock (psink->mainloop);
++
++      if (!psink->stream) {
++        pa_threaded_mainloop_unlock (psink->mainloop);
++        break;
++      }
++
++      gst_pulsedirectsink_set_corked (psink, FALSE);
++
++      if (!(o = pa_stream_trigger (psink->stream,
++          gst_pulsedirectsink_stream_success_cb, psink))) {
++        GST_ERROR_OBJECT (psink, "pa_stream_trigger(): %s",
++            pa_strerror (pa_context_errno (psink->context)));
++
++        goto unexpected;
++      }
++
++      while (pa_operation_get_state (o) == PA_OPERATION_RUNNING) {
++        pa_threaded_mainloop_wait (psink->mainloop);
++      }
++
++      pa_operation_unref (o);
++
++      pa_threaded_mainloop_unlock (psink->mainloop);
++      break;
++
++    default:
++      break;
++  }
++
++  ret = GST_BASE_SINK_CLASS (parent_class)->wait_event (bsink, event);
++  if (ret != GST_FLOW_OK)
++    return ret;
++
++  switch (GST_EVENT_TYPE (event)) {
++    case GST_EVENT_EOS:
++      GST_DEBUG_OBJECT (psink, "Draining on EOS");
++
++      pa_threaded_mainloop_lock (psink->mainloop);
++
++      if (!psink->stream) {
++        pa_threaded_mainloop_unlock (psink->mainloop);
++        break;
++      }
++
++      if (!(o = pa_stream_drain (psink->stream,
++          gst_pulsedirectsink_stream_success_cb, psink))) {
++        GST_ERROR_OBJECT (psink, "pa_stream_drain(): %s",
++            pa_strerror (pa_context_errno (psink->context)));
++
++        goto unexpected;
++      }
++
++      while (pa_operation_get_state (o) == PA_OPERATION_RUNNING) {
++        pa_threaded_mainloop_wait (psink->mainloop);
++
++        if (bsink->flushing) {
++          ret = GST_FLOW_FLUSHING;
++          break;
++        }
++      }
++
++      if (pa_operation_get_state (o) == PA_OPERATION_DONE)
++        ret = GST_FLOW_OK;
++      else
++        ret = GST_FLOW_ERROR;
++
++      pa_operation_unref (o);
++      pa_threaded_mainloop_unlock (psink->mainloop);
++      break;
++
++    default:
++      break;
++  }
++
++  return ret;
++
++unexpected:
++  if (o)
++    pa_operation_unref (o);
++
++  pa_threaded_mainloop_unlock (psink->mainloop);
++
++  return GST_FLOW_OK;
++}
++
++static gboolean
++gst_pulsedirectsink_set_caps (GstBaseSink * bsink, GstCaps * caps)
++{
++  GstPulseDirectSink *psink = GST_PULSEDIRECTSINK (bsink);
++
++  GST_DEBUG_OBJECT (bsink, "setting caps %" GST_PTR_FORMAT, caps);
++
++  if (psink->caps && gst_caps_is_equal (psink->caps, caps)) {
++    GST_DEBUG_OBJECT (bsink, "caps unchanged, reusing existing stream");
++    return TRUE;
++  }
++
++  if (psink->stream) {
++    pa_threaded_mainloop_lock (psink->mainloop);
++    gst_pulsedirectsink_destroy_stream (psink);
++    pa_threaded_mainloop_unlock (psink->mainloop);
++  }
++
++  gst_caps_replace (&psink->caps, caps);
++
++  if (!gst_pulsedirectsink_create_stream (psink)) {
++    GST_DEBUG_OBJECT (bsink, "create stream failed");
++    return FALSE;
++  }
++
++  return TRUE;
++}
+diff --git a/ext/pulse/pulsedirectsink.h b/ext/pulse/pulsedirectsink.h
+new file mode 100644
+index 0000000..ec05371
+--- /dev/null
++++ b/ext/pulse/pulsedirectsink.h
+@@ -0,0 +1,65 @@
++/*
++ * GStreamer
++ * Copyright (C) 2019, 2021 Linux Foundation. All rights reserved.
++ *
++ * This library is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU Lesser General Public
++ * License as published by the Free Software Foundation; either
++ * version 2.1 of the License, or (at your option) any later version.
++ *
++ * This library is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++ * Lesser General Public License for more details.
++ *
++ * You should have received a copy of the GNU Lesser General Public
++ * License along with this library; if not, write to the
++ * Free Software Foundation, Inc., 51 Franklin St, Fifth Floor,
++ * Boston, MA 02110-1301, USA.
++ */
++
++#ifndef __GST_PULSEDIRECTSINK_H__
++#define __GST_PULSEDIRECTSINK_H__
++
++#include <gst/base/gstbasesink.h>
++
++#include <pulse/pulseaudio.h>
++
++G_BEGIN_DECLS
++#define GST_TYPE_PULSEDIRECTSINK \
++    (gst_pulsedirectsink_get_type())
++G_DECLARE_FINAL_TYPE (GstPulseDirectSink, gst_pulsedirectsink, GST, PULSEDIRECTSINK, GstBaseSink)
++#define GST_PULSEDIRECTSINK_GET_CLASS(obj) \
++    (G_TYPE_INSTANCE_GET_CLASS((obj),GST_TYPE_PULSEDIRECTSINK,GstPulseDirectSinkClass))
++#define GST_PULSEDIRECTSINK_CAST(obj) \
++    ((GstPulseDirectSink *)(obj))
++
++struct _GstPulseDirectSink
++{
++  GstBaseSink base_sink;
++  gchar *client_name, *server, *device;
++
++  /* buffer attributes */
++  guint32 tlength;
++  guint32 minreq;
++  guint32 maxlength;
++  guint32 prebuf;
++
++  pa_threaded_mainloop *mainloop;
++  pa_context *context;
++  pa_stream *stream;
++  pa_format_info *format;
++
++  GstCaps *caps;
++  gboolean corked;
++
++  GstStructure *properties;
++
++  gint unlocked;
++};
++
++#define PULSE_DIRECT_SINK_TEMPLATE_CAPS \
++  _PULSE_CAPS_MP3
++
++G_END_DECLS
++#endif /* __GST_PULSEDIRECTSINK_H__ */
+-- 
+2.34.1
+
