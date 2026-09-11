@@ -73,6 +73,8 @@ do_install:append() {
     rm -f ${D}${libdir}/camx/kodiak/camera/components/*${SOLIBSDEV}
     rm -f ${D}${libdir}/camx/kodiak/hw/*${SOLIBSDEV}
     rm -f ${D}${libdir}/camx/kodiak/camera/*${SOLIBSDEV}
+
+    # Remove  legacy libcamera* libs from the staged image
     rm -f ${D}${libdir}/libcamera*
 
     install -m 0644 ${S}/usr/share/doc/${BPN}/NOTICE ${D}${datadir}/doc/${BPN}

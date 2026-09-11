@@ -1,13 +1,13 @@
 PLATFORM = "lemans"
-PBT_BUILD_DATE = "260825"
+PBT_BUILD_DATE = "260910"
 
 require common.inc
 
-SRC_URI[camxlib.sha256sum] = "d786afdae167643ad5feaad745ed14b741001060cf41e6174fe4f37cee8077f5"
-SRC_URI[camx.sha256sum] = "fd57a206aa1ae4dd6ac95f71ceb2812f995b5ebbf32322fe693186c7359b9770"
-SRC_URI[chicdk.sha256sum] = "31b7582c5c8f2f8a3412e9b99f3b689afda6b53efd1504d8864097ab73fd9c31"
-SRC_URI[camxcommon.sha256sum] = "e2a8645a8ae22182cd62e612ecbb1d098b7fcee4e75e42778b79a88b2587bcfb"
-SRC_URI[camxtest.sha256sum] = "628a94a198b5269812169e3bfbedf285b68cd3190e7102d9f076654fef3b9915"
+SRC_URI[camxlib.sha256sum] = "0888f786d032ed6cf91e097d761d8e6f49e6a0a960bbf57111a981705e321985"
+SRC_URI[camx.sha256sum] = "e8a6c72e65e2449558100d291e672956da83816dc865493876d1a7955f03b71f"
+SRC_URI[chicdk.sha256sum] = "0ea775319b58b93e7ecf392b1663bed1dc81b056b09a66dc00a7da5fb5a077ad"
+SRC_URI[camxcommon.sha256sum] = "6cde038f80e4005ad03e530f498fb025125682c39a095c4dd01927256776c51e"
+SRC_URI[camxtest.sha256sum] = "d49ebcf823d9ba600659080661950a504ed7ec7319d718fd7db85e0440bd5ce0"
 
 DEPENDS += "${@bb.utils.contains('DISTRO_FEATURES', 'opencl', 'virtual/libopencl1', '', d)}"
 DEPENDS += "${@bb.utils.contains('DISTRO_FEATURES', 'opengl', 'virtual/egl virtual/libgles2', '', d)}"
@@ -22,9 +22,6 @@ do_install:append() {
     cp -r ${S}/usr/share/camx ${D}${datadir}
     # copy skel file
     cp -r ${S}/usr/share/qcom ${D}${datadir}
-    install -d ${D}${datadir}/qcom/qcs8300/Qualcomm/QCS8300-RIDE/dsp/cdsp
-    ln -sr ${D}${datadir}/qcom/sa8775p/Qualcomm/SA8775P-RIDE/dsp/cdsp/libbitml_nsp_73nb_skel.so \
-        ${D}${datadir}/qcom/qcs8300/Qualcomm/QCS8300-RIDE/dsp/cdsp/libbitml_nsp_73nb_skel.so
 
     # Remove OpenCL-dependent libraries when opencl is not enabled.
     if ${@bb.utils.contains('DISTRO_FEATURES', 'opencl', 'false', 'true', d)}; then
@@ -40,7 +37,7 @@ RDEPENDS:${PN} += "${PN}-skel"
 RRECOMMENDS:${PN} += "${@bb.utils.contains('DISTRO_FEATURES', 'opencl', 'virtual-opencl-icd', '', d)}"
 
 FILES:camx-nhx = "\
-    ${bindir}/nhx.sh \
+    ${bindir}/camera-nhx \
     ${sysconfdir}/camera/test/NHX/ \
 "
 FILES:${PN}-skel = "\
