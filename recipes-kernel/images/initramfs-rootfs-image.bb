@@ -9,6 +9,7 @@ PACKAGE_INSTALL = " \
     ${MACHINE_ESSENTIAL_EXTRA_RDEPENDS} \
     ${ROOTFS_BOOTSTRAP_INSTALL} \
 "
+require ${@bb.utils.contains('IMAGE_CLASSES', 'dm-verity-img', 'initramfs-rootfs-image-dmverity.inc', '', d)}
 
 # Do not pollute the initrd image with rootfs features
 IMAGE_FEATURES = ""
