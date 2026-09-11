@@ -2,10 +2,15 @@
 
 set -e
 
-sleep 10
+# Wait before touching configfs, unless the unit tells us it is not needed.
+sleep "${ANDROID_GADGET_UDC_DELAY:-10}"
 
-# Speed-only selection:
-# 1) Pick UDC with highest maximum_speed
+# UDC selection:
+# 0) An explicit UDC always wins, taken from the 'adbd.udc=<name>' kernel
+#    command line argument. Needed on boards with several equally capable OTG
+#    ports, where the speed-based selection below cannot tell which one is
+#    wired for debug.
+# 1) Otherwise pick UDC with highest maximum_speed
 # 2) Tie-breaker: lexicographic order (first one found via sort)
 #
 # Recognized speeds:
@@ -16,11 +21,11 @@ GADGET_PATH="/sys/kernel/config/usb_gadget/adb"
 
 if [ ! -d "$UDC_FOLDER" ]; then
     echo "Error: UDC folder '$UDC_FOLDER' not found." >&2
-    return 1
+    exit 1
 fi
 if [ ! -d "$GADGET_PATH" ]; then
     echo "Error: Gadget path '$GADGET_PATH' does not exist." >&2
-    return 1
+    exit 1
 fi
 
 # Return a normalized rank for a speed string.
@@ -50,25 +55,37 @@ read_max_speed() {
 best_udc=""
 best_max_rank=-1
 
-# Iterate all UDCs and select the best one by maximum_speed.
-for udc in $(ls -1 "$UDC_FOLDER" 2>/dev/null | sort); do
-    udc_path="$UDC_FOLDER/$udc"
-    [ -d "$udc_path" ] || continue
-
-    max_text="$(read_max_speed "$udc_path")"
-    max_rank="$(speed_rank "$max_text")"
-
-    # Initialize or update if we found a faster controller
-    # Strict inequality (>): maintains lexicographical order (first one wins) on ties
-    if [ -z "$best_udc" ] || [ "$max_rank" -gt "$best_max_rank" ]; then
-        best_udc="$udc"
-        best_max_rank="$max_rank"
+# An explicit UDC overrides the speed-based selection below.
+udc_override="$(sed -n -e '/adbd\.udc=/ s/.*adbd\.udc=\([^ ]*\).*/\1/p' /proc/cmdline)"
+if [ -n "$udc_override" ]; then
+    if [ -d "$UDC_FOLDER/$udc_override" ]; then
+        best_udc="$udc_override"
+    else
+        echo "Warning: requested UDC '$udc_override' not present, falling back to autodetection." >&2
     fi
-done
+fi
+
+# Iterate all UDCs and select the best one by maximum_speed.
+if [ -z "$best_udc" ]; then
+    for udc in $(ls -1 "$UDC_FOLDER" 2>/dev/null | sort); do
+        udc_path="$UDC_FOLDER/$udc"
+        [ -d "$udc_path" ] || continue
+
+        max_text="$(read_max_speed "$udc_path")"
+        max_rank="$(speed_rank "$max_text")"
+
+        # Initialize or update if we found a faster controller
+        # Strict inequality (>): maintains lexicographical order (first one wins) on ties
+        if [ -z "$best_udc" ] || [ "$max_rank" -gt "$best_max_rank" ]; then
+            best_udc="$udc"
+            best_max_rank="$max_rank"
+        fi
+    done
+fi
 
 if [ -z "$best_udc" ]; then
     echo "Error: No UDC controller found in $UDC_FOLDER" >&2
-    return 1
+    exit 1
 fi
 
 echo "Binding Gadget to UDC: $best_udc (maximum_speed='$(read_max_speed "$UDC_FOLDER/$best_udc")')" >&2
