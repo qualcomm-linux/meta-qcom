@@ -15,6 +15,10 @@ inputs:
   summary_title:
     description: "Title for the summary part of the report"
     required: false
+  lava_url:
+    description: "Hostname of the LAVA instance the results are read from, without the scheme"
+    required: false
+    default: lava.infra.foundries.io
 outputs:
   artifact_id:
     description: "ID of the uploaded artifact"
@@ -43,8 +47,10 @@ runs:
           INPUTS_PREFIX: ${{ inputs.prefix }}
           INPUTS_SUMMARY_FILE_NAME: ${{ inputs.summary_file_name }}
           INPUTS_SUMMARY_TITLE: ${{ inputs.summary_title }}
+          INPUTS_LAVA_URL: ${{ inputs.lava_url }}
         run: |
           set -x
+          LAVA_BASE="https://${INPUTS_LAVA_URL}"
           # When a failed LAVA job is re-run, GitHub keeps the original failed
           # job's "<distro>-test-job-<id>" artifact AND adds a new artifact for the
           # re-submitted job (LAVA assigns a fresh, higher id). Both get downloaded
@@ -69,8 +75,8 @@ runs:
           INPUT=$(for TESTJOB in ${TESTJOBS}
           do
               JOB_ID=$(cat "$TESTJOB" | jq ".id")
-              JOB_URL="https://lava.infra.foundries.io/results/$JOB_ID"
-              JOB_DETAILS=$(curl -s "https://lava.infra.foundries.io/api/v0.2/jobs/$JOB_ID/")
+              JOB_URL="${LAVA_BASE}/results/$JOB_ID"
+              JOB_DETAILS=$(curl -s "${LAVA_BASE}/api/v0.2/jobs/$JOB_ID/")
               JOB_HEALTH=$(echo "$JOB_DETAILS" | jq -r ".health")
               JOB_STATE=$(echo "$JOB_DETAILS" | jq -r ".state")
               JOB_DEVICE_TYPE=$(echo "$JOB_DETAILS" | jq -r ".requested_device_type")
@@ -80,14 +86,14 @@ runs:
                   JOB_TYPE="boot"
               fi
               # get suites and results
-              JOB_SUITES=$(curl -s "https://lava.infra.foundries.io/api/v0.2/jobs/$JOB_ID/suites/")
+              JOB_SUITES=$(curl -s "${LAVA_BASE}/api/v0.2/jobs/$JOB_ID/suites/")
               TEST_RESULTS=$(for SUITE in $(echo "$JOB_SUITES" | jq -r -c ".results[]")
               do
                   if [ "${JOB_TYPE}" = "test" ]; then
                       if [ "${JOB_STATE}" = "Finished" ]; then
                           SUITE_NAME=$(echo "$SUITE" | jq -r ".name")
                           SUITE_ID=$(echo "$SUITE" | jq -r ".id")
-                          SUITE_TESTS=$(curl -s "https://lava.infra.foundries.io/api/v0.2/jobs/$JOB_ID/suites/$SUITE_ID/tests/")
+                          SUITE_TESTS=$(curl -s "${LAVA_BASE}/api/v0.2/jobs/$JOB_ID/suites/$SUITE_ID/tests/")
                           if [ "$SUITE_NAME" != "lava" ]; then
                               echo "$SUITE_TESTS" | jq ".results[] | {(.name): {result: .result, url: .resource_uri}} | to_entries | .[]"
                           fi
@@ -172,8 +178,8 @@ runs:
           for TESTJOB in ${TESTJOBS}
           do
               JOB_ID=$(cat "${TESTJOB}" | jq ".id")
-              JOB_URL="https://lava.infra.foundries.io/results/$JOB_ID"
-              JOB_DETAILS=$(curl -s "https://lava.infra.foundries.io/api/v0.2/jobs/$JOB_ID/")
+              JOB_URL="${LAVA_BASE}/results/$JOB_ID"
+              JOB_DETAILS=$(curl -s "${LAVA_BASE}/api/v0.2/jobs/$JOB_ID/")
               JOB_HEALTH=$(echo "$JOB_DETAILS" | jq -r ".health")
               JOB_STATE=$(echo "$JOB_DETAILS" | jq -r ".state")
               JOB_DEVICE_TYPE=$(echo "$JOB_DETAILS" | jq -r ".requested_device_type")
