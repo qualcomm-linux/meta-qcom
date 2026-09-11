@@ -8,6 +8,7 @@ header:
 local_conf_header:
   ci: |
     BB_SIGNATURE_HANDLER = "OEBasicHash"
+    IMAGE_CLASSES += "image-on-sstate"
     FIRMWARE_COMPRESSION:qcom-armv8a = "zst"
     # Workaround needed due https://bugzilla.yoctoproject.org/show_bug.cgi?id=16010
     PACKAGE_CLASSES = "package_rpm"
@@ -36,3 +37,10 @@ local_conf_header:
     BB_PRESSURE_MAX_MEMORY = "15000"
     PARALLEL_MAKE = "-j 4"
     do_compile[number_threads] = "8"
+
+repos:
+  oe-core:
+    patches:
+      sstatesig-do_image_complete-1:
+        repo: meta-qcom
+        path: patches/oe-core/0001-sstatesig-do_image_complete-needs-to-run-with-pseudo.patch

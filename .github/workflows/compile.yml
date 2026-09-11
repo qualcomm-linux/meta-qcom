@@ -90,7 +90,7 @@ jobs:
             version: 14
           local_conf_header:
             build-id: |
-              BUILD_ID = "${BUILD_ID}"
+              QCOM_BUILD_ID = "${BUILD_ID}"
           EOF
         env:
           INPUTS_CACHE_DIR: ${{inputs.cache_dir}}
