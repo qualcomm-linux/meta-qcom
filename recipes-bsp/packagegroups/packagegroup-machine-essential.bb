@@ -62,6 +62,7 @@ RRECOMMENDS:${PN}-qcom-generic += " \
     kernel-module-qcom-battmgr \
     kernel-module-qcom-camss \
     kernel-module-qcom-iris \
+    kernel-module-qcom-pas-tee \
     kernel-module-qcom-pd-mapper \
     kernel-module-qcom-pmic-tcpm \
     kernel-module-qcom-pon \

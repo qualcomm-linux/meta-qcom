@@ -8,4 +8,4 @@ setenv fdt_high 0x1ffffffff
 
 setenv bootargs "@KERNEL_CMDLINE@"
 load ${devtype} ${devnum}:${distro_bootpart} ${kernel_addr_r} /fitImage
-bootm ${kernel_addr_r}
+bootm ${kernel_addr_r}@FIT_CONF@
