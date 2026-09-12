@@ -49,8 +49,10 @@ class QcomFitImageTests(OESelftestTestCase):
         "sku0", "softsku0", "softsku1",
     }
 
-    # Suffixes allowed by the metadata-check script's blacklist
-    COMPAT_EXTENSIONS = {"camx", "el2kvm", "staging"}
+    # Suffixes allowed by the metadata-check script's blacklist.
+    # el2kvm/el2gh select the hypervisor (KVM or Gunyah) and, like camx and
+    # staging, are not board metadata so they have no qcom-metadata node.
+    COMPAT_EXTENSIONS = {"camx", "el2gh", "el2kvm", "staging"}
 
     # ------------------------------------------------------------------
     # Helpers
@@ -578,7 +580,7 @@ class QcomFitImageIntegrationTests(OESelftestTestCase):
     _meta_nodes = None
 
     # Suffixes allowed by the metadata-check blacklist
-    COMPAT_SKIP_PATTERNS = {"camx", "el2kvm", "staging"}
+    COMPAT_SKIP_PATTERNS = {"camx", "el2gh", "el2kvm", "staging"}
 
     # ------------------------------------------------------------------
     # Helpers
@@ -772,7 +774,7 @@ class QcomFitImageIntegrationTests(OESelftestTestCase):
 
         Every dash-separated suffix in each compatible string must
         either be a node name in the metadata DTS or be listed in
-        the skip patterns (camx, el2kvm).
+        the skip patterns (camx, el2gh, el2kvm, staging).
 
         This replicates the core check from check-fitimage-metadata.sh
         without requiring dtc.
