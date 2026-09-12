@@ -11,7 +11,7 @@ REQUIRED_DISTRO_FEATURES = "opengl"
 
 SRC_URI = "git://github.com/qualcomm/qimsdk;protocol=https;nobranch=1;tag=${PV}"
 
-SRCREV = "20470472f856c795d53942c144cb131a0e1741b5"
+SRCREV = "2656273ed6f54f5e817d5630db6b6b1d2caf132d"
 
 DEPENDS += "\
     gstreamer1.0 \
