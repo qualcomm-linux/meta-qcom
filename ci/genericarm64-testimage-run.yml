@@ -1,0 +1,16 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/siemens/kas/master/kas/schema-kas.json
+
+header:
+  version: 14
+  includes:
+  - ci/genericarm64-testimage.yml
+
+local_conf_header:
+  test: |
+    # running tests automatically
+    TESTIMAGE_AUTO = "1"
+    # change qemu defaults
+    TEST_QEMUBOOT_TIMEOUT = "180"
+    TEST_RUNQEMUPARAMS = "snapshot slirp nographic"
+    # minimal test suite
+    #TEST_SUITES = "ping ssh parselogs"
