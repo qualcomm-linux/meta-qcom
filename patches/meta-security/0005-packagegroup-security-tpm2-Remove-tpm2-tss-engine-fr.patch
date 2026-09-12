@@ -1,0 +1,30 @@
+From b4f3af87150c3373725d1d3207a850d5670d1886 Mon Sep 17 00:00:00 2001
+From: Khem Raj <raj.khem@gmail.com>
+Date: Mon, 7 Sep 2026 08:28:44 -0700
+Subject: [PATCH 5/5] packagegroup-security-tpm2: Remove tpm2-tss-engine from
+ packagegroup
+
+engines are not available in openSSL 4.x
+
+Upstream-Status: Submitted [https://patchwork.yoctoproject.org/project/yocto/patch/97570/]
+
+Signed-off-by: Khem Raj <khem.raj@oss.qualcomm.com>
+---
+ .../recipes-core/packagegroup/packagegroup-security-tpm2.bb     | 2 --
+ 1 file changed, 2 deletions(-)
+
+diff --git a/meta-tpm/recipes-core/packagegroup/packagegroup-security-tpm2.bb b/meta-tpm/recipes-core/packagegroup/packagegroup-security-tpm2.bb
+index b04851f..423a86f 100644
+--- a/meta-tpm/recipes-core/packagegroup/packagegroup-security-tpm2.bb
++++ b/meta-tpm/recipes-core/packagegroup/packagegroup-security-tpm2.bb
+@@ -22,7 +22,5 @@ RDEPENDS:packagegroup-security-tpm2 = " \
+     tpm2-abrmd \
+     tpm2-pkcs11 \
+     tpm2-openssl \
+-    tpm2-tss-engine \
+-    tpm2-tss-engine-engines \
+     python3-tpm2-pytss \
+     "
+-- 
+2.43.0
+
