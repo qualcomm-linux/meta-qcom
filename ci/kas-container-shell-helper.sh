@@ -3,12 +3,21 @@
 # SPDX-License-Identifier: MIT
 
 TOPDIR=$(realpath $(dirname $(readlink -f $0))/..)
-SCRIPT=$(realpath $1)
 
-if ! [ -f $SCRIPT ]; then
+_help(){
     echo "The script path argument is missing, please run it with:"
     echo " $0 /path/to/script"
     exit 1
+}
+
+if [ -z "$1" ] ; then
+    _help
+fi
+
+SCRIPT=$(realpath $1)
+
+if ! [ -f "$SCRIPT" ]; then
+    _help
 fi
 
 # make it relative to the TOPDIR
