@@ -11,15 +11,25 @@ LICENSE = "LicenseRef-qcom-ai-stack"
 LIC_FILES_CHKSUM = "file://LICENSE.pdf;md5=878b885995f453e328edbcd5a1302306"
 NO_GENERIC_LICENSE[qcom-ai-stack] = "LICENSE.pdf"
 
+# The zip file is quite large ~2.4 GB
+# Tt's better to increase the default tries from 2 and timeout from 100.
+FETCHCMD_wget = "wget --tries=5 --timeout=1000"
+
 SRC_URI = "https://softwarecenter.qualcomm.com/api/download/software/sdks/Qualcomm_AI_Runtime_Community/All/${PV}/v${PV}.zip"
-SRC_URI[sha256sum] = "d3497e110eae82c35a9152a93c0a18bbede402aaf9faa7a97c8079eb0f522b01"
+SRC_URI[sha256sum] = "a346ea0e2c8631b46d57261a4969994cd9cc34124a8355bbc7b08b2c8bd859a5"
 
 S = "${UNPACKDIR}/qairt/${PV}"
+
+# libGenieService.so has a hard DT_NEEDED on libsystemd.so.0 and cannot
+# function without it. Restrict the recipe to systemd-based distros.
+inherit features_check
+REQUIRED_DISTRO_FEATURES = "systemd"
 
 # We need host tools during the build:
 #  - patchelf-native: to patch DT_NEEDED entries in prebuilt .so files
 #  - binutils-native: for readelf to inspect NEEDED
-DEPENDS = "patchelf-native binutils-native"
+#  - systemd: for libsystemd.so.0 dependency of libGenieService.so
+DEPENDS = "patchelf-native binutils-native systemd"
 
 # The SDK ships multiple toolchain-specific lib directories with names
 # like "aarch64-oe-linux-gcc8.2", "aarch64-oe-linux-gcc9.3", etc.
@@ -59,6 +69,8 @@ do_install() {
     install -d ${D}${datadir}/qcom/sa8775p/Qualcomm/SA8775P-RIDE/dsp/cdsp
     install -d ${D}${datadir}/qcom/sa8775p/Qualcomm/SA8775P-RIDE/dsp/cdsp1
     install -d ${D}${datadir}/qcom/qcs8300/Qualcomm/QCS8300-RIDE/dsp/cdsp
+    install -d ${D}${datadir}/qcom/x1e80100/Qualcomm/Hamoa-IoT-EVK/dsp/cdsp
+    install -d ${D}${datadir}/qcom/shikra/Qualcomm/Shikra-CQS-EVK/dsp/cdsp
     install -d ${D}${bindir}
 
     cp -r ${S}/include/* ${D}${includedir}
@@ -72,6 +84,19 @@ do_install() {
     cp -r ${S}/lib/hexagon-v73/unsigned/* ${D}${datadir}/qcom/sa8775p/Qualcomm/SA8775P-RIDE/dsp/cdsp
     cp -r ${S}/lib/hexagon-v75/unsigned/* ${D}${datadir}/qcom/qcs8300/Qualcomm/QCS8300-RIDE/dsp/cdsp
 
+    # Shikra CQS-EVK uses the same v66 binaries as QCS615-RIDE.
+    for lib in ${D}${datadir}/qcom/qcs615/Qualcomm/QCS615-RIDE/dsp/cdsp/*; do \
+        ln -s ${datadir}/qcom/qcs615/Qualcomm/QCS615-RIDE/dsp/cdsp/$(basename $lib) \
+        ${D}${datadir}/qcom/shikra/Qualcomm/Shikra-CQS-EVK/dsp/cdsp/$(basename $lib); \
+    done
+
+    # Hamoa IoT EVK uses the same v73 binaries as SA8775P-RIDE.
+    for lib in ${D}${datadir}/qcom/sa8775p/Qualcomm/SA8775P-RIDE/dsp/cdsp/*; do \
+        ln -s ${datadir}/qcom/sa8775p/Qualcomm/SA8775P-RIDE/dsp/cdsp/$(basename $lib) \
+        ${D}${datadir}/qcom/x1e80100/Qualcomm/Hamoa-IoT-EVK/dsp/cdsp/$(basename $lib); \
+    done
+
+    # SA8775P-RIDE cdsp1 is an alias for cdsp used by some FastRPC clients.
     for lib in ${D}${datadir}/qcom/sa8775p/Qualcomm/SA8775P-RIDE/dsp/cdsp/*; do \
         ln -s ../cdsp/$(basename $lib) \
         ${D}${datadir}/qcom/sa8775p/Qualcomm/SA8775P-RIDE/dsp/cdsp1/$(basename $lib); \
@@ -116,9 +141,11 @@ PACKAGES += "\
 "
 
 FILES:${PN}-hexagon-v66 += "${datadir}/qcom/qcs615/Qualcomm/QCS615-RIDE/dsp/cdsp"
+FILES:${PN}-hexagon-v66 += "${datadir}/qcom/shikra/Qualcomm/Shikra-CQS-EVK/dsp/cdsp"
 FILES:${PN}-hexagon-v68 += "${datadir}/qcom/qcm6490/Thundercomm/RB3gen2/dsp/cdsp"
 FILES:${PN}-hexagon-v73 += "${datadir}/qcom/sa8775p/Qualcomm/SA8775P-RIDE/dsp/cdsp"
 FILES:${PN}-hexagon-v73 += "${datadir}/qcom/sa8775p/Qualcomm/SA8775P-RIDE/dsp/cdsp1"
+FILES:${PN}-hexagon-v73 += "${datadir}/qcom/x1e80100/Qualcomm/Hamoa-IoT-EVK/dsp/cdsp"
 FILES:${PN}-hexagon-v75 += "${datadir}/qcom/qcs8300/Qualcomm/QCS8300-RIDE/dsp/cdsp"
 
 RDEPENDS:${PN} += "fastrpc"
@@ -137,4 +164,5 @@ INSANE_SKIP:${PN}-hexagon-v73 += "arch libdir ldflags file-rdeps"
 INSANE_SKIP:${PN}-hexagon-v75 += "arch libdir ldflags file-rdeps"
 
 # Hexagon libraries include .so symlinks but are runtime artifacts.
+INSANE_SKIP:${PN}-hexagon-v66 += "dev-so"
 INSANE_SKIP:${PN}-hexagon-v73 += "dev-so"
