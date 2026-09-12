@@ -4,12 +4,12 @@ LICENSE = "LicenseRef-LICENSE.qcom-2"
 LIC_FILES_CHKSUM = "file://${UNPACKDIR}/usr/share/doc/${PN}/NOLOGINBINARYLICENSEQTI.pdf;md5=4ceffe94cb40cdce6d2f4fb93cc063d1 \
                     file://${UNPACKDIR}/usr/share/doc/${PN}/NOTICE;md5=4b722aa0574e24873e07b94e40b92e4d "
 
-PBT_BUILD_DATE = "260719"
+PBT_BUILD_DATE = "260805"
 ARTIFACTORY_URL = "https://qartifactory-edge.qualcomm.com/artifactory/qsc_releases/software/chip/component/computervision-fastcv.qclinux.0.1/${PBT_BUILD_DATE}/prebuilt_yocto_wrynose"
 PBT_ARCH = "armv8a"
 
 SRC_URI = "${ARTIFACTORY_URL}/${BPN}_${PV}_${PBT_ARCH}.tar.gz"
-SRC_URI[sha256sum] = "b580381bb987dae572cda20f4ab1457c22e1cddb2a2a06bd41c1bb3856a4c2db"
+SRC_URI[sha256sum] = "894846e3ea7c436515e07785b9fe9ed69dc3b5a450a3b710335bc05e82d54b41"
 S = "${UNPACKDIR}"
 
 DEPENDS += "glib-2.0 fastrpc"
