@@ -122,14 +122,17 @@ jobs:
           echo "pr_number=$PR_NUMBER" >> $GITHUB_OUTPUT
 
       - name: Comment on PR
-        uses: thollander/actions-comment-pull-request@24bffb9b452ba05a4f3f77933840a6a841d1b32b # v3
+        uses: marocchino/sticky-pull-request-comment@5770ad5eb8f42dd2c4f34da00c94c5381e49af88 # v3.0.5
         with:
-          file-path: pr-comment.txt
-          pr-number: ${{ steps.pr_comment_prep.outputs.pr_number }}
-          # Update a single tagged comment per PR instead of posting a new one on
-          # every run, so the PR shows one current result instead of accumulating
-          # stale comments (one per run / per superseded commit).
-          comment-tag: test-results
+          path: pr-comment.txt
+          number_force: ${{ steps.pr_comment_prep.outputs.pr_number }}
+          # Post a fresh comment on every run (GitHub only notifies on
+          # comment creation) and minimize the previous tagged comment as
+          # outdated instead of deleting it, so the retry history stays
+          # visible (collapsed) in the PR timeline.
+          header: test-results
+          hide_and_recreate: true
+          hide_classify: OUTDATED
 
   publish-test-results:
     permissions:
