@@ -1,13 +1,13 @@
 PLATFORM = "talos"
-PBT_BUILD_DATE = "260825"
+PBT_BUILD_DATE = "260910"
 
 require common.inc
 
-SRC_URI[camxlib.sha256sum] = "bad5bb9ca3a99dda9665d0ddbe2f5ade10fb291ef7b954f279b378da9c56c63d"
-SRC_URI[camx.sha256sum] = "f2e356e96b84bf77a764b16fcb1d947854ea6feec8f04682bb3202b165aaa76d"
-SRC_URI[chicdk.sha256sum] = "4e6942bd426bb0dd9d5719674740c97f77e8ba4a17255e48a5ae9b554118082a"
-SRC_URI[camxcommon.sha256sum] = "3400a71accf286d0539d05f7b55e9f7269a77c31c833e83742163d613be45ed3"
-SRC_URI[camxtest.sha256sum] = "af51977b0cbd79e7d50088ac64ae643b98e1d7c11b0a419bd3319c88e185d258"
+SRC_URI[camxlib.sha256sum] = "3f6b90a805a2c16d155cd8e19779d93a1a579e38793ef17841a37623acf0bd2d"
+SRC_URI[camx.sha256sum] = "9a9b87a3117ac0ad6d38062e4d3f2772c8675399bb882216dc0fe25860b58777"
+SRC_URI[chicdk.sha256sum] = "8c8f13e72bcece296a751b07d8a119a804a9b3769432672d95084b33bec3c384"
+SRC_URI[camxcommon.sha256sum] = "adfdcba5f52d42b70223a9bb9d32b9ed497d35210657c5c52701b75a47f23288"
+SRC_URI[camxtest.sha256sum] = "e038ed09189db4ee7bb593a586c26965cd7edb30493bf1d2c364377bcd165105"
 
 DEPENDS += "${@bb.utils.contains('DISTRO_FEATURES', 'opencl', 'virtual/libopencl1', '', d)}"
 DEPENDS += "${@bb.utils.contains('DISTRO_FEATURES', 'opengl', 'virtual/egl virtual/libgles2', '', d)}"
