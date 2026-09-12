@@ -1,20 +1,25 @@
 name: LAVA test job summary
+description: "Build a summary of LAVA test job results and upload it as a workflow artifact"
 inputs:
   build_id:
-    description: "ID of the workflow from which build URL will be downloaded"
+    description: "ID of the workflow run from which the test job artifacts are downloaded"
     required: true
   gh_token:
-    description: "Github token. It's required to download artifacts from the workflow"
+    description: "GitHub token. It's required to download artifacts from the workflow"
     required: true
   prefix:
-    description: "Prefix for the compressed file that is uploaded as workflow artifact"
-    default: test-job*
+    description: "Name pattern of the test job artifacts and of the job JSON files they contain"
+    default: "*test-job*"
   summary_file_name:
     description: "File name that is used to save test job summary"
     default: step-summary.txt
   summary_title:
     description: "Title for the summary part of the report"
     required: false
+  lava_url:
+    description: "Hostname of the LAVA instance the results are read from, without the scheme"
+    required: false
+    default: lava.infra.foundries.io
 outputs:
   artifact_id:
     description: "ID of the uploaded artifact"
@@ -43,8 +48,35 @@ runs:
           INPUTS_PREFIX: ${{ inputs.prefix }}
           INPUTS_SUMMARY_FILE_NAME: ${{ inputs.summary_file_name }}
           INPUTS_SUMMARY_TITLE: ${{ inputs.summary_title }}
+          INPUTS_LAVA_URL: ${{ inputs.lava_url }}
         run: |
           set -x
+          # Most of the LAVA requests run in command substitutions. Make them
+          # inherit errexit, so a failed request fails the step instead of
+          # producing an incomplete summary.
+          shopt -s inherit_errexit
+          LAVA_BASE="https://${INPUTS_LAVA_URL}"
+          # Print the body of a LAVA REST API response. A busy LAVA server can
+          # be slow to respond, so a failed request is repeated once after a
+          # wait. If it fails again, report the request that failed as an
+          # error annotation, so it's clear why the step failed. Messages go to
+          # stderr, stdout is captured by the caller.
+          lava_api() {
+              local url="${LAVA_BASE}/api/v0.2/$1"
+              local wait=30
+              local rc=0
+              curl -sSf --retry 3 "${url}" || rc=$?
+              if [ "${rc}" -ne 0 ]; then
+                  echo "::warning title=LAVA request failed::curl exited with ${rc} for ${url}, retrying in ${wait}s" >&2
+                  sleep "${wait}"
+                  rc=0
+                  curl -sSf --retry 3 "${url}" || rc=$?
+              fi
+              if [ "${rc}" -ne 0 ]; then
+                  echo "::error title=LAVA request failed::curl exited with ${rc} for ${url}" >&2
+                  return "${rc}"
+              fi
+          }
           # When a failed LAVA job is re-run, GitHub keeps the original failed
           # job's "<distro>-test-job-<id>" artifact AND adds a new artifact for the
           # re-submitted job (LAVA assigns a fresh, higher id). Both get downloaded
@@ -69,8 +101,8 @@ runs:
           INPUT=$(for TESTJOB in ${TESTJOBS}
           do
               JOB_ID=$(cat "$TESTJOB" | jq ".id")
-              JOB_URL="https://lava.infra.foundries.io/results/$JOB_ID"
-              JOB_DETAILS=$(curl -s "https://lava.infra.foundries.io/api/v0.2/jobs/$JOB_ID/")
+              JOB_URL="${LAVA_BASE}/results/$JOB_ID"
+              JOB_DETAILS=$(lava_api "jobs/$JOB_ID/")
               JOB_HEALTH=$(echo "$JOB_DETAILS" | jq -r ".health")
               JOB_STATE=$(echo "$JOB_DETAILS" | jq -r ".state")
               JOB_DEVICE_TYPE=$(echo "$JOB_DETAILS" | jq -r ".requested_device_type")
@@ -79,31 +111,31 @@ runs:
               if echo "${JOB_TITLE}" | grep -q "boot"; then
                   JOB_TYPE="boot"
               fi
-              # get suites and results
-              JOB_SUITES=$(curl -s "https://lava.infra.foundries.io/api/v0.2/jobs/$JOB_ID/suites/")
-              TEST_RESULTS=$(for SUITE in $(echo "$JOB_SUITES" | jq -r -c ".results[]")
-              do
-                  if [ "${JOB_TYPE}" = "test" ]; then
+              if [ "${JOB_TYPE}" = "boot" ]; then
+                  # boot result comes from the job itself, so it is reported
+                  # even when the job has no test suites
+                  if [ "${JOB_STATE}" = "Finished" ] && [ ${JOB_HEALTH} = "Complete" ]; then
+                      TEST_RESULT_BOOT="pass"
+                  else
+                      TEST_RESULT_BOOT="fail"
+                  fi
+                  TEST_RESULTS=$(jq -n -c --arg url "${JOB_URL}" --arg result "${TEST_RESULT_BOOT}" '{boot: $ARGS.named}')
+              else
+                  # get suites and results
+                  JOB_SUITES=$(lava_api "jobs/$JOB_ID/suites/")
+                  TEST_RESULTS=$(for SUITE in $(echo "$JOB_SUITES" | jq -r -c ".results[]")
+                  do
                       if [ "${JOB_STATE}" = "Finished" ]; then
                           SUITE_NAME=$(echo "$SUITE" | jq -r ".name")
                           SUITE_ID=$(echo "$SUITE" | jq -r ".id")
-                          SUITE_TESTS=$(curl -s "https://lava.infra.foundries.io/api/v0.2/jobs/$JOB_ID/suites/$SUITE_ID/tests/")
+                          SUITE_TESTS=$(lava_api "jobs/$JOB_ID/suites/$SUITE_ID/tests/")
                           if [ "$SUITE_NAME" != "lava" ]; then
-                              echo "$SUITE_TESTS" | jq ".results[] | {(.name): {result: .result, url: .resource_uri}} | to_entries | .[]"
+                              # resource_uri points to the REST API, link to the test case page instead
+                              echo "$SUITE_TESTS" | jq --arg base "${LAVA_BASE}" '.results[] | {(.name): {result: .result, url: "\($base)/results/testcase/\(.id)"}} | to_entries | .[]'
                           fi
                       fi
-                  else
-                      if [ "${JOB_STATE}" = "Finished" ] && [ ${JOB_HEALTH} = "Complete" ]; then
-                          TEST_RESULT_BOOT="pass"
-                      else
-                          TEST_RESULT_BOOT="fail"
-                      fi
-                      TEST_NAME="boot"
-                      TEST_URL="${JOB_URL}"
-                      TEST_RESULT_OBJ=$(jq --arg url "$TEST_URL" --arg result "$TEST_RESULT_BOOT" -n -c '$ARGS.named')
-                      jq -n -c --arg key "$TEST_NAME" --argjson value "$TEST_RESULT_OBJ" '$ARGS.named'
-                  fi
-              done | jq -s -c --sort-keys 'from_entries')
+                  done | jq -s -c --sort-keys 'from_entries')
+              fi
               echo "{\"key\": \"$JOB_DEVICE_TYPE\", \"value\": $TEST_RESULTS}" | jq
           # combine entries from boot jobs and pre-merge jobs
           done | jq -s -c 'reduce .[] as $i ({}; .[$i.key] = ((.[$i.key] // {}) + $i.value))')
@@ -172,8 +204,8 @@ runs:
           for TESTJOB in ${TESTJOBS}
           do
               JOB_ID=$(cat "${TESTJOB}" | jq ".id")
-              JOB_URL="https://lava.infra.foundries.io/results/$JOB_ID"
-              JOB_DETAILS=$(curl -s "https://lava.infra.foundries.io/api/v0.2/jobs/$JOB_ID/")
+              JOB_URL="${LAVA_BASE}/results/$JOB_ID"
+              JOB_DETAILS=$(lava_api "jobs/$JOB_ID/")
               JOB_HEALTH=$(echo "$JOB_DETAILS" | jq -r ".health")
               JOB_STATE=$(echo "$JOB_DETAILS" | jq -r ".state")
               JOB_DEVICE_TYPE=$(echo "$JOB_DETAILS" | jq -r ".requested_device_type")
