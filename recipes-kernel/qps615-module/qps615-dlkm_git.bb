@@ -15,6 +15,10 @@ PV = "6.0.3+git"
 
 B = "${S}/drivers/net/ethernet/toshiba/tc956x"
 
+# devtool/externalsrc uses a separate build directory unless the out-of-tree
+# build directory is explicitly provided.
+EXTERNALSRC_BUILD = "${EXTERNALSRC}/drivers/net/ethernet/toshiba/tc956x"
+
 # The original Makefile uses an "ifeq ($(pf), 1)" check to pick the default config.
 # Therefore, pf=1 needs to be set while compiling for non-SRIOV VF config.
 EXTRA_OEMAKE += "KCFLAGS='-DTC956X -DCONFIG_TC956X_PLATFORM_SUPPORT -DTC956X_SRIOV_PF' pf=1"
