@@ -299,10 +299,18 @@ do_compile() {
             "${BOOTBINS_STAGED}/dtb.bin"
     fi
 
-    # Inject OEM root cert into xbl_config.elf when present.  Platforms
-    # without xbl_config.elf (e.g. hamoa) skip this step.
-    if [ -f "${BOOTBINS_STAGED}/xbl_config.elf" ]; then
-        patch_xblconfig_cert "${BOOTBINS_STAGED}/xbl_config.elf"
+    # Inject the OEM root cert into the MACHINE-SELECTED xbl_config variant
+    # QCOM_XBL_CONFIG when present.  Platforms without an xbl_config (e.g.
+    # hamoa) skip this.
+    XBL_CONFIG_VARIANT="${QCOM_XBL_CONFIG}"
+    [ -n "${XBL_CONFIG_VARIANT}" ] || XBL_CONFIG_VARIANT="xbl_config.elf"
+    if [ -f "${BOOTBINS_STAGED}/${XBL_CONFIG_VARIANT}" ]; then
+        patch_xblconfig_cert "${BOOTBINS_STAGED}/${XBL_CONFIG_VARIANT}"
+        if [ -f "${CAPSULE_DIR}/.xbl_with_oem_cert" ] && \
+           [ "${XBL_CONFIG_VARIANT}" != "xbl_config.elf" ]; then
+            cp "${BOOTBINS_STAGED}/${XBL_CONFIG_VARIANT}" \
+               "${BOOTBINS_STAGED}/xbl_config.elf"
+        fi
     fi
 
     qcom-capsule-tool sysfw-version-create \
