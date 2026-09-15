@@ -57,6 +57,9 @@ do_install:append() {
     rm -f ${D}${libdir}/camx/${PLATFORM}/hw/*${SOLIBSDEV}
     rm -f ${D}${libdir}/camx/${PLATFORM}/camera/*${SOLIBSDEV}
 
+    # Remove legacy libcamera* libs from the staged image
+    rm -f ${D}${libdir}/libcamera*
+
     # Base docs
     install -m 0644 ${S}/usr/share/doc/${BPN}/NOTICE \
         ${D}${datadir}/doc/${BPN}
