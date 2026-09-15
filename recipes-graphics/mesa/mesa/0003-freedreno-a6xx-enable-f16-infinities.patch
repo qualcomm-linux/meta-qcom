@@ -1,0 +1,35 @@
+From 685a15a2534e534adef0287b9b3317a057989c93 Mon Sep 17 00:00:00 2001
+From: Tupili Krishna Gowtham Reddy <tupilikr@qti.qualcomm.com>
+Date: Tue, 11 Aug 2026 18:20:51 +0530
+Subject: [PATCH] freedreno/a6xx: enable f16 infinities for freedreno driver
+
+
+A6XX_SP_NC_MODE_CNTL_2.F16_NO_INF makes all fp16 ALU operations that
+overflow produce +-MAX_HALF_FLOAT (65504.0) instead of +-Inf. IEEE-754
+and default (non-fast-math) OpenCL/GLSL semantics require overflowing
+float arithmetic to round to infinity, so this bit should not be set.
+
+Upstream-Status: Backport [https://gitlab.freedesktop.org/mesa/mesa/-/commit/685a15a2534e534adef0287b9b3317a057989c93]
+Signed-off-by: Tupili Krishna Gowtham Reddy <tupilikr@qti.qualcomm.com>
+
+Part-of: <https://gitlab.freedesktop.org/mesa/mesa/-/merge_requests/43677>
+---
+ src/gallium/drivers/freedreno/a6xx/fd6_emit.cc | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/src/gallium/drivers/freedreno/a6xx/fd6_emit.cc b/src/gallium/drivers/freedreno/a6xx/fd6_emit.cc
+index 8019e53e52b1..4ed253443503 100644
+--- a/src/gallium/drivers/freedreno/a6xx/fd6_emit.cc
++++ b/src/gallium/drivers/freedreno/a6xx/fd6_emit.cc
+@@ -887,7 +887,7 @@ fd6_emit_static_non_context_regs(struct fd_context *ctx, fd_cs &cs)
+     */
+    if (CHIP < A8XX) {
+       ncrb.add(A6XX_RB_DBG_ECO_CNTL(.dword = screen->info->magic.RB_DBG_ECO_CNTL));
+-      ncrb.add(A6XX_SP_NC_MODE_CNTL_2(.f16_no_inf = true));
++      ncrb.add(A6XX_SP_NC_MODE_CNTL_2(.f16_no_inf = false));
+       ncrb.add(VPC_LB_MODE_CNTL(CHIP));
+       ncrb.add(PC_CONTEXT_SWITCH_GFX_PREEMPTION_MODE(CHIP));
+    }
+-- 
+GitLab
+

@@ -1,0 +1,85 @@
+From 50ea8f86c6835491192b1b19771dddee026cf048 Mon Sep 17 00:00:00 2001
+From: Kajal Kajal <kkajal@qti.qualcomm.com>
+Date: Thu, 30 Jul 2026 19:39:46 +0530
+Subject: [PATCH] rusticl/kernel: emit image/texture barriers after a kernel
+ launch
+
+After dispatching a kernel rusticl only emitted PIPE_BARRIER_SHADER_BUFFER,
+so writes to images were never followed by a texture/image cache
+flush+invalidate. On drivers that rely on the memory_barrier callback to
+insert that flush, an image written by one kernel via a storage image and
+then sampled by a later kernel on the same in-order queue read back stale
+data.
+
+This showed up as the OpenCL CTS api test clone_kernel failing in the
+image arg shallow clone subtest: img_write_kernel writes an image, then
+img_read_kernel samples it, and without an intervening clFinish the sampled
+result was all zeroes.
+
+Include PIPE_BARRIER_IMAGE / PIPE_BARRIER_TEXTURE in the post-dispatch
+memory_barrier whenever the kernel bound any images or sampler views, so the
+driver inserts the required cache flush. Kernels that touch no images keep
+the previous PIPE_BARRIER_SHADER_BUFFER-only behaviour and pay no extra cost.
+
+Upstream-Status: Backport [https://gitlab.freedesktop.org/mesa/mesa/-/commit/50ea8f86c6835491192b1b19771dddee026cf048]
+Signed-off-by: Kajal Kajal <kkajal@qti.qualcomm.com>
+Reviewed-by: Karol Herbst <kherbst@redhat.com>
+Part-of: <https://gitlab.freedesktop.org/mesa/mesa/-/merge_requests/43273>
+---
+ src/gallium/frontends/rusticl/core/kernel.rs | 25 ++++++++++++++++++--
+ 1 file changed, 23 insertions(+), 2 deletions(-)
+
+diff --git a/src/gallium/frontends/rusticl/core/kernel.rs b/src/gallium/frontends/rusticl/core/kernel.rs
+index 4a6c8002ac95..66c038c51d58 100644
+--- a/src/gallium/frontends/rusticl/core/kernel.rs
++++ b/src/gallium/frontends/rusticl/core/kernel.rs
+@@ -1974,12 +1974,34 @@ impl Kernel {
+ 
+             let (resources, mut globals) = exec_builder.get_resources_and_globals();
+ 
++            let mut read_barriers = 0;
++            let mut write_barriers = 0;
++            if !resources.is_empty() || !bdas.is_empty() {
++                read_barriers |= PIPE_BARRIER_MAPPED_BUFFER
++                    | PIPE_BARRIER_SHADER_BUFFER
++                    | PIPE_BARRIER_UPDATE_BUFFER;
++                write_barriers |= PIPE_BARRIER_MAPPED_BUFFER
++                    | PIPE_BARRIER_SHADER_BUFFER
++                    | PIPE_BARRIER_UPDATE_BUFFER;
++            }
++            if !sviews.is_empty() {
++                read_barriers |= PIPE_BARRIER_TEXTURE | PIPE_BARRIER_UPDATE_TEXTURE;
++            }
++            if !iviews.is_empty() {
++                // TODO: skip this if there are only write_only images
++                read_barriers |= PIPE_BARRIER_IMAGE | PIPE_BARRIER_UPDATE_TEXTURE;
++                write_barriers |=
++                    PIPE_BARRIER_IMAGE | PIPE_BARRIER_TEXTURE | PIPE_BARRIER_UPDATE_TEXTURE;
++            }
++
+             ctx.bind_kernel(&nir_kernel_builds, variant)?;
+             ctx.bind_sampler_states(samplers);
+             ctx.bind_sampler_views(sviews);
+             ctx.bind_shader_images(iviews);
+             ctx.set_global_binding(resources, &mut globals);
+ 
++            ctx.memory_barrier(read_barriers);
++
+             for z in 0..grid[2].div_ceil(hw_max_grid[2]) {
+                 for y in 0..grid[1].div_ceil(hw_max_grid[1]) {
+                     for x in 0..grid[0].div_ceil(hw_max_grid[0]) {
+@@ -2011,10 +2033,9 @@ impl Kernel {
+                 }
+             }
+ 
++            ctx.memory_barrier(write_barriers);
+             ctx.clear_global_binding(globals.len() as u32);
+ 
+-            ctx.memory_barrier(PIPE_BARRIER_SHADER_BUFFER);
+-
+             if let Some(printf_buf) = &printf_buf {
+                 let tx = ctx
+                     .buffer_map(printf_buf, 0, printf_size as i32, RWFlags::RD)
+-- 
+GitLab
+
