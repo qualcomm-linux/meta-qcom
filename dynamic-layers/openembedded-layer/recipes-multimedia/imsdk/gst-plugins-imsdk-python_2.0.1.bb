@@ -1,5 +1,5 @@
-require gst-plugins-imsdk-common.inc
-require gst-plugins-imsdk-packaging.inc
+require recipes-multimedia/imsdk/gst-plugins-imsdk-common.inc
+require recipes-multimedia/imsdk/gst-plugins-imsdk-packaging.inc
 
 SUMMARY = "Qualcomm IMSDK GStreamer Python Libraries"
 DESCRIPTION = "Python binding overrides (complementing the bindings provided by python-gi) for IMSDK GStreamer libraries."

@@ -11,7 +11,7 @@ REQUIRED_DISTRO_FEATURES = "opengl"
 
 SRC_URI = "git://github.com/qualcomm/qimsdk;protocol=https;nobranch=1;tag=${PV}"
 
-SRCREV = "20470472f856c795d53942c144cb131a0e1741b5"
+SRCREV = "2656273ed6f54f5e817d5630db6b6b1d2caf132d"
 
 DEPENDS += "\
     gstreamer1.0 \
@@ -53,5 +53,6 @@ RDEPENDS:${PN}-qtismartvencbin += "smart-venc-ctrl-algo"
 # To ensure runtime availability, added runtime dependency on 'mosquitto'.
 RDEPENDS:libgstqtimqttadaptor += "mosquitto"
 
-RDEPENDS:${PN}-apps += "${@bb.utils.contains('PACKAGECONFIG', 'python-apps', 'python3-core gstreamer1.0-python python3-pygobject gtk+3 python3-opencv', '', d)} \
+RDEPENDS:${PN}-apps += "${@bb.utils.contains('PACKAGECONFIG', 'python', 'python3-opencv python3-pycairo', '', d)} \
+                        ${@bb.utils.contains('PACKAGECONFIG', 'python-apps', 'python3-core gstreamer1.0-python python3-pygobject gtk+3 python3-opencv', '', d)} \
                         ${@bb.utils.contains('PACKAGECONFIG', 'webrtc', 'gstreamer1.0-plugins-bad-webrtc', '', d)}"
