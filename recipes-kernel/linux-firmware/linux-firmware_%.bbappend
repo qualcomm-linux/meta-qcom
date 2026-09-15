@@ -3,10 +3,12 @@ FILESEXTRAPATHS:prepend := "${THISDIR}/${PN}:"
 ALTERNATIVES_CLASS = ""
 ALTERNATIVES_CLASS:qcom = "update-alternatives"
 
+WHENCE_CHKSUM:qcom = "2479ba3a89ec32f3c8b23698b0a75ee5"
 PATCHTOOL:qcom = "git"
 
 SRC_URI:append:qcom = " \
     file://0001-qcom-sa8775p-update-signature-on-cdsp1-firmware.patch \
+    file://0001-ath10k-WCN3990-hw1.0-add-shikra-firmware-files.patch \
 "
 
 inherit_defer ${ALTERNATIVES_CLASS}
