@@ -57,6 +57,8 @@ FIT_DTB_COMPATIBLE[qcom_qcs9075-iot-subtype1-emmc] = \
     "lemans-evk lemans-evk-ifp-mezzanine lemans-evk-emmc"
 FIT_DTB_COMPATIBLE[qcom_qcs9075-iot-subtype1-staging-emmc] = \
     "lemans-evk lemans-evk-ifp-mezzanine lemans-staging lemans-evk-staging lemans-evk-emmc"
+FIT_DTB_COMPATIBLE[qcom_qcs9075-iot-subtype1-lvds] = \
+    "lemans-evk lemans-evk-ifp-mezzanine lemans-evk-lvds-boe_dv215fhm-r01"
 
 FIT_DTB_COMPATIBLE[qcom_qcs9100-qam-el2gh-staging] = \
     "qcs9100-ride lemans-staging"
@@ -151,6 +153,9 @@ FIT_DTB_COMPATIBLE[qcom_qcs8275-iot-subtype3-staging] = \
 FIT_DTB_COMPATIBLE[qcom_qcs8275-iot-subtype3-staging-emmc] = \
     "monaco-evk monaco-evk-ifp-mezzanine monaco-staging monaco-evk-staging monaco-evk-emmc"
 
+FIT_DTB_COMPATIBLE[qcom_qcs8275-iot-subtype3-lvds] = \
+    "monaco-evk monaco-evk-ifp-mezzanine monaco-evk-lvds-boe_dv215fhm-r01"
+
 FIT_DTB_COMPATIBLE[qcom_qcs8300-adp-el2gh-staging] = "qcs8300-ride monaco-staging"
 FIT_DTB_COMPATIBLE[qcom_qcs8300-adp] = "qcs8300-ride monaco-el2"
 FIT_DTB_COMPATIBLE[qcom_qcs8300-adp-staging] = \
@@ -213,6 +218,8 @@ FIT_DTB_COMPATIBLE[qcom_qcs5430-iot-subtype9-staging] = \
     "qcs6490-rb3gen2 qcs6490-rb3gen2-industrial-mezzanine kodiak-staging qcs6490-rb3gen2-industrial-mezzanine-staging"
 FIT_DTB_COMPATIBLE[qcom_qcs6490-iot-subtype9-staging] = \
     "qcs6490-rb3gen2 qcs6490-rb3gen2-industrial-mezzanine kodiak-staging qcs6490-rb3gen2-industrial-mezzanine-staging"
+FIT_DTB_COMPATIBLE[qcom_qcs6490-iot-subtype9-lvds] = \
+    "qcs6490-rb3gen2 qcs6490-rb3gen2-industrial-mezzanine qcs6490-rb3gen2-industrial-mezzanine-lvds-boe_dv215fhm-r01"
 
 FIT_DTB_COMPATIBLE[qcom_qcs5430-iot-subtype2-el2kvm] = \
     "qcs6490-rb3gen2 qcs6490-rb3gen2-vision-mezzanine kodiak-el2"
