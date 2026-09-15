@@ -4,6 +4,7 @@ SRC_URI:append:qcom = " \
     file://0001-freedreno-Add-chip-id-support-for-A830v1.patch \
     file://0001-freedreno-Add-chip-support-for-a722.patch \
     file://0001-tu-disable-storage-image-support-depth-stencil.patch \
+    file://0002-turnip-scale-xfb-counter-offset-a6xx.patch \
 "
 
 # Enable freedreno driver
