@@ -18,4 +18,7 @@ MACHINE_ESSENTIAL_EXTRA_RRECOMMENDS += " \
 
 MACHINE_EXTRA_RRECOMMENDS += " \
     packagegroup-qcom-boot-additional \
+    qcom-rtss-mailbox-dlkm \
+    qcom-rtss-mailbox-umd \
+    qcom-rtss-mailbox-umd-utils \
 "
