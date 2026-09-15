@@ -852,7 +852,7 @@ class QcomFitImageMatrixTests(OESelftestTestCase):
     KERNEL_PROVIDERS_QCOM = ("linux-qcom-next", "linux-qcom")
 
     _provider_outputs_cache = {}
-    _provider_machine_cache = {}
+    _provider_union_cache = {}
     _available_providers_cache = None
     _matrix_cache = None
     _layer_dir_cache = None
@@ -939,14 +939,8 @@ class QcomFitImageMatrixTests(OESelftestTestCase):
                     return True
         return False
 
-    def _provider_output_files(self, provider):
-        """Return set of DTB/DTBO output filenames available in provider source."""
-        if provider in self.__class__._provider_outputs_cache:
-            return self.__class__._provider_outputs_cache[provider]
-
-        machine = self._provider_machine(provider)
-        self.assertIsNotNone(machine,
-            f"Could not find a MACHINE compatible with provider {provider}")
+    def _unpack_provider_source_outputs(self, machine, provider):
+        """Unpack one machine's kernel source and collect its DTB/DTBO names."""
         postconfig = '\n'.join([
             f'MACHINE = "{machine}"',
             f'PREFERRED_PROVIDER_virtual/kernel = "{provider}"',
@@ -975,24 +969,40 @@ class QcomFitImageMatrixTests(OESelftestTestCase):
                         outputs.add(os.path.splitext(fname)[0] + ".dtb")
                     elif fname.endswith(".dtso"):
                         outputs.add(os.path.splitext(fname)[0] + ".dtbo")
-
-        self.__class__._provider_outputs_cache[provider] = outputs
         return outputs
 
-    def _provider_machine(self, provider):
-        if provider in self.__class__._provider_machine_cache:
-            return self.__class__._provider_machine_cache[provider]
+    def _provider_output_files(self, provider):
+        """Return the union of DTB/DTBO output filenames available in provider source.
 
+        Machines sharing the same provider recipe name can still resolve to
+        different kernel source trees (e.g. via SOC_FAMILY-scoped SRCREV
+        overrides), so this unions outputs across every distinct SRCREV
+        actually used by a machine under this provider, rather than assuming
+        one representative machine speaks for all of them.
+        """
+        if provider in self.__class__._provider_union_cache:
+            return self.__class__._provider_union_cache[provider]
+
+        union = set()
+        resolved_any = False
         for machine in self._machine_list():
             try:
-                self._resolve_machine_provider(machine, provider)
-                self.__class__._provider_machine_cache[provider] = machine
-                return machine
+                resolved = self._resolve_machine_provider(machine, provider)
             except AssertionError:
                 continue
+            resolved_any = True
 
-        self.__class__._provider_machine_cache[provider] = None
-        return None
+            cache_key = (provider, resolved.get("srcrev"))
+            if cache_key not in self.__class__._provider_outputs_cache:
+                self.__class__._provider_outputs_cache[cache_key] = (
+                    self._unpack_provider_source_outputs(machine, provider))
+            union |= self.__class__._provider_outputs_cache[cache_key]
+
+        self.assertTrue(resolved_any,
+            f"Could not find a MACHINE compatible with provider {provider}")
+
+        self.__class__._provider_union_cache[provider] = union
+        return union
 
     def _available_providers(self):
         if self.__class__._available_providers_cache is not None:
@@ -1017,7 +1027,7 @@ class QcomFitImageMatrixTests(OESelftestTestCase):
             f'PREFERRED_PROVIDER_virtual/kernel = "{provider}"',
         ])
         bb_vars = get_bb_vars(
-            ["KERNEL_DEVICETREE", "LINUX_QCOM_KERNEL_DEVICETREE"],
+            ["KERNEL_DEVICETREE", "LINUX_QCOM_KERNEL_DEVICETREE", "SRCREV"],
             "virtual/kernel",
             postconfig=postconfig,
         )
@@ -1029,6 +1039,7 @@ class QcomFitImageMatrixTests(OESelftestTestCase):
             "dt_files": dt_files,
             "dt_keys": self._dt_keys_from_files(dt_files),
             "extra_files": extra_files,
+            "srcrev": bb_vars.get("SRCREV"),
         }
 
     def _resolve_qcom_provider(self, machine):
