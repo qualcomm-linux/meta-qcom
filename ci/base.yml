@@ -69,7 +69,9 @@ local_conf_header:
     # Use a weak assignment so the CI override wins regardless of how kas
     # orders the merged local.conf fragments.
     OS_RELEASE_FIELDS:append = " BUILD_ID"
-    BUILD_ID ?= "local-${DATETIME}"
+    QCOM_BUILD_ID ?= "local-${DATETIME}"
+    BUILD_ID ?= "${QCOM_BUILD_ID}"
+    BUILD_ID[vardepsexclude] ?= "QCOM_BUILD_ID"
 
 machine: unset
 
