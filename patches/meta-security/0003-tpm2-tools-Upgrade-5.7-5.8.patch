@@ -1,0 +1,57 @@
+From 6ec2b96247ef8a1089eb1be244bb847c3f2180bb Mon Sep 17 00:00:00 2001
+From: Khem Raj <raj.khem@gmail.com>
+Date: Sun, 6 Sep 2026 19:25:45 -0700
+Subject: [PATCH 3/5] tpm2-tools: Upgrade 5.7 -> 5.8
+
+Release notes:
+https://github.com/tpm2-software/tpm2-tools/blob/5.8/docs/CHANGELOG.md
+
+Fixes GHSA-v7w4-4gc9-qcgv, GHSA-gwfg-w3jr-xh66 and GHSA-qp88-8f4j-wv7q,
+including a heap buffer overflow in tpm2_getekcertificate.
+
+Also brings OpenSSL 4.0 compatible macros, so the tools build and link
+cleanly against openssl 4.x (verified against 4.0.2 with no deprecation
+warnings; tpm2 links libcrypto.so.4).
+
+Add autoconf-archive-native to DEPENDS: the 5.8 release tarball no longer
+bundles the autoconf-archive ax_*.m4 macros under m4/ the way 5.7 did, so
+the autoreconf done by autotools.bbclass leaves AX_CHECK_COMPILE_FLAG,
+AX_CHECK_LINK_FLAG, AX_CHECK_PREPROC_FLAG, AX_ADD_FORTIFY_SOURCE,
+AX_CODE_COVERAGE and AX_IS_RELEASE undefined. m4 then strips a quoting
+level off their unexpanded arguments and the bare AC_MSG_ERROR leaks into
+configure, failing autoconf's m4_pattern_forbid check with:
+
+  configure.ac:40: error: undefined or overquoted macro: AC_MSG_ERROR
+
+Upstream-Status: Submitted [https://patchwork.yoctoproject.org/project/yocto/patch/97429/]
+
+Signed-off-by: Khem Raj <khem.raj@oss.qualcomm.com>
+---
+ .../tpm2-tools/{tpm2-tools_5.7.bb => tpm2-tools_5.8.bb}       | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+ rename meta-tpm/recipes-tpm2/tpm2-tools/{tpm2-tools_5.7.bb => tpm2-tools_5.8.bb} (83%)
+
+diff --git a/meta-tpm/recipes-tpm2/tpm2-tools/tpm2-tools_5.7.bb b/meta-tpm/recipes-tpm2/tpm2-tools/tpm2-tools_5.8.bb
+similarity index 83%
+rename from meta-tpm/recipes-tpm2/tpm2-tools/tpm2-tools_5.7.bb
+rename to meta-tpm/recipes-tpm2/tpm2-tools/tpm2-tools_5.8.bb
+index 7c5d156..4edd283 100644
+--- a/meta-tpm/recipes-tpm2/tpm2-tools/tpm2-tools_5.7.bb
++++ b/meta-tpm/recipes-tpm2/tpm2-tools/tpm2-tools_5.8.bb
+@@ -5,11 +5,11 @@ LICENSE = "BSD-3-Clause"
+ LIC_FILES_CHKSUM = "file://docs/LICENSE;md5=a846608d090aa64494c45fc147cc12e3"
+ SECTION = "tpm"
+ 
+-DEPENDS = "tpm2-tss openssl curl"
++DEPENDS = "tpm2-tss openssl curl autoconf-archive-native"
+ 
+ SRC_URI = "https://github.com/tpm2-software/${BPN}/releases/download/${PV}/${BPN}-${PV}.tar.gz"
+ 
+-SRC_URI[sha256sum] = "3810d36b5079256f4f2f7ce552e22213d43b1031c131538df8a2dbc3c570983a"
++SRC_URI[sha256sum] = "1cb73185cae814b4e15c7c2d0b22642d640faf48775f4156a1fd92edf84bef73"
+ 
+ UPSTREAM_CHECK_URI = "https://github.com/tpm2-software/${BPN}/releases"
+ 
+-- 
+2.43.0
+

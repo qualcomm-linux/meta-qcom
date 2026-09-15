@@ -17,13 +17,15 @@ DEPENDS = " \
 
 SRC_URI = "git://github.com/onnxruntime/onnxruntime-qnn.git;protocol=https;nobranch=1;tag=v${PV};name=ort-qnn \
     git://github.com/dcleblanc/SafeInt.git;protocol=https;nobranch=1;name=safeint;tag=3.0.28;destsuffix=safeint \
+    git://github.com/microsoft/GSL.git;protocol=https;nobranch=1;name=gsl;tag=v4.0.0;destsuffix=gsl \
     file://0001-cmake-Rename-pkg-config-output-to-libonnxruntime_pr.patch \
     file://0002-QNN-EP-Fix-ORT-header-include-path-and-multiarch-li.patch \
 "
 
-SRCREV_FORMAT = "ort-qnn_safeint"
+SRCREV_FORMAT = "ort-qnn_safeint_gsl"
 SRCREV_ort-qnn = "215ea95bd6df9ab24ba48193a6554dce8490337d"
 SRCREV_safeint = "4cafc9196c4da9c817992b20f5253ef967685bf8"
+SRCREV_gsl = "1fcf53a2f64c72c76f5d84adb50d41e6c4467d23"
 
 # Since qairt-sdk is installed only on ARMv8 (aarch64) machines and QNN EP uses
 # qairt sdk for hw acceleration. Therefore, builds for other architectures are
@@ -45,6 +47,7 @@ EXTRA_OECMAKE = " \
     -DCMAKE_FIND_ROOT_PATH=${STAGING_DIR_TARGET} \
     -DFETCHCONTENT_FULLY_DISCONNECTED=ON \
     -DFETCHCONTENT_SOURCE_DIR_SAFEINT=${UNPACKDIR}/safeint \
+    -DFETCHCONTENT_SOURCE_DIR_GSL=${UNPACKDIR}/gsl \
     -DONNX_CUSTOM_PROTOC_EXECUTABLE=${STAGING_BINDIR_NATIVE}/protoc \
     -Donnxruntime_BUILD_SHARED_LIB=ON \
     -Donnxruntime_BUILD_UNIT_TESTS=OFF \

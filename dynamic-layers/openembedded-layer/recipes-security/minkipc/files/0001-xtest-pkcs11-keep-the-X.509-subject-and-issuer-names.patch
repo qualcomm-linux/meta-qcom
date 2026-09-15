@@ -1,0 +1,46 @@
+From 9a3b651cefef5e0501151e59f1feeed77cd30741 Mon Sep 17 00:00:00 2001
+From: Ricardo Salveti <ricardo.salveti@oss.qualcomm.com>
+Date: Wed, 9 Sep 2026 15:59:13 +0000
+Subject: [PATCH] xtest: pkcs11: keep the X.509 subject and issuer names const
+
+OpenSSL 4.0 changed X509_get_subject_name() and X509_get_issuer_name()
+to return a const X509_NAME pointer. The certificate test assigns the
+results to non-const pointers, and since xtest builds with -Werror the
+whole host build fails against OpenSSL 4.0:
+
+  pkcs11_1000.c:7879:27: error: assignment discards 'const' qualifier
+  from pointer target type [-Werror=discarded-qualifiers]
+
+Declare both names const. They are only passed to i2d_X509_NAME(),
+which has taken a const pointer since OpenSSL 1.1.0, and to
+ADBG_EXPECT_NOT_NULL(), which takes a const void pointer, so the change
+builds unchanged against OpenSSL 3.x as well.
+
+Assisted-by: Claude Code:claude-fable-5-1
+Upstream-Status: Submitted [https://github.com/OP-TEE/optee_test/pull/838]
+
+Signed-off-by: Ricardo Salveti <ricardo.salveti@oss.qualcomm.com>
+---
+ host/xtest/pkcs11_1000.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/host/xtest/pkcs11_1000.c b/host/xtest/pkcs11_1000.c
+index c822ec2..08d4093 100644
+--- a/host/xtest/pkcs11_1000.c
++++ b/host/xtest/pkcs11_1000.c
+@@ -7725,10 +7725,10 @@ static void xtest_pkcs11_test_1024(ADBG_Case_t *c)
+ 	X509 *x509_cert = NULL;
+ 	uint8_t *x509_cert_der = NULL;
+ 	int x509_cert_der_size = 0;
+-	X509_NAME *x509_subject_name = NULL;
++	const X509_NAME *x509_subject_name = NULL;
+ 	uint8_t *x509_subject_name_der = NULL;
+ 	int x509_subject_name_der_size = 0;
+-	X509_NAME *x509_issuer_name = NULL;
++	const X509_NAME *x509_issuer_name = NULL;
+ 	uint8_t *x509_issuer_name_der = NULL;
+ 	int x509_issuer_name_der_size = 0;
+ 	ASN1_INTEGER *x509_serial_number = NULL;
+-- 
+2.43.0
+

@@ -1,0 +1,38 @@
+From 3258f8b6ee376ce64a30663447f81846c26e5972 Mon Sep 17 00:00:00 2001
+From: Ricardo Salveti <ricardo.salveti@oss.qualcomm.com>
+Date: Wed, 9 Sep 2026 00:22:15 +0000
+Subject: [PATCH] qcom-multimedia-proprietary-image: drop qwes until it is
+ rebuilt for OpenSSL 4.0
+
+OE-Core moved to OpenSSL 4.0, and the prebuilt qwesd daemon is linked
+against libcrypto.so.3, which no longer exists:
+
+  ERROR: qwes-1.1-r0 do_package_qa: QA Issue: /usr/bin/qwesd contained in
+  package qwes requires libcrypto.so.3(OPENSSL_3.0.0)(64bit), but no
+  providers found in RDEPENDS:qwes? [file-rdeps]
+
+A prebuilt cannot be relinked, so leave qwes out of the image until a
+build against OpenSSL 4.0 is published.
+
+Upstream-Status: Pending
+
+Signed-off-by: Ricardo Salveti <ricardo.salveti@oss.qualcomm.com>
+---
+ recipes-products/images/qcom-multimedia-proprietary-image.bb | 1 -
+ 1 file changed, 1 deletion(-)
+
+diff --git a/recipes-products/images/qcom-multimedia-proprietary-image.bb b/recipes-products/images/qcom-multimedia-proprietary-image.bb
+index 1b6e52d..afaaa6c 100644
+--- a/recipes-products/images/qcom-multimedia-proprietary-image.bb
++++ b/recipes-products/images/qcom-multimedia-proprietary-image.bb
+@@ -21,7 +21,6 @@ CORE_IMAGE_BASE_INSTALL += " \
+     onnxruntime-qnn \
+     qcom-adreno \
+     qcom-sensors-binaries \
+-    qwes \
+ "
+ CORE_IMAGE_BASE_INSTALL:append = " \
+     ${@bb.utils.contains('BBFILE_COLLECTIONS', 'meta-audioreach', ' packagegroup-audioreach', '', d)} \
+-- 
+2.43.0
+
