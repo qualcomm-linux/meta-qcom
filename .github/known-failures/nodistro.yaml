@@ -1,0 +1,16 @@
+---
+# Known test failures for the "nodistro" build variant.
+#
+# Mapping of LAVA device type to the list of test names that are expected to
+# fail. Use "*" as the device type for a failure seen on every device. Annotate
+# every entry with the issue it is tracked in, so that the list stays reviewable.
+# See README.md in this directory for details.
+#
+# Example:
+#
+# qcm6490-idp:
+#   - test: some_failing_test
+#     comment: https://github.com/qualcomm-linux/meta-qcom/issues/1234
+# "*":
+#   - test: test_failing_everywhere
+#     comment: "flaky since the 6.18 kernel uprev, issue #1235"

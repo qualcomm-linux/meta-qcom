@@ -24,6 +24,29 @@ on:
         required: false
         type: string
         description: "Suffix for the distro name"
+      known_failures_file:
+        required: false
+        type: string
+        default: ""
+        description: >
+          Path to the YAML file listing the known failures of this build
+          variant. Defaults to <distro_name><distro_suffix>.yaml, taken from
+          known_failures_repository when it has one and from
+          .github/known-failures otherwise.
+      known_failures_repository:
+        required: false
+        type: string
+        default: ""
+        description: >
+          Repository the known failures lists are taken from, "<owner>/<repo>".
+          Set it to the head repository of a pull request so its own lists are
+          applied. Empty (the default) applies the lists of the checkout.
+      known_failures_ref:
+        required: false
+        type: string
+        default: ""
+        description: >
+          Ref or commit of known_failures_repository to take the lists from.
       lava_test_plans_ref:
         type: string
         description: "Ref in lava-test-plans repository: commit, tag or branch"
@@ -267,6 +290,38 @@ jobs:
         with:
           fetch-depth: 0
 
+      # A pull request may fix a failure that is still listed, or list one it
+      # found, so the summary has to report it against its own lists. The test
+      # chain runs on workflow_run, so the checkout above is the base branch;
+      # this adds the lists of the branch or fork the pull request comes from,
+      # read as data only. An unreachable fork falls back to the base branch.
+      - name: Check out the known failures lists of the pull request
+        if: ${{ inputs.known_failures_repository != '' }}
+        continue-on-error: true
+        uses: actions/checkout@v6
+        with:
+          repository: ${{ inputs.known_failures_repository }}
+          ref: ${{ inputs.known_failures_ref }}
+          path: known-failures-pr
+          sparse-checkout: .github/known-failures
+          sparse-checkout-cone-mode: false
+          persist-credentials: false
+
+      - name: Select known failures list
+        id: known_failures
+        env:
+          INPUTS_KNOWN_FAILURES_FILE: "${{ inputs.known_failures_file }}"
+          VARIANT: "${{ inputs.distro_name }}${{ inputs.distro_suffix }}"
+        run: |
+          FILE="known-failures-pr/.github/known-failures/${VARIANT}.yaml"
+          if [ -n "${INPUTS_KNOWN_FAILURES_FILE}" ]; then
+            FILE="${INPUTS_KNOWN_FAILURES_FILE}"
+          elif [ ! -f "${FILE}" ]; then
+            FILE=".github/known-failures/${VARIANT}.yaml"
+          fi
+          echo "::notice title=Known failures::Applying ${FILE}"
+          echo "file=${FILE}" >> "${GITHUB_OUTPUT}"
+
       - name: Generate Summary
         id: generate-summary
         uses: ./.github/actions/test-job-summary
@@ -276,6 +331,7 @@ jobs:
           prefix: "${{ inputs.distro_name }}${{ inputs.distro_suffix }}-test-job*"
           summary_file_name: "${{ inputs.distro_name }}${{ inputs.distro_suffix }}-test_job_summary"
           summary_title: "${{ inputs.distro_name }}${{ inputs.distro_suffix }}"
+          known_failures_file: "${{ steps.known_failures.outputs.file }}"
 
       - name: Download Summary
         uses: actions/download-artifact@v7

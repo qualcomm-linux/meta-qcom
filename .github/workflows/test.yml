@@ -14,6 +14,20 @@ on:
         required: false
         type: string
         description: "Pull request URL. Added to the LAVA job metadata for PR builds"
+      known_failures_repository:
+        required: false
+        type: string
+        default: ""
+        description: >
+          Repository the known failures lists are taken from, "<owner>/<repo>".
+          Set it to the head repository of a pull request so its own lists are
+          applied. Empty (the default) applies the lists of the checkout.
+      known_failures_ref:
+        required: false
+        type: string
+        default: ""
+        description: >
+          Ref or commit of known_failures_repository to take the lists from.
     outputs:
       summary_ids:
         description: "IDs of the test summary artifact"
@@ -55,6 +69,8 @@ jobs:
       testkit_ref: "${{ needs.prepare-env.outputs.testkit-ref }}"
       pr_number: "${{ inputs.pr_number }}"
       pr_url: "${{ inputs.pr_url }}"
+      known_failures_repository: "${{ inputs.known_failures_repository }}"
+      known_failures_ref: "${{ inputs.known_failures_ref }}"
   test-qcom-distro:
     needs: [prepare-env]
     name: "Test qcom-distro"
@@ -71,6 +87,8 @@ jobs:
       testkit_ref: "${{ needs.prepare-env.outputs.testkit-ref }}"
       pr_number: "${{ inputs.pr_number }}"
       pr_url: "${{ inputs.pr_url }}"
+      known_failures_repository: "${{ inputs.known_failures_repository }}"
+      known_failures_ref: "${{ inputs.known_failures_ref }}"
   test-qcom-distro_linux-qcom-6-18:
     needs: [prepare-env]
     name: "Test qcom-distro_linux-qcom-6.18"
@@ -88,6 +106,8 @@ jobs:
       testkit_ref: "${{ needs.prepare-env.outputs.testkit-ref }}"
       pr_number: "${{ inputs.pr_number }}"
       pr_url: "${{ inputs.pr_url }}"
+      known_failures_repository: "${{ inputs.known_failures_repository }}"
+      known_failures_ref: "${{ inputs.known_failures_ref }}"
 
   collect-ids:
     name: "Collect Summary artifact IDs"
