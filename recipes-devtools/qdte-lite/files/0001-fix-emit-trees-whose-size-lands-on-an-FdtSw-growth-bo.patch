@@ -1,0 +1,155 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Igor Opaniuk <igor.opaniuk@oss.qualcomm.com>
+Date: Wed, 2 Sep 2026 11:48:44 +0200
+Subject: [PATCH] fix: emit trees whose size lands on an FdtSw growth boundary
+
+Serializing a device tree fails with FDT_ERR_NOSPACE for particular
+trees, and succeeds for almost identical ones. Two builds of the same
+hamoa boot container differ here: the DTB is 153568 bytes in one and
+153600 in the next, and only the second one fails.
+
+153600 is exactly 150 x 1024. FdtSw grows its buffer in INC_SIZE (1024)
+byte steps, and every write method retries through check_space() when it
+runs out, so writing the tree always succeeds. as_fdt() does not retry --
+it calls fdt_finish() once, and fdt_finish() still has to place the
+strings block and fix up the header. A tree that fills the buffer to an
+exact multiple of INC_SIZE leaves nothing for it, so emission fails on
+size alone. Roughly one tree in every 256 lands there.
+
+That makes it a lottery rather than a limit, and an unusually confusing
+one: the same code, tool and certificate work on one firmware drop and
+fail on the next, and the exception surfaces from a load rather than
+from the write that caused it, because the load path serializes the tree
+to hash it.
+
+Seed the buffer past that point and retry with more room if the finish
+still does not fit.
+
+The selftest gains --emit-sizes, which sweeps a padding property in
+4-byte steps across three growth increments so several emissions land
+exactly on a boundary, and asserts that at least one did -- a sweep that
+missed every boundary would pass without testing anything. It fails on
+the unfixed backend at precisely the three boundary sizes.
+
+Upstream-Status: Submitted [https://github.com/qualcomm/qdte-lite/pull/4]
+
+Signed-off-by: Igor Opaniuk <igor.opaniuk@oss.qualcomm.com>
+---
+ qdte_lite/core/_fdt_selftest.py | 50 +++++++++++++++++++++++++++++++--
+ qdte_lite/core/fdt_backend.py   | 35 +++++++++++++++++------
+ 2 files changed, 75 insertions(+), 10 deletions(-)
+
+diff --git a/qdte_lite/core/_fdt_selftest.py b/qdte_lite/core/_fdt_selftest.py
+index f6c927a..21ed0da 100644
+--- a/qdte_lite/core/_fdt_selftest.py
++++ b/qdte_lite/core/_fdt_selftest.py
+@@ -139,15 +139,61 @@ def check_roundtrip(paths):
+         print("ROUNDTRIP OK: %s (%d bytes)" % (path, len(blob_a)))
+ 
+ 
++def check_emit_sizes():
++    """Emit trees whose serialized size lands on every offset across an
++    FdtSw growth boundary.
++
++    FdtSw grows its buffer in INC_SIZE steps and every write method retries
++    through check_space(), but as_fdt() calls fdt_finish() once with no
++    retry. A tree that serializes to an exact multiple of INC_SIZE leaves no
++    slack for the strings block, so emission used to fail with
++    FDT_ERR_NOSPACE -- for that size only, which made it a lottery rather
++    than a limit. Sweep a padding property in 4-byte steps so several
++    emissions land exactly on a boundary.
++    """
++
++    import libfdt
++
++    inc = libfdt.FdtSw.INC_SIZE
++    sizes, failures = set(), []
++    for pad_cells in range(1, (inc * 3) // 4):
++        root = fdt_backend.FdtNode("/")
++        root.append(fdt_backend.FdtPropertyWords("pad", [0xDEADBEEF] * pad_cells))
++        try:
++            blob = fdt_backend.Fdt(root).to_dtb()
++        except Exception as ex:
++            failures.append((pad_cells, ex))
++            continue
++        sizes.add(len(blob))
++
++    on_boundary = sorted(n for n in sizes if n % inc == 0)
++    assert on_boundary, (
++        "sweep never produced a blob on an INC_SIZE (%d) boundary, so this "
++        "would not have caught the bug it exists for" % inc
++    )
++    assert not failures, "emission failed at %d size(s), first: pad=%d %s" % (
++        len(failures),
++        failures[0][0],
++        failures[0][1],
++    )
++    print(
++        "emit sizes: %d blobs, %d exactly on a %d-byte boundary, no failures"
++        % (len(sizes), len(on_boundary), inc)
++    )
++
++
+ def main(argv=None):
+     parser = argparse.ArgumentParser(description=__doc__)
+     mode = parser.add_mutually_exclusive_group(required=True)
+     mode.add_argument("--parity", action="store_true")
+     mode.add_argument("--roundtrip", action="store_true")
+-    parser.add_argument("dtbs", nargs="+", help="DTB files to test")
++    mode.add_argument("--emit-sizes", action="store_true")
++    parser.add_argument("dtbs", nargs="*", help="DTB files to test")
+     opts = parser.parse_args(argv)
+ 
+-    if opts.parity:
++    if opts.emit_sizes:
++        check_emit_sizes()
++    elif opts.parity:
+         check_parity(opts.dtbs)
+     else:
+         check_roundtrip(opts.dtbs)
+diff --git a/qdte_lite/core/fdt_backend.py b/qdte_lite/core/fdt_backend.py
+index 90fe5c8..1a8b869 100644
+--- a/qdte_lite/core/fdt_backend.py
++++ b/qdte_lite/core/fdt_backend.py
+@@ -246,14 +246,33 @@ class Fdt:
+         """Serialize deterministically via libfdt's sequential writer.
+         When ``mappings`` is a dict, fill it with {path: (start, end)}
+         byte ranges of each node header / property record in the blob."""
+-        sw = libfdt.FdtSw()
+-        for addr, size in self.memrsv:
+-            sw.add_reservemap_entry(addr, size)
+-        sw.finish_reservemap()
+-        sw.begin_node("")
+-        self._emit_node(sw, self.root)
+-        sw.end_node()
+-        fdt = sw.as_fdt()
++        # FdtSw grows its buffer in INC_SIZE steps, and every write method
++        # retries through check_space() when it runs out.  as_fdt() does not:
++        # it calls fdt_finish() once and raises FDT_ERR_NOSPACE if the strings
++        # block and header fixups do not fit in what is left.  A tree whose
++        # serialized size lands on a multiple of INC_SIZE leaves zero slack
++        # and fails, which makes this a size lottery rather than a real limit.
++        #
++        # Seed the buffer past the point where that can happen and retry with
++        # more room if it still does.
++        size_hint = libfdt.FdtSw.INC_SIZE
++        while True:
++            sw = libfdt.FdtSw(size_hint)
++            for addr, size in self.memrsv:
++                sw.add_reservemap_entry(addr, size)
++            sw.finish_reservemap()
++            sw.begin_node("")
++            self._emit_node(sw, self.root)
++            sw.end_node()
++            try:
++                fdt = sw.as_fdt()
++                break
++            except libfdt.FdtException as ex:
++                if ex.err != -libfdt.NOSPACE:
++                    raise
++                # len(sw) is the grown buffer; ask for meaningfully more than
++                # the increment so this terminates in one further attempt.
++                size_hint = len(sw.as_bytearray()) + libfdt.FdtSw.INC_SIZE * 16
+         fdt.pack()
+         buf = bytearray(fdt.as_bytearray())
+         if self.boot_cpuid:

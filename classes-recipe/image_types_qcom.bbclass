@@ -171,7 +171,15 @@ create_qcomflash_pkg() {
             fi
 
             # uefi dtb
-            if [ -n "${QCOM_UEFI_DTB}" ] && \
+            # Prefer the OEM-cert-injected uefi_dtbs deployed by
+            # firmware-qcom-oem-cert when available.  Mirrors the xbl_config
+            # substitution above, for SPI-NOR-boot targets (e.g. hamoa) that
+            # carry QcCapsuleRootCert in uefi_dtbs.elf rather than
+            # xbl_config.elf.
+            if [ -n "${QCOM_CAPSULE_FIRMWARE}" ] && \
+                    [ -f "${DEPLOY_DIR_IMAGE}/uefi_dtbs-with-oem-cert.xz" ]; then
+                install -m 0644 "${DEPLOY_DIR_IMAGE}/uefi_dtbs-with-oem-cert.xz" spinor/uefi_dtbs.xz
+            elif [ -n "${QCOM_UEFI_DTB}" ] && \
                     [ -f "${DEPLOY_DIR_IMAGE}/${QCOM_BOOT_FILES_SUBDIR}/spinor/${QCOM_UEFI_DTB}" ]; then
                 install -m 0644 "${DEPLOY_DIR_IMAGE}/${QCOM_BOOT_FILES_SUBDIR}/spinor/${QCOM_UEFI_DTB}" spinor/uefi_dtbs.xz
             fi
