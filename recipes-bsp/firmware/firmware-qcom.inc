@@ -1,4 +1,8 @@
-inherit allarch
+# Optional secure-boot signing (QCOM_FIRMWARE_SIGN_ENABLE).  Unsigned
+# firmware is the same for every machine; signed firmware is bound to its
+# Security Profile and keys.
+inherit qcom-firmware-sign
+inherit_defer ${@'allarch' if d.getVar('QCOM_FIRMWARE_SIGN_ENABLE') != '1' else ''}
 
 FILES:${PN} += "${nonarch_base_libdir}/firmware/"
 
@@ -50,22 +54,53 @@ python() {
         bb.error("%s: split firmware-qcom packages engaged, but FW_QCOM_NAME is not defined" % pn)
 }
 
-do_install:append() {
-    for fw in $(find ${D}${FW_QCOM_BASE_PATH} -type f)
+firmware_qcom_compress() {
+    for fw in $(find ${D}${FW_QCOM_BASE_PATH} -type f ! -name '*.jsn')
     do
-        if [ "${fw%%jsn}" = "${fw}" ]
-        then
-            case "${FIRMWARE_COMPRESSION}" in
-                zst | zstd)
-                    zstd --compress --rm ${fw}
-                    ;;
-                xz)
-                    xz --compress --check=crc32 ${fw}
-                    ;;
-            esac
-        fi
+        case "${FIRMWARE_COMPRESSION}" in
+            zst | zstd)
+                zstd --compress --rm ${fw}
+                ;;
+            xz)
+                xz --compress --check=crc32 ${fw}
+                ;;
+        esac
     done
 }
+
+do_install:append() {
+    firmware_qcom_compress
+}
+
+# Undo firmware_qcom_compress, whatever FIRMWARE_COMPRESSION was when the
+# blobs were compressed.
+firmware_qcom_decompress() {
+    find ${D}${FW_QCOM_BASE_PATH} -type f -name '*.zst' -exec zstd --decompress --rm {} \;
+    find ${D}${FW_QCOM_BASE_PATH} -type f -name '*.xz' -exec xz --decompress {} \;
+}
+
+# Signing needs the raw blobs: compressed, they no longer match the
+# image-id map.  Undo the do_install compression, sign, compress again.
+do_qcom_firmware_sign() {
+    if ! qcom_check_signing_enabled ; then
+        return 0
+    fi
+
+    # Placeholder recipes install no firmware.
+    [ -d "${D}${FW_QCOM_BASE_PATH}" ] || return 0
+
+    firmware_qcom_decompress
+
+    bbnote "qcom-firmware-sign: walking ${D}${FW_QCOM_BASE_PATH} for MBN/ELF blobs"
+    find "${D}${FW_QCOM_BASE_PATH}" -type f \
+        \( -iname '*.mbn' -o -iname '*.elf' \) \
+        | while read -r f; do
+            qcom_sign_verify_file "${f}" || bbfatal "Failed to sign: ${f}"
+        done
+
+    firmware_qcom_compress
+}
+do_qcom_firmware_sign[vardeps] += "FIRMWARE_COMPRESSION"
 
 INHIBIT_PACKAGE_DEBUG_SPLIT = "1"
 INHIBIT_PACKAGE_STRIP = "1"
