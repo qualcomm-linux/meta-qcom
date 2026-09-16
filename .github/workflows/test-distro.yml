@@ -68,7 +68,7 @@ jobs:
 
       - name: Run lava-test-plans
         id: lava-test-plans
-        uses: ./.github/actions/lava-test-plans
+        uses: $/.github/actions/lava-test-plans
         with:
           machines: ${{ inputs.devices }}
           distro_name: ${{ inputs.distro_name }}${{ inputs.distro_suffix }}
@@ -195,7 +195,7 @@ jobs:
 
       - name: Run lava-test-plans
         id: lava-test-plans
-        uses: ./.github/actions/lava-test-plans
+        uses: $/.github/actions/lava-test-plans
         with:
           machines: ${{ steps.determine-device-list.outputs.PREMERGE_DEVICE_LIST }}
           distro_name: ${{ inputs.distro_name }}${{ inputs.distro_suffix }}
@@ -269,7 +269,7 @@ jobs:
 
       - name: Generate Summary
         id: generate-summary
-        uses: ./.github/actions/test-job-summary
+        uses: $/.github/actions/test-job-summary
         with:
           build_id: ${{ github.run_id }}
           gh_token: ${{ secrets.GITHUB_TOKEN }}

@@ -43,7 +43,7 @@ jobs:
   test-nodistro:
     needs: [prepare-env]
     name: "Test nodistro"
-    uses: ./.github/workflows/test-distro.yml
+    uses: $/.github/workflows/test-distro.yml
     secrets:
       LAVATOKEN: ${{ secrets.LAVATOKEN }}
     with:
@@ -58,7 +58,7 @@ jobs:
   test-qcom-distro_linux-qcom-next:
     needs: [prepare-env]
     name: "Test qcom-distro_linux-qcom-next"
-    uses: ./.github/workflows/test-distro.yml
+    uses: $/.github/workflows/test-distro.yml
     secrets:
       LAVATOKEN: ${{ secrets.LAVATOKEN }}
     with:
@@ -75,7 +75,7 @@ jobs:
   test-qcom-distro:
     needs: [prepare-env]
     name: "Test qcom-distro"
-    uses: ./.github/workflows/test-distro.yml
+    uses: $/.github/workflows/test-distro.yml
     secrets:
       LAVATOKEN: ${{ secrets.LAVATOKEN }}
     with:
