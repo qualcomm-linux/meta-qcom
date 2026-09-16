@@ -1,0 +1,54 @@
+header:
+  version: 14
+
+local_conf_header:
+  lowmem-userspace: |
+    CORE_IMAGE_BASE_INSTALL:remove = " \
+        docker-compose \
+        fwupd \
+        gst-plugins-imsdk-python \
+        iris-video-dlkm \
+        kgsl-dlkm \
+        libdiag-bin \
+        libdrm-tests \
+        libgomp \
+        modemmanager \
+        packagegroup-audioreach \
+        packagegroup-container \
+        packagegroup-qcom-benchmark \
+        packagegroup-qcom-m2-firmware \
+        packagegroup-qcom-security \
+        packagegroup-qcom-test-pkgs \
+        packagegroup-qcom-utilities-debug-utils \
+        packagegroup-qcom-utilities-gpu-utils \
+        packagegroup-qcom-utilities-network-utils \
+        packagegroup-qcom-utilities-profile-utils \
+        packagegroup-qcom-utilities-support-utils \
+        packagegroup-qcom-virtualization \
+        qcom-adreno \
+        qcom-sensors-binaries \
+        qwes \
+        tensorflow-lite-tools \
+        thermald \
+        userspace-resource-manager \
+        userspace-resource-manager-extensions \
+        weston \
+        weston-examples \
+        weston-init \
+        weston-xwayland \
+        xterm \
+    "
+
+    CORE_IMAGE_BASE_INSTALL:append = " \
+        efivar \
+        virtual-containerd \
+    "
+
+    IMAGE_FEATURES:remove = "\
+        package-management \
+        ssh-server-openssh \
+        weston \
+    "
+
+  lowmem-kernel: |
+    KBUILD_CONFIG_EXTRA:append = " ${S}/arch/arm64/configs/lowmem.config"
