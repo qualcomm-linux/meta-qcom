@@ -52,6 +52,7 @@ KBUILD_CONFIG_EXTRA:append:aarch64 = " ${S}/arch/arm64/configs/prune.config"
 KBUILD_CONFIG_EXTRA:append:aarch64 = " ${S}/arch/arm64/configs/qcom.config"
 KBUILD_CONFIG_EXTRA:append = " ${@oe.utils.vartrue('DEBUG_BUILD', '${S}/kernel/configs/debug.config', '', d)}"
 KBUILD_CONFIG_EXTRA:append:aarch64 = " ${@oe.utils.vartrue('DEBUG_BUILD', '${S}/arch/arm64/configs/qcom_debug.config', '', d)}"
+KBUILD_CONFIG_EXTRA:append = "${@bb.utils.contains('DISTRO_FEATURES', 'lowmem', ' ${S}/arch/arm64/configs/lowmem.config', '', d)}"
 
 do_configure:prepend() {
     # Use a copy of the 'defconfig' from the actual repo to merge fragments
