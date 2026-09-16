@@ -11,7 +11,7 @@ REQUIRED_DISTRO_FEATURES = "opengl"
 
 SRC_URI = "git://github.com/qualcomm/qimsdk;protocol=https;nobranch=1;tag=${PV}"
 
-SRCREV = "20470472f856c795d53942c144cb131a0e1741b5"
+SRCREV = "cd6d5951a910c7c2530ef736fe889478932e954a"
 
 DEPENDS += "\
     gstreamer1.0 \
@@ -27,7 +27,7 @@ PACKAGECONFIG[base]         = "-DENABLE_GST_PLUGIN_BASE=ON, -DENABLE_GST_PLUGIN_
 PACKAGECONFIG[builder-cpp]  = "-DENABLE_APP_BUILDER_CPP=1, -DENABLE_APP_BUILDER_CPP=0, yaml-cpp"
 PACKAGECONFIG[camera]       = "-DENABLE_GST_PLUGIN_CAMERA_BASE=ON -DENABLE_GST_PLUGIN_QMMFSRC=1 -DENABLE_GST_PLUGIN_JPEGENC=1, \
                                -DENABLE_GST_PLUGIN_CAMERA_BASE=OFF -DENABLE_GST_PLUGIN_QMMFSRC=0 -DENABLE_GST_PLUGIN_JPEGENC=0, camera-service"
-PACKAGECONFIG[camera-apps]  = "-DENABLE_GST_SAMPLE_APPS_CAMERA=1, -DENABLE_GST_SAMPLE_APPS_CAMERA=0, camera-service"
+PACKAGECONFIG[camera-apps]  = "-DENABLE_GST_SAMPLE_APPS_CAMERA=1, -DENABLE_GST_SAMPLE_APPS_CAMERA=0, camera-service qcom-fastcv-binaries"
 PACKAGECONFIG[messaging]    = "-DENABLE_GST_MESSAGING_PLUGINS=1, -DENABLE_GST_MESSAGING_PLUGINS=0, librdkafka mosquitto"
 PACKAGECONFIG[ml]           = "-DENABLE_GST_ML_PLUGINS=1, -DENABLE_GST_ML_PLUGINS=0, cairo json-glib libeigen opencv"
 PACKAGECONFIG[onnx]         = "-DENABLE_GST_PLUGIN_MLONNX=1, -DENABLE_GST_PLUGIN_MLONNX=0, onnx onnxruntime"
@@ -53,5 +53,6 @@ RDEPENDS:${PN}-qtismartvencbin += "smart-venc-ctrl-algo"
 # To ensure runtime availability, added runtime dependency on 'mosquitto'.
 RDEPENDS:libgstqtimqttadaptor += "mosquitto"
 
-RDEPENDS:${PN}-apps += "${@bb.utils.contains('PACKAGECONFIG', 'python-apps', 'python3-core gstreamer1.0-python python3-pygobject gtk+3 python3-opencv', '', d)} \
+RDEPENDS:${PN}-apps += "${@bb.utils.contains('PACKAGECONFIG', 'python', 'python3-opencv python3-pycairo', '', d)} \
+                        ${@bb.utils.contains('PACKAGECONFIG', 'python-apps', 'python3-core gstreamer1.0-python python3-pygobject gtk+3 python3-opencv', '', d)} \
                         ${@bb.utils.contains('PACKAGECONFIG', 'webrtc', 'gstreamer1.0-plugins-bad-webrtc', '', d)}"
