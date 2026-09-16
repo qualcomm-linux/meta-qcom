@@ -3,9 +3,10 @@ DESCRIPTION = "Qualcomm camera firmware to support camera functionality on Hamoa
 LICENSE = "LICENSE.qcom-2"
 LIC_FILES_CHKSUM = "file://usr/share/doc/${BPN}/LICENSE.QCOM-2.txt;md5=165287851294f2fb8ac8cbc5e24b02b0"
 
-PBT_BUILD_DATE = "260514"
-SRC_URI = "https://qartifactory-edge.qualcomm.com/artifactory/qsc_releases/software/chip/component/camx.qclinux.0.0/${PBT_BUILD_DATE}/prebuilt_yocto/${BPN}_${PV}_armv8-2a.tar.gz"
-SRC_URI[sha256sum] = "7201797be68d34ca826f6b2530590ab5f1bb3fb5c347a63259bee61a9b16036d"
+PBT_BUILD_DATE = "260911"
+PBT_BRANCH = "master"
+SRC_URI = "https://qartifactory-edge.qualcomm.com/artifactory/qsc_releases/software/chip/component/camx.qclinux.0.0/${PBT_BUILD_DATE}/prebuilt_yocto_${PBT_BRANCH}/${BPN}_${PV}_armv8-2a.tar.gz"
+SRC_URI[sha256sum] = "21c27f927c8a8d5caa97ae70a49fa57d513c8c6b9232fba2dc0503f6b7fd0fac"
 
 S = "${UNPACKDIR}"
 
