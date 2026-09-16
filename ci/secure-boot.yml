@@ -1,0 +1,26 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/siemens/kas/master/kas/schema-kas.json
+#
+# Include this kas file to sign the pre-built firmware images with
+# classes-recipe/qcom-firmware-sign.bbclass (sectools + security profiles)
+# and add the VIP digest table to the qcomflash bundle.  The Security
+# Profile comes from the machine; the keys from a second overlay:
+#
+#   kas build ci/base.yml:ci/<machine>.yml:ci/secure-boot.yml:ci/ecdsa-secure-boot-test-keys.yml
+#
+# Production builds replace the test-keys overlay with one pointing
+# QCOM_FIRMWARE_SIGN_KEY_DIR at the OEM key directory.
+
+header:
+  version: 14
+
+local_conf_header:
+  secure-boot: |
+    QCOM_FIRMWARE_SIGN_ENABLE = "1"
+
+    # Fuse-binding identifiers, development placeholders.
+    QCOM_FUSE_OEM_HW_ID              = "0x0001"
+    QCOM_FUSE_OEM_PRODUCT_ID         = "0xabcd"
+    QCOM_FUSE_SEC_KEY_DERIVATION_KEY = ""
+
+    # Anti-rollback floor stamped into signed images.
+    QCOM_FIRMWARE_SIGN_ANTI_ROLLBACK = "0x0"
