@@ -20,6 +20,23 @@ inputs:
     description: "Base URL of the LAVA instance the results are read from"
     required: false
     default: https://lava.infra.foundries.io
+  known_failures_file:
+    description: >
+      Path to a YAML file listing the failures that are known and accepted for
+      the build under test, relative to the workspace. A listed failure is
+      reported as a known failure and counted as a pass, and a listed test that
+      passes is reported as an unexpected pass and counted as a failure, so a
+      stale entry gets noticed. Empty, or a file that does not exist, means no
+      known failure. See the README of the directory it lives in for the
+      format.
+    required: false
+    default: ""
+  kernel:
+    description: >
+      Kernel flavour under test. An entry of the known failures list that names
+      a "kernels" filter only applies to the flavours it lists.
+    required: false
+    default: ""
 outputs:
   artifact_id:
     description: "ID of the uploaded artifact"
@@ -49,6 +66,8 @@ runs:
           INPUTS_SUMMARY_FILE_NAME: ${{ inputs.summary_file_name }}
           INPUTS_SUMMARY_TITLE: ${{ inputs.summary_title }}
           INPUTS_LAVA_BASE_URL: ${{ inputs.lava_base_url }}
+          INPUTS_KNOWN_FAILURES_FILE: ${{ inputs.known_failures_file }}
+          INPUTS_KERNEL: ${{ inputs.kernel }}
         run: |
           set -x
           # fail the step with failed command
@@ -135,6 +154,61 @@ runs:
           # combine entries from boot jobs and pre-merge jobs
           done | jq -s -c 'reduce .[] as $i ({}; .[$i.key] = ((.[$i.key] // {}) + $i.value))')
           echo "$INPUT"
+
+          # Load the list of known failures. An entry is either a bare test
+          # name or a mapping with a "test", an optional "comment" holding the
+          # issue it is tracked in, and an optional "kernels" list restricting
+          # it to some kernel flavours. Both forms are normalised to
+          # {device: {test name: comment}}.
+          KNOWN_FAILURES="{}"
+          if [ -n "${INPUTS_KNOWN_FAILURES_FILE}" ]; then
+              if [ -f "${GITHUB_WORKSPACE}/${INPUTS_KNOWN_FAILURES_FILE}" ]; then
+                  KNOWN_FAILURES_RAW=$(yq -o=json -I=0 "${GITHUB_WORKSPACE}/${INPUTS_KNOWN_FAILURES_FILE}" | jq -c '. // {}')
+                  KNOWN_FAILURES=$(echo "${KNOWN_FAILURES_RAW}" | jq -c --arg kernel "${INPUTS_KERNEL}" '
+                    with_entries(.value |= ((. // []) | map(
+                      if type == "string" then {key: ., value: ""}
+                      elif type == "object" and (.test | type) == "string" then
+                        # an entry without a kernels filter applies everywhere
+                        if (.kernels | type) == "array" and ((.kernels | index($kernel)) | not) then empty
+                        else {key: .test, value: (.comment // "" | tostring)}
+                        end
+                      else empty
+                      end) | from_entries))')
+                  # entries filtered out by kernel, and entries matching neither
+                  # form, are dropped by the mapping above
+                  RAW_COUNT=$(echo "${KNOWN_FAILURES_RAW}" | jq --arg kernel "${INPUTS_KERNEL}" '[.[] | (. // []) | map(select((type != "object") or ((.kernels | type) != "array") or ((.kernels | index($kernel)) != null))) | length] | add // 0')
+                  KNOWN_COUNT=$(echo "${KNOWN_FAILURES}" | jq '[.[] | length] | add // 0')
+                  if [ "${RAW_COUNT}" != "${KNOWN_COUNT}" ]; then
+                      echo "::warning::${INPUTS_KNOWN_FAILURES_FILE}: ignored $((RAW_COUNT - KNOWN_COUNT)) malformed entry/entries"
+                  fi
+              else
+                  echo "::warning::known failures file ${INPUTS_KNOWN_FAILURES_FILE} not found"
+              fi
+          fi
+          echo "${KNOWN_FAILURES}"
+
+          # Turn the LAVA result of every test into the status that is
+          # reported. A failure that is on the list is reported as a known
+          # failure and counted as a pass. A test that passes while it is on
+          # the list is reported as an unexpected pass and counted as a
+          # failure, so that stale entries get noticed and removed. The comment
+          # of the entry is carried over so it can be reported too.
+          INPUT=$(echo "$INPUT" | jq -c --argjson known "${KNOWN_FAILURES}" '
+            with_entries(
+              # a device specific entry overrides the one listed for all devices
+              (($known["*"] // {}) + ($known[.key] // {})) as $known_tests
+              | .value |= with_entries(
+                  .key as $test
+                  | ($known_tests | has($test)) as $is_known
+                  | .value.status = (
+                      if .value.result == "fail" and $is_known then "known failure"
+                      elif .value.result == "pass" and $is_known then "unexpected pass"
+                      else .value.result
+                      end)
+                  | if $is_known then .value.comment = $known_tests[$test] else . end)
+            )')
+          echo "$INPUT"
+
           DEVICES=$(echo "$INPUT" | jq -r 'keys[]' | sort)
 
           RESULTS=$(echo "$INPUT" | jq -r '.[] | keys[]?' | sort -u)
@@ -142,14 +216,21 @@ runs:
           # Print collapsible box
           echo "<details>" >> "${INPUTS_SUMMARY_FILE_NAME}"
           # Print section summary
-          TOTAL_PASS=$(echo "${INPUT}" | jq '[.. | objects | select(.result? == "pass")] | length')
-          TOTAL_FAIL=$(echo "${INPUT}" | jq '[.. | objects | select(.result? == "fail")] | length')
+          TOTAL_PASS=$(echo "${INPUT}" | jq '[.. | objects | select(.status? == "pass")] | length')
+          TOTAL_KNOWN_FAIL=$(echo "${INPUT}" | jq '[.. | objects | select(.status? == "known failure")] | length')
+          # an unexpected pass counts as a failure: the known failures list is
+          # out of date and has to be updated
+          TOTAL_FAIL=$(echo "${INPUT}" | jq '[.. | objects | select(.status? == "fail" or .status? == "unexpected pass")] | length')
           TOTAL=$(echo "${INPUT}" | jq '[.. | objects | select(.result)] | length')
           SUMMARY_TITLE=""
           if [ "${INPUTS_SUMMARY_TITLE}" != "" ]; then
             SUMMARY_TITLE="${INPUTS_SUMMARY_TITLE}<br/>"
           fi
-          echo "<summary>${SUMMARY_TITLE}Pass: $TOTAL_PASS | Fail: $TOTAL_FAIL | Total: $TOTAL </summary>" >> "${INPUTS_SUMMARY_FILE_NAME}"
+          KNOWN_SUMMARY=""
+          if [ "${TOTAL_KNOWN_FAIL}" -gt 0 ]; then
+            KNOWN_SUMMARY="Known failures: $TOTAL_KNOWN_FAIL | "
+          fi
+          echo "<summary>${SUMMARY_TITLE}Pass: $TOTAL_PASS | ${KNOWN_SUMMARY}Fail: $TOTAL_FAIL | Total: $TOTAL </summary>" >> "${INPUTS_SUMMARY_FILE_NAME}"
           echo "" >> "${INPUTS_SUMMARY_FILE_NAME}"
           echo "" >> "${INPUTS_SUMMARY_FILE_NAME}"
 
@@ -178,10 +259,12 @@ runs:
             printf "| %s |" "$R" >> "${INPUTS_SUMMARY_FILE_NAME}"
 
             for D in $DEVICES; do
-              VALUE=$(echo "$INPUT" | jq -r --arg d "$D" --arg r "$R" '.[$d][$r].result // ""')
+              VALUE=$(echo "$INPUT" | jq -r --arg d "$D" --arg r "$R" '.[$d][$r].status // ""')
               URL=$(echo "$INPUT" | jq -r --arg d "$D" --arg r "$R" '.[$d][$r].url // ""')
               CHECKMARK=":white_check_mark:"
               if [ "${VALUE}" = "fail" ]; then CHECKMARK=":x:"; fi
+              if [ "${VALUE}" = "unexpected pass" ]; then CHECKMARK=":x:"; fi
+              if [ "${VALUE}" = "known failure" ]; then CHECKMARK=":ballot_box_with_check:"; fi
               if [ "${VALUE}" = "skip" ]; then CHECKMARK=":warning:"; fi
               if [ -z "${VALUE}" ]; then CHECKMARK=":no_entry_sign:"; fi
               printf " %s [%s](%s) |" "$CHECKMARK" "$VALUE" "$URL"
@@ -191,6 +274,23 @@ runs:
           done
           echo "" >> "${INPUTS_SUMMARY_FILE_NAME}"
           echo "</details>" >> "${INPUTS_SUMMARY_FILE_NAME}"
+          # Print the entries of the known failures list that were applied,
+          # together with the issue each one is annotated with
+          KNOWN_ROWS=$(echo "$INPUT" | jq -r '
+            to_entries[] | .key as $device | .value | to_entries[]
+            | select(.value.status == "known failure" or .value.status == "unexpected pass")
+            | "| \($device) | \(.key) | \(.value.status) | \(.value.comment // "") |"' | sort)
+          if [ -n "${KNOWN_ROWS}" ]; then
+            echo "<details>" >> "${INPUTS_SUMMARY_FILE_NAME}"
+            echo "<summary>Known failures ($(echo "${KNOWN_ROWS}" | wc -l))</summary>" >> "${INPUTS_SUMMARY_FILE_NAME}"
+            echo "" >> "${INPUTS_SUMMARY_FILE_NAME}"
+            echo "| Device | Test | Status | Comment |" >> "${INPUTS_SUMMARY_FILE_NAME}"
+            echo "| ---- | ---- | ---- | ---- |" >> "${INPUTS_SUMMARY_FILE_NAME}"
+            echo "${KNOWN_ROWS}" >> "${INPUTS_SUMMARY_FILE_NAME}"
+            echo "" >> "${INPUTS_SUMMARY_FILE_NAME}"
+            echo "</details>" >> "${INPUTS_SUMMARY_FILE_NAME}"
+          fi
+
           echo "<details>" >> "${INPUTS_SUMMARY_FILE_NAME}"
           echo "<summary>All jobs summary</summary>" >> "${INPUTS_SUMMARY_FILE_NAME}"
           echo "" >> "${INPUTS_SUMMARY_FILE_NAME}"
