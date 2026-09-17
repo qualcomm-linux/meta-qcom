@@ -39,9 +39,9 @@ runs:
       id: build-vars
       shell: bash
       run: |
-        # use a monthly sstate cache folder
         echo "dl_dir=${INPUTS_CACHE_DIR}/downloads" >> $GITHUB_OUTPUT
-        echo "sstate_dir=${INPUTS_CACHE_DIR}/sstate-cache-$(date '+%Y-%m')" >> $GITHUB_OUTPUT
+        # use a single shared sstate cache folder, cleaned up by mtime
+        echo "sstate_dir=${INPUTS_CACHE_DIR}/sstate-cache" >> $GITHUB_OUTPUT
         echo "kas_work_dir=${PWD}/../kas" >> $GITHUB_OUTPUT
         echo "kas_yamls=ci/ci.yml:ci/${INPUTS_MACHINE}.yml${INPUTS_DISTRO_YAML}${INPUTS_KERNEL_YAML}" >> $GITHUB_OUTPUT
       env:
