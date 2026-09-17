@@ -231,6 +231,10 @@ FIT_DTB_COMPATIBLE[qcom_qcs6490-iot-subtype9-staging] = \
     "qcs6490-rb3gen2 qcs6490-rb3gen2-industrial-mezzanine kodiak-staging qcs6490-rb3gen2-industrial-mezzanine-staging kodiak-el2"
 FIT_DTB_COMPATIBLE[qcom_qcs6490-iot-subtype9-el2gh-staging] = \
     "qcs6490-rb3gen2 qcs6490-rb3gen2-industrial-mezzanine kodiak-staging qcs6490-rb3gen2-industrial-mezzanine-staging"
+FIT_DTB_COMPATIBLE[qcom_qcs6490-iot-subtype13] = \
+    "qcs6490-rb3gen2 qcs6490-rb3gen2-industrial-mezzanine qcs6490-rb3gen2-industrial-mezzanine-bt-uart kodiak-el2"
+FIT_DTB_COMPATIBLE[qcom_qcs6490-iot-subtype13-el2gh] = \
+    "qcs6490-rb3gen2 qcs6490-rb3gen2-industrial-mezzanine qcs6490-rb3gen2-industrial-mezzanine-bt-uart"
 
 FIT_DTB_COMPATIBLE[qcom_qcs5430-iot-subtype2] = \
     "qcs6490-rb3gen2 qcs6490-rb3gen2-vision-mezzanine kodiak-el2"
