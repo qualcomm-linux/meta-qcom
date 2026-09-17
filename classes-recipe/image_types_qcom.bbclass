@@ -49,6 +49,11 @@ IMAGE_TYPEDEP:qcomflash += "${IMAGE_QCOMFLASH_FS_TYPE}"
 QCOMFLASH_PRE_TAR_HOOKS ?= ""
 create_qcomflash_pkg[vardeps] += "${QCOMFLASH_PRE_TAR_HOOKS}"
 
+# Add the signed VIP digest table (qcomflash-vip.bbclass); defaults to on
+# whenever firmware signing is on.
+QCOMFLASH_VIP ??= "${QCOM_FIRMWARE_SIGN_ENABLE}"
+inherit_defer ${@'qcomflash-vip' if d.getVar('QCOMFLASH_VIP') == '1' else ''}
+
 deploy_partition_files() {
     for pbin in $1/gpt_main*.bin $1/gpt_backup*.bin \
                 $1/gpt_both*.bin $1/zeros_*.bin \
