@@ -70,6 +70,8 @@ runs:
           INPUTS_KERNEL: ${{ inputs.kernel }}
         run: |
           set -x
+          # how much of a known failure's note fits in a table cell
+          COMMENT_WIDTH=40
           # fail the step with failed command
           set -eo pipefail
           # Inherit errexit to force step failure
@@ -273,8 +275,28 @@ runs:
               if [ "${VALUE}" = "known failure" ]; then CHECKMARK=":ballot_box_with_check:"; fi
               if [ "${VALUE}" = "skip" ]; then CHECKMARK=":warning:"; fi
               if [ -z "${VALUE}" ]; then CHECKMARK=":no_entry_sign:"; fi
-              printf " %s [%s](%s) |" "$CHECKMARK" "$VALUE" "$URL"
-              printf " %s [%s](%s) |" "$CHECKMARK" "$VALUE" "$URL" >> "${INPUTS_SUMMARY_FILE_NAME}"
+
+              # A listed failure says more with the note that comes with it
+              # than with its own name, so put that in the cell instead. Any
+              # URL in the note becomes where the cell links to, which is
+              # usually the issue the failure is tracked in.
+              LABEL="${VALUE}"
+              TARGET="${URL}"
+              COMMENT=$(echo "$INPUT" | jq -r --arg d "$D" --arg r "$R" '.[$d][$r].comment // ""')
+              if [ -n "${COMMENT}" ]; then
+                  COMMENT_URL=$(printf '%s' "${COMMENT}" | grep -oE 'https?://[^[:space:]]+' | head -1 || true)
+                  if [ -n "${COMMENT_URL}" ]; then
+                      TARGET="${COMMENT_URL}"
+                  fi
+                  # a pipe would end the cell, and a long note would push the
+                  # board columns off the side of the page
+                  LABEL=$(printf '%s' "${COMMENT}" | tr '\n' ' ' | sed 's/|/\\|/g')
+                  if [ "${#LABEL}" -gt "${COMMENT_WIDTH}" ]; then
+                      LABEL="${LABEL:0:${COMMENT_WIDTH}}..."
+                  fi
+              fi
+              printf " %s [%s](%s) |" "$CHECKMARK" "$LABEL" "$TARGET"
+              printf " %s [%s](%s) |" "$CHECKMARK" "$LABEL" "$TARGET" >> "${INPUTS_SUMMARY_FILE_NAME}"
             done
             echo "" >> "${INPUTS_SUMMARY_FILE_NAME}"
           done
