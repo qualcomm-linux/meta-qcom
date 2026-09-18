@@ -5,9 +5,9 @@ validate sensor services functionality through the Sensinghub Interface."
 LICENSE = "LicenseRef-LICENSE.qcom-2"
 LIC_FILES_CHKSUM = "file://LICENSE.qcom-2;md5=f33ba334514c4dfabc6ab7377babb377"
 
-PBT_BUILD_DATE = "260514.1"
-SRC_URI = "https://qartifactory-edge.qualcomm.com/artifactory/qsc_releases/software/chip/component/sensors.lnx.0.0/${PBT_BUILD_DATE}/prebuilt_yocto/qcom-sensors-prebuilts_${PV}_armv8a.tar.gz"
-SRC_URI[sha256sum] = "507652592b326bfeb1b31c4c37f61a5173439bd3dffa7ded72b675f834ea11bb"
+PBT_BUILD_DATE = "260811.1"
+SRC_URI = "https://qartifactory-edge.qualcomm.com/artifactory/qsc_releases/software/chip/component/sensors.qli.0.0/${PBT_BUILD_DATE}/prebuilt_yocto/qcom-sensors-prebuilts_${PV}_armv8a.tar.gz"
+SRC_URI[sha256sum] = "344209231dd07d25c83e890b08ec4013392184f1badb41da8fb5c8a885ecacc1"
 
 S = "${UNPACKDIR}"
 
@@ -34,9 +34,11 @@ do_install() {
 
     # Install library
     oe_libinstall -C ${S}/usr/lib -so libsensinghubapiprop ${D}${libdir}
+    oe_libinstall -C ${S}/usr/lib -so libsensinghubapipropc ${D}${libdir}
     oe_libinstall -C ${S}/usr/lib -so libQshQmiIDL ${D}${libdir}
     oe_libinstall -C ${S}/usr/lib -so libQshSession ${D}${libdir}
     oe_libinstall -C ${S}/usr/lib -so libsnsdiaglog ${D}${libdir}
+    oe_libinstall -C ${S}/usr/lib -so libsnsdiaglog-c ${D}${libdir}
     oe_libinstall -C ${S}/usr/lib -so libUSTANative ${D}${libdir}
     oe_libinstall -C ${S}/usr/lib -so libSEESalt ${D}${libdir}
     oe_libinstall -C ${S}/usr/lib -so libsns_direct_channel_stub ${D}${libdir}
