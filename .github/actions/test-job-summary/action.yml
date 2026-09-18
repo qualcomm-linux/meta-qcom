@@ -209,9 +209,15 @@ runs:
             )')
           echo "$INPUT"
 
-          DEVICES=$(echo "$INPUT" | jq -r 'keys[]' | sort)
+          # Boards across the top and tests down the side, both alphabetical,
+          # except that boot always comes first: it is the one result every job
+          # has, and the one that explains all the others when it fails.
+          DEVICES=$(echo "$INPUT" | jq -r '[keys[]] | sort_by(ascii_downcase) | .[]')
 
-          RESULTS=$(echo "$INPUT" | jq -r '.[] | keys[]?' | sort -u)
+          RESULTS=$(echo "$INPUT" | jq -r '
+            [.[] | keys[]?] | unique
+            | map(select(. == "boot")) + (map(select(. != "boot")) | sort_by(ascii_downcase))
+            | .[]')
 
           # Print collapsible box
           echo "<details>" >> "${INPUTS_SUMMARY_FILE_NAME}"
