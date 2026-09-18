@@ -1,0 +1,376 @@
+From 0ad1802ea5b17d7d5f1d356ad5de64da5e330c7a Mon Sep 17 00:00:00 2001
+From: Viswanath Kraleti <viswanath.kraleti@oss.qualcomm.com>
+Date: Mon, 10 Aug 2026 15:45:53 +0530
+Subject: [PATCH] platforms: add partitioning scheme for nord-rrd
+
+Add initial partition.conf and contents.xml.in for Nord RRD board
+to support the boot firmware stack using QTEE, UEFI and systemd-boot.
+
+Signed-off-by: Viswanath Kraleti <viswanath.kraleti@oss.qualcomm.com>
+Upstream-Status: Submitted [https://github.com/qualcomm-linux/qcom-ptool/commit/d53b097d1cea9d5964223864bc26e944aa973f33]
+---
+ platforms/nord-rrd/ufs/contents.xml.in | 139 +++++++++++++++++++++++++
+ platforms/nord-rrd/ufs/partitions.conf | 133 +++++++++++++++++++++++
+ tests/integration/checksums.sha256     |  60 +++++++++++
+ 3 files changed, 332 insertions(+)
+ create mode 100644 platforms/nord-rrd/ufs/contents.xml.in
+ create mode 100644 platforms/nord-rrd/ufs/partitions.conf
+
+diff --git a/platforms/nord-rrd/ufs/contents.xml.in b/platforms/nord-rrd/ufs/contents.xml.in
+new file mode 100644
+index 0000000..8e5cf45
+--- /dev/null
++++ b/platforms/nord-rrd/ufs/contents.xml.in
+@@ -0,0 +1,139 @@
++<?xml version="1.0" ?>
++<!--
++========================================================================
++  contents.xml.in
++
++  General Description
++     Contains information about component builds for this target.
++     It will clone as contents.xml during build compilation process.
++
++  Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
++  SPDX-License-Identifier: BSD-3-Clause
++
++========================================================================
++-->
++
++<contents>
++  <product_flavors cmm_pf_var="PRODUCT_FLAVORS">
++    <pf>
++      <name>default</name>
++      <component>
++        <name>common</name>
++        <flavor>default</flavor>
++      </component>
++      <component>
++        <name>apps</name>
++        <flavor>default</flavor>
++      </component>
++    </pf>
++    <pf>
++      <name>sail_nor</name>
++      <component>
++        <name>common</name>
++        <flavor>sail_nor</flavor>
++      </component>
++    </pf>
++  </product_flavors>
++  <product_info>
++    <product_name>Nord_IOT.LE.0.0</product_name>
++    <hlos_type>LE</hlos_type>
++    <chipid flavor="default" storage_type="ufs" flash_phase="1">NORD</chipid>
++    <chipid flavor="sail_nor" storage_type="spinor" flash_phase="2">NORD</chipid>
++    <additional_chipid>SA8797P,QAM8797P</additional_chipid>
++    <meta_type>FULL_STACK</meta_type>
++    <build_type>K2L</build_type>
++  </product_info>
++  <builds_flat>
++    <build>
++      <name>apps</name>
++      <role>apps</role>
++      <chipset>NORD</chipset>
++      <windows_root_path>.\</windows_root_path>
++      <linux_root_path>./</linux_root_path>
++      <image_dir>apps_proc</image_dir>
++    </build>
++    <build>
++      <name>common</name>
++      <role>common</role>
++      <chipset>NORD</chipset>
++      <windows_root_path>.\</windows_root_path>
++      <linux_root_path>./</linux_root_path>
++      <image_dir>common</image_dir>
++      <device_programmer cmm_file_var="FIREHOSE_DDR_ELF">
++        <file_name>qsahara_device_programmer.xml</file_name>
++        <file_path>.</file_path>
++      </device_programmer>
++      <download_file>
++        <fastboot_complete>{partition_name}</fastboot_complete>
++        <file_name>{image_name}</file_name>
++        <file_path>.</file_path>
++      </download_file>
++      <download_file qsahara_image_id="61">
++        <file_name>tme_config.elf</file_name>
++        <file_path>.</file_path>
++      </download_file>
++      <download_file qsahara_image_id="60">
++        <file_name>signed_firmware_soc_view.elf</file_name>
++        <file_path>.</file_path>
++      </download_file>
++      <download_file qsahara_image_id="59">
++        <file_name>sequencer_ram.elf</file_name>
++        <file_path>.</file_path>
++      </download_file>
++      <download_file qsahara_image_id="21">
++        <file_name>xbl_sc.elf</file_name>
++        <file_path>.</file_path>
++      </download_file>
++      <download_file qsahara_image_id="36">
++        <file_name>qti_misc.mbn</file_name>
++        <file_path>.</file_path>
++      </download_file>
++      <download_file qsahara_image_id="37">
++        <file_name>oem_misc.mbn</file_name>
++        <file_path>.</file_path>
++      </download_file>
++      <device_programmer cmm_file_var="DEV_PRG" qsahara_image_id="13">
++        <file_name>device_programmer_ddr.elf</file_name>
++        <file_path>.</file_path>
++      </device_programmer>
++      <device_programmer cmm_file_var="XBL_CFG" qsahara_image_id="38">
++        <file_name>xbl_config_devprg.elf</file_name>
++        <file_path>.\</file_path>
++      </device_programmer>
++      <partition_file>
++        <storage_type>{storage_type}</storage_type>
++        <file_name>{partition_file_name}</file_name>
++        <file_path flavor="default">.</file_path>
++      </partition_file>
++      <partition_patch_file>
++        <storage_type>{storage_type}</storage_type>
++        <file_name>{partition_patch_file_name}</file_name>
++        <file_path flavor="default">.</file_path>
++      </partition_patch_file>
++      <download_file storage_type="spinor" fastboot_complete="SAIL_HYP">
++        <file_name>sailhyp.elf</file_name>
++        <file_path flavor="sail_nor">./sail_nor</file_path>
++      </download_file>
++      <download_file storage_type="spinor" fastboot_complete="SAIL_SW1">
++        <file_name>sailsw1.elf</file_name>
++        <file_path flavor="sail_nor">./sail_nor</file_path>
++      </download_file>
++      <download_file storage_type="spinor" flavor="sail_nor">
++        <file_name>gpt_main0.bin</file_name>
++        <file_path flavor="sail_nor">./sail_nor</file_path>
++      </download_file>
++      <download_file storage_type="spinor" flavor="sail_nor">
++        <file_name>gpt_backup0.bin</file_name>
++        <file_path flavor="sail_nor">./sail_nor</file_path>
++      </download_file>
++      <partition_file storage_type="spinor" flavor="sail_nor">
++        <file_name>rawprogram0.xml</file_name>
++        <file_path flavor="sail_nor">./sail_nor</file_path>
++      </partition_file>
++      <partition_patch_file storage_type="spinor" flavor="sail_nor">
++        <file_name>patch0.xml</file_name>
++        <file_path flavor="sail_nor">./sail_nor</file_path>
++      </partition_patch_file>
++   </build>
++  </builds_flat>
++</contents>
+diff --git a/platforms/nord-rrd/ufs/partitions.conf b/platforms/nord-rrd/ufs/partitions.conf
+new file mode 100644
+index 0000000..ec5c3b1
+--- /dev/null
++++ b/platforms/nord-rrd/ufs/partitions.conf
+@@ -0,0 +1,133 @@
++# Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
++# SPDX-License-Identifier: BSD-3-Clause-Clear
++
++# select disk type emmc | nand | ufs Mandatory
++# disk size in bytes Mandatory
++# options if not explicitly provide
++--disk --type=ufs --size=137438953472 --write-protect-boundary=0 --sector-size-in-bytes=4096 --grow-last-partition
++
++# per partition entry
++# mandatory options:
++#   --lun (mandatory for UFS, emmc no need this)
++#   --name
++#   --size in bytes
++#   --type-guid
++# optional options: (defaults used if not provided)
++#   --attributes  1000000000000004
++#   --filename    ""
++#   --readonly    true
++#   --sparse      false
++
++#This is LUN 0 - HLOS LUN
++--partition --lun=0 --name=efi --size=524288KB --type-guid=C12A7328-F81F-11D2-BA4B-00A0C93EC93B --filename=efi.bin
++--partition --lun=0 --name=rootfs --size=16777216KB --type-guid=B921B045-1DF0-41C3-AF44-4C6F280D3FAE --filename=rootfs.img
++
++#This is LUN 1 - Boot LUN A
++--partition --lun=1 --name=tme_config_a --size=512KB --type-guid=A50BF003-B224-4DD8-881A-2FCC64274267 --filename=tme_config.elf
++--partition --lun=1 --name=tme_fw_a --size=1024KB --type-guid=B8DF5B14-9304-442C-AAA3-10CFB51B38CE --filename=signed_firmware_soc_view.elf
++--partition --lun=1 --name=tme_seq_patch_a --size=8KB --type-guid=9542DF23-692D-4505-A2AD-EDE82AD0B2C2 --filename=sequencer_ram.elf
++--partition --lun=1 --name=xbl_a --size=5120KB --type-guid=DEA0BA2C-CBDD-4805-B4F9-F428251C3E98 --filename=xbl_sc.elf
++--partition --lun=1 --name=xbl_config_a --size=1024KB --type-guid=5A325AE4-4276-B66D-0ADD-3494DF27706A --filename=xbl_config.elf
++--partition --lun=1 --name=xbl_ac_config_a --size=128KB --type-guid=AB3C2889-7AFC-4DB3-8C3F-B31829E769FC --filename=xbl_ac_config.mbn
++--partition --lun=1 --name=last_parti --size=0KB --type-guid=00000000-0000-0000-0000-000000000000
++
++#This is LUN 2 - Boot LUN B
++--partition --lun=2 --name=tme_config_b --size=512KB --type-guid=5A79575A-9256-4901-B66A-3B42911E9A7C --filename=tme_config.elf
++--partition --lun=2 --name=tme_fw_b --size=1024KB --type-guid=625E89EC-17AC-4EBB-B45A-9B810AD9FCB4 --filename=signed_firmware_soc_view.elf
++--partition --lun=2 --name=tme_seq_patch_b --size=8KB --type-guid=8B4E0DD9-8F18-4DB9-92F6-6F0F8E8ACD09 --filename=sequencer_ram.elf
++--partition --lun=2 --name=xbl_b --size=5120KB --type-guid=7A3DF1A3-A31A-454D-BD78-DF259ED486BE --filename=xbl_sc.elf
++--partition --lun=2 --name=xbl_config_b --size=1024KB --type-guid=F462E0EA-A20E-4B10-867A-2D4455366548 --filename=xbl_config.elf
++--partition --lun=2 --name=xbl_ac_config_b --size=128KB --type-guid=A211141B-5596-4B47-B115-29D53DDA83F8 --filename=xbl_ac_config.mbn
++--partition --lun=2 --name=last_parti --size=0KB --type-guid=00000000-0000-0000-0000-000000000000
++
++#This is LUN 3 - OTP LUN
++#QCOM development requirement: Ensure all partitions in LUN3 is a multiple of 128k
++--partition --lun=3 --name=ALIGN_TO_128K_1 --size=104KB --type-guid=FDE1604B-D68B-4BD4-973D-962AE7A1ED88
++--partition --lun=3 --name=cdt --size=128KB --type-guid=A19F205F-CCD8-4B6D-8F1E-2D9BC24CFFB1 --filename=cdt.bin
++--partition --lun=3 --name=ddr_a --size=1024KB --type-guid=20A0C19C-286A-42FA-9CE7-F64C3226A794
++--partition --lun=3 --name=ddr_b --size=1024KB --type-guid=325DEF02-1305-44A3-AA8D-AC82FEBE220E
++--partition --lun=3 --name=last_parti --size=0KB --type-guid=00000000-0000-0000-0000-000000000000
++
++#This is LUN 4 - Protected Read-only LUN
++# Partition's that are expected to be OTA upgradable require a A and B version.
++# If the partition you are adding is not expected to be OTA upgradable please add it after the 'B' partition list.
++# These are the 'A' partition's needed for the A/B boot/ota update feature.
++# If you add something to this section remember to add it to B as well
++--partition --lun=4 --name=aop_a --size=1024KB --type-guid=D69E90A5-4CAB-0071-F6DF-AB977F141A7F --filename=aop.mbn
++--partition --lun=4 --name=aop_config_a --size=512KB --type-guid=3D12F234-C882-4B46-A20C-17D52C8FC03D --filename=aop_devcfg.mbn
++--partition --lun=4 --name=apdp_a --size=64KB --type-guid=E6E98DA2-E22A-4D12-AB33-169E7DEAA507 --filename=zeros_1sector.bin
++--partition --lun=4 --name=core_nhlos_a --size=122880KB --type-guid=6690B4CE-70E9-4817-B9F1-25D64D888357
++--partition --lun=4 --name=cpucp_a --size=1024KB --type-guid=1E8615BD-6D8C-41AD-B3EA-50E8BF40E43F --filename=cpucp.elf
++--partition --lun=4 --name=cpucp_dtb_a --size=128KB --type-guid=6C6018BC-4FBE-40C5-B148-4BCB1DB23748 --filename=cpucp_dtbs.elf
++--partition --lun=4 --name=devcfg_a --size=256KB --type-guid=F65D4B16-343D-4E25-AAFC-BE99B6556A6D --filename=devcfg_iot.mbn
++--partition --lun=4 --name=dtb_a --size=65536KB --type-guid=2A1A52FC-AA0B-401C-A808-5EA0F91068F8 --filename=dtb.bin
++--partition --lun=4 --name=hyp_a --size=512000KB --type-guid=E1A6A689-0C8D-4CC6-B4E8-55A4320FBD8A --filename=hypvm.mbn
++--partition --lun=4 --name=hyp_ac_config_a --size=256KB --type-guid=05E0CA06-3F20-49C4-8B82-AC560268F2AE --filename=hyp_ac_config.mbn
++--partition --lun=4 --name=multiimgqti_a --size=48KB --type-guid=846C6F05-EB46-4C0A-A1A3-3648EF3F9D0E --filename=qti_misc.mbn
++--partition --lun=4 --name=multiimgoem_a --size=48KB --type-guid=E126A436-757E-42D0-8D19-0F362F7A62B8 --filename=oem_misc.mbn
++--partition --lun=4 --name=pdp_a --size=512KB --type-guid=4D65EF4C-6B68-4563-80B5-2B079A9E649B --filename=pdp.elf
++--partition --lun=4 --name=pdp_cdb_a --size=128KB --type-guid=39F567C2-CBAA-4378-A88A-F1912512CE10 --filename=pdp_cdb.elf
++--partition --lun=4 --name=qupfw_a --size=128KB --type-guid=21D1219F-2ED1-4AB4-930A-41A16AE75F7F --filename=qupv3fw.elf
++--partition --lun=4 --name=shrm_a --size=256KB --type-guid=CB74CA22-2F0D-4B82-A1D6-C4213F348D73 --filename=shrm.elf
++--partition --lun=4 --name=soccp_a --size=3072KB --type-guid=7999BAF4-9E18-4073-987B-2AC661353F9F --filename=soccp.mbn
++--partition --lun=4 --name=soccp_dcd_a --size=48KB --type-guid=D67CC91F-B88A-43FA-9B3A-12EF5A1892DC --filename=dcd.mbn
++--partition --lun=4 --name=soccp_debug_a --size=512KB --type-guid=95825EE7-01DD-4A7C-A9EE-8C37B997FEC4 --filename=sdi.mbn
++--partition --lun=4 --name=tz_a --size=10240KB --type-guid=A053AA7F-40B8-4B1C-BA08-2F68AC71A4F4 --filename=tz.mbn
++--partition --lun=4 --name=tz_ac_config_a --size=512KB --type-guid=7437F5B5-215F-4E08-927A-F49F53CC1F5D --filename=tz_ac_config.mbn
++--partition --lun=4 --name=tz_qti_config_a --size=512KB --type-guid=71AF1E14-AE35-4184-8EA2-7809235BF8D7 --filename=tz_qti_config.mbn
++--partition --lun=4 --name=uefi_a --size=12288KB --type-guid=400FFDCD-22E0-47E7-9A23-F16ED9382388 --filename=uefi.elf
++--partition --lun=4 --name=uefi_dtb_a --size=2048KB --type-guid=C84D3B5E-EF34-4FA4-8118-30EAE18D3FA6 --filename=uefi_dtbs.elf
++--partition --lun=4 --name=uefisecapp_a --size=2048KB --type-guid=BE8A7E08-1B7A-4CAE-993A-D5B7FB55B3C2 --filename=uefi_sec.mbn
++--partition --lun=4 --name=xbl_ramdump_a --size=2048KB --type-guid=0382F197-E41F-4E84-B18B-0B564AEAD875 --filename=xbl_ramdump.elf
++
++#These are the 'B' partition's needed for the A/B boot/ota update feature. A and B partitions must have differrent GUID's.
++#For convinience sake we keep all the B partitions with the same GUID
++--partition --lun=4 --name=aop_b --size=1024KB --type-guid=B8B27C4C-4B5B-8AB2-502F-A792B590A896 --filename=aop.mbn
++--partition --lun=4 --name=aop_config_b --size=512KB --type-guid=5738935D-8A89-4F71-9731-514FF00B8B4F --filename=aop_devcfg.mbn
++--partition --lun=4 --name=apdp_b --size=64KB --type-guid=110F198D-8174-4193-9AF1-5DA94CDC59C9 --filename=zeros_1sector.bin
++--partition --lun=4 --name=core_nhlos_b --size=122880KB --type-guid=E8867782-68AB-46F5-9FA2-68FDFDBB1E13
++--partition --lun=4 --name=cpucp_b --size=1024KB --type-guid=6C1111FB-5354-41DE-AC17-5B6E542BE836 --filename=cpucp.elf
++--partition --lun=4 --name=cpucp_dtb_b --size=128KB --type-guid=57213A2B-39DE-4184-97DE-645D37913E4E --filename=cpucp_dtbs.elf
++--partition --lun=4 --name=devcfg_b --size=256KB --type-guid=169534E7-7809-4240-9763-0BA5DC37B5FF --filename=devcfg_iot.mbn
++--partition --lun=4 --name=dtb_b --size=65536KB --type-guid=A166F11A-2B39-4FAA-B7E7-F8AA080D0587 --filename=dtb.bin
++--partition --lun=4 --name=hyp_b --size=512000KB --type-guid=CB45ECA0-504E-42BB-91BA-C9B3236F6A6E --filename=hypvm.mbn
++--partition --lun=4 --name=hyp_ac_config_b --size=256KB --type-guid=43B68B3D-DE1F-4514-B280-69C970E2920A --filename=hyp_ac_config.mbn
++--partition --lun=4 --name=multiimgqti_b --size=48KB --type-guid=D30C8B21-DDD9-45B6-8DE0-3165D34395C9 --filename=qti_misc.mbn
++--partition --lun=4 --name=multiimgoem_b --size=48KB --type-guid=3E3E3ECD-C512-4F95-9144-6063826A8970 --filename=oem_misc.mbn
++--partition --lun=4 --name=pdp_b --size=512KB --type-guid=23BC2066-6DF0-4869-B84D-84B6247E3C53 --filename=pdp.elf
++--partition --lun=4 --name=pdp_cdb_b --size=128KB --type-guid=C49242AA-4C04-43C5-9E81-817AF9C23AD5 --filename=pdp_cdb.elf
++--partition --lun=4 --name=qupfw_b --size=128KB --type-guid=1DF89EA5-F53A-41CC-82B1-ED2EE0C2B4B7 --filename=qupv3fw.elf
++--partition --lun=4 --name=shrm_b --size=256KB --type-guid=39FD6C00-49EB-6BD1-6899-2FB849DD4F75 --filename=shrm.elf
++--partition --lun=4 --name=soccp_b --size=3072KB --type-guid=B842FDD7-8ED5-4DAA-A755-D0B43FFF21E6 --filename=soccp.mbn
++--partition --lun=4 --name=soccp_dcd_b --size=48KB --type-guid=BF795A2C-F2EA-4110-85EA-95CC43FE1532 --filename=dcd.mbn
++--partition --lun=4 --name=soccp_debug_b --size=512KB --type-guid=88CE4B5F-616E-4549-B875-565DAD984951 --filename=sdi.mbn
++--partition --lun=4 --name=tz_b --size=10240KB --type-guid=C832EA16-8B0D-4398-A67B-EBB30EF98E7E --filename=tz.mbn
++--partition --lun=4 --name=tz_ac_config_b --size=512KB --type-guid=FA5C1B9B-CED6-4ED8-8C92-97BEC5791F30 --filename=tz_ac_config.mbn
++--partition --lun=4 --name=tz_qti_config_b --size=512KB --type-guid=9ED896DD-F1A4-44C2-845F-834967E77879 --filename=tz_qti_config.mbn
++--partition --lun=4 --name=uefi_b --size=12288KB --type-guid=9F234B5B-0EFB-4313-8E4C-0AF1F605536B --filename=uefi.elf
++--partition --lun=4 --name=uefi_dtb_b --size=2048KB --type-guid=5F7D760A-3EF5-4AA5-B915-69A4ECAAE662 --filename=uefi_dtbs.elf
++--partition --lun=4 --name=uefisecapp_b --size=2048KB --type-guid=77036CD4-03D5-42BB-8ED1-37E5A88BAA34 --filename=uefi_sec.mbn
++--partition --lun=4 --name=xbl_ramdump_b --size=2048KB --type-guid=FF608BF6-AEDF-4084-BEC5-C92AB4E4534D --filename=xbl_ramdump.elf
++
++#These are non A/B partitions. In a A/B build these would not be updated via a OTA update
++--partition --lun=4 --name=cateloader --size=2048KB --type-guid=AA9A5C4C-4F1F-7D3A-014A-22BD33BF7191
++--partition --lun=4 --name=devinfo --size=4KB --type-guid=65ADDCF4-0C5C-4D9A-AC2D-D90B5CBFCD03
++--partition --lun=4 --name=logfs --size=8192KB --type-guid=BC0330EB-3410-4951-A617-03898DBE3372 --filename=logfs_ufs_8mb.bin
++--partition --lun=4 --name=qmcs --size=30720KB --type-guid=5FF68F4B-623F-47A1-90AB-006AA34DD742
++--partition --lun=4 --name=quantumcontentfv --size=1024KB --type-guid=E12D830B-7F62-4F0B-B48A-8178C5BF3AC1
++--partition --lun=4 --name=quantumfv --size=1024KB --type-guid=80C23C26-C3F9-4A19-BB38-1E457DACEB09
++--partition --lun=4 --name=quantumsdk --size=40960KB --type-guid=B09AFFF8-70C4-4BFA-ADD2-2C7C8C5051EE
++--partition --lun=4 --name=questdatafv --size=16384KB --type-guid=160CF0BE-A1D6-4F95-8ECC-DCF981D37507
++--partition --lun=4 --name=secdata --size=128KB --type-guid=76CFC7EF-039D-4E2C-B81E-4DD8C2CB2A93
++--partition --lun=4 --name=spunvm --size=8192KB --type-guid=E42E2B4C-33B0-429B-B1EF-D341C547022C
++--partition --lun=4 --name=SYSFW_VERSION --size=64KB --type-guid=3C44F88B-1878-4C29-B122-EE78766442A7
++--partition --lun=4 --name=toolsfv --size=1024KB --type-guid=97745ABA-135A-44C3-9ADC-05616173C24C --filename=tools.fv
++--partition --lun=4 --name=xbl_sc_logs --size=1024KB --type-guid=F7EECB66-781A-439A-8955-70E12ED4A7A0
++--partition --lun=4 --name=xbl_sc_test_mode --size=64KB --type-guid=91FDD2B9-8ED3-4176-BC42-260F2E34D04A
++--partition --lun=4 --name=last_parti --size=0KB --type-guid=00000000-0000-0000-0000-000000000000
++
++#This is LUN 5 - Protected Read-write LUN
++#QCOM development requirement: Ensure all partitions in LUN5 is a multiple of 128k.
++--partition --lun=5 --name=ALIGN_TO_128K_2 --size=104KB --type-guid=6891A3B7-0CCC-4705-BB53-2673CAC193BD
++--partition --lun=5 --name=persist --size=30720KB --type-guid=6C95E238-E343-4BA8-B489-8681ED22AD0B
++--partition --lun=5 --name=last_parti --size=0KB --type-guid=00000000-0000-0000-0000-000000000000
+diff --git a/tests/integration/checksums.sha256 b/tests/integration/checksums.sha256
+index c7a6215..5a8f8ce 100644
+--- a/tests/integration/checksums.sha256
++++ b/tests/integration/checksums.sha256
+@@ -499,6 +499,66 @@ c9f52ac16ce29c8c6ff84bd4d37429fb0ff049a08aedd66bebeb6163805a38e9  platforms/kaan
+ ad7facb2586fc6e966c004d7d1d16b024f5805ff7cb47c7a85dabd8b48892ca7  platforms/kaanapali-mtp/ufs/zeros_1sector.bin
+ 74518f204d46de660dff3ed003e92476bad8c691ba392453fc1c7532cc856018  platforms/kaanapali-mtp/ufs/zeros_33sectors.bin
+ cc61635da46b2c9974335ea37e0b5fd660a5c8a42a89b271fa7ec2ac4b8b26f6  platforms/kaanapali-mtp/ufs/zeros_5sectors.bin
++f7b040abed81b41dc621e27310d1211837c26747baf39e34036b2b171424c79a  platforms/nord-rrd/ufs/contents.xml
++583219d4c5afe0701e8cb68e34e91cb5e3f0562ac6e34ab45cc32739809c4d1f  platforms/nord-rrd/ufs/gpt_backup0.bin
++d289a1819598c029092041c355af3aecf50fe2d173d5a06b810712398f2305f2  platforms/nord-rrd/ufs/gpt_backup1.bin
++1e44f9925748f8f36c0c22acf78781460e298b883227936593dc22db3a7ecfda  platforms/nord-rrd/ufs/gpt_backup2.bin
++563887f285db74a22a8dab11fd69b6a39667c8f20915edeafa67129d05215ebc  platforms/nord-rrd/ufs/gpt_backup3.bin
++324bb3f77e162d4e158ea427216dab2000baf3667cb19f9049f8cc1f9ad4be73  platforms/nord-rrd/ufs/gpt_backup4.bin
++80beddc670c53ac20eb6ab5ba467fc76b4bedbb9beec00005e8fe40cc8bd38c9  platforms/nord-rrd/ufs/gpt_backup5.bin
++21e9e65befcc36ecb5f373c224304386113a41f1f765e908db97802dbae5ed0f  platforms/nord-rrd/ufs/gpt_both0.bin
++135d74685cdbe51d10e8118879c35f25ab3a5327ef31baf94e410b16c2dbc1ea  platforms/nord-rrd/ufs/gpt_both1.bin
++5474dd5ab773ba6245cca859f90ad262260a8ccba390d3cc10370edeb7cf9a60  platforms/nord-rrd/ufs/gpt_both2.bin
++044d0eb73351855bc0e6e1f2ede0f34371fed2027206d4ed3ee81d8e6f793e5a  platforms/nord-rrd/ufs/gpt_both3.bin
++e028d2106587b34ef8b2dc5c1d526f5ea8558bb9d4a1c3443758cbb145b4aaa9  platforms/nord-rrd/ufs/gpt_both4.bin
++7436244f25618079810ebc9f60922709658a8ce7b787c9a3c4645e3c8cf4a212  platforms/nord-rrd/ufs/gpt_both5.bin
++296ad8f9dac8ae490e27fc296e68de9183a83efd638e4f05404c3de700e4cc05  platforms/nord-rrd/ufs/gpt_empty0.bin
++296ad8f9dac8ae490e27fc296e68de9183a83efd638e4f05404c3de700e4cc05  platforms/nord-rrd/ufs/gpt_empty1.bin
++296ad8f9dac8ae490e27fc296e68de9183a83efd638e4f05404c3de700e4cc05  platforms/nord-rrd/ufs/gpt_empty2.bin
++296ad8f9dac8ae490e27fc296e68de9183a83efd638e4f05404c3de700e4cc05  platforms/nord-rrd/ufs/gpt_empty3.bin
++296ad8f9dac8ae490e27fc296e68de9183a83efd638e4f05404c3de700e4cc05  platforms/nord-rrd/ufs/gpt_empty4.bin
++296ad8f9dac8ae490e27fc296e68de9183a83efd638e4f05404c3de700e4cc05  platforms/nord-rrd/ufs/gpt_empty5.bin
++672eed3b3dba2d1d1d521e078897e7f6412157e91432daff498e798ed381ee4d  platforms/nord-rrd/ufs/gpt_main0.bin
++7e061774a1a182f4ade298e4d739b571a3aa93a37c4380e7edaf3c83758d5cb3  platforms/nord-rrd/ufs/gpt_main1.bin
++f5b5a4281cd4511e575a5c29465060643ec27c3b115333e14c9684e1546ac4ee  platforms/nord-rrd/ufs/gpt_main2.bin
++5eb465d8580f8b5be00dcc336bc719941e24f2f4552e8cf22b4ed640fd62ec18  platforms/nord-rrd/ufs/gpt_main3.bin
++b0f0db5132f5b31d851df77eed026f998fa1cf7c07f63cd56cbd4af34b059c5b  platforms/nord-rrd/ufs/gpt_main4.bin
++1ef257628477a265756dbb3731914236adf1c98b419c6edf1d051351d4e28220  platforms/nord-rrd/ufs/gpt_main5.bin
++4567f4f00ae15b3d639e69b47b69e0e0fb0250e00d4b7e73e6943f7638ede6f1  platforms/nord-rrd/ufs/partitions.xml
++17e926bf598a781a766319cd1a0e2b84563ef0850d565b83479294be518d160a  platforms/nord-rrd/ufs/patch0.xml
++6651cf358a85e066992c29fc1953851681fb9f52f7be3881d51aaa2f3160dfb4  platforms/nord-rrd/ufs/patch1.xml
++7e8d630cf0ed305df5184e1f082fa70b1b34fb83bdedb3a525ddaf753cf96eed  platforms/nord-rrd/ufs/patch2.xml
++f7da06354afae918957d84ed12ec71c0a195a02555e709584172da4bba53e685  platforms/nord-rrd/ufs/patch3.xml
++ac0d4a7e92750780e11d125fdd61dadcb1ca8e422dd26a860d023aded78606e4  platforms/nord-rrd/ufs/patch4.xml
++7c6fbd8320b03108a2243b0a72d080d4c041b8d0dc8afcae92aa2bab9447c696  platforms/nord-rrd/ufs/patch5.xml
++fedee9a39cd1b3ed39dcae48fcb8efef6c32a81ef738b95c6eba9312d1668105  platforms/nord-rrd/ufs/rawprogram0.xml
++bfd6149fca38b0d45a636f87be864562f321e5418b917120f4f350d6f5a11a7e  platforms/nord-rrd/ufs/rawprogram0_BLANK_GPT.xml
++6e144d3730cd61a0d866fbf068f31294caddf742423ffae67020143494b155fa  platforms/nord-rrd/ufs/rawprogram0_WIPE_PARTITIONS.xml
++f922896cce24620fa6063d227fdc956f4ab88e28cce386ff03c675e0e6b1e9fc  platforms/nord-rrd/ufs/rawprogram1.xml
++698caaf24b821c5aca4e11f6bd86b8190203df9f0794595d5d44d202a293c50d  platforms/nord-rrd/ufs/rawprogram1_BLANK_GPT.xml
++29f6b5f60f40f989745bbc50e3978c6d758dc0f03e80215e0a99c90f5ba33059  platforms/nord-rrd/ufs/rawprogram1_WIPE_PARTITIONS.xml
++a020f88d85112e68c92fa6cc4266a7e66b09107b4cf09627874e484b9cbd46f5  platforms/nord-rrd/ufs/rawprogram2.xml
++244b029e9ac508d06a315292a6469439257781f7cb475b130a32455054b25446  platforms/nord-rrd/ufs/rawprogram2_BLANK_GPT.xml
++80190b354ad2f3dcc5de2edc949f41ca2b56ce64c2564d6042bc5b2dee9fafeb  platforms/nord-rrd/ufs/rawprogram2_WIPE_PARTITIONS.xml
++fff56507b0e9315070905625ba2ce565dd811443369f13e4168e73969888cca3  platforms/nord-rrd/ufs/rawprogram3.xml
++19393ca7400346b48ddf58032098c8522387ba61780a68631a926dbec24fc3d8  platforms/nord-rrd/ufs/rawprogram3_BLANK_GPT.xml
++cbc97a1fe929099d55f37e3addf89905a2d93fcbe3843715d2f7406b04bdac53  platforms/nord-rrd/ufs/rawprogram3_WIPE_PARTITIONS.xml
++6087e42eed74741cca7a23fef692f6ba3c06792dc7c4e68b0f7eec550c42f34a  platforms/nord-rrd/ufs/rawprogram4.xml
++13e39a421e5f11f0aca36b2447be74b9ee8fb5cf9023bed0d472a087a95c630a  platforms/nord-rrd/ufs/rawprogram4_BLANK_GPT.xml
++5a2f85bde9a64ae2a343461170c38c4c594a56b780e327c83fd82366275972d6  platforms/nord-rrd/ufs/rawprogram4_WIPE_PARTITIONS.xml
++5f840417c57b87b5767e48921e6aade328aa8277c1f2a16346c4258f83b49fec  platforms/nord-rrd/ufs/rawprogram5.xml
++7a526f3da790c95d1f3274deedb9af87e8e2d395bdebefa0cd8a4dc8da3e23ea  platforms/nord-rrd/ufs/rawprogram5_BLANK_GPT.xml
++8966e3b2440445c8d56665976c5374a331d9e3d43c16a86c053e23b1d72445d7  platforms/nord-rrd/ufs/rawprogram5_WIPE_PARTITIONS.xml
++8f4ad45a45bf96091a1bddc6e9ef9f0c1b6a8b93c4cfc9ee269d9563fdb927bf  platforms/nord-rrd/ufs/wipe_rawprogram_PHY0.xml
++c9f52ac16ce29c8c6ff84bd4d37429fb0ff049a08aedd66bebeb6163805a38e9  platforms/nord-rrd/ufs/wipe_rawprogram_PHY1.xml
++915acd9e9017bb6103cb0c7264b0df3c294dd4eabb4d099eda9da6df75153810  platforms/nord-rrd/ufs/wipe_rawprogram_PHY2.xml
++7dc6e2c38c670688d77b5e7b5199d129d4dd3803aa0f9047fe36dd82b270254b  platforms/nord-rrd/ufs/wipe_rawprogram_PHY4.xml
++3db09ee13c9969237acc4027d16eea8763de3b1a61418a46ad9ccf4577f8fd99  platforms/nord-rrd/ufs/wipe_rawprogram_PHY5.xml
++69fa314f3d9301a2554455416708cb54e0c0b5700cf89a2e59575642979674cd  platforms/nord-rrd/ufs/wipe_rawprogram_PHY6.xml
++6c66987561c898febfc77096da19f3b215a5e689cbca95dc2af23c7529cd20ea  platforms/nord-rrd/ufs/wipe_rawprogram_PHY7.xml
++ad7facb2586fc6e966c004d7d1d16b024f5805ff7cb47c7a85dabd8b48892ca7  platforms/nord-rrd/ufs/zeros_1sector.bin
++74518f204d46de660dff3ed003e92476bad8c691ba392453fc1c7532cc856018  platforms/nord-rrd/ufs/zeros_33sectors.bin
++cc61635da46b2c9974335ea37e0b5fd660a5c8a42a89b271fa7ec2ac4b8b26f6  platforms/nord-rrd/ufs/zeros_5sectors.bin
+ 635fb7a343c7a6d2f350544f9edb77c673ab5880bf17cc976dd370255577030f  platforms/qcm6490-idp/emmc/contents.xml
+ ecc5d3a9d343ab4d31e87fb7cbcbbfe82723992108a77cff5a67529e031b5740  platforms/qcm6490-idp/emmc/gpt_backup0.bin
+ 10897baed9ef7316ea56ea858e44ab4c032a86a48e24873a6b026cd64ab2391b  platforms/qcm6490-idp/emmc/gpt_backup1.bin
+-- 
+2.43.0
+
