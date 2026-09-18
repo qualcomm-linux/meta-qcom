@@ -72,13 +72,15 @@ runs:
           set -x
           # how much of a known failure's note fits in a table cell
           COMMENT_WIDTH=40
+          # results per request; the LAVA default is 50
+          LAVA_PAGE_SIZE=1000
           # fail the step with failed command
           set -eo pipefail
           # Inherit errexit to force step failure
           shopt -s inherit_errexit
           # Helper for fetching the URL with retries
-          lava_api() {
-              local url="${INPUTS_LAVA_BASE_URL}/api/v0.2/$1"
+          lava_fetch() {
+              local url="$1"
               local wait=30
               local rc=0
               curl -sSf --retry 3 "${url}" || rc=$?
@@ -92,6 +94,43 @@ runs:
                   echo "::error title=LAVA request failed::curl exited with ${rc} for ${url}" >&2
                   return "${rc}"
               fi
+          }
+
+          # A listing is paginated: it answers with a page of results and a
+          # "next" URL for the rest. Follow "next" until it runs
+          # out however large the listing turns out to be, and hand the caller
+          # every result as one response so it cannot tell the difference.
+          #
+          # A single object - a job, say - has no "results", and is passed
+          # straight through.
+          lava_api() {
+              local url="${INPUTS_LAVA_BASE_URL}/api/v0.2/$1"
+              local body results
+
+              case "${url}" in
+                  *\?*) url="${url}&limit=${LAVA_PAGE_SIZE}" ;;
+                  *) url="${url}?limit=${LAVA_PAGE_SIZE}" ;;
+              esac
+
+              results=""
+              while [ -n "${url}" ]; do
+                  body=$(lava_fetch "${url}")
+                  if ! printf '%s' "${body}" | jq -e . >/dev/null 2>&1; then
+                      echo "::error title=LAVA request failed::${url} did not answer with JSON" >&2
+                      return 1
+                  fi
+                  if ! printf '%s' "${body}" | jq -e 'type == "object" and has("results")' >/dev/null; then
+                      printf '%s' "${body}"
+                      return 0
+                  fi
+                  results="${results}$(printf '%s' "${body}" | jq -c '.results[]')
+          "
+                  # LAVA hands out its next link as http, which would be a
+                  # redirect to follow and a round trip in the clear; ask for
+                  # the same page over the scheme we came in on
+                  url=$(printf '%s' "${body}" | jq -r '.next // ""' | sed 's|^http://|https://|')
+              done
+              printf '%s' "${results}" | jq -s -c '{results: .}'
           }
           # When a failed LAVA job is re-run, GitHub keeps the original failed
           # job's "<distro>-test-job-<id>" artifact AND adds a new artifact for the
