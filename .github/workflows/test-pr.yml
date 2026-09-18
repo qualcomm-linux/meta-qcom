@@ -74,6 +74,11 @@ jobs:
       build_id: ${{ github.event.workflow_run.id }}
       pr_number: ${{ needs.determine-target-branch.outputs.pr_number }}
       pr_url: ${{ needs.determine-target-branch.outputs.pr_url }}
+      # The known failures lists come from the branch or fork the pull request
+      # is built from, so that it can drop an entry it fixes, or add one it
+      # found, and be reported against them right away instead of after merge.
+      known_failures_repository: ${{ github.event.workflow_run.head_repository.full_name }}
+      known_failures_ref: ${{ github.event.workflow_run.head_sha }}
 
   comment-on-pr:
     name: "Comment on PR"
@@ -146,3 +151,5 @@ jobs:
       event_file: artifacts/Event File/event.json
       event_name: ${{ github.event.workflow_run.event }}
       workflow_id: ${{ github.event.workflow_run.id }}
+      known_failures_repository: ${{ github.event.workflow_run.head_repository.full_name }}
+      known_failures_ref: ${{ github.event.workflow_run.head_sha }}

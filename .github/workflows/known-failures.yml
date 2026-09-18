@@ -1,0 +1,43 @@
+name: Validate known failures
+
+# The known failures lists are only read when a test run publishes its results,
+# so a typo in one of them stays invisible until it silently fails to suppress a
+# known failure. Validate them on every change instead, both to the lists and to
+# the test workflow that defines the build variants and devices they refer to.
+on:
+  push:
+    branches: [ master ]
+    paths:
+      - '.github/known-failures/**'
+      - '.github/scripts/apply-known-failures.py'
+      - '.github/workflows/known-failures.yml'
+      - '.github/workflows/test.yml'
+  pull_request:
+    paths:
+      - '.github/known-failures/**'
+      - '.github/scripts/apply-known-failures.py'
+      - '.github/workflows/known-failures.yml'
+      - '.github/workflows/test.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    name: "Validate known failures lists"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: 3.11
+
+      - name: Validate
+        run: |
+          pip install --quiet pyyaml
+          python3 .github/scripts/apply-known-failures.py --validate

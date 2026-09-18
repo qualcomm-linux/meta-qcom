@@ -15,6 +15,20 @@ on:
       commit:
         required: true
         type: string
+      known_failures_repository:
+        required: false
+        type: string
+        default: ""
+        description: >
+          Repository the known failures lists are taken from, "<owner>/<repo>".
+          Set it to the head repository of a pull request so its own lists are
+          applied. Empty (the default) applies the lists of the checkout.
+      known_failures_ref:
+        required: false
+        type: string
+        default: ""
+        description: >
+          Ref or commit of known_failures_repository to take the lists from.
     secrets:
       TEST_REPORTING_APP_TOKEN:
         required: true
@@ -31,6 +45,33 @@ jobs:
     name: "Publish Tests Results"
     runs-on: ubuntu-latest
     steps:
+      # Checked out before the artifacts are downloaded: actions/checkout wipes
+      # untracked files from the workspace, which would take the artifacts with
+      # it. For the PR test chain this is a workflow_run run, so the checkout is
+      # the base branch: it provides the script below, which always comes from
+      # the base branch, and the known failures lists to fall back on.
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      # A pull request may fix a failure that is still listed, or list one it
+      # found, so it has to be judged by its own lists rather than by the ones
+      # already merged. Only the lists are checked out, and only ever read as
+      # data - no code from the pull request runs in this privileged chain.
+      # A fork that has become unreachable is not fatal: the lists of the base
+      # branch are applied instead.
+      - name: Check out the known failures lists of the pull request
+        if: ${{ inputs.known_failures_repository != '' }}
+        continue-on-error: true
+        uses: actions/checkout@v6
+        with:
+          repository: ${{ inputs.known_failures_repository }}
+          ref: ${{ inputs.known_failures_ref }}
+          path: known-failures-pr
+          sparse-checkout: .github/known-failures
+          sparse-checkout-cone-mode: false
+          persist-credentials: false
+
       - name: Download result files
         uses: actions/download-artifact@v7
         with:
@@ -54,6 +95,36 @@ jobs:
             echo "Error: no .xml files found"
             exit 1
           fi
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: 3.11
+
+      # A failure that is already known and accepted for a build variant must
+      # not keep the "Test Results" check red. The result files are rewritten
+      # before they are published: a known failure becomes a skipped test, a
+      # test that passes while it is listed as a known failure becomes a
+      # failure. See .github/known-failures/README.md.
+      - name: Apply known failures
+        env:
+          PR_KNOWN_FAILURES: known-failures-pr/.github/known-failures
+        run: |
+          pip install --quiet pyyaml
+          KNOWN_FAILURES_DIR=.github/known-failures
+          # Only the syntax of the lists of the pull request is required here:
+          # which build variants exist is a property of this branch, and it is
+          # known-failures.yml, running on the pull request itself, that checks
+          # the lists against it. A list that does not even parse would abort
+          # the run that applies it, so fall back to the reviewed lists.
+          if [ -d "${PR_KNOWN_FAILURES}" ] && python3 \
+               .github/scripts/apply-known-failures.py --validate --syntax-only \
+               --known-failures-dir "${PR_KNOWN_FAILURES}"; then
+            KNOWN_FAILURES_DIR="${PR_KNOWN_FAILURES}"
+          fi
+          echo "::notice title=Known failures::Applying ${KNOWN_FAILURES_DIR}"
+          python3 .github/scripts/apply-known-failures.py \
+            --known-failures-dir "${KNOWN_FAILURES_DIR}" \
+            --results-dir "${GITHUB_WORKSPACE}/artifacts"
 
       - id: app_token
         uses: actions/create-github-app-token@v3
