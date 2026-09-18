@@ -68,7 +68,7 @@ jobs:
       actions: read
       checks: write
       pull-requests: write
-    uses: ./.github/workflows/test.yml
+    uses: $/.github/workflows/test.yml
     secrets: inherit
     with:
       build_id: ${{ github.event.workflow_run.id }}
@@ -138,7 +138,7 @@ jobs:
       actions: read
       checks: write
       pull-requests: write
-    uses: ./.github/workflows/publish-results.yml
+    uses: $/.github/workflows/publish-results.yml
     secrets: inherit
     needs: [test]
     with:

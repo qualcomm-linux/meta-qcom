@@ -185,7 +185,7 @@ jobs:
           - type: default
             dirname: ""
             yamlfile: ""
-    uses: ./.github/workflows/compile.yml
+    uses: $/.github/workflows/compile.yml
     with:
       name: ${{ matrix.machine }}/${{ matrix.distro.name }}${{ matrix.kernel.dirname }}
       # One world build per machine and distro family is enough for compile
@@ -209,7 +209,7 @@ jobs:
     if: |
       github.repository_owner == 'qualcomm-linux' &&
       (inputs.skip_if_github_cached != true || needs.github-cache-check.outputs.cache_hit != 'true')
-    uses: ./.github/workflows/compile.yml
+    uses: $/.github/workflows/compile.yml
     with:
       name: qcom-armv8a/qcom-distro-sdk
       sdk: true
@@ -474,7 +474,7 @@ jobs:
                 type: default
                 dirname: ""
                 yamlfile: ""
-    uses: ./.github/workflows/compile.yml
+    uses: $/.github/workflows/compile.yml
     with:
       name: ${{ matrix.machine }}/${{ matrix.distro.name }}${{ matrix.kernel.dirname }}
       # Which profiles build this entry. Entries without distro.profile are
@@ -510,7 +510,7 @@ jobs:
         with:
           persist-credentials: false
 
-      - uses: ./.github/actions/print-build-output
+      - uses: $/.github/actions/print-build-output
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           pattern: build-url*

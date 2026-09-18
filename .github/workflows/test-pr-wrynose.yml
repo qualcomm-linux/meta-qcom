@@ -114,7 +114,7 @@ jobs:
       actions: read
       checks: write
       pull-requests: write
-    uses: ./.github/workflows/publish-results.yml
+    uses: $/.github/workflows/publish-results.yml
     secrets: inherit
     needs: [test-wrynose]
     if: always() && (needs.test-wrynose.result == 'success')
