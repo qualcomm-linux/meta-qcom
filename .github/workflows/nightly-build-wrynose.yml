@@ -4,8 +4,10 @@ on:
   schedule:
   # NOTE - changes to the cron spec should be pushed by https://github.com/quic-yocto-ci
   # so that build notification emails will be sent out properly.
-  # At 23:22 UTC everyday - picked a random "minute" as top of hour can be busy in github
-  - cron: "22 23 * * *"
+  # At 2:22 UTC everyday - picked a random "minute" as top of hour can be busy
+  # in github. Kept 2 hours after the master nightly/weekly build (0:22 UTC) so
+  # the two branches do not build at the same time.
+  - cron: "22 2 * * *"
 
 permissions:
   checks: write
