@@ -53,6 +53,10 @@ on:
         required: true
         description: "Token used to submit jobs to the LAVA lab"
 
+env:
+  # LAVA instance the test jobs are submitted to and the results are read from
+  LAVA_URL: lava.infra.foundries.io
+
 jobs:
   prepare-boot-jobs:
     name: "Prepare boot jobs for ${{ inputs.distro_name }}"
@@ -117,7 +121,7 @@ jobs:
         uses: foundriesio/lava-action@v13
         with:
           lava_token: ${{ secrets.LAVATOKEN }}
-          lava_url: 'lava.infra.foundries.io'
+          lava_url: ${{ env.LAVA_URL }}
           job_definition: ${{ matrix.target.path }}
           wait_for_job: true
           fail_action_on_failure: true
@@ -238,7 +242,7 @@ jobs:
         uses: foundriesio/lava-action@v13
         with:
           lava_token: ${{ secrets.LAVATOKEN }}
-          lava_url: 'lava.infra.foundries.io'
+          lava_url: ${{ env.LAVA_URL }}
           job_definition: ${{ matrix.target.path }}
           wait_for_job: true
           fail_action_on_failure: true
@@ -276,6 +280,7 @@ jobs:
           prefix: "${{ inputs.distro_name }}${{ inputs.distro_suffix }}-test-job*"
           summary_file_name: "${{ inputs.distro_name }}${{ inputs.distro_suffix }}-test_job_summary"
           summary_title: "${{ inputs.distro_name }}${{ inputs.distro_suffix }}"
+          lava_url: ${{ env.LAVA_URL }}
 
       - name: Download Summary
         uses: actions/download-artifact@v7
