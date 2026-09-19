@@ -339,14 +339,6 @@ jobs:
                 type: default
                 dirname: ""
                 yamlfile: ""
-          - machine: rb3gen2-core-kit
-            distro:
-                name: qcom-distro-kvm
-                yamlfile: ':ci/qcom-distro-kvm.yml'
-            kernel:
-                type: default
-                dirname: ""
-                yamlfile: ""
           - machine: qcom-armv7a
             distro:
                 name: nodistro
@@ -413,8 +405,8 @@ jobs:
                 yamlfile: ":ci/u-boot-qcom.yml"
           - machine: rb3gen2-core-kit-open-fw
             distro:
-                name: qcom-distro-kvm
-                yamlfile: ':ci/qcom-distro-kvm.yml'
+                name: qcom-distro
+                yamlfile: ':ci/qcom-distro.yml'
             kernel:
                 type: default
                 dirname: ""
