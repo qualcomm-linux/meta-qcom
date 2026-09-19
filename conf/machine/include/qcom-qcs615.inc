@@ -15,3 +15,5 @@ MACHINE_ESSENTIAL_EXTRA_RRECOMMENDS += " \
 MACHINE_EXTRA_RRECOMMENDS += " \
     packagegroup-qcom-boot-additional \
 "
+
+QCOM_FIRMWARE_SIGN_SECPROFILE ?= "talos_security_profile.xml"

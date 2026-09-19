@@ -37,4 +37,25 @@ do_deploy() {
 }
 addtask deploy before do_build after do_install
 
-inherit allarch
+# Optional secure-boot signing, in place, before do_deploy
+# (QCOM_FIRMWARE_SIGN_ENABLE).  Unsigned boot binaries are the same for
+# every machine; signed ones are bound to its Security Profile and keys.
+inherit qcom-firmware-sign
+inherit_defer ${@'allarch' if d.getVar('QCOM_FIRMWARE_SIGN_ENABLE') != '1' else ''}
+
+do_qcom_firmware_sign() {
+    if ! qcom_check_signing_enabled ; then
+        return 0
+    fi
+
+    for bootdir in ${QCOM_BOOT_BINARY_DIRS}; do
+        [ -d "${bootdir}" ] || continue
+
+        bbnote "qcom-firmware-sign: walking ${bootdir} for MBN/ELF/MELF blobs"
+        find "${bootdir}" -maxdepth 1 -type f \
+            \( -iname '*.mbn' -o -iname '*.elf' -o -iname '*.melf' \) \
+            | while read -r f; do
+                qcom_sign_verify_file "${f}" || bbfatal "Failed to sign: ${f}"
+            done
+    done
+}

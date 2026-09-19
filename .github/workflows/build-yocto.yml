@@ -452,6 +452,14 @@ jobs:
                 yamlfile: ""
           - machine: rb3gen2-core-kit
             distro:
+                name: nodistro
+                yamlfile: ':ci/secure-boot.yml:ci/ecdsa-secure-boot-test-keys.yml'
+            kernel:
+                type: secure-boot
+                dirname: "_secure-boot"
+                yamlfile: ""
+          - machine: rb3gen2-core-kit
+            distro:
                 name: qcom-distro
                 yamlfile: ':ci/qcom-distro.yml'
             kernel:
