@@ -5,7 +5,7 @@ overrides:
         oe-core:
             commit: ef022bf82d79015802309d14c28b13373ebe53f5
         meta-lts-mixins:
-            commit: 8bfc4ae8cf7fc835a23d7a27830f866617d9808f
+            commit: 30947f51f44e7251a870e7424c42db353e29c020
         bitbake:
             commit: 0ad6c1c34a5e07a5f8dd66ab248c1e7b37b69fa9
         meta-arm:

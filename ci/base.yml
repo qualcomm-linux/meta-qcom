@@ -18,12 +18,8 @@ repos:
       meta:
 
   meta-lts-mixins:
-    url: https://git.yoctoproject.org/meta-lts-mixins
-    branch: wrynose/linux-firmware
-    patches:
-      shirka-wlan-fw:
-        repo: meta-qcom
-        path: patches/linux-firmware-mixin/0001-linux-firmware-backport-shikra-wlan-firmware-support.patch
+    url: https://github.com/quaresmajose/meta-lts-mixins
+    branch: wrynose/linux-firmware-next
 
   bitbake:
     url: https://github.com/openembedded/bitbake
