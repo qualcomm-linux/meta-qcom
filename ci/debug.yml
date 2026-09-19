@@ -5,7 +5,7 @@ local_conf_header:
   debug-build: |
     DEBUG_BUILD = "1"
     IMAGE_GEN_DEBUGFS = "1"
-    IMAGE_FSTYPES_DEBUGFS = "tar.bz2"
+    IMAGE_FSTYPES_DEBUGFS = "tar.zst"
 
   cmdline-dbg: |
     KERNEL_CMDLINE_EXTRA_FTRACE = "ftrace=tracing_on trace_buf_size=5M trace_event=timer:timer_expire_entry,timer:timer_expire_exit,timer:hrtimer_cancel,timer:hrtimer_expire_entry,timer:hrtimer_expire_exit,timer:hrtimer_init,timer:hrtimer_start,irq:*,workqueue:*,sched:sched_migrate_task,sched:sched_pi_setprio,sched:sched_switch,sched:sched_wakeup,sched:sched_wakeup_new,power:clock_set_rate,power:clock_enable,power:clock_disable,power:cpu_frequency,regulator:*,thermal:thermal_zone_trip,thermal:thermal_temperature,thermal:cdev_update,rpmh:rpmh_send_msg"

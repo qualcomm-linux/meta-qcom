@@ -2,6 +2,7 @@
 
 [![Build on push](https://img.shields.io/github/actions/workflow/status/qualcomm-linux/meta-qcom/push.yml?branch=wrynose&label=Build%20on%20push)](https://github.com/qualcomm-linux/meta-qcom/actions/workflows/push.yml?query=branch%3Awrynose)
 [![Nightly Build](https://img.shields.io/github/actions/workflow/status/qualcomm-linux/meta-qcom/nightly-build.yml?branch=wrynose&label=Nightly%20Build)](https://github.com/qualcomm-linux/meta-qcom/actions/workflows/nightly-build.yml?query=branch%3Awrynose)
+[![Weekly Build](https://img.shields.io/github/actions/workflow/status/qualcomm-linux/meta-qcom/weekly-build.yml?branch=wrynose&label=Weekly%20Build)](https://github.com/qualcomm-linux/meta-qcom/actions/workflows/weekly-build.yml?query=branch%3Awrynose)
 
 ## Introduction
 

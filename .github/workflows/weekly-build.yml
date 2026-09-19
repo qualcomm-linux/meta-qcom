@@ -1,43 +1,43 @@
-name: Nightly Build
-run-name: "Nightly Build (${{ github.ref_name }})"
+name: Weekly Build
+run-name: "Weekly Build (${{ github.ref_name }})"
 
 on:
   workflow_dispatch:
   schedule:
-  # NOTE - changes to the cron spec should be pushed by https://github.com/quic-yocto-ci
-  # so that build notification emails will be sent out properly.
-  # At 0:22 UTC from Sunday to Friday - picked a random "minute" as top of hour
-  # can be busy in github. Saturday is covered by the weekly build, which builds
-  # a superset of this matrix.
-  - cron: "22 0 * * 0-5"
+  # At 0:22 UTC on Saturday - picked a random "minute" as top of hour can be
+  # busy in github. The weekly build repeats the whole nightly matrix and adds
+  # the entries that are too expensive to build every night, so it takes over
+  # Saturday's nightly slot and its results are published well before Monday.
+  - cron: "22 0 * * 6"
 
 permissions:
   contents: read
 
 jobs:
-  build-nightly:
+  build-weekly:
     permissions:
       contents: read
       packages: read
       actions: read
     uses: ./.github/workflows/build-yocto.yml
     with:
+      profile: weekly
       skip_if_github_cached: true
-  test-nightly:
-    if: needs.build-nightly.outputs.build_skipped != 'true'
+  test-weekly:
+    if: needs.build-weekly.outputs.build_skipped != 'true'
     permissions:
       contents: read
       actions: read
       checks: write
       pull-requests: write
     uses: ./.github/workflows/test.yml
-    needs: build-nightly
+    needs: build-weekly
     secrets:
       LAVATOKEN: ${{ secrets.LAVATOKEN }}
     with:
       build_id: ${{ github.run_id }}
   publish-test-results:
-    if: needs.build-nightly.outputs.build_skipped != 'true'
+    if: needs.build-weekly.outputs.build_skipped != 'true'
     permissions:
       contents: read
       packages: read
@@ -45,7 +45,7 @@ jobs:
       checks: write
       pull-requests: write
     uses: ./.github/workflows/publish-results.yml
-    needs: [build-nightly, test-nightly]
+    needs: [build-weekly, test-weekly]
     secrets:
       TEST_REPORTING_APP_TOKEN: ${{ secrets.TEST_REPORTING_APP_TOKEN }}
     with:

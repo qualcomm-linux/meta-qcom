@@ -6,7 +6,7 @@ on:
       profile:
         required: false
         type: string
-        default: "full" # values: pr | full
+        default: "full" # values: pr | full | weekly
       skip_if_github_cached:
         required: false
         type: boolean
@@ -138,7 +138,8 @@ jobs:
       - name: Setup cache variables (used by oe-selftest)
         run: |
           echo "DL_DIR=${CACHE_DIR}/downloads" >> $GITHUB_ENV
-          echo "SSTATE_DIR=${CACHE_DIR}/sstate-cache-$(date '+%Y-%m')" >> $GITHUB_ENV
+          # use a single shared sstate cache folder, cleaned up by mtime
+          echo "SSTATE_DIR=${CACHE_DIR}/sstate-cache" >> $GITHUB_ENV
 
       - name: Run Yocto patchreview
         run: |
@@ -191,14 +192,17 @@ jobs:
       # coverage: nodistro (including the nogl variant) covers the plain OE
       # configuration and qcom-distro-catchall enables a superset of the
       # qcom-distro DISTRO_FEATURES, so the remaining distro and kernel
-      # combinations only repeat already-covered world builds.
-      world: ${{ (startsWith(matrix.distro.name, 'nodistro') || matrix.distro.name == 'qcom-distro-catchall') && matrix.kernel.type == 'default' }}
+      # combinations only repeat already-covered world builds. qcom-armv7a has
+      # no qcom-distro-catchall variant, so its qcom-distro build is the
+      # distro-family world build for that machine.
+      world: ${{ (startsWith(matrix.distro.name, 'nodistro') || matrix.distro.name == 'qcom-distro-catchall' || (matrix.machine == 'qcom-armv7a' && matrix.distro.name == 'qcom-distro')) && matrix.kernel.type == 'default' }}
       machine: ${{matrix.machine}}
       distro_yaml: ${{matrix.distro.yamlfile}}
       distro_name: ${{matrix.distro.name}}
       kernel_yaml: ${{matrix.kernel.yamlfile}}
       kernel_dirname: ${{matrix.kernel.dirname}}
       cache_dir: ${{ needs.compile-env.outputs.CACHE_DIR }}
+      profile: ${{ inputs.profile }}
 
   compile_sdk:
     needs: [github-cache-check, compile_warm_up, compile-env]
@@ -217,6 +221,7 @@ jobs:
       kernel_yaml: ''
       kernel_dirname: ''
       cache_dir: ${{ needs.compile-env.outputs.CACHE_DIR }}
+      profile: ${{ inputs.profile }}
 
   compile:
     needs: [github-cache-check, compile_warm_up, compile-env]
@@ -251,9 +256,11 @@ jobs:
           - name: qcom-distro-catchall
             yamlfile: ':ci/qcom-distro-catchall.yml'
           - name: debug
-            yamlfile: ':ci/qcom-distro-catchall.yml:ci/debug.yml'
+            yamlfile: ':ci/qcom-distro-catchall.yml:ci/debug.yml:ci/nospdx.yml'
+            profile: weekly
           - name: performance
-            yamlfile: ':ci/qcom-distro-catchall.yml:ci/performance.yml'
+            yamlfile: ':ci/qcom-distro-catchall.yml:ci/performance.yml:ci/nospdx.yml'
+            profile: full
         kernel:
           - type: default
             dirname: ""
@@ -272,6 +279,14 @@ jobs:
                 type: rt-6.18-distro-kvm
           - distro:
                 name: qcom-distro-catchall
+            kernel:
+                type: rt-6.18-distro-kvm
+          - distro:
+                name: debug
+            kernel:
+                type: rt-6.18-distro-kvm
+          - distro:
+                name: performance
             kernel:
                 type: rt-6.18-distro-kvm
           # Exclude jobs from compile_warm_up
@@ -454,19 +469,27 @@ jobs:
     uses: ./.github/workflows/compile.yml
     with:
       name: ${{ matrix.machine }}/${{ matrix.distro.name }}${{ matrix.kernel.dirname }}
-      enabled: ${{inputs.profile != 'pr' || (matrix.distro.name != 'debug' && matrix.distro.name != 'performance')}}
+      # Which profiles build this entry. Entries without distro.profile are
+      # built by every profile; an entry marked with distro.profile is built by
+      # that profile and by the wider ones above it, ordered pr < full (push
+      # and nightly) < weekly. Add "profile: weekly" to the distro entry of a
+      # target that is too expensive to build every night.
+      enabled: ${{ (matrix.distro.profile || 'any') == 'any' || (matrix.distro.profile == 'full' && inputs.profile != 'pr') || (matrix.distro.profile == 'weekly' && inputs.profile == 'weekly') }}
       # One world build per machine and distro family is enough for compile
       # coverage: nodistro (including the nogl variant) covers the plain OE
       # configuration and qcom-distro-catchall enables a superset of the
       # qcom-distro DISTRO_FEATURES, so the remaining distro and kernel
-      # combinations only repeat already-covered world builds.
-      world: ${{ (startsWith(matrix.distro.name, 'nodistro') || matrix.distro.name == 'qcom-distro-catchall') && matrix.kernel.type == 'default' }}
+      # combinations only repeat already-covered world builds. qcom-armv7a has
+      # no qcom-distro-catchall variant, so its qcom-distro build is the
+      # distro-family world build for that machine.
+      world: ${{ (startsWith(matrix.distro.name, 'nodistro') || matrix.distro.name == 'qcom-distro-catchall' || (matrix.machine == 'qcom-armv7a' && matrix.distro.name == 'qcom-distro')) && matrix.kernel.type == 'default' }}
       machine: ${{matrix.machine}}
       distro_yaml: ${{matrix.distro.yamlfile}}
       distro_name: ${{matrix.distro.name}}
       kernel_yaml: ${{matrix.kernel.yamlfile}}
       kernel_dirname: ${{matrix.kernel.dirname}}
       cache_dir: ${{ needs.compile-env.outputs.CACHE_DIR }}
+      profile: ${{ inputs.profile }}
 
   publish_summary:
     needs: [github-cache-check, compile, compile_sdk]
