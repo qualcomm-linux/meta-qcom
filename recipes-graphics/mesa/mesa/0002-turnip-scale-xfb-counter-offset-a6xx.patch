@@ -1,0 +1,224 @@
+From 71458294276fa2a042edc5858f4849e5182e1ad3 Mon Sep 17 00:00:00 2001
+From: Dmitry Baryshkov <dmitry.baryshkov@oss.qualcomm.com>
+Date: Mon, 17 Aug 2026 04:51:11 +0300
+Subject: [PATCH] turnip: scale the transform feedback counter offset on a6xx
+
+vkCmdDrawIndirectByteCountEXT draws too many vertices whenever
+counterOffset is non-zero, failing every
+dEQP-VK.transform_feedback.simple*.draw_indirect*_counter_offset_* case
+on a618, a660 and a702.  The a6xx command processor holds the
+CP_DRAW_AUTO counter in dwords and so shifts NUM_VERTICES_OFFSET right
+by two before subtracting it, while turnip hands it a byte counter --
+tu_CmdEndTransformFeedbackEXT converts one to the other -- along with a
+byte stride, so only a quarter of the requested offset is taken off.
+
+Scale the offset up by four on a6xx so that shift cancels.  a7xx shifts
+the counter too and already gets a consistent pair.
+
+Fixes: 20e12d9ef4e2 ("turnip: implement CmdDrawIndirectByteCountEXT")
+Assisted-by: Claude:claude-opus-5
+Signed-off-by: Dmitry Baryshkov <dmitry.baryshkov@oss.qualcomm.com>
+Part-of: <https://gitlab.freedesktop.org/mesa/mesa/-/merge_requests/43801>
+
+Upstream-Status: Backport [https://gitlab.freedesktop.org/mesa/mesa/-/commit/71458294276fa2a042edc5858f4849e5182e1ad3]
+
+---
+ src/freedreno/ci/freedreno-a618-fails.txt     | 52 -------------------
+ src/freedreno/ci/freedreno-a660-fails.txt     | 37 -------------
+ src/freedreno/ci/freedreno-a702-fails.txt     | 18 +------
+ src/freedreno/vulkan/tu_cmd_buffer.cc         |  5 ++
+ .../ci/android-angle-venus-tu-fails.txt       |  3 --
+ 5 files changed, 7 insertions(+), 108 deletions(-)
+ delete mode 100644 src/virtio/ci/android-angle-venus-tu-fails.txt
+
+diff --git a/src/freedreno/ci/freedreno-a618-fails.txt b/src/freedreno/ci/freedreno-a618-fails.txt
+index fbf1c66f80dc..8bcbd5ac7eb6 100644
+--- a/src/freedreno/ci/freedreno-a618-fails.txt
++++ b/src/freedreno/ci/freedreno-a618-fails.txt
+@@ -219,58 +219,6 @@ KHR-GL46.texture_lod_bias.texture_lod_bias_all,Fail
+ 
+ # GL tests above, Vulkan tests below
+ 
+-# New fails in 1.4.3.3
+-dEQP-VK.transform_feedback.simple.draw_indirect_counter_offset_16,Fail
+-dEQP-VK.transform_feedback.simple.draw_indirect_counter_offset_244,Fail
+-dEQP-VK.transform_feedback.simple.draw_indirect_counter_offset_508,Fail
+-dEQP-VK.transform_feedback.simple.draw_indirect_multiview_counter_offset_16,Fail
+-dEQP-VK.transform_feedback.simple.draw_indirect_multiview_counter_offset_244,Fail
+-dEQP-VK.transform_feedback.simple.draw_indirect_multiview_counter_offset_508,Fail
+-dEQP-VK.transform_feedback.simple_fast_gpl.draw_indirect_counter_offset_16,Fail
+-dEQP-VK.transform_feedback.simple_fast_gpl.draw_indirect_counter_offset_244,Fail
+-dEQP-VK.transform_feedback.simple_fast_gpl.draw_indirect_counter_offset_508,Fail
+-dEQP-VK.transform_feedback.simple_fast_gpl.draw_indirect_multiview_counter_offset_16,Fail
+-dEQP-VK.transform_feedback.simple_fast_gpl.draw_indirect_multiview_counter_offset_244,Fail
+-dEQP-VK.transform_feedback.simple_fast_gpl.draw_indirect_multiview_counter_offset_508,Fail
+-dEQP-VK.transform_feedback.simple_optimized_gpl.draw_indirect_counter_offset_16,Fail
+-dEQP-VK.transform_feedback.simple_optimized_gpl.draw_indirect_counter_offset_244,Fail
+-dEQP-VK.transform_feedback.simple_optimized_gpl.draw_indirect_counter_offset_508,Fail
+-dEQP-VK.transform_feedback.simple_optimized_gpl.draw_indirect_multiview_counter_offset_16,Fail
+-dEQP-VK.transform_feedback.simple_optimized_gpl.draw_indirect_multiview_counter_offset_244,Fail
+-dEQP-VK.transform_feedback.simple_optimized_gpl.draw_indirect_multiview_counter_offset_508,Fail
+-android-dEQP-VK.transform_feedback.simple_fast_gpl.draw_indirect_counter_offset_244,Fail
+-asan-dEQP-VK.transform_feedback.simple_fast_gpl.draw_indirect_counter_offset_16,Fail
+-asan-dEQP-VK.transform_feedback.simple_fast_gpl.draw_indirect_counter_offset_244,Fail
+-gmem-dEQP-VK.transform_feedback.simple_fast_gpl.draw_indirect_counter_offset_16,Fail
+-gmem-dEQP-VK.transform_feedback.simple_fast_gpl.draw_indirect_multiview_counter_offset_16,Fail
+-gmem-dEQP-VK.transform_feedback.simple.draw_indirect_counter_offset_508,Fail
+-gmem-dEQP-VK.transform_feedback.simple.draw_indirect_multiview_counter_offset_16,Fail
+-nobin-dEQP-VK.transform_feedback.simple.draw_indirect_multiview_counter_offset_16,Fail
+-nobin-dEQP-VK.transform_feedback.simple.draw_indirect_counter_offset_244,Fail
+-nobin-dEQP-VK.transform_feedback.simple.draw_indirect_counter_offset_508,Fail
+-nobin-dEQP-VK.transform_feedback.simple.draw_indirect_multiview_counter_offset_244,Fail
+-nobin-dEQP-VK.transform_feedback.simple_fast_gpl.draw_indirect_counter_offset_16,Fail
+-nobin-dEQP-VK.transform_feedback.simple_fast_gpl.draw_indirect_multiview_counter_offset_16,Fail
+-nobin-dEQP-VK.transform_feedback.simple_fast_gpl.draw_indirect_multiview_counter_offset_244,Fail
+-nobin-dEQP-VK.transform_feedback.simple_fast_gpl.draw_indirect_multiview_counter_offset_508,Fail
+-nobin-dEQP-VK.transform_feedback.simple_optimized_gpl.draw_indirect_counter_offset_16,Fail
+-nobin-dEQP-VK.transform_feedback.simple_optimized_gpl.draw_indirect_counter_offset_244,Fail
+-nobin-dEQP-VK.transform_feedback.simple_optimized_gpl.draw_indirect_counter_offset_508,Fail
+-nobin-dEQP-VK.transform_feedback.simple_optimized_gpl.draw_indirect_multiview_counter_offset_16,Fail
+-nobin-dEQP-VK.transform_feedback.simple_optimized_gpl.draw_indirect_multiview_counter_offset_244,Fail
+-
+-# New failures with VKCTS 1.4.4.0
+-gmem-dEQP-VK.transform_feedback.simple.draw_indirect_counter_offset_16,Fail
+-gmem-dEQP-VK.transform_feedback.simple.draw_indirect_multiview_counter_offset_508,Fail
+-gmem-dEQP-VK.transform_feedback.simple_fast_gpl.draw_indirect_counter_offset_244,Fail
+-gmem-dEQP-VK.transform_feedback.simple_fast_gpl.draw_indirect_counter_offset_508,Fail
+-gmem-dEQP-VK.transform_feedback.simple_optimized_gpl.draw_indirect_multiview_counter_offset_508,Fail
+-nobin-dEQP-VK.transform_feedback.simple.draw_indirect_counter_offset_16,Fail
+-nobin-dEQP-VK.transform_feedback.simple.draw_indirect_multiview_counter_offset_508,Fail
+-nobin-dEQP-VK.transform_feedback.simple_fast_gpl.draw_indirect_counter_offset_244,Fail
+-nobin-dEQP-VK.transform_feedback.simple_fast_gpl.draw_indirect_counter_offset_508,Fail
+-nobin-dEQP-VK.transform_feedback.simple_optimized_gpl.draw_indirect_multiview_counter_offset_508,Fail
+-
+ #Unexpected CL error: CL_SUCCESS 0
+ #Expected CL error: CL_INVALID_LINKER_OPTIONS -67
+ #Failed (error code: CL_SUCCESS): Trigger CL_INVALID_LINKER_OPTIONS if the linker options specified by options are invalid.
+diff --git a/src/freedreno/ci/freedreno-a660-fails.txt b/src/freedreno/ci/freedreno-a660-fails.txt
+index ec230666d4d8..6520df98bfbb 100644
+--- a/src/freedreno/ci/freedreno-a660-fails.txt
++++ b/src/freedreno/ci/freedreno-a660-fails.txt
+@@ -6,43 +6,6 @@ KHR-GL46.texture_lod_bias.texture_lod_bias_all,Fail
+ 
+ # GL tests above, Vulkan tests below
+ 
+-# New fails in 1.4.3.3
+-dEQP-VK.transform_feedback.simple.draw_indirect_counter_offset_16,Fail
+-dEQP-VK.transform_feedback.simple.draw_indirect_counter_offset_244,Fail
+-dEQP-VK.transform_feedback.simple.draw_indirect_counter_offset_508,Fail
+-dEQP-VK.transform_feedback.simple.draw_indirect_multiview_counter_offset_16,Fail
+-dEQP-VK.transform_feedback.simple.draw_indirect_multiview_counter_offset_244,Fail
+-dEQP-VK.transform_feedback.simple.draw_indirect_multiview_counter_offset_508,Fail
+-dEQP-VK.transform_feedback.simple_fast_gpl.draw_indirect_counter_offset_16,Fail
+-dEQP-VK.transform_feedback.simple_fast_gpl.draw_indirect_counter_offset_244,Fail
+-dEQP-VK.transform_feedback.simple_fast_gpl.draw_indirect_counter_offset_508,Fail
+-dEQP-VK.transform_feedback.simple_fast_gpl.draw_indirect_multiview_counter_offset_16,Fail
+-dEQP-VK.transform_feedback.simple_fast_gpl.draw_indirect_multiview_counter_offset_244,Fail
+-dEQP-VK.transform_feedback.simple_fast_gpl.draw_indirect_multiview_counter_offset_508,Fail
+-dEQP-VK.transform_feedback.simple_optimized_gpl.draw_indirect_counter_offset_16,Fail
+-dEQP-VK.transform_feedback.simple_optimized_gpl.draw_indirect_counter_offset_244,Fail
+-dEQP-VK.transform_feedback.simple_optimized_gpl.draw_indirect_counter_offset_508,Fail
+-dEQP-VK.transform_feedback.simple_optimized_gpl.draw_indirect_multiview_counter_offset_16,Fail
+-dEQP-VK.transform_feedback.simple_optimized_gpl.draw_indirect_multiview_counter_offset_244,Fail
+-dEQP-VK.transform_feedback.simple_optimized_gpl.draw_indirect_multiview_counter_offset_508,Fail
+-gmem-dEQP-VK.transform_feedback.simple.draw_indirect_multiview_counter_offset_16,Fail
+-gmem-dEQP-VK.transform_feedback.simple.draw_indirect_multiview_counter_offset_244,Fail
+-nobin-dEQP-VK.transform_feedback.simple.draw_indirect_multiview_counter_offset_16,Fail
+-nobin-dEQP-VK.transform_feedback.simple.draw_indirect_multiview_counter_offset_244,Fail
+-
+-# New failures with VKCTS 1.4.4.0
+-gmem-dEQP-VK.transform_feedback.simple.draw_indirect_counter_offset_16,Fail
+-gmem-dEQP-VK.transform_feedback.simple.draw_indirect_multiview_counter_offset_508,Fail
+-gmem-dEQP-VK.transform_feedback.simple_fast_gpl.draw_indirect_counter_offset_244,Fail
+-gmem-dEQP-VK.transform_feedback.simple_fast_gpl.draw_indirect_counter_offset_508,Fail
+-gmem-dEQP-VK.transform_feedback.simple_optimized_gpl.draw_indirect_multiview_counter_offset_508,Fail
+-nobin-dEQP-VK.transform_feedback.simple.draw_indirect_counter_offset_16,Fail
+-nobin-dEQP-VK.transform_feedback.simple.draw_indirect_multiview_counter_offset_508,Fail
+-nobin-dEQP-VK.transform_feedback.simple_fast_gpl.draw_indirect_counter_offset_244,Fail
+-nobin-dEQP-VK.transform_feedback.simple_fast_gpl.draw_indirect_counter_offset_508,Fail
+-nobin-dEQP-VK.transform_feedback.simple_optimized_gpl.draw_indirect_multiview_counter_offset_508,Fail
+-
+-
+ # Bad assumptions in piglit about layout of multiplanar formats,
+ # it should use separate buffers per plane:
+ spec@ext_image_dma_buf_import@ext_image_dma_buf_import-sample_yvu420,Fail
+diff --git a/src/freedreno/ci/freedreno-a702-fails.txt b/src/freedreno/ci/freedreno-a702-fails.txt
+index 2a963bfe16f8..bc2b9d939bd9 100644
+--- a/src/freedreno/ci/freedreno-a702-fails.txt
++++ b/src/freedreno/ci/freedreno-a702-fails.txt
+@@ -127,45 +127,31 @@ dEQP-VK.shader_object.misc.state.pipeline.vert.depth.bias,Fail
+ dEQP-VK.shader_object.misc.state.pipeline.vert_frag.depth.bias,Fail
+ gmem-dEQP-VK.shader_object.misc.state.pipeline.vert.depth.bias,Fail
+ 
+-# Transform feedback counter_offset does not currently work on A6XX & A702
+-dEQP-VK.transform_feedback.simple.draw_indirect_counter_offset_16,Fail
+-dEQP-VK.transform_feedback.simple.draw_indirect_counter_offset_244,Fail
+-dEQP-VK.transform_feedback.simple.draw_indirect_counter_offset_508,Fail
++# A702 has no multiview.  The CTS only checks for multiview support in one of
++# its three multiview test types, so the other two run here regardless and fail.
+ dEQP-VK.transform_feedback.simple.draw_indirect_multiview_counter_buffer_offset_16,Fail
+ dEQP-VK.transform_feedback.simple.draw_indirect_multiview_counter_buffer_offset_244,Fail
+ dEQP-VK.transform_feedback.simple.draw_indirect_multiview_counter_buffer_offset_508,Fail
+ dEQP-VK.transform_feedback.simple.draw_indirect_multiview_counter_offset_16,Fail
+ dEQP-VK.transform_feedback.simple.draw_indirect_multiview_counter_offset_244,Fail
+ dEQP-VK.transform_feedback.simple.draw_indirect_multiview_counter_offset_508,Fail
+-dEQP-VK.transform_feedback.simple_fast_gpl.draw_indirect_counter_offset_16,Fail
+-dEQP-VK.transform_feedback.simple_fast_gpl.draw_indirect_counter_offset_244,Fail
+-dEQP-VK.transform_feedback.simple_fast_gpl.draw_indirect_counter_offset_508,Fail
+ dEQP-VK.transform_feedback.simple_fast_gpl.draw_indirect_multiview_counter_buffer_offset_16,Fail
+ dEQP-VK.transform_feedback.simple_fast_gpl.draw_indirect_multiview_counter_buffer_offset_244,Fail
+ dEQP-VK.transform_feedback.simple_fast_gpl.draw_indirect_multiview_counter_buffer_offset_508,Fail
+ dEQP-VK.transform_feedback.simple_fast_gpl.draw_indirect_multiview_counter_offset_16,Fail
+ dEQP-VK.transform_feedback.simple_fast_gpl.draw_indirect_multiview_counter_offset_244,Fail
+ dEQP-VK.transform_feedback.simple_fast_gpl.draw_indirect_multiview_counter_offset_508,Fail
+-dEQP-VK.transform_feedback.simple_optimized_gpl.draw_indirect_counter_offset_16,Fail
+-dEQP-VK.transform_feedback.simple_optimized_gpl.draw_indirect_counter_offset_244,Fail
+-dEQP-VK.transform_feedback.simple_optimized_gpl.draw_indirect_counter_offset_508,Fail
+ dEQP-VK.transform_feedback.simple_optimized_gpl.draw_indirect_multiview_counter_buffer_offset_16,Fail
+ dEQP-VK.transform_feedback.simple_optimized_gpl.draw_indirect_multiview_counter_buffer_offset_244,Fail
+ dEQP-VK.transform_feedback.simple_optimized_gpl.draw_indirect_multiview_counter_buffer_offset_508,Fail
+ dEQP-VK.transform_feedback.simple_optimized_gpl.draw_indirect_multiview_counter_offset_16,Fail
+ dEQP-VK.transform_feedback.simple_optimized_gpl.draw_indirect_multiview_counter_offset_244,Fail
+ dEQP-VK.transform_feedback.simple_optimized_gpl.draw_indirect_multiview_counter_offset_508,Fail
+-gmem-dEQP-VK.transform_feedback.simple.draw_indirect_counter_offset_16,Fail
+ gmem-dEQP-VK.transform_feedback.simple.draw_indirect_multiview_counter_buffer_offset_16,Fail
+-gmem-dEQP-VK.transform_feedback.simple_fast_gpl.draw_indirect_counter_offset_16,Fail
+ gmem-dEQP-VK.transform_feedback.simple_fast_gpl.draw_indirect_multiview_counter_offset_16,Fail
+-gmem-dEQP-VK.transform_feedback.simple_optimized_gpl.draw_indirect_counter_offset_508,Fail
+ gmem-dEQP-VK.transform_feedback.simple_optimized_gpl.draw_indirect_multiview_counter_buffer_offset_244,Fail
+-nobin-dEQP-VK.transform_feedback.simple.draw_indirect_counter_offset_16,Fail
+ nobin-dEQP-VK.transform_feedback.simple.draw_indirect_multiview_counter_buffer_offset_16,Fail
+-nobin-dEQP-VK.transform_feedback.simple_fast_gpl.draw_indirect_counter_offset_16,Fail
+ nobin-dEQP-VK.transform_feedback.simple_fast_gpl.draw_indirect_multiview_counter_offset_16,Fail
+-nobin-dEQP-VK.transform_feedback.simple_optimized_gpl.draw_indirect_counter_offset_508,Fail
+ nobin-dEQP-VK.transform_feedback.simple_optimized_gpl.draw_indirect_multiview_counter_buffer_offset_244,Fail
+ 
+ dEQP-VK.ycbcr.copy.a1b5g5r5_unorm_pack16.g8_b8r8_2plane_420_unorm.optimal_optimal,Fail
+diff --git a/src/freedreno/vulkan/tu_cmd_buffer.cc b/src/freedreno/vulkan/tu_cmd_buffer.cc
+index 617c426bc1dc..489f3e090db3 100644
+--- a/src/freedreno/vulkan/tu_cmd_buffer.cc
++++ b/src/freedreno/vulkan/tu_cmd_buffer.cc
+@@ -9306,6 +9306,11 @@ tu_CmdDrawIndirectByteCountEXT(VkCommandBuffer commandBuffer,
+        * the vertexStride should also be in units of dwords.
+        */
+       vertexStride = vertexStride >> 2;
++   } else {
++      /* On a6xx only the offset is shifted right by 2, so scale it up to
++       * match the byte counter and stride.
++       */
++      counterOffset = counterOffset << 2;
+    }
+    tu_cs_emit(cs, instanceCount);
+    tu_cs_emit_qw(cs, vk_buffer_address(&buf->vk, counterBufferOffset));
+diff --git a/src/virtio/ci/android-angle-venus-tu-fails.txt b/src/virtio/ci/android-angle-venus-tu-fails.txt
+deleted file mode 100644
+index 8a63865a3b4a..000000000000
+--- a/src/virtio/ci/android-angle-venus-tu-fails.txt
++++ /dev/null
+@@ -1,3 +0,0 @@
+-# Turnip host failure
+-dEQP-VK.transform_feedback.simple_fast_gpl.draw_indirect_counter_offset_16,Fail
+-dEQP-VK.transform_feedback.simple_fast_gpl.draw_indirect_counter_offset_244,Fail
+-- 
+GitLab
+

@@ -1,0 +1,102 @@
+From 5b336f43ea9f4249ddf480797eec334f77dc54b2 Mon Sep 17 00:00:00 2001
+From: Valentine Burley <valentine.burley@collabora.com>
+Date: Mon, 24 Aug 2026 09:14:44 +0200
+Subject: [PATCH] tu: Fix GMEM clears with an FDM offset on the blit-event
+ clear path
+
+Unlike the a7xx generic clear path, GMEM was left uncleared for a6xx
+devices with per-view viewports.
+
+Fixes: 9e632244246 ("tu: Use a patchpoint for subpass clears with FDM")
+Signed-off-by: Valentine Burley <valentine.burley@collabora.com>
+Part-of: <https://gitlab.freedesktop.org/mesa/mesa/-/merge_requests/43953>
+
+Upstream-Status: Backport [https://gitlab.freedesktop.org/mesa/mesa/-/commit/5b336f43ea9f4249ddf480797eec334f77dc54b2]
+
+---
+ src/freedreno/ci/freedreno-a660-fails.txt | 37 -----------------------
+ src/freedreno/vulkan/tu_clear_blit.cc     |  9 +++---
+ 2 files changed, 5 insertions(+), 41 deletions(-)
+
+diff --git a/src/freedreno/ci/freedreno-a660-fails.txt b/src/freedreno/ci/freedreno-a660-fails.txt
+index 6520df98bfbb..04b5a9421dea 100644
+--- a/src/freedreno/ci/freedreno-a660-fails.txt
++++ b/src/freedreno/ci/freedreno-a660-fails.txt
+@@ -52,43 +52,6 @@ program@execute@vector-conversion,Fail
+ # Initial ANGLE failures
+ angle-dEQP-GLES2.functional.shaders.algorithm.rgb_to_hsl_vertex,Fail
+ 
+-# VKCTS 1.4.5.3 -> 1.4.6.1 uprev
+-# No GPU fault and the failures seem consistent.
+-dEQP-VK.renderpasses.dynamic_rendering.primary_cmd_buff.custom_resolve.fast_lib.fdm_nonsubsampled_large_fb_with_offset,Fail
+-dEQP-VK.renderpasses.dynamic_rendering.primary_cmd_buff.custom_resolve.fast_lib.fdm_nonsubsampled_multilayer_large_fb_with_offset,Fail
+-dEQP-VK.renderpasses.dynamic_rendering.primary_cmd_buff.custom_resolve.fast_lib.fdm_nonsubsampled_multilayer_with_offset,Fail
+-dEQP-VK.renderpasses.dynamic_rendering.primary_cmd_buff.custom_resolve.fast_lib.fdm_nonsubsampled_multiview_large_fb_with_offset,Fail
+-dEQP-VK.renderpasses.dynamic_rendering.primary_cmd_buff.custom_resolve.fast_lib.fdm_nonsubsampled_multiview_with_offset,Fail
+-dEQP-VK.renderpasses.dynamic_rendering.primary_cmd_buff.custom_resolve.fast_lib.fdm_nonsubsampled_with_offset,Fail
+-dEQP-VK.renderpasses.dynamic_rendering.primary_cmd_buff.custom_resolve.fast_lib.fdm_subsampled_large_fb_with_offset,Fail
+-dEQP-VK.renderpasses.dynamic_rendering.primary_cmd_buff.custom_resolve.fast_lib.fdm_subsampled_with_offset,Fail
+-dEQP-VK.renderpasses.dynamic_rendering.primary_cmd_buff.custom_resolve.monolithic.fdm_nonsubsampled_large_fb_with_offset,Fail
+-dEQP-VK.renderpasses.dynamic_rendering.primary_cmd_buff.custom_resolve.monolithic.fdm_nonsubsampled_multilayer_large_fb_with_offset,Fail
+-dEQP-VK.renderpasses.dynamic_rendering.primary_cmd_buff.custom_resolve.monolithic.fdm_nonsubsampled_multilayer_with_offset,Fail
+-dEQP-VK.renderpasses.dynamic_rendering.primary_cmd_buff.custom_resolve.monolithic.fdm_nonsubsampled_multiview_large_fb_with_offset,Fail
+-dEQP-VK.renderpasses.dynamic_rendering.primary_cmd_buff.custom_resolve.monolithic.fdm_nonsubsampled_multiview_with_offset,Fail
+-dEQP-VK.renderpasses.dynamic_rendering.primary_cmd_buff.custom_resolve.monolithic.fdm_nonsubsampled_with_offset,Fail
+-dEQP-VK.renderpasses.dynamic_rendering.primary_cmd_buff.custom_resolve.monolithic.fdm_subsampled_large_fb_with_offset,Fail
+-dEQP-VK.renderpasses.dynamic_rendering.primary_cmd_buff.custom_resolve.monolithic.fdm_subsampled_with_offset,Fail
+-dEQP-VK.renderpasses.renderpass2.custom_resolve.fast_lib.fdm_nonsubsampled_large_fb_with_offset,Fail
+-dEQP-VK.renderpasses.renderpass2.custom_resolve.fast_lib.fdm_nonsubsampled_multilayer_large_fb_with_offset,Fail
+-dEQP-VK.renderpasses.renderpass2.custom_resolve.fast_lib.fdm_nonsubsampled_multilayer_with_offset,Fail
+-dEQP-VK.renderpasses.renderpass2.custom_resolve.fast_lib.fdm_nonsubsampled_multiview_large_fb_with_offset,Fail
+-dEQP-VK.renderpasses.renderpass2.custom_resolve.fast_lib.fdm_nonsubsampled_multiview_with_offset,Fail
+-dEQP-VK.renderpasses.renderpass2.custom_resolve.fast_lib.fdm_nonsubsampled_with_offset,Fail
+-dEQP-VK.renderpasses.renderpass2.custom_resolve.fast_lib.fdm_subsampled_large_fb_with_offset,Fail
+-dEQP-VK.renderpasses.renderpass2.custom_resolve.fast_lib.fdm_subsampled_with_offset,Fail
+-dEQP-VK.renderpasses.renderpass2.custom_resolve.monolithic.fdm_nonsubsampled_large_fb_with_offset,Fail
+-dEQP-VK.renderpasses.renderpass2.custom_resolve.monolithic.fdm_nonsubsampled_multilayer_large_fb_with_offset,Fail
+-dEQP-VK.renderpasses.renderpass2.custom_resolve.monolithic.fdm_nonsubsampled_multilayer_with_offset,Fail
+-dEQP-VK.renderpasses.renderpass2.custom_resolve.monolithic.fdm_nonsubsampled_multiview_large_fb_with_offset,Fail
+-dEQP-VK.renderpasses.renderpass2.custom_resolve.monolithic.fdm_nonsubsampled_multiview_with_offset,Fail
+-dEQP-VK.renderpasses.renderpass2.custom_resolve.monolithic.fdm_nonsubsampled_with_offset,Fail
+-dEQP-VK.renderpasses.renderpass2.custom_resolve.monolithic.fdm_subsampled_large_fb_with_offset,Fail
+-dEQP-VK.renderpasses.renderpass2.custom_resolve.monolithic.fdm_subsampled_with_offset,Fail
+-gmem-dEQP-VK.renderpasses.dynamic_rendering.primary_cmd_buff.custom_resolve.fast_lib.fdm_subsampled_large_fb_with_offset,Fail
+-gmem-dEQP-VK.renderpasses.renderpass2.custom_resolve.fast_lib.fdm_nonsubsampled_with_offset,Fail
+-
+ #
+ # OpenCL-CTS
+ #
+diff --git a/src/freedreno/vulkan/tu_clear_blit.cc b/src/freedreno/vulkan/tu_clear_blit.cc
+index af49cf0c34c0..849e10cbccd2 100644
+--- a/src/freedreno/vulkan/tu_clear_blit.cc
++++ b/src/freedreno/vulkan/tu_clear_blit.cc
+@@ -4653,13 +4653,13 @@ tu_emit_clear_gmem_attachment(struct tu_cmd_buffer *cmd,
+       if (fdm_rect) {
+             struct apply_gmem_clear_coords_state state = {
+                .view = layer,
+-               .rect = *fdm_rect,
++               .rect = per_layer_render_area ? cmd->state.render_areas[layer] : *fdm_rect,
+             };
+             tu_create_fdm_bin_patchpoint(cmd, cs, 3, TU_FDM_SKIP_BINNING,
+                                          fdm_apply_gmem_clear_coords, state);
+-      }
+-      if (per_layer_render_area)
++      } else if (per_layer_render_area) {
+          tu6_emit_blit_scissor(cmd, cs, layer, false);
++      }
+       if (att->format == VK_FORMAT_D32_SFLOAT_S8_UINT) {
+          if (mask & VK_IMAGE_ASPECT_DEPTH_BIT) {
+             uint32_t buffer_id = tu_resolve_group_include_buffer<CHIP>(resolve_group, VK_FORMAT_D32_SFLOAT);
+@@ -5114,7 +5114,8 @@ tu_clear_gmem_attachment(struct tu_cmd_buffer *cmd,
+                                  attachment->used_views,
+                                  per_layer_render_area,
+                                  attachment->clear_mask,
+-                                 &cmd->state.clear_values[a], NULL);
++                                 &cmd->state.clear_values[a],
++                                 cmd->state.fdm_enabled ? &cmd->state.render_areas[0] : NULL);
+ }
+ TU_GENX(tu_clear_gmem_attachment);
+ 
+-- 
+GitLab
+
