@@ -10,6 +10,8 @@ overrides:
             commit: 0ad6c1c34a5e07a5f8dd66ab248c1e7b37b69fa9
         meta-arm:
             commit: 0979b80429099f1a42dc0026c8c466cee780bc74
+        meta-qcom-distro:
+            commit: 9b2bd8add61378f316b51d3dd848f2c2f6e80ae9
         meta-openembedded:
             commit: 14282a02be9c74a1276a7cda7d6c89e054699a11
         meta-virtualization:
