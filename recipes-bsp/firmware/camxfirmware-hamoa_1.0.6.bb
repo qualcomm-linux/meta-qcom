@@ -17,9 +17,26 @@ require recipes-bsp/firmware/firmware-qcom.inc
 do_configure[noexec] = "1"
 do_compile[noexec] = "1"
 
+def fw_compr_file_suffix(d):
+    compr = d.getVar('FIRMWARE_COMPRESSION')
+    if compr == '':
+        return ''
+    if compr == 'zstd':
+        compr = 'zst'
+    return '.' + compr
+
 do_install() {
     install -d ${D}${FW_QCOM_PATH}
     install -m 0644 ${S}/usr/lib/firmware/qcom/x1e80100/CAMERA_ICP.mbn ${D}${FW_QCOM_PATH}
     install -d ${D}${datadir}/doc/${BPN}
     install -m 0644 ${S}/usr/share/doc/${BPN}/LICENSE.QCOM-2.txt ${D}${datadir}/doc/${BPN}
+
+    # Purwa and Hamoa platforms use same CAMX firmware.
+    # Create symlinks under x1p42100 to satisfy platform-specific
+    # lookup paths and avoid binary duplication for Purwa
+    install -d ${D}${FW_QCOM_BASE_PATH}/x1p42100
+    ln -sf ../${FW_QCOM_NAME}/CAMERA_ICP.mbn${@fw_compr_file_suffix(d)} ${D}${FW_QCOM_BASE_PATH}/x1p42100/
 }
+
+PACKAGE_BEFORE_PN += "camxfirmware-purwa"
+FILES:camxfirmware-purwa = "${FW_QCOM_BASE_PATH}/x1p42100"
