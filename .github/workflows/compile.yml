@@ -5,6 +5,10 @@ on:
         required: false
         type: boolean
         default: true
+      profile:
+        required: false
+        type: string
+        default: "full" # values: pr | full | weekly
       sdk:
         required: false
         type: boolean
@@ -67,9 +71,9 @@ jobs:
       - name: Setup build variables
         shell: bash
         run: |
-          # use a monthly sstate cache folder
           echo "DL_DIR=${INPUTS_CACHE_DIR}/downloads" >> $GITHUB_ENV
-          echo "SSTATE_DIR=${INPUTS_CACHE_DIR}/sstate-cache-$(date '+%Y-%m')" >> $GITHUB_ENV
+          # use a single shared sstate cache folder, cleaned up by mtime
+          echo "SSTATE_DIR=${INPUTS_CACHE_DIR}/sstate-cache" >> $GITHUB_ENV
           echo "KAS_WORK_DIR=${PWD}/../kas" >> $GITHUB_ENV
           echo "KAS_YAMLS=ci/ci.yml:ci/${INPUTS_MACHINE}.yml${INPUTS_DISTRO_YAML}${INPUTS_KERNEL_YAML}:ci/build-id.yml" >> $GITHUB_ENV
           echo "INPUTS_CACHE_DIR=${INPUTS_CACHE_DIR}" >> $GITHUB_ENV
@@ -199,6 +203,9 @@ jobs:
           elif [[ "$GITHUB_EVENT_NAME" = "push" ]]; then
             echo "OBJECT_TAG=retention=15d" >> $GITHUB_ENV
             echo "BUILD_TYPE=buildType=PUSH" >> $GITHUB_ENV
+          elif [[ "${INPUTS_PROFILE}" = "weekly" ]]; then
+            echo "OBJECT_TAG=retention=15d" >> $GITHUB_ENV
+            echo "BUILD_TYPE=buildType=WEEKLY" >> $GITHUB_ENV
           elif [[ "$GITHUB_WORKFLOW" == *"Nightly Build"* ]]; then
             echo "OBJECT_TAG=retention=15d" >> $GITHUB_ENV
             echo "BUILD_TYPE=buildType=NIGHTLY" >> $GITHUB_ENV
@@ -206,6 +213,8 @@ jobs:
             echo "OBJECT_TAG=retention=15d" >> $GITHUB_ENV
             echo "BUILD_TYPE=buildType=OTHER" >> $GITHUB_ENV
           fi
+        env:
+          INPUTS_PROFILE: ${{ inputs.profile }}
       
       - name: Upload artifacts to S3 bucket
         uses: qualcomm-linux/upload-private-artifact-action@aws-v5

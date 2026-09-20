@@ -28,6 +28,14 @@ inputs:
     description: "Ref in qcom-linux-testkit repository. Can be a CalVer tag (testkit-YYYY.MM.DD) or commit SHA"
     required: false
     default: ""
+  pr_number:
+    description: "Pull request number. When set, it is added to the LAVA job metadata as PR_NUMBER"
+    required: false
+    default: ""
+  pr_url:
+    description: "Pull request URL. When set, it is added to the LAVA job metadata as PR_URL"
+    required: false
+    default: ""
 
 outputs:
   jobmatrix:
@@ -68,6 +76,8 @@ runs:
           INPUTS_TESTPLAN: ${{ inputs.testplan }}
           INPUTS_PREFIX: ${{ inputs.prefix }}
           INPUTS_TESTKIT_REF: ${{ inputs.testkit_ref }}
+          INPUTS_PR_NUMBER: ${{ inputs.pr_number }}
+          INPUTS_PR_URL: ${{ inputs.pr_url }}
         run: |
           set -euo pipefail
           cd lava-test-plans && pip install .
@@ -97,6 +107,18 @@ runs:
           if [ -n "${INPUTS_TESTKIT_REF}" ]; then
             echo "TEST_DEFINITIONS_REVISION=${INPUTS_TESTKIT_REF}" >> "${VARS_OUT_PATH}/gh-variables.ini"
           fi
+          # For pull request builds, record the PR number and URL so they end up
+          # in the LAVA job metadata section (rendered by the lava-test-plans
+          # metadata templates). Left unset for push/nightly builds.
+          if [ -n "${INPUTS_PR_NUMBER}" ]; then
+            echo "PR_NUMBER=${INPUTS_PR_NUMBER}" >> "${VARS_OUT_PATH}/gh-variables.ini"
+          fi
+          if [ -n "${INPUTS_PR_URL}" ]; then
+            echo "PR_URL=${INPUTS_PR_URL}" >> "${VARS_OUT_PATH}/gh-variables.ini"
+          fi
+          echo "GITHUB_WORKFLOW_URL=${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}" >> "${VARS_OUT_PATH}/gh-variables.ini"
+          echo "GITHUB_WORKFLOW_RUN_ID=${GITHUB_RUN_ID}" >> "${VARS_OUT_PATH}/gh-variables.ini"
+          echo "GITHUB_WORKFLOW_RUN_ATTEMPT=${GITHUB_RUN_ATTEMPT}" >> "${VARS_OUT_PATH}/gh-variables.ini"
           IMAGE_TYPE="core-image-base"
           case "${INPUTS_DISTRO_NAME}" in
             "qcom-distro"*)
@@ -131,6 +153,7 @@ runs:
                continue
             fi
             echo "BUILD_DOWNLOAD_URL=${BUILD_URL}/" >> "${VARS_OUT_PATH}/${machine}.ini"
+            echo "BUILD_URL=${BUILD_URL}" >> "${VARS_OUT_PATH}/${machine}.ini"
 
             echo "ROOTFS_URL=${BUILD_URL}/${INPUTS_DISTRO_NAME}/${machine}/${IMAGE_TYPE}-${machine}.rootfs.qcomflash.tar.gz" >> "${VARS_OUT_PATH}/${machine}.ini"
 

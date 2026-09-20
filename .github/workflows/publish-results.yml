@@ -15,6 +15,10 @@ on:
       commit:
         required: true
         type: string
+    secrets:
+      TEST_REPORTING_APP_TOKEN:
+        required: true
+        description: "Private key of the GitHub App used to report test results"
 
 permissions:
   checks: write
