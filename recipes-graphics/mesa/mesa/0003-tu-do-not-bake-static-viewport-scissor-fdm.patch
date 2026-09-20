@@ -1,0 +1,99 @@
+From 23f841ed91eca354ede48850a3713d1d393e82f6 Mon Sep 17 00:00:00 2001
+From: Valentine Burley <valentine.burley@collabora.com>
+Date: Thu, 20 Aug 2026 13:32:32 +0200
+Subject: [PATCH] tu: Do not bake static viewport/scissor when FDM is enabled
+
+When a fragment shader uses FDM, viewport and scissor state must be
+patched per-bin during GMEM rendering, even with a single viewport.
+
+Cc: mesa-stable
+Signed-off-by: Valentine Burley <valentine.burley@collabora.com>
+Part-of: <https://gitlab.freedesktop.org/mesa/mesa/-/merge_requests/43953>
+
+Upstream-Status: Backport [https://gitlab.freedesktop.org/mesa/mesa/-/commit/23f841ed91eca354ede48850a3713d1d393e82f6]
+
+---
+ src/freedreno/ci/freedreno-a618-fails.txt  | 23 ----------------------
+ src/freedreno/ci/freedreno-a618-flakes.txt |  6 ------
+ src/freedreno/vulkan/tu_pipeline.cc        |  9 ++++++++-
+ 3 files changed, 8 insertions(+), 30 deletions(-)
+
+diff --git a/src/freedreno/ci/freedreno-a618-fails.txt b/src/freedreno/ci/freedreno-a618-fails.txt
+index 5e069de72d92..1e646f42c47a 100644
+--- a/src/freedreno/ci/freedreno-a618-fails.txt
++++ b/src/freedreno/ci/freedreno-a618-fails.txt
+@@ -403,33 +403,10 @@ dEQP-VK.fragment_operations.early_fragment.sample_count_early_fragment_tests_dep
+ angle-dEQP-GLES3.functional.fbo.msaa.2_samples.rg8,Fail
+ angle-dEQP-GLES3.functional.fbo.msaa.4_samples.rg8,Fail
+ 
+-# VKCTS 1.4.4.2 -> 1.4.5.3 uprev.
+-# [  118.945672] *** gpu fault: ttbr0=00000001d0f38000 iova=00000000040ff000 dir=READ type=TRANSLATION source=TP|VFD (0,0,0,1)
+-# Not entirely reliable -- which ones crash vs pass may flip around, so clear the flakes entry when it's fixed.
+-dEQP-VK.renderpasses.dynamic_rendering.primary_cmd_buff.custom_resolve.fast_lib.fdm_subsampled_pre_resolve_info_frag_out_only_resolve_info_frag_shader_no_formats,Crash
+-dEQP-VK.renderpasses.dynamic_rendering.primary_cmd_buff.custom_resolve.fast_lib.fdm_subsampled_resolve_info_frag_shader_no_formats,Crash
+-dEQP-VK.renderpasses.dynamic_rendering.primary_cmd_buff.custom_resolve.fast_lib.fdm_subsampled,Crash
+-dEQP-VK.renderpasses.renderpass1.custom_resolve.fast_lib.fdm_subsampled,Crash
+-dEQP-VK.renderpasses.renderpass1.custom_resolve.monolithic.fdm_subsampled,Crash
+-
+ # uprev Piglit in Mesa
+ spec@!opengl 1.1@large-tex,Fail
+ spec@!opengl 1.1@large-tex@test_image_load_store,Fail
+ 
+-# VKCTS 1.4.5.3 -> 1.4.6.1 uprev
+-# [  254.112811] *** gpu fault: ttbr0=000000010778d000 iova=00000000040fff00 dir=READ type=TRANSLATION source=TP|VFD (0,0,0,1)
+-# Not entirely reliable -- which ones crash vs pass may flip around, so clear the flakes entry when it's fixed.
+-dEQP-VK.renderpasses.dynamic_rendering.primary_cmd_buff.custom_resolve.monolithic.fdm_nonsubsampled_large_fb_with_offset,Crash
+-dEQP-VK.renderpasses.dynamic_rendering.primary_cmd_buff.custom_resolve.monolithic.fdm_nonsubsampled_multilayer_with_offset,Fail
+-dEQP-VK.renderpasses.dynamic_rendering.primary_cmd_buff.custom_resolve.monolithic.fdm_nonsubsampled_with_offset,Fail
+-dEQP-VK.renderpasses.renderpass2.custom_resolve.fast_lib.fdm_nonsubsampled_multilayer_large_fb_with_offset,Crash
+-dEQP-VK.renderpasses.renderpass2.custom_resolve.fast_lib.fdm_nonsubsampled_multilayer_with_offset,Fail
+-dEQP-VK.renderpasses.renderpass2.custom_resolve.fast_lib.fdm_nonsubsampled_multiview_large_fb_with_offset,Crash
+-dEQP-VK.renderpasses.renderpass2.custom_resolve.monolithic.fdm_nonsubsampled_multiview_with_offset,Crash
+-dEQP-VK.renderpasses.renderpass2.custom_resolve.monolithic.fdm_nonsubsampled_with_offset,Fail
+-gmem-dEQP-VK.renderpasses.dynamic_rendering.primary_cmd_buff.custom_resolve.fast_lib.fdm_nonsubsampled_with_offset,Fail
+-gmem-dEQP-VK.renderpasses.dynamic_rendering.primary_cmd_buff.custom_resolve.monolithic.fdm_nonsubsampled_multilayer_with_offset,Fail
+-
+ #
+ # OpenCL-CTS
+ #
+diff --git a/src/freedreno/ci/freedreno-a618-flakes.txt b/src/freedreno/ci/freedreno-a618-flakes.txt
+index 66c844272847..0526480a4292 100644
+--- a/src/freedreno/ci/freedreno-a618-flakes.txt
++++ b/src/freedreno/ci/freedreno-a618-flakes.txt
+@@ -354,10 +354,4 @@ android-dEQP-VK.pipeline.fast_linked_library.stencil.nocolor.format.s8_uint.stat
+ android-dEQP-VK.pipeline.pipeline_library.stencil.nocolor.format.d32_sfloat_s8_uint_separate_layouts.states.fail_incc.pass_decw.dfail_keep.comp_never.any
+ android-dEQP-VK.renderpasses.renderpass1.dedicated_allocation.formats.r16g16_uint.input.clear.dont_care.self_dep_draw_use_input_aspect_ms
+ 
+-# See this entry in the VKCTS 1.4.4.2 -> 1.4.5.3 uprev fails list.
+-dEQP-VK.*.custom_resolve.*.fdm_subsampled
+-
+-# See this entry in the VKCTS 1.4.5.3 -> 1.4.6.1 uprev fails list.
+-dEQP-VK.*.custom_resolve.*.fdm_nonsubsampled
+-
+ spec@!opengl 1.1@getteximage-depth@GL_TEXTURE_1D_ARRAY-GL_DEPTH_COMPONENT
+diff --git a/src/freedreno/vulkan/tu_pipeline.cc b/src/freedreno/vulkan/tu_pipeline.cc
+index 6ccb868f80c1..14da376a2986 100644
+--- a/src/freedreno/vulkan/tu_pipeline.cc
++++ b/src/freedreno/vulkan/tu_pipeline.cc
+@@ -3951,10 +3951,17 @@ tu_pipeline_builder_emit_state(struct tu_pipeline_builder *builder,
+               builder->graphics_state.vi);
+    /* If (a) per-view viewport is used or (b) we don't know yet, then we need
+     * to set viewport and stencil state dynamically.
++    *
++    * The same applies whenever the fragment shader uses FDM, even with a
++    * single viewport.  This matters on a6xx gens without
++    * has_per_view_viewport, where per_view_viewport is false even though
++    * FDM is in use.
+     */
++   const struct tu_shader *fs = pipeline->shaders[MESA_SHADER_FRAGMENT];
+    bool no_per_view_viewport = pipeline_contains_all_shader_state(pipeline) &&
+       !pipeline->program.per_view_viewport &&
+-      !pipeline->program.per_layer_viewport;
++      !pipeline->program.per_layer_viewport &&
++      !(fs && fs->fs.has_fdm);
+    DRAW_STATE_COND(viewport, TU_DYNAMIC_STATE_VIEWPORT, no_per_view_viewport,
+                    builder->graphics_state.vp,
+                    builder->graphics_state.rs);
+-- 
+GitLab
+

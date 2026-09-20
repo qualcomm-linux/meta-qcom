@@ -1,0 +1,47 @@
+From 1538621f4650c11108bd1eae52b7612df139068a Mon Sep 17 00:00:00 2001
+From: Emma Anholt <emma@anholt.net>
+Date: Tue, 28 Apr 2026 12:30:44 -0700
+Subject: [PATCH] tu: Disable storage image support for depth/stencil.
+
+Fixes failures in the new CTS tests like
+dEQP-VK.image.store.without_format.2d.x8_d24_unorm_pack32.
+
+Part-of: <https://gitlab.freedesktop.org/mesa/mesa/-/merge_requests/41245>
+
+Upstream-Status: Backport [https://gitlab.freedesktop.org/mesa/mesa/-/commit/1538621f4650c11108bd1eae52b7612df139068a]
+
+---
+ src/freedreno/vulkan/tu_formats.cc | 17 ++++++++++++-----
+ 1 file changed, 12 insertions(+), 5 deletions(-)
+
+diff --git a/src/freedreno/vulkan/tu_formats.cc b/src/freedreno/vulkan/tu_formats.cc
+index 6b92fd81866f..76cec46809cd 100644
+--- a/src/freedreno/vulkan/tu_formats.cc
++++ b/src/freedreno/vulkan/tu_formats.cc
+@@ -232,11 +232,18 @@ tu_physical_device_get_format_properties(
+ 
+    if (supported_color) {
+       assert(supported_tex);
+-      optimal |= VK_FORMAT_FEATURE_2_COLOR_ATTACHMENT_BIT |
+-                 VK_FORMAT_FEATURE_2_BLIT_DST_BIT |
+-                 VK_FORMAT_FEATURE_2_STORAGE_IMAGE_BIT |
+-                 VK_FORMAT_FEATURE_2_STORAGE_READ_WITHOUT_FORMAT_BIT |
+-                 VK_FORMAT_FEATURE_2_STORAGE_WRITE_WITHOUT_FORMAT_BIT;
++      optimal |= VK_FORMAT_FEATURE_2_COLOR_ATTACHMENT_BIT | VK_FORMAT_FEATURE_2_BLIT_DST_BIT;
++
++      /* "Compatibility Between SPIR-V Image Formats and Vulkan Formats" doesn't
++       * map any SPIR-V image formats formats to Vulkan depth/stencil formats,
++       * except for "Unknown" which maps to anything with the feature flags set.
++       * Don't bother supporting that unformatted z/s access, either, since
++       * x8_d24 fails and it seems like an unintended corner of the spec.
++       */
++      if (!vk_format_is_depth_or_stencil(vk_format)) {
++         optimal |= VK_FORMAT_FEATURE_2_STORAGE_IMAGE_BIT | VK_FORMAT_FEATURE_2_STORAGE_READ_WITHOUT_FORMAT_BIT |
++                    VK_FORMAT_FEATURE_2_STORAGE_WRITE_WITHOUT_FORMAT_BIT;
++      }
+ 
+       buffer |= VK_FORMAT_FEATURE_2_STORAGE_TEXEL_BUFFER_BIT |
+                 VK_FORMAT_FEATURE_2_STORAGE_READ_WITHOUT_FORMAT_BIT |
+-- 
+GitLab
+
