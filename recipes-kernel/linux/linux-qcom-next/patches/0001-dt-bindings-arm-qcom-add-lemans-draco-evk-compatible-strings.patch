@@ -1,0 +1,38 @@
+From e82697810a58ed8b65cc8537c7316e36710aac84 Mon Sep 17 00:00:00 2001
+From: Gopikishan Thawre <gthawre@qti.qualcomm.com>
+Date: Thu, 10 Sep 2026 14:44:31 +0530
+Subject: [PATCH 1/4] dt-bindings: arm: qcom: Add LeMans Draco EVK compatible
+ strings
+
+Add compatible strings for the Qualcomm LeMans Draco EVK board
+based on the SA8775P/QCS9100 SoC.
+
+Upstream-Status: Pending
+Signed-off-by: Gopikishan Thawre <gthawre@qti.qualcomm.com>
+(cherry picked from commit 9736e78227999bb9d48b64db12c24c1489aa7626)
+---
+ Documentation/devicetree/bindings/arm/qcom.yaml | 7 +++++++
+ 1 file changed, 7 insertions(+)
+
+diff --git a/Documentation/devicetree/bindings/arm/qcom.yaml b/Documentation/devicetree/bindings/arm/qcom.yaml
+index ff8a35df7862..67530e35b79a 100644
+--- a/Documentation/devicetree/bindings/arm/qcom.yaml
++++ b/Documentation/devicetree/bindings/arm/qcom.yaml
+@@ -467,6 +467,13 @@ properties:
+               - qcom,sa8775p-ride-r3
+           - const: qcom,sa8775p
+ 
++      - items:
++          - enum:
++              - qcom,lemans-draco-evk
++          - const: qcom,lemans-draco-evk-som
++          - const: qcom,qcs9100
++          - const: qcom,sa8775p
++
+       - items:
+           - enum:
+               - qcom,lemans-evk
+-- 
+QUALCOMM INDIA, on behalf of Qualcomm Innovation Center, Inc. is a
+member of the Code Aurora Forum, hosted by The Linux Foundation
+

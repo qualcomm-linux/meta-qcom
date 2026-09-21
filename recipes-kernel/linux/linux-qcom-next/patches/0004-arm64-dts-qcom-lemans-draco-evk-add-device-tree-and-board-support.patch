@@ -1,0 +1,118 @@
+From 1ca25cd9fc582a0afe8dd52a1a029e5da8679677 Mon Sep 17 00:00:00 2001
+From: Gopikishan Thawre <gthawre@qti.qualcomm.com>
+Date: Fri, 18 Sep 2026 13:53:28 +0530
+Subject: [PATCH 4/4] arm64: dts: qcom: lemans-draco-evk: add device tree and
+ board support
+
+Add the top-level board DTS and extend the SOM DTSI with carrier
+board peripherals: I2C GPIO expanders, EEPROM with MAC address
+layout, UFS, USB, uart10 as console, and remoteproc SMMU stream
+IDs. Remove pcie0, pcie1 and ethernet0 absent on this board.
+
+Upstream-Status: Pending
+Signed-off-by: Gopikishan Thawre <gthawre@qti.qualcomm.com>
+(cherry picked from commit d5c1ee44f7fd4da741dcbeb06d4e774d3c981558)
+---
+ arch/arm64/boot/dts/qcom/lemans-draco-evk.dts | 89 +++++++++++++++++++
+ 1 file changed, 89 insertions(+)
+ create mode 100644 arch/arm64/boot/dts/qcom/lemans-draco-evk.dts
+
+diff --git a/arch/arm64/boot/dts/qcom/lemans-draco-evk.dts b/arch/arm64/boot/dts/qcom/lemans-draco-evk.dts
+new file mode 100644
+index 000000000000..cacdf2353a24
+--- /dev/null
++++ b/arch/arm64/boot/dts/qcom/lemans-draco-evk.dts
+@@ -0,0 +1,89 @@
++// SPDX-License-Identifier: BSD-3-Clause
++/*
++ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
++ */
++/dts-v1/;
++
++#include "lemans-draco-evk-som.dtsi"
++
++/ {
++	model = "Qualcomm Technologies, Inc. Lemans Draco EVK";
++	compatible = "qcom,lemans-draco-evk", "qcom,lemans-draco-evk-som", "qcom,qcs9100",
++		     "qcom,sa8775p";
++	chassis-type = "embedded";
++};
++
++&i2c2 {
++	status = "okay";
++
++	expander0: gpio@20 {
++		compatible = "ti,tca6416";
++		reg = <0x20>;
++		#gpio-cells = <2>;
++		gpio-controller;
++	};
++
++	expander1: gpio@21 {
++		compatible = "ti,tca6416";
++		reg = <0x21>;
++		#gpio-cells = <2>;
++		gpio-controller;
++	};
++
++	expander2: gpio@22 {
++		compatible = "ti,tca6416";
++		reg = <0x22>;
++		#gpio-cells = <2>;
++		gpio-controller;
++	};
++
++	expander3: gpio@23 {
++		compatible = "ti,tca6416";
++		reg = <0x23>;
++		#gpio-cells = <2>;
++		gpio-controller;
++	};
++
++	expander4: gpio@38 {
++		compatible = "nxp,pca9534";
++		reg = <0x38>;
++		#gpio-cells = <2>;
++		gpio-controller;
++	};
++
++	eeprom@50 {
++		compatible = "giantec,gt24c256c", "atmel,24c256";
++		reg = <0x50>;
++		pagesize = <64>;
++
++		nvmem-layout {
++			compatible = "fixed-layout";
++			#address-cells = <1>;
++			#size-cells = <1>;
++
++			mac_addr0: mac-addr@0 {
++				reg = <0x0 0x6>;
++			};
++		};
++	};
++};
++
++&tlmm {
++	expander_int: expander-int-state {
++		pins = "gpio22";
++		function = "gpio";
++		bias-pull-up;
++		input-enable;
++	};
++};
++
++&i2c18 {
++	status = "okay";
++
++	expander5: gpio@3c {
++		compatible = "nxp,pca9534";
++		reg = <0x3c>;
++		#gpio-cells = <2>;
++		gpio-controller;
++	};
++};
+-- 
+QUALCOMM INDIA, on behalf of Qualcomm Innovation Center, Inc. is a
+member of the Code Aurora Forum, hosted by The Linux Foundation
+
