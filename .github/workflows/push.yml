@@ -23,7 +23,8 @@ jobs:
       pull-requests: write
     uses: $/.github/workflows/test.yml
     needs: [build]
-    secrets: inherit
+    secrets:
+      LAVATOKEN: ${{ secrets.LAVATOKEN }}
     with:
       build_id: ${{ github.run_id }}
   publish-test-results:
@@ -35,7 +36,8 @@ jobs:
       pull-requests: write
     uses: $/.github/workflows/publish-results.yml
     needs: test
-    secrets: inherit
+    secrets:
+      TEST_REPORTING_APP_TOKEN: ${{ secrets.TEST_REPORTING_APP_TOKEN }}
     with:
       workflow_id: ${{ github.run_id }}
       event_name: ${{ github.event_name }}
