@@ -3,7 +3,7 @@ From: Viswanath Kraleti <viswanath.kraleti@oss.qualcomm.com>
 Date: Wed, 16 Sep 2026 17:12:04 +0530
 Subject: [PATCH] linux-firmware: backport shikra wlan firmware support
 
-The current linux-firmware 20260810 version doesn't include the WLAN
+The current linux-firmware 20260910 version doesn't include the WLAN
 firmware required by Shikra platforms. Backport the upstream commit
 f64d7db7d264 ("ath10k: WCN3990: hw1.0: add shikra firmware files") to
 ensure the required WCN3990 Shikra firmware files are picked up to
@@ -16,13 +16,13 @@ Signed-off-by: Viswanath Kraleti <viswanath.kraleti@oss.qualcomm.com>
 Upstream-Status: Backport [https://gitlab.com/kernel-firmware/linux-firmware/-/commit/f64d7db7d2646e1c7744963d540524f523ae0443]
 ---
  ...3990-hw1.0-add-shikra-firmware-files.patch | 40814 ++++++++++++++++
- .../linux-firmware/linux-firmware_20260810.bb |     3 +-
- 2 files changed, 40816 insertions(+), 1 deletion(-)
+ .../linux-firmware/linux-firmware_20260910.bb |     5 +-
+ 2 files changed, 40818 insertions(+), 1 deletion(-)
  create mode 100644 meta/recipes-kernel/linux-firmware/linux-firmware/0001-ath10k-WCN3990-hw1.0-add-shikra-firmware-files.patch
 
 diff --git a/meta/recipes-kernel/linux-firmware/linux-firmware/0001-ath10k-WCN3990-hw1.0-add-shikra-firmware-files.patch b/meta/recipes-kernel/linux-firmware/linux-firmware/0001-ath10k-WCN3990-hw1.0-add-shikra-firmware-files.patch
 new file mode 100644
-index 0000000000..9dc4f38598
+index 0000000000..7ea368f749
 --- /dev/null
 +++ b/meta/recipes-kernel/linux-firmware/linux-firmware/0001-ath10k-WCN3990-hw1.0-add-shikra-firmware-files.patch
 @@ -0,0 +1,40814 @@
@@ -40840,21 +40840,25 @@ index 0000000000..9dc4f38598
 +literal 0
 +HcmV?d00001
 +
-diff --git a/meta/recipes-kernel/linux-firmware/linux-firmware_20260810.bb b/meta/recipes-kernel/linux-firmware/linux-firmware_20260810.bb
-index 2a0d3980b7..faf4cac47f 100644
---- a/meta/recipes-kernel/linux-firmware/linux-firmware_20260810.bb
-+++ b/meta/recipes-kernel/linux-firmware/linux-firmware_20260810.bb
+diff --git a/meta/recipes-kernel/linux-firmware/linux-firmware_20260910.bb b/meta/recipes-kernel/linux-firmware/linux-firmware_20260910.bb
+index 3fc59a12a6..44f20239c9 100644
+--- a/meta/recipes-kernel/linux-firmware/linux-firmware_20260910.bb
++++ b/meta/recipes-kernel/linux-firmware/linux-firmware_20260910.bb
 @@ -277,7 +277,7 @@ LIC_FILES_CHKSUM = "file://LICENSES/LICENCE.Abilis;md5=b5ee3f410780e56711ad48ead
                      "
  # WHENCE checksum is defined separately to ease overriding it if
  # class-devupstream is selected.
--WHENCE_CHKSUM  = "de47d58e10797eae2ccc753ab8d69bd7"
-+WHENCE_CHKSUM  = "2479ba3a89ec32f3c8b23698b0a75ee5"
+-WHENCE_CHKSUM  = "fe7960bbe2eb0922168c3434c8d125d0"
++WHENCE_CHKSUM  = "47dbfc1b4d2d5a13c2e990ae38c3ac2b"
  
  # These are not common licenses, set NO_GENERIC_LICENSE for them
  # so that the license files will be copied from fetched source
-@@ -409,6 +409,7 @@ PE = "1"
+@@ -407,8 +407,11 @@ NO_GENERIC_LICENSE[Firmware-WHENCE] = "WHENCE"
  
+ PE = "1"
+ 
++PATCHTOOL:qcom = "git"
++
  SRC_URI = "\
    ${KERNELORG_MIRROR}/linux/kernel/firmware/${BPN}-${PV}.tar.xz \
 +  file://0001-ath10k-WCN3990-hw1.0-add-shikra-firmware-files.patch \
