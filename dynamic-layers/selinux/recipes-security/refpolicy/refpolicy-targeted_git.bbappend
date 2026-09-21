@@ -5,6 +5,7 @@ SRC_URI:append:qcom = " \
     ${@bb.utils.contains('MACHINE_FEATURES', 'optee', '', 'file://0002-Enable-the-tunable-flag-tee_supplicant_qtee.patch', d)} \
     file://0003-seatd-allow-self-fifo_file-read-write-for-signal-han.patch \
     file://0004-kernel-allow-module-loaders-to-use-net_admin.patch \
+    file://0005-policy-tpm2-fix-tpm2-abrmd-D-Bus-communication-under-enf.patch \
 "
 
 # Space-separated policy boolean/tunable settings in name=value format.
