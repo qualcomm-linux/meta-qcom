@@ -11,7 +11,21 @@ SRCREV = "2cbd7b9ddf2318d58044dcbd57dc187dfca55034"
 
 SRC_URI = "git://github.com/qualcomm-linux/TC9564_Host_Driver.git;protocol=https;branch=qcom"
 
+EXTERNALSRC_ORIG_SRC_URI := "${SRC_URI}"
+
+def qps615_pkgv_suffix(d):
+    import bb.fetch
+
+    data = d.createCopy()
+    data.setVar("SRC_URI", d.getVar("EXTERNALSRC_ORIG_SRC_URI"))
+    return bb.fetch.get_pkgv_string(data)
+
 PV = "6.0.3+git"
+
+# externalsrc removes the Git URI from SRC_URI, so package_setup_pkgv() cannot
+# append the normal SCM revision suffix. Reuse BitBake's own revision formatter
+# so devtool package versions match versions from the regular fetch/build path.
+PKGV:append = "${@qps615_pkgv_suffix(d) if d.getVar('EXTERNALSRC') else ''}"
 
 B = "${S}/drivers/net/ethernet/toshiba/tc956x"
 
