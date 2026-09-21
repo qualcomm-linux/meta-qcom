@@ -21,6 +21,7 @@ PACKAGES = " \
 # This packagegroup lists non-qcom specific modules that are needed,
 # like hdmi and gpio support
 RRECOMMENDS:${PN}-board-generic += " \
+    kernel-module-at24 \
     kernel-module-ax88179-178a \
     kernel-module-cdc-ncm \
     kernel-module-display-connector \
@@ -196,6 +197,7 @@ RRECOMMENDS:${PN}-qcom-qcs8300-soc += " \
     kernel-module-gpucc-sa8775p \
     kernel-module-phy-qcom-sgmii-eth \
     kernel-module-pwrseq-qcom-wcn \
+    kernel-module-qca808x \
     kernel-module-stmmac-platform \
     kernel-module-videocc-sa8775p \
 "
@@ -210,6 +212,7 @@ RRECOMMENDS:${PN}-qcom-qcs9100-soc += " \
     kernel-module-gpucc-sa8775p \
     kernel-module-phy-qcom-sgmii-eth \
     kernel-module-pwrseq-qcom-wcn \
+    kernel-module-qca808x \
     kernel-module-stmmac-platform \
     kernel-module-videocc-sa8775p \
 "
