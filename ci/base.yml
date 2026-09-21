@@ -27,6 +27,9 @@ repos:
       shirka-wlan-fw:
         repo: meta-qcom
         path: patches/oe-core/0001-linux-firmware-backport-shikra-wlan-firmware-support.patch
+      fw-20260910:
+        repo: meta-qcom
+        path: patches/oe-core/0001-linux-firmware-upgrade-20260810-20260910.patch
     layers:
       meta:
 
