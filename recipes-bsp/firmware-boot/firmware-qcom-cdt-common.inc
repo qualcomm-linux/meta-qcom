@@ -3,7 +3,7 @@ LIC_FILES_CHKSUM = "file://${COREBASE}/meta/files/common-licenses/BSD-3-Clause;m
 
 inherit allarch
 
-CDT_ARTIFACTORY = "artifacts.codelinaro.org/artifactory/codelinaro-le/Qualcomm_Linux"
+CDT_ARTIFACTORY ?= "artifacts.codelinaro.org/artifactory/codelinaro-le/Qualcomm_Linux"
 
 S = "${UNPACKDIR}"
 
