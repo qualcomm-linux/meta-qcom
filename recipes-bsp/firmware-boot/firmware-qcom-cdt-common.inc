@@ -18,6 +18,6 @@ inherit deploy
 
 do_deploy() {
     install -d ${DEPLOYDIR}/${QCOM_CDT_SUBDIR}
-    find "${UNPACKDIR}" -iname '*cdt*.bin' -exec install -m 0644 {} ${DEPLOYDIR}/${QCOM_CDT_SUBDIR} \;
+    find "${UNPACKDIR}" -iname '*cdt*.bin' -iname '*${QCOM_CDT_FILE}*.bin' -exec install -m 0644 {} ${DEPLOYDIR}/${QCOM_CDT_SUBDIR} \;
 }
 addtask deploy before do_build after do_install
