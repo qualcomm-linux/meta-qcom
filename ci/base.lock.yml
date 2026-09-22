@@ -9,19 +9,19 @@ overrides:
         bitbake:
             commit: 0ad6c1c34a5e07a5f8dd66ab248c1e7b37b69fa9
         meta-arm:
-            commit: 0979b80429099f1a42dc0026c8c466cee780bc74
+            commit: 673e8d7c5dcd14de58092eb73e6ecc5eee5c1735
         meta-qcom-distro:
             commit: 9b2bd8add61378f316b51d3dd848f2c2f6e80ae9
         meta-openembedded:
-            commit: 14282a02be9c74a1276a7cda7d6c89e054699a11
+            commit: 47d7dbdd10890bbd429bc0cccbe14435c37e5af1
         meta-virtualization:
-            commit: aab9c1a0dd6b48776c9f372a32c32486c560b9c9
+            commit: 70a5d5a65d7237cfe978961fa4d8765c895cddc8
         meta-audioreach:
             commit: e4ef44bb8c6a77b7d14a1160394b81d54baa1e85
         meta-selinux:
             commit: 1c3a699f363167571ab39fecb0fe6f56691a4e20
         meta-updater:
-            commit: f0e1ccafaa877d2781ed953236981dac57439dc8
+            commit: 92f4788c30fdcab2d376eb9ae6b191bda7d06d0a
         meta-security:
             commit: c0d1d6200e7a84c39fb940cb1f22aad4b0b3d808
         meta-dpdk:
