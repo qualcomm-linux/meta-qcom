@@ -53,6 +53,7 @@ runs:
           repository: qualcomm-linux/lava-test-plans
           path: lava-test-plans
           ref: ${{ inputs.ref }}
+          persist-credentials: false
 
       - uses: actions/setup-python@v6
         with:
