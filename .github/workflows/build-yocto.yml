@@ -372,48 +372,48 @@ jobs:
                 yamlfile: ""
           - machine: qcs615-ride
             distro:
-                name: qcom-distro
-                yamlfile: ':ci/qcom-distro.yml'
+                name: qcom-distro-catchall
+                yamlfile: ':ci/qcom-distro-catchall.yml'
             kernel:
                 type: u-boot-qcom
                 dirname: "_u-boot-qcom"
                 yamlfile: ":ci/u-boot-qcom.yml"
           - machine: rb3gen2-core-kit
             distro:
-                name: qcom-distro
-                yamlfile: ':ci/qcom-distro.yml'
+                name: qcom-distro-catchall
+                yamlfile: ':ci/qcom-distro-catchall.yml'
             kernel:
                 type: u-boot-qcom
                 dirname: "_u-boot-qcom"
                 yamlfile: ":ci/u-boot-qcom.yml"
           - machine: iq-9075-evk
             distro:
-                name: qcom-distro
-                yamlfile: ':ci/qcom-distro.yml'
+                name: qcom-distro-catchall
+                yamlfile: ':ci/qcom-distro-catchall.yml'
             kernel:
                 type: u-boot-qcom
                 dirname: "_u-boot-qcom"
                 yamlfile: ":ci/u-boot-qcom.yml"
           - machine: iq-615-evk
             distro:
-                name: qcom-distro
-                yamlfile: ':ci/qcom-distro.yml'
+                name: qcom-distro-catchall
+                yamlfile: ':ci/qcom-distro-catchall.yml'
             kernel:
                 type: u-boot-qcom
                 dirname: "_u-boot-qcom"
                 yamlfile: ":ci/u-boot-qcom.yml"
           - machine: shikra-evk
             distro:
-                name: qcom-distro
-                yamlfile: ':ci/qcom-distro.yml'
+                name: qcom-distro-catchall
+                yamlfile: ':ci/qcom-distro-catchall.yml'
             kernel:
                 type: u-boot-qcom
                 dirname: "_u-boot-qcom"
                 yamlfile: ":ci/u-boot-qcom.yml"
           - machine: iq-8275-evk
             distro:
-                name: qcom-distro
-                yamlfile: ':ci/qcom-distro.yml'
+                name: qcom-distro-catchall
+                yamlfile: ':ci/qcom-distro-catchall.yml'
             kernel:
                 type: u-boot-qcom
                 dirname: "_u-boot-qcom"
