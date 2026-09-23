@@ -11,6 +11,9 @@ on:
       - '**/*.md'
       - '.github/.markdownlint.yaml'
 
+permissions:
+  contents: read
+
 jobs:
   markdownlint:
     runs-on: ubuntu-latest
