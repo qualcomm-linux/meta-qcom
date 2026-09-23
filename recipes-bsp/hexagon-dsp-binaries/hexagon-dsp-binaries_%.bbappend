@@ -3,6 +3,7 @@
 # which also force enable the updated linux-firmware version.
 
 PACKAGES_FROM_MIXINS_LAYER = " \
+    ${PN}-qcom-eliza-mtp-cdsp \
     ${PN}-qcom-shikra-cqm-evk-cdsp \
     ${PN}-qcom-shikra-cqs-evk-cdsp \
     ${PN}-qcom-shikra-iqs-evk-cdsp \
