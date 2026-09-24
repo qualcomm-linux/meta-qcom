@@ -41,29 +41,20 @@ skill over re-deriving the workflow; improvements go back to that catalog.
 2. Container runtime access (Docker/Podman backend used by `kas-container`).
 3. Work directories outside the repository for build outputs and shared caches.
 
-### Container runtime smoke test (required order)
+### Container runtime smoke test
 
-Run Docker first:
-
-```sh
-docker run --rm hello-world
-```
-
-Then check Podman:
+`kas-container` uses Docker when it is installed and falls back to Podman
+otherwise (set `KAS_CONTAINER_ENGINE` to override), so check the engine it
+will pick:
 
 ```sh
-if command -v podman >/dev/null 2>&1; then
-  podman run --rm hello-world
-else
-  echo "podman not installed; continue with Docker backend"
-fi
+docker run --rm hello-world    # or, on a Podman-only host: podman run --rm hello-world
 ```
 
 Notes:
 
 - Do not use `sudo` unless the host setup explicitly requires it.
 - Do not create or modify user groups as part of this workflow.
-- If Podman is unavailable, Docker-only operation is acceptable.
 
 ## 2) Recommended environment
 
