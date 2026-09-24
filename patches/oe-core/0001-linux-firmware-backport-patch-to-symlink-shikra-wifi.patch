@@ -1,0 +1,109 @@
+From 8022526b897c6b4885648ae34b4fe38a7707f444 Mon Sep 17 00:00:00 2001
+From: Viswanath Kraleti <viswanath.kraleti@oss.qualcomm.com>
+Date: Thu, 24 Sep 2026 08:02:09 +0530
+Subject: [PATCH] linux-firmware: backport patch to symlink shikra wifi
+ firmware
+
+On Shikra platform the WiFi firmware is loaded by the tqftpserv
+from the same location as the rest of the DSP firmware. This link
+was missing in the previous commit that brought it in WiFi firmware.
+
+Backport the upstream commit 837ae0e5becc ("qcom/shikra: link WiFi
+firmware from the ath10k subdir") that is pointing from the expected
+location to the actual WiFi firmware file.
+
+Signed-off-by: Viswanath Kraleti <viswanath.kraleti@oss.qualcomm.com>
+Upstream-Status: Backport [https://gitlab.com/kernel-firmware/linux-firmware/-/commit/837ae0e5beccc2f1e974afba56c22c3cf981fc4e]
+---
+ ...-WiFi-firmware-from-the-ath10k-subdi.patch | 28 +++++++++++++++++++
+ .../linux-firmware/linux-firmware_20260910.bb |  7 ++++-
+ 2 files changed, 34 insertions(+), 1 deletion(-)
+ create mode 100644 meta/recipes-kernel/linux-firmware/linux-firmware/0001-qcom-shikra-link-WiFi-firmware-from-the-ath10k-subdi.patch
+
+diff --git a/meta/recipes-kernel/linux-firmware/linux-firmware/0001-qcom-shikra-link-WiFi-firmware-from-the-ath10k-subdi.patch b/meta/recipes-kernel/linux-firmware/linux-firmware/0001-qcom-shikra-link-WiFi-firmware-from-the-ath10k-subdi.patch
+new file mode 100644
+index 0000000000..010121da6b
+--- /dev/null
++++ b/meta/recipes-kernel/linux-firmware/linux-firmware/0001-qcom-shikra-link-WiFi-firmware-from-the-ath10k-subdi.patch
+@@ -0,0 +1,28 @@
++From 837ae0e5beccc2f1e974afba56c22c3cf981fc4e Mon Sep 17 00:00:00 2001
++From: Dmitry Baryshkov <dmitry.baryshkov@oss.qualcomm.com>
++Date: Fri, 18 Sep 2026 17:52:15 +0300
++Subject: [PATCH] qcom/shikra: link WiFi firmware from the ath10k subdir
++
++On Qualcomm Shikra platform the WiFi firmware is loaded by the tqftpserv
++from the same location as the rest of the DSP firmware. Add symlink,
++pointing from the expected location to the actual WiFi firmware file.
++
++Fixes: f64d7db7d264 ("ath10k: WCN3990: hw1.0: add shikra firmware files")
++Signed-off-by: Dmitry Baryshkov <dmitry.baryshkov@oss.qualcomm.com>
++Upstream-Status: Backport [https://gitlab.com/kernel-firmware/linux-firmware/-/commit/837ae0e5beccc2f1e974afba56c22c3cf981fc4e]
++---
++ WHENCE | 1 +
++ 1 file changed, 1 insertion(+)
++
++diff --git a/WHENCE b/WHENCE
++index a712978b..053640a0 100644
++--- a/WHENCE
+++++ b/WHENCE
++@@ -3825,6 +3825,7 @@ Version: WLAN.HL.2.0-01387-QCAHLSWMTPLZ-1
++ File: ath10k/WCN3990/hw1.0/notice.txt_wlanmdsp
++ File: ath10k/WCN3990/hw1.0/shikra/firmware-5.bin
++ File: ath10k/WCN3990/hw1.0/shikra/wlanmdsp.mbn
+++Link: qcom/shikra/wlanmdsp.mbn -> ../../ath10k/WCN3990/hw1.0/shikra/wlanmdsp.mbn
++ Version: WLAN.HL.3.3.7.c5-00093.2-QCAHLSWMTPL-1
++ File: ath10k/WCN3990/hw1.0/shikra/notice.txt_wlanmdsp
++ 
+diff --git a/meta/recipes-kernel/linux-firmware/linux-firmware_20260910.bb b/meta/recipes-kernel/linux-firmware/linux-firmware_20260910.bb
+index 81b920b7e4..0cf9775f59 100644
+--- a/meta/recipes-kernel/linux-firmware/linux-firmware_20260910.bb
++++ b/meta/recipes-kernel/linux-firmware/linux-firmware_20260910.bb
+@@ -277,7 +277,7 @@ LIC_FILES_CHKSUM = "file://LICENSES/LICENCE.Abilis;md5=b5ee3f410780e56711ad48ead
+                     "
+ # WHENCE checksum is defined separately to ease overriding it if
+ # class-devupstream is selected.
+-WHENCE_CHKSUM  = "47dbfc1b4d2d5a13c2e990ae38c3ac2b"
++WHENCE_CHKSUM  = "0468f24519fa953ad96a5c89e9f22812"
+ 
+ # These are not common licenses, set NO_GENERIC_LICENSE for them
+ # so that the license files will be copied from fetched source
+@@ -412,6 +412,7 @@ PATCHTOOL:qcom = "git"
+ SRC_URI = "\
+   ${KERNELORG_MIRROR}/linux/kernel/firmware/${BPN}-${PV}.tar.xz \
+   file://0001-ath10k-WCN3990-hw1.0-add-shikra-firmware-files.patch \
++  file://0001-qcom-shikra-link-WiFi-firmware-from-the-ath10k-subdi.patch \
+ "
+ 
+ BBCLASSEXTEND = "devupstream:target"
+@@ -587,6 +588,7 @@ PACKAGES =+ "${PN}-amphion-vpu-license ${PN}-amphion-vpu \
+              ${PN}-atheros-license ${PN}-ar5523 ${PN}-ar9170 ${PN}-ath6k ${PN}-ath9k ${PN}-ath3k \
+              ${PN}-carl9170 \
+              ${PN}-qcom-qcm2290-wifi ${PN}-qcom-qrb4210-wifi ${PN}-qcom-sdm845-modem \
++             ${PN}-qcom-shikra-wifi \
+              ${PN}-ar3k-license ${PN}-ar3k \
+              ${PN}-ath10k-license ${PN}-ath10k \
+              ${PN}-ath10k-qca4019 \
+@@ -2467,6 +2469,7 @@ LICENSE:${PN}-qcom-shikra-compute = "LicenseRef-Firmware-qcom-2"
+ LICENSE:${PN}-qcom-shikra-audio = "LicenseRef-Firmware-qcom-2"
+ LICENSE:${PN}-qcom-shikra-modem = "LicenseRef-Firmware-qcom-2"
+ LICENSE:${PN}-qcom-shikra-qupv3fw = "LicenseRef-Firmware-qcom"
++LICENSE:${PN}-qcom-shikra-wifi = "LicenseRef-Firmware-qualcommAthos-ath10k"
+ LICENSE:${PN}-qcom-sm8150-adreno = "LicenseRef-Firmware-qcom"
+ LICENSE:${PN}-qcom-sm8250-adreno = "LicenseRef-Firmware-qcom"
+ LICENSE:${PN}-qcom-sm8250-audio = "LicenseRef-Firmware-qcom"
+@@ -2644,6 +2647,7 @@ FILES:${PN}-qcom-shikra-compute = "${firmwaredir}/qcom/shikra/cdsp*.*"
+ FILES:${PN}-qcom-shikra-audio = "${nonarch_base_libdir}/firmware/qcom/shikra/lpaicp*.*"
+ FILES:${PN}-qcom-shikra-modem = "${nonarch_base_libdir}/firmware/qcom/shikra/cqs/qdsp6sw.mbn*"
+ FILES:${PN}-qcom-shikra-qupv3fw = "${firmwaredir}/qcom/shikra/qupv3fw.elf*"
++FILES:${PN}-qcom-shikra-wifi = "${firmwaredir}/qcom/shikra/wlanmdsp.mbn* ${firmwaredir}/ath10k/WCN3990/hw1.0/shikra/*"
+ FILES:${PN}-qcom-sm8150-adreno = "${firmwaredir}/qcom/sm8150/a640*.*"
+ FILES:${PN}-qcom-sm8250-adreno = "${firmwaredir}/qcom/sm8250/a650*.*"
+ FILES:${PN}-qcom-sm8250-audio = "${firmwaredir}/qcom/sm8250/adsp*.*"
+@@ -2822,6 +2826,7 @@ RDEPENDS:${PN}-qcom-shikra-compute = "${PN}-qcom-2-license"
+ RDEPENDS:${PN}-qcom-shikra-audio = "${PN}-qcom-2-license"
+ RDEPENDS:${PN}-qcom-shikra-modem = "${PN}-qcom-2-license"
+ RDEPENDS:${PN}-qcom-shikra-qupv3fw = "${PN}-qcom-license"
++RDEPENDS:${PN}-qcom-shikra-wifi = "${PN}-ath10k-license"
+ RDEPENDS:${PN}-qcom-sm8150-adreno = "${PN}-qcom-license"
+ RDEPENDS:${PN}-qcom-sm8250-adreno = "${PN}-qcom-license"
+ RDEPENDS:${PN}-qcom-sm8250-audio = "${PN}-qcom-license"
