@@ -81,7 +81,7 @@ mkdir -p "${DL_DIR}" "${SSTATE_DIR}" "${KAS_WORK_DIR}"
 ## 3) Build with kas-container (CI style)
 
 CI build composition pattern:
-`:ci/<machine>.yml[:distro.yml][:kernel.yml]`
+`ci/<machine>.yml[:ci/<distro>.yml][:ci/<kernel>.yml]`
 
 Example:
 
