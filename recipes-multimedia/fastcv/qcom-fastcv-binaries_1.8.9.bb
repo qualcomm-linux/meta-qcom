@@ -19,20 +19,13 @@ DEPENDS += "glib-2.0 fastrpc"
 COMPATIBLE_MACHINE = "^$"
 COMPATIBLE_MACHINE:aarch64 = "(.*)"
 
+inherit qcom-hexagon
+
 do_install() {
     install -d ${D}${bindir}/
     install -d ${D}${libdir}/pkgconfig
     install -d ${D}${datadir}/doc/${PN}
     install -d ${D}${includedir}/fastcv
-    install -d ${D}${datadir}/qcom/glymur/Qualcomm/Glymur-CRD/dsp/cdsp
-    install -d ${D}${datadir}/qcom/kaanapali/Qualcomm/Kaanapali-MTP/dsp/cdsp
-    install -d ${D}${datadir}/qcom/qcm6490/Thundercomm/RB3gen2/dsp/cdsp
-    install -d ${D}${datadir}/qcom/qcs615/Qualcomm/QCS615-RIDE/dsp/cdsp
-    install -d ${D}${datadir}/qcom/qcs8300/Qualcomm/QCS8300-RIDE/dsp/cdsp
-    install -d ${D}${datadir}/qcom/sa8775p/Qualcomm/SA8775P-RIDE/dsp/cdsp
-    install -d ${D}${datadir}/qcom/shikra/Qualcomm/Shikra-CQS-EVK/dsp/cdsp
-    install -d ${D}${datadir}/qcom/sm8750/Qualcomm/SM8750-MTP/dsp/cdsp
-    install -d ${D}${datadir}/qcom/x1e80100/Qualcomm/Hamoa-IoT-EVK/dsp/cdsp
 
     install -m 0755 ${S}/usr/lib/libfastcvopt.so.1.8.0 ${D}${libdir}
     install -m 0755 ${S}/usr/lib/libfastcvdsp_stub.so.1.8.0 ${D}${libdir}
@@ -47,67 +40,34 @@ do_install() {
     install -m 0644 ${S}/usr/include/fastcv/fastcv.h ${D}${includedir}/fastcv/
     install -m 0644 ${S}/usr/include/fastcv/fastcvExt.h ${D}${includedir}/fastcv/
 
-    install -m 0644 ${S}/usr/lib/dsp/cdsp/cv/v65/TALOS_MOOREA/*.so ${D}${datadir}/qcom/qcs615/Qualcomm/QCS615-RIDE/dsp/cdsp
-    install -m 0644 ${S}/usr/lib/dsp/cdsp/cv/v66/SHIKRA/*.so ${D}${datadir}/qcom/shikra/Qualcomm/Shikra-CQS-EVK/dsp/cdsp
-    install -m 0644 ${S}/usr/lib/dsp/cdsp/cv/v68/KODIAK/*.so ${D}${datadir}/qcom/qcm6490/Thundercomm/RB3gen2/dsp/cdsp
-    install -m 0644 ${S}/usr/lib/dsp/cdsp/cv/v73/HAMOA/*.so ${D}${datadir}/qcom/x1e80100/Qualcomm/Hamoa-IoT-EVK/dsp/cdsp
-    install -m 0644 ${S}/usr/lib/dsp/cdsp/cv/v73/LEMANS/*.so ${D}${datadir}/qcom/sa8775p/Qualcomm/SA8775P-RIDE/dsp/cdsp
-    install -m 0644 ${S}/usr/lib/dsp/cdsp/cv/v75/MONACO/*.so ${D}${datadir}/qcom/qcs8300/Qualcomm/QCS8300-RIDE/dsp/cdsp
-    install -m 0644 ${S}/usr/lib/dsp/cdsp/cv/v79/PAKALA/*.so ${D}${datadir}/qcom/sm8750/Qualcomm/SM8750-MTP/dsp/cdsp
-    install -m 0644 ${S}/usr/lib/dsp/cdsp/cv/v81/KAANAPALI/*.so ${D}${datadir}/qcom/kaanapali/Qualcomm/Kaanapali-MTP/dsp/cdsp
-    install -m 0644 ${S}/usr/lib/dsp/cdsp/cv/v81/GLYMUR/*.so ${D}${datadir}/qcom/glymur/Qualcomm/Glymur-CRD/dsp/cdsp
+    # The per-SoC builds of a Hexagon version differ only in their signature
+    for dir in ${S}/usr/lib/dsp/cdsp/cv/v*/*; do
+        case $(basename ${dir}) in
+        # Built for v66 and v73 respectively, not for the Hexagon version of
+        # the directory they are shipped in
+        TALOS_MOOREA|KAILUA)
+            continue
+            ;;
+        esac
+
+        arch=$(basename $(dirname ${dir}))
+        install -d ${D}${datadir}/qcom/${arch}
+        install -m 0644 ${dir}/*.so ${D}${datadir}/qcom/${arch}
+    done
 
     install -m 0755 ${S}/usr/bin/fastcv_simple_test64 ${D}${bindir}
 }
 
 PACKAGE_BEFORE_PN = "${PN}-dsp fastcv-apps"
 
-PACKAGES += "\
-    ${PN}-glymur-crd-dsp \
-    ${PN}-hamoa-iot-evk-dsp \
-    ${PN}-kaanapali-mtp-dsp \
-    ${PN}-purwa-iot-evk-dsp \
-    ${PN}-qcs615-ride-dsp \
-    ${PN}-qcs8300-ride-dsp \
-    ${PN}-sa8775p-ride-dsp \
-    ${PN}-shikra-evk-dsp \
-    ${PN}-sm8750-mtp-dsp \
-    ${PN}-thundercomm-rb3gen2-dsp \
-"
-
 FILES:${PN}-dsp = "${libdir}/libfastcvdsp_stub.so.*"
 FILES:fastcv-apps = "${bindir}/fastcv_simple_test64"
 
-RDEPENDS:${PN}-glymur-crd-dsp = "${PN}-dsp"
-RDEPENDS:${PN}-hamoa-iot-evk-dsp = "${PN}-dsp"
-RDEPENDS:${PN}-kaanapali-mtp-dsp = "${PN}-dsp"
-RDEPENDS:${PN}-purwa-iot-evk-dsp = "${PN}-dsp ${PN}-hamoa-iot-evk-dsp"
-RDEPENDS:${PN}-qcs615-ride-dsp = "${PN}-dsp"
-RDEPENDS:${PN}-qcs8300-ride-dsp = "${PN}-dsp"
-RDEPENDS:${PN}-sa8775p-ride-dsp = "${PN}-dsp"
-RDEPENDS:${PN}-shikra-evk-dsp = "${PN}-dsp"
-RDEPENDS:${PN}-sm8750-mtp-dsp = "${PN}-dsp"
-RDEPENDS:${PN}-thundercomm-rb3gen2-dsp = "${PN}-dsp"
+QCOM_HEXAGON_RDEPENDS = "${PN}-dsp"
 
-INSANE_SKIP:${PN}-glymur-crd-dsp = "arch libdir"
-INSANE_SKIP:${PN}-hamoa-iot-evk-dsp = "arch libdir"
-INSANE_SKIP:${PN}-kaanapali-mtp-dsp = "arch libdir"
-INSANE_SKIP:${PN}-qcs615-ride-dsp = "arch libdir"
-INSANE_SKIP:${PN}-qcs8300-ride-dsp = "arch libdir"
-INSANE_SKIP:${PN}-sa8775p-ride-dsp = "arch libdir"
-INSANE_SKIP:${PN}-shikra-evk-dsp = "arch libdir"
-INSANE_SKIP:${PN}-sm8750-mtp-dsp = "arch libdir"
-INSANE_SKIP:${PN}-thundercomm-rb3gen2-dsp = "arch libdir"
-
-
-ALLOW_EMPTY:${PN}-purwa-iot-evk-dsp = "1"
-
-FILES:${PN}-glymur-crd-dsp += "${datadir}/qcom/glymur/Qualcomm/Glymur-CRD/dsp/cdsp"
-FILES:${PN}-hamoa-iot-evk-dsp += "${datadir}/qcom/x1e80100/Qualcomm/Hamoa-IoT-EVK/dsp/cdsp"
-FILES:${PN}-kaanapali-mtp-dsp += "${datadir}/qcom/kaanapali/Qualcomm/Kaanapali-MTP/dsp/cdsp"
-FILES:${PN}-qcs615-ride-dsp += "${datadir}/qcom/qcs615/Qualcomm/QCS615-RIDE/dsp"
-FILES:${PN}-qcs8300-ride-dsp += "${datadir}/qcom/qcs8300/Qualcomm/QCS8300-RIDE/dsp"
-FILES:${PN}-sa8775p-ride-dsp += "${datadir}/qcom/sa8775p/Qualcomm/SA8775P-RIDE/dsp"
-FILES:${PN}-shikra-evk-dsp += "${datadir}/qcom/shikra/Qualcomm/Shikra-CQS-EVK/dsp/cdsp"
-FILES:${PN}-sm8750-mtp-dsp += "${datadir}/qcom/sm8750/Qualcomm/SM8750-MTP/dsp/cdsp"
-FILES:${PN}-thundercomm-rb3gen2-dsp += "${datadir}/qcom/qcm6490/Thundercomm/RB3gen2/dsp"
+RPROVIDES:${PN}-hexagon-v66 = "${PN}-qcs615-ride-dsp ${PN}-shikra-evk-dsp"
+RPROVIDES:${PN}-hexagon-v68 = "${PN}-thundercomm-rb3gen2-dsp"
+RPROVIDES:${PN}-hexagon-v73 = "${PN}-hamoa-iot-evk-dsp ${PN}-purwa-iot-evk-dsp ${PN}-sa8775p-ride-dsp"
+RPROVIDES:${PN}-hexagon-v75 = "${PN}-qcs8300-ride-dsp"
+RPROVIDES:${PN}-hexagon-v79 = "${PN}-sm8750-mtp-dsp"
+RPROVIDES:${PN}-hexagon-v81 = "${PN}-glymur-crd-dsp ${PN}-kaanapali-mtp-dsp"
