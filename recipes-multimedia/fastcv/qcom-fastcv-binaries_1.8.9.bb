@@ -63,6 +63,8 @@ PACKAGE_BEFORE_PN = "${PN}-dsp fastcv-apps"
 FILES:${PN}-dsp = "${libdir}/libfastcvdsp_stub.so.*"
 FILES:fastcv-apps = "${bindir}/fastcv_simple_test64"
 
+RRECOMMENDS:${PN} += "packagegroup-qcom-hexagon-fastcv"
+
 QCOM_HEXAGON_RDEPENDS = "${PN}-dsp"
 
 RPROVIDES:${PN}-hexagon-v66 = "${PN}-qcs615-ride-dsp ${PN}-shikra-evk-dsp"
