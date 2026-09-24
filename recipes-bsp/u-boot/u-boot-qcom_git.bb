@@ -23,6 +23,7 @@ SRC_URI += " \
     file://0001-Add-support-for-OpenSSL-Provider-API.patch \
     file://disable-eficapsule-tool.cfg \
     file://efi-rt-volatile-store.cfg \
+    file://fw_env.config \
     ${@bb.utils.contains('MACHINE_FEATURES', 'optee', 'file://tfa-optee.cfg', '', d)} \
     ${@bb.utils.contains('MACHINE_FEATURES', 'kvm', 'file://gunyah-exit.cfg', '', d)} \
     ${@bb.utils.contains('SPL_SIGN_ENABLE', '1', 'file://spl-fit-signature.cfg', '', d)} \
