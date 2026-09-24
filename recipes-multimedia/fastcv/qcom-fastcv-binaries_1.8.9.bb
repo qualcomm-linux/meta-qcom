@@ -66,10 +66,3 @@ FILES:fastcv-apps = "${bindir}/fastcv_simple_test64"
 RRECOMMENDS:${PN} += "packagegroup-qcom-hexagon-fastcv"
 
 QCOM_HEXAGON_RDEPENDS = "${PN}-dsp"
-
-RPROVIDES:${PN}-hexagon-v66 = "${PN}-qcs615-ride-dsp ${PN}-shikra-evk-dsp"
-RPROVIDES:${PN}-hexagon-v68 = "${PN}-thundercomm-rb3gen2-dsp"
-RPROVIDES:${PN}-hexagon-v73 = "${PN}-hamoa-iot-evk-dsp ${PN}-purwa-iot-evk-dsp ${PN}-sa8775p-ride-dsp"
-RPROVIDES:${PN}-hexagon-v75 = "${PN}-qcs8300-ride-dsp"
-RPROVIDES:${PN}-hexagon-v79 = "${PN}-sm8750-mtp-dsp"
-RPROVIDES:${PN}-hexagon-v81 = "${PN}-glymur-crd-dsp ${PN}-kaanapali-mtp-dsp"
