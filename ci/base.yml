@@ -21,9 +21,15 @@ repos:
     url: https://git.yoctoproject.org/meta-lts-mixins
     branch: wrynose/linux-firmware
     patches:
-      shirka-wlan-fw:
+      001-shikra-wlan-fw:
         repo: meta-qcom
         path: patches/linux-firmware-mixin/0001-linux-firmware-backport-shikra-wlan-firmware-support.patch
+      002-shikra-wifi-pkg:
+        repo: meta-qcom
+        path: patches/linux-firmware-mixin/0002-linux-firmware-package-qcom-shikra-wifi-firmware.patch
+      003-shikra-wlan-fw-link:
+        repo: meta-qcom
+        path: patches/linux-firmware-mixin/0003-linux-firmware-backport-patch-to-symlink-shikra-wifi.patch
 
   bitbake:
     url: https://github.com/openembedded/bitbake
