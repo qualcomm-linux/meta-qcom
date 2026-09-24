@@ -74,6 +74,8 @@ jobs:
           echo "DL_DIR=${INPUTS_CACHE_DIR}/downloads" >> $GITHUB_ENV
           # use a single shared sstate cache folder, cleaned up by mtime
           echo "SSTATE_DIR=${INPUTS_CACHE_DIR}/sstate-cache" >> $GITHUB_ENV
+          # use a single shared hashserv folder
+          echo "BB_HASHSERVE_DB_DIR=\${SSTATE_DIR}/hashserv" >> $GITHUB_ENV
           echo "KAS_WORK_DIR=${PWD}/../kas" >> $GITHUB_ENV
           echo "KAS_YAMLS=ci/ci.yml:ci/${INPUTS_MACHINE}.yml${INPUTS_DISTRO_YAML}${INPUTS_KERNEL_YAML}:ci/build-id.yml" >> $GITHUB_ENV
           echo "INPUTS_CACHE_DIR=${INPUTS_CACHE_DIR}" >> $GITHUB_ENV
@@ -99,10 +101,14 @@ jobs:
           INPUTS_KERNEL_YAML: ${{ inputs.kernel_yaml }}
           BUILD_ID: ${{ github.run_id }}-${{ github.run_attempt }}
 
+      - name: Create Directories
+        run: |
+          mkdir -p $KAS_WORK_DIR
+          mkdir -p $BB_HASHSERVE_DB_DIR
+
       - name: Dump kas-build yaml
         shell: bash
         run: |
-          mkdir $KAS_WORK_DIR
           $KAS_CONTAINER dump --resolve-env --resolve-local --resolve-refs ${KAS_YAMLS} > kas-build.yml
 
       - name: Kas build world

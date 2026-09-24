@@ -5,4 +5,5 @@ header:
 
 local_conf_header:
   mirror: |
+    BB_HASHSERVE_UPSTREAM = "wss://hashserv.yoctoproject.org/ws"
     SSTATE_MIRRORS = "file://.* http://sstate.yoctoproject.org/all/PATH;downloadfilename=PATH"
