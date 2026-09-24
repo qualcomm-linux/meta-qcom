@@ -109,12 +109,6 @@ Run a subset:
   --command "/repo/ci/oe-selftest.sh /repo /work qcom_fitimage.QcomFitImageMatrixTests"
 ```
 
-If passing explicit tests directly (without helper), call:
-
-```sh
-ci/oe-selftest.sh "$REPO_DIR" "$KAS_WORK_DIR" qcom_fitimage.QcomFitImageMatrixTests
-```
-
 ## 5) Direct kas shell alternative (no helper wrapper)
 
 For one-off commands:
