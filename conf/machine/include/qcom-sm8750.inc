@@ -7,6 +7,8 @@ require conf/machine/include/qcom-common.inc
 DEFAULTTUNE = "armv8-7a"
 require conf/machine/include/arm/arch-armv8-7a.inc
 
+QCOM_HEXAGON_ARCHS = "v79"
+
 MACHINE_ESSENTIAL_EXTRA_RRECOMMENDS += " \
     packagegroup-qcom-boot-essential \
 "
