@@ -154,12 +154,17 @@ Never fabricate a name or email; always read them from `git config`.
 
 Trailer order matters: `Assisted-by` goes **before** `Signed-off-by`, so the
 sign-off is always the last trailer written by the author. A complete
-agent-assisted commit message looks like this:
+agent-assisted commit message, at a typical length, looks like this:
 
 ```text
-recipe-name: summary of the changes
+ci/performance: enable root-only udev trigger
 
-Explain the problem first, then the change, in plain English.
+The initramfs udev framework now supports root-only triggering for all
+supported initramfs images and falls back to a full trigger when the
+root device cannot be resolved.
+
+Enable the optimization unconditionally in the performance command line
+instead of limiting it to initramfs-rootfs-image.
 
 Assisted-by: AGENT_NAME:MODEL_VERSION
 Signed-off-by: Author Name <author@example.com>
@@ -171,6 +176,19 @@ write both trailers in the order above in a single commit message instead.
 
 Fixups within the same patch series are not allowed; changes should be
 corrected in the patch where they are introduced.
+
+### Writing for reviewers
+
+Commit messages, code comments and pull request descriptions are read by
+maintainers reviewing many changes, so keep them short enough to take in
+at a glance. A commit body is usually one or two short paragraphs: the
+problem, the change, and any fact the reviewer cannot get from the diff.
+Leave out what the diff already shows, the alternatives you considered,
+and what the change does not affect, unless a reviewer would otherwise
+ask. Get there by saying less, not by compressing it into fragments.
+
+Comment code the way the surrounding file does, and only where the reason
+is not obvious; how the code changed belongs in the commit message.
 
 ## 8) Backporting to a release branch
 
