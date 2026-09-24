@@ -132,6 +132,11 @@ The full backport workflow — the default `git cherry-pick -x` path from
 run before opening a PR, and the `[Backport wrynose]` commit message
 conventions — is documented in [BACKPORTING.md](BACKPORTING.md).
 
+Open a pull request, backports included, only when the user asks for one.
+Every pull request lands in the maintainers' review queue, so one the user
+did not ask for, or does not know about, is review load nobody wanted.
+Otherwise, stop once the change is committed and tell the user it is ready.
+
 If the change **cannot** be submitted to `master` (it is specific to
 `wrynose`), then submit it directly against `wrynose`, and **explain in the
 commit body and PR description why it is wrynose-only** and not a backport.
@@ -181,8 +186,8 @@ branch), follow the same conventions the automation uses:
    appends the `(cherry picked from commit <sha>)` line for you. Keep the
    original subject, body, and trailers unchanged, and add your own
    `Signed-off-by` after the cherry-pick line if it is not already present.
-3. Open the pull request against the release branch with the subject
-   prefixed by the target branch, for example
+3. When the user asks for the pull request, open it against the release
+   branch with the subject prefixed by the target branch, for example
    `[Backport wrynose] recipe-name: summary of the changes`, and link the
    original pull request in the description.
 
