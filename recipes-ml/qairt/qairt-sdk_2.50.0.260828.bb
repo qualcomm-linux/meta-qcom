@@ -104,12 +104,4 @@ SOLIBS = ".so"
 FILES_SOLIBSDEV = ""
 
 RDEPENDS:${PN} += "fastrpc"
-RRECOMMENDS:${PN} += " \
-    ${PN}-hexagon-v66 \
-    ${PN}-hexagon-v68 \
-    ${PN}-hexagon-v69 \
-    ${PN}-hexagon-v73 \
-    ${PN}-hexagon-v75 \
-    ${PN}-hexagon-v79 \
-    ${PN}-hexagon-v81 \
-"
+RRECOMMENDS:${PN} += "packagegroup-qcom-hexagon-qairt"
