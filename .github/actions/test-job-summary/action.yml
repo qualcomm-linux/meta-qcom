@@ -1,20 +1,42 @@
 name: LAVA test job summary
+description: "Build a summary of LAVA test job results and upload it as a workflow artifact"
 inputs:
   build_id:
-    description: "ID of the workflow from which build URL will be downloaded"
+    description: "ID of the workflow run from which the test job artifacts are downloaded"
     required: true
   gh_token:
-    description: "Github token. It's required to download artifacts from the workflow"
+    description: "GitHub token. It's required to download artifacts from the workflow"
     required: true
   prefix:
-    description: "Prefix for the compressed file that is uploaded as workflow artifact"
-    default: test-job*
+    description: "Name pattern of the test job artifacts and of the job JSON files they contain"
+    default: "*test-job*"
   summary_file_name:
     description: "File name that is used to save test job summary"
     default: step-summary.txt
   summary_title:
     description: "Title for the summary part of the report"
     required: false
+  lava_base_url:
+    description: "Base URL of the LAVA instance the results are read from"
+    required: false
+    default: https://lava.infra.foundries.io
+  known_failures_file:
+    description: >
+      Path to a YAML file listing the failures that are known and accepted for
+      the build under test, relative to the workspace. A listed failure is
+      reported as a known failure and counted as a pass, and a listed test that
+      passes is reported as an unexpected pass and counted as a failure, so a
+      stale entry gets noticed. Empty, or a file that does not exist, means no
+      known failure. See the README of the directory it lives in for the
+      format.
+    required: false
+    default: ""
+  kernel:
+    description: >
+      Kernel flavour under test. An entry of the known failures list that names
+      a "kernels" filter only applies to the flavours it lists.
+    required: false
+    default: ""
 outputs:
   artifact_id:
     description: "ID of the uploaded artifact"
@@ -43,8 +65,73 @@ runs:
           INPUTS_PREFIX: ${{ inputs.prefix }}
           INPUTS_SUMMARY_FILE_NAME: ${{ inputs.summary_file_name }}
           INPUTS_SUMMARY_TITLE: ${{ inputs.summary_title }}
+          INPUTS_LAVA_BASE_URL: ${{ inputs.lava_base_url }}
+          INPUTS_KNOWN_FAILURES_FILE: ${{ inputs.known_failures_file }}
+          INPUTS_KERNEL: ${{ inputs.kernel }}
         run: |
           set -x
+          # how much of a known failure's note fits in a table cell
+          COMMENT_WIDTH=40
+          # results per request; the LAVA default is 50
+          LAVA_PAGE_SIZE=1000
+          # fail the step with failed command
+          set -eo pipefail
+          # Inherit errexit to force step failure
+          shopt -s inherit_errexit
+          # Helper for fetching the URL with retries
+          lava_fetch() {
+              local url="$1"
+              local wait=30
+              local rc=0
+              curl -sSf --retry 3 "${url}" || rc=$?
+              if [ "${rc}" -ne 0 ]; then
+                  echo "::warning title=LAVA request failed::curl exited with ${rc} for ${url}, retrying in ${wait}s" >&2
+                  sleep "${wait}"
+                  rc=0
+                  curl -sSf --retry 3 "${url}" || rc=$?
+              fi
+              if [ "${rc}" -ne 0 ]; then
+                  echo "::error title=LAVA request failed::curl exited with ${rc} for ${url}" >&2
+                  return "${rc}"
+              fi
+          }
+
+          # A listing is paginated: it answers with a page of results and a
+          # "next" URL for the rest. Follow "next" until it runs
+          # out however large the listing turns out to be, and hand the caller
+          # every result as one response so it cannot tell the difference.
+          #
+          # A single object - a job, say - has no "results", and is passed
+          # straight through.
+          lava_api() {
+              local url="${INPUTS_LAVA_BASE_URL}/api/v0.2/$1"
+              local body results
+
+              case "${url}" in
+                  *\?*) url="${url}&limit=${LAVA_PAGE_SIZE}" ;;
+                  *) url="${url}?limit=${LAVA_PAGE_SIZE}" ;;
+              esac
+
+              results=""
+              while [ -n "${url}" ]; do
+                  body=$(lava_fetch "${url}")
+                  if ! printf '%s' "${body}" | jq -e . >/dev/null 2>&1; then
+                      echo "::error title=LAVA request failed::${url} did not answer with JSON" >&2
+                      return 1
+                  fi
+                  if ! printf '%s' "${body}" | jq -e 'type == "object" and has("results")' >/dev/null; then
+                      printf '%s' "${body}"
+                      return 0
+                  fi
+                  results="${results}$(printf '%s' "${body}" | jq -c '.results[]')
+          "
+                  # LAVA hands out its next link as http, which would be a
+                  # redirect to follow and a round trip in the clear; ask for
+                  # the same page over the scheme we came in on
+                  url=$(printf '%s' "${body}" | jq -r '.next // ""' | sed 's|^http://|https://|')
+              done
+              printf '%s' "${results}" | jq -s -c '{results: .}'
+          }
           # When a failed LAVA job is re-run, GitHub keeps the original failed
           # job's "<distro>-test-job-<id>" artifact AND adds a new artifact for the
           # re-submitted job (LAVA assigns a fresh, higher id). Both get downloaded
@@ -69,8 +156,8 @@ runs:
           INPUT=$(for TESTJOB in ${TESTJOBS}
           do
               JOB_ID=$(cat "$TESTJOB" | jq ".id")
-              JOB_URL="https://lava.infra.foundries.io/results/$JOB_ID"
-              JOB_DETAILS=$(curl -s "https://lava.infra.foundries.io/api/v0.2/jobs/$JOB_ID/")
+              JOB_URL="${INPUTS_LAVA_BASE_URL}/results/$JOB_ID"
+              JOB_DETAILS=$(lava_api "jobs/$JOB_ID/")
               JOB_HEALTH=$(echo "$JOB_DETAILS" | jq -r ".health")
               JOB_STATE=$(echo "$JOB_DETAILS" | jq -r ".state")
               JOB_DEVICE_TYPE=$(echo "$JOB_DETAILS" | jq -r ".requested_device_type")
@@ -79,50 +166,118 @@ runs:
               if echo "${JOB_TITLE}" | grep -q "boot"; then
                   JOB_TYPE="boot"
               fi
-              # get suites and results
-              JOB_SUITES=$(curl -s "https://lava.infra.foundries.io/api/v0.2/jobs/$JOB_ID/suites/")
-              TEST_RESULTS=$(for SUITE in $(echo "$JOB_SUITES" | jq -r -c ".results[]")
-              do
-                  if [ "${JOB_TYPE}" = "test" ]; then
+              if [ "${JOB_TYPE}" = "boot" ]; then
+                  # boot result comes from the job itself, so it is reported
+                  # even when the job has no test suites
+                  if [ "${JOB_STATE}" = "Finished" ] && [ ${JOB_HEALTH} = "Complete" ]; then
+                      TEST_RESULT_BOOT="pass"
+                  else
+                      TEST_RESULT_BOOT="fail"
+                  fi
+                  TEST_RESULTS=$(jq -n -c --arg url "${JOB_URL}" --arg result "${TEST_RESULT_BOOT}" '{boot: $ARGS.named}')
+              else
+                  # get suites and results
+                  JOB_SUITES=$(lava_api "jobs/$JOB_ID/suites/")
+                  TEST_RESULTS=$(for SUITE in $(echo "$JOB_SUITES" | jq -r -c ".results[]")
+                  do
                       if [ "${JOB_STATE}" = "Finished" ]; then
                           SUITE_NAME=$(echo "$SUITE" | jq -r ".name")
                           SUITE_ID=$(echo "$SUITE" | jq -r ".id")
-                          SUITE_TESTS=$(curl -s "https://lava.infra.foundries.io/api/v0.2/jobs/$JOB_ID/suites/$SUITE_ID/tests/")
+                          SUITE_TESTS=$(lava_api "jobs/$JOB_ID/suites/$SUITE_ID/tests/")
                           if [ "$SUITE_NAME" != "lava" ]; then
-                              echo "$SUITE_TESTS" | jq ".results[] | {(.name): {result: .result, url: .resource_uri}} | to_entries | .[]"
+                              # resource_uri points to the REST API, link to the test case page instead
+                              echo "$SUITE_TESTS" | jq --arg base "${INPUTS_LAVA_BASE_URL}" '.results[] | {(.name): {result: .result, url: "\($base)/results/testcase/\(.id)"}} | to_entries | .[]'
                           fi
                       fi
-                  else
-                      if [ "${JOB_STATE}" = "Finished" ] && [ ${JOB_HEALTH} = "Complete" ]; then
-                          TEST_RESULT_BOOT="pass"
-                      else
-                          TEST_RESULT_BOOT="fail"
-                      fi
-                      TEST_NAME="boot"
-                      TEST_URL="${JOB_URL}"
-                      TEST_RESULT_OBJ=$(jq --arg url "$TEST_URL" --arg result "$TEST_RESULT_BOOT" -n -c '$ARGS.named')
-                      jq -n -c --arg key "$TEST_NAME" --argjson value "$TEST_RESULT_OBJ" '$ARGS.named'
-                  fi
-              done | jq -s -c --sort-keys 'from_entries')
+                  done | jq -s -c --sort-keys 'from_entries')
+              fi
               echo "{\"key\": \"$JOB_DEVICE_TYPE\", \"value\": $TEST_RESULTS}" | jq
           # combine entries from boot jobs and pre-merge jobs
           done | jq -s -c 'reduce .[] as $i ({}; .[$i.key] = ((.[$i.key] // {}) + $i.value))')
           echo "$INPUT"
-          DEVICES=$(echo "$INPUT" | jq -r 'keys[]' | sort)
 
-          RESULTS=$(echo "$INPUT" | jq -r '.[] | keys[]?' | sort -u)
+          # Load the list of known failures. An entry is either a bare test
+          # name or a mapping with a "test", an optional "comment" holding the
+          # issue it is tracked in, and an optional "kernels" list restricting
+          # it to some kernel flavours. Both forms are normalised to
+          # {device: {test name: comment}}.
+          KNOWN_FAILURES="{}"
+          if [ -n "${INPUTS_KNOWN_FAILURES_FILE}" ]; then
+              if [ -f "${GITHUB_WORKSPACE}/${INPUTS_KNOWN_FAILURES_FILE}" ]; then
+                  KNOWN_FAILURES_RAW=$(yq -o=json -I=0 "${GITHUB_WORKSPACE}/${INPUTS_KNOWN_FAILURES_FILE}" | jq -c '. // {}')
+                  KNOWN_FAILURES=$(echo "${KNOWN_FAILURES_RAW}" | jq -c --arg kernel "${INPUTS_KERNEL}" '
+                    with_entries(.value |= ((. // []) | map(
+                      if type == "string" then {key: ., value: ""}
+                      elif type == "object" and (.test | type) == "string" then
+                        # an entry without a kernels filter applies everywhere
+                        if (.kernels | type) == "array" and ((.kernels | index($kernel)) | not) then empty
+                        else {key: .test, value: (.comment // "" | tostring)}
+                        end
+                      else empty
+                      end) | from_entries))')
+                  # entries filtered out by kernel, and entries matching neither
+                  # form, are dropped by the mapping above
+                  RAW_COUNT=$(echo "${KNOWN_FAILURES_RAW}" | jq --arg kernel "${INPUTS_KERNEL}" '[.[] | (. // []) | map(select((type != "object") or ((.kernels | type) != "array") or ((.kernels | index($kernel)) != null))) | length] | add // 0')
+                  KNOWN_COUNT=$(echo "${KNOWN_FAILURES}" | jq '[.[] | length] | add // 0')
+                  if [ "${RAW_COUNT}" != "${KNOWN_COUNT}" ]; then
+                      echo "::warning::${INPUTS_KNOWN_FAILURES_FILE}: ignored $((RAW_COUNT - KNOWN_COUNT)) malformed entry/entries"
+                  fi
+              else
+                  echo "::warning::known failures file ${INPUTS_KNOWN_FAILURES_FILE} not found"
+              fi
+          fi
+          echo "${KNOWN_FAILURES}"
+
+          # Turn the LAVA result of every test into the status that is
+          # reported. A failure that is on the list is reported as a known
+          # failure and counted as a pass. A test that passes while it is on
+          # the list is reported as an unexpected pass and counted as a
+          # failure, so that stale entries get noticed and removed. The comment
+          # of the entry is carried over so it can be reported too.
+          INPUT=$(echo "$INPUT" | jq -c --argjson known "${KNOWN_FAILURES}" '
+            with_entries(
+              # a device specific entry overrides the one listed for all devices
+              (($known["*"] // {}) + ($known[.key] // {})) as $known_tests
+              | .value |= with_entries(
+                  .key as $test
+                  | ($known_tests | has($test)) as $is_known
+                  | .value.status = (
+                      if .value.result == "fail" and $is_known then "known failure"
+                      elif .value.result == "pass" and $is_known then "unexpected pass"
+                      else .value.result
+                      end)
+                  | if $is_known then .value.comment = $known_tests[$test] else . end)
+            )')
+          echo "$INPUT"
+
+          # Boards across the top and tests down the side, both alphabetical,
+          # except that boot always comes first: it is the one result every job
+          # has, and the one that explains all the others when it fails.
+          DEVICES=$(echo "$INPUT" | jq -r '[keys[]] | sort_by(ascii_downcase) | .[]')
+
+          RESULTS=$(echo "$INPUT" | jq -r '
+            [.[] | keys[]?] | unique
+            | map(select(. == "boot")) + (map(select(. != "boot")) | sort_by(ascii_downcase))
+            | .[]')
 
           # Print collapsible box
           echo "<details>" >> "${INPUTS_SUMMARY_FILE_NAME}"
           # Print section summary
-          TOTAL_PASS=$(echo "${INPUT}" | jq '[.. | objects | select(.result? == "pass")] | length')
-          TOTAL_FAIL=$(echo "${INPUT}" | jq '[.. | objects | select(.result? == "fail")] | length')
+          TOTAL_PASS=$(echo "${INPUT}" | jq '[.. | objects | select(.status? == "pass")] | length')
+          TOTAL_KNOWN_FAIL=$(echo "${INPUT}" | jq '[.. | objects | select(.status? == "known failure")] | length')
+          # an unexpected pass counts as a failure: the known failures list is
+          # out of date and has to be updated
+          TOTAL_FAIL=$(echo "${INPUT}" | jq '[.. | objects | select(.status? == "fail" or .status? == "unexpected pass")] | length')
           TOTAL=$(echo "${INPUT}" | jq '[.. | objects | select(.result)] | length')
           SUMMARY_TITLE=""
           if [ "${INPUTS_SUMMARY_TITLE}" != "" ]; then
             SUMMARY_TITLE="${INPUTS_SUMMARY_TITLE}<br/>"
           fi
-          echo "<summary>${SUMMARY_TITLE}Pass: $TOTAL_PASS | Fail: $TOTAL_FAIL | Total: $TOTAL </summary>" >> "${INPUTS_SUMMARY_FILE_NAME}"
+          KNOWN_SUMMARY=""
+          if [ "${TOTAL_KNOWN_FAIL}" -gt 0 ]; then
+            KNOWN_SUMMARY="Known failures: $TOTAL_KNOWN_FAIL | "
+          fi
+          echo "<summary>${SUMMARY_TITLE}Pass: $TOTAL_PASS | ${KNOWN_SUMMARY}Fail: $TOTAL_FAIL | Total: $TOTAL </summary>" >> "${INPUTS_SUMMARY_FILE_NAME}"
           echo "" >> "${INPUTS_SUMMARY_FILE_NAME}"
           echo "" >> "${INPUTS_SUMMARY_FILE_NAME}"
 
@@ -151,19 +306,58 @@ runs:
             printf "| %s |" "$R" >> "${INPUTS_SUMMARY_FILE_NAME}"
 
             for D in $DEVICES; do
-              VALUE=$(echo "$INPUT" | jq -r --arg d "$D" --arg r "$R" '.[$d][$r].result // ""')
+              VALUE=$(echo "$INPUT" | jq -r --arg d "$D" --arg r "$R" '.[$d][$r].status // ""')
               URL=$(echo "$INPUT" | jq -r --arg d "$D" --arg r "$R" '.[$d][$r].url // ""')
               CHECKMARK=":white_check_mark:"
               if [ "${VALUE}" = "fail" ]; then CHECKMARK=":x:"; fi
+              if [ "${VALUE}" = "unexpected pass" ]; then CHECKMARK=":x:"; fi
+              if [ "${VALUE}" = "known failure" ]; then CHECKMARK=":ballot_box_with_check:"; fi
               if [ "${VALUE}" = "skip" ]; then CHECKMARK=":warning:"; fi
               if [ -z "${VALUE}" ]; then CHECKMARK=":no_entry_sign:"; fi
-              printf " %s [%s](%s) |" "$CHECKMARK" "$VALUE" "$URL"
-              printf " %s [%s](%s) |" "$CHECKMARK" "$VALUE" "$URL" >> "${INPUTS_SUMMARY_FILE_NAME}"
+
+              # A listed failure says more with the note that comes with it
+              # than with its own name, so put that in the cell instead. Any
+              # URL in the note becomes where the cell links to, which is
+              # usually the issue the failure is tracked in.
+              LABEL="${VALUE}"
+              TARGET="${URL}"
+              COMMENT=$(echo "$INPUT" | jq -r --arg d "$D" --arg r "$R" '.[$d][$r].comment // ""')
+              if [ -n "${COMMENT}" ]; then
+                  COMMENT_URL=$(printf '%s' "${COMMENT}" | grep -oE 'https?://[^[:space:]]+' | head -1 || true)
+                  if [ -n "${COMMENT_URL}" ]; then
+                      TARGET="${COMMENT_URL}"
+                  fi
+                  # a pipe would end the cell, and a long note would push the
+                  # board columns off the side of the page
+                  LABEL=$(printf '%s' "${COMMENT}" | tr '\n' ' ' | sed 's/|/\\|/g')
+                  if [ "${#LABEL}" -gt "${COMMENT_WIDTH}" ]; then
+                      LABEL="${LABEL:0:${COMMENT_WIDTH}}..."
+                  fi
+              fi
+              printf " %s [%s](%s) |" "$CHECKMARK" "$LABEL" "$TARGET"
+              printf " %s [%s](%s) |" "$CHECKMARK" "$LABEL" "$TARGET" >> "${INPUTS_SUMMARY_FILE_NAME}"
             done
             echo "" >> "${INPUTS_SUMMARY_FILE_NAME}"
           done
           echo "" >> "${INPUTS_SUMMARY_FILE_NAME}"
           echo "</details>" >> "${INPUTS_SUMMARY_FILE_NAME}"
+          # Print the entries of the known failures list that were applied,
+          # together with the issue each one is annotated with
+          KNOWN_ROWS=$(echo "$INPUT" | jq -r '
+            to_entries[] | .key as $device | .value | to_entries[]
+            | select(.value.status == "known failure" or .value.status == "unexpected pass")
+            | "| \($device) | \(.key) | \(.value.status) | \(.value.comment // "") |"' | sort)
+          if [ -n "${KNOWN_ROWS}" ]; then
+            echo "<details>" >> "${INPUTS_SUMMARY_FILE_NAME}"
+            echo "<summary>Known failures ($(echo "${KNOWN_ROWS}" | wc -l))</summary>" >> "${INPUTS_SUMMARY_FILE_NAME}"
+            echo "" >> "${INPUTS_SUMMARY_FILE_NAME}"
+            echo "| Device | Test | Status | Comment |" >> "${INPUTS_SUMMARY_FILE_NAME}"
+            echo "| ---- | ---- | ---- | ---- |" >> "${INPUTS_SUMMARY_FILE_NAME}"
+            echo "${KNOWN_ROWS}" >> "${INPUTS_SUMMARY_FILE_NAME}"
+            echo "" >> "${INPUTS_SUMMARY_FILE_NAME}"
+            echo "</details>" >> "${INPUTS_SUMMARY_FILE_NAME}"
+          fi
+
           echo "<details>" >> "${INPUTS_SUMMARY_FILE_NAME}"
           echo "<summary>All jobs summary</summary>" >> "${INPUTS_SUMMARY_FILE_NAME}"
           echo "" >> "${INPUTS_SUMMARY_FILE_NAME}"
@@ -172,8 +366,8 @@ runs:
           for TESTJOB in ${TESTJOBS}
           do
               JOB_ID=$(cat "${TESTJOB}" | jq ".id")
-              JOB_URL="https://lava.infra.foundries.io/results/$JOB_ID"
-              JOB_DETAILS=$(curl -s "https://lava.infra.foundries.io/api/v0.2/jobs/$JOB_ID/")
+              JOB_URL="${INPUTS_LAVA_BASE_URL}/results/$JOB_ID"
+              JOB_DETAILS=$(lava_api "jobs/$JOB_ID/")
               JOB_HEALTH=$(echo "$JOB_DETAILS" | jq -r ".health")
               JOB_STATE=$(echo "$JOB_DETAILS" | jq -r ".state")
               JOB_DEVICE_TYPE=$(echo "$JOB_DETAILS" | jq -r ".requested_device_type")
