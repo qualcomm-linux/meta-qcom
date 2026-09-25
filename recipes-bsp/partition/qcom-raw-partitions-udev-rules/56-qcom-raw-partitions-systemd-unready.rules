@@ -1,0 +1,12 @@
+# Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
+# SPDX-License-Identifier: BSD-3-Clause
+
+# Raw Qualcomm GPT partitions are not systemd-ready devices.
+#
+# 55-qcom-raw-partitions-noblkid.rules sets QCOM_RAW_PARTITION for the
+# generated raw-partition set. Keep this rule separate so the generated
+# partition-name policy can be reused by other udev rules.
+ENV{QCOM_RAW_PARTITION}!="1", GOTO="qcom_raw_systemd_unready_end"
+ENV{SYSTEMD_READY}="0"
+
+LABEL="qcom_raw_systemd_unready_end"
