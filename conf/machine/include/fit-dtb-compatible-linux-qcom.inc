@@ -176,14 +176,14 @@ FIT_DTB_COMPATIBLE[qcom_talos-evk-lvds-auo_g133han01-el2gh-staging] = \
     "talos-evk talos-evk-lvds-auo_g133han01 talos-staging"
 FIT_DTB_COMPATIBLE[qcom_talos-evk-lvds-auo_g133han01-staging] = \
     "talos-evk talos-evk-lvds-auo_g133han01 talos-el2 talos-staging"
-FIT_DTB_COMPATIBLE[qcom_qcs615-iot-subtype8] = \
-    "talos-lyra-evk talos-el2"
-FIT_DTB_COMPATIBLE[qcom_qcs615-iot-subtype8-el2gh] = \
-    "talos-lyra-evk"
-FIT_DTB_COMPATIBLE[qcom_qcs615-iot-subtype8-el2gh-staging] = \
-    "talos-lyra-evk talos-staging"
-FIT_DTB_COMPATIBLE[qcom_qcs615-iot-subtype8-staging] = \
-    "talos-lyra-evk talos-el2 talos-staging"
+FIT_DTB_COMPATIBLE[qcom_qcs615-iot-subtype8-camx] = \
+    "talos-lyra-evk talos-lyra-evk-camx talos-el2"
+FIT_DTB_COMPATIBLE[qcom_qcs615-iot-subtype8-el2gh-camx] = \
+    "talos-lyra-evk talos-lyra-evk-camx"
+FIT_DTB_COMPATIBLE[qcom_qcs615-iot-subtype8-el2gh-camx-staging] = \
+    "talos-lyra-evk talos-lyra-evk-camx talos-staging"
+FIT_DTB_COMPATIBLE[qcom_qcs615-iot-subtype8-camx-staging] = \
+    "talos-lyra-evk talos-lyra-evk-camx talos-el2 talos-staging"
 
 # ---------- kodiak ----------
 FIT_DTB_COMPATIBLE[qcom_qcm6490-idp-staging] = "qcm6490-idp kodiak-staging kodiak-el2"
