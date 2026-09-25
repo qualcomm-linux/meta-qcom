@@ -8,7 +8,7 @@ LICENSE = "BSD-3-Clause"
 LIC_FILES_CHKSUM = "file://LICENSE.txt;md5=9701d0ef17353f1d05d7b74c8712ebbd"
 
 SRC_URI = "git://github.com/qualcomm/userspace-resource-manager.git;protocol=https;branch=main;tag=v${PV}"
-SRCREV = "21380f4c0150d2df2eef2e1e45338fbe9438a1a4"
+SRCREV = "f9389292276a8650ff902edb5b9c15d99f901c16"
 
 inherit cmake pkgconfig systemd
 
@@ -31,7 +31,10 @@ FILES:${PN}-dev += " \
     ${libdir}/urm/libUrmPlugin.so \
 "
 
-FILES:${PN} += "${sysconfdir}/urm/*"
+FILES:${PN} += " \
+    ${sysconfdir}/urm/* \
+    ${libdir}/tmpfiles.d/urm.conf \
+"
 
 PACKAGE_BEFORE_PN += "${PN}-extensions"
 FILES:${PN}-extensions += " \
