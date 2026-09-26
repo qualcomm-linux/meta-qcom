@@ -301,6 +301,10 @@ jobs:
                 name: performance
             kernel:
                 type: rt-6.18-distro-kvm
+          # No KVM boot firmware for shikra-evk
+          - machine: shikra-evk
+            kernel:
+                type: rt-6.18-distro-kvm
           # Exclude jobs from compile_warm_up
           - machine: glymur-crd
             distro:
