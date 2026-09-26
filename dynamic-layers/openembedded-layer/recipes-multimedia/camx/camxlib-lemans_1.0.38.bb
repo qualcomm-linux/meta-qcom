@@ -20,11 +20,9 @@ do_install:append() {
     fi
     # copy Deep Learning based binary
     cp -r ${S}/usr/share/camx ${D}${datadir}
-    # copy skel file
-    cp -r ${S}/usr/share/qcom ${D}${datadir}
-    install -d ${D}${datadir}/qcom/qcs8300/Qualcomm/QCS8300-RIDE/dsp/cdsp
-    ln -sr ${D}${datadir}/qcom/sa8775p/Qualcomm/SA8775P-RIDE/dsp/cdsp/libbitml_nsp_73nb_skel.so \
-        ${D}${datadir}/qcom/qcs8300/Qualcomm/QCS8300-RIDE/dsp/cdsp/libbitml_nsp_73nb_skel.so
+    install -d ${D}${datadir}/qcom/v73 ${D}${datadir}/qcom/v75
+    install -m 0644 ${S}/usr/share/qcom/sa8775p/Qualcomm/SA8775P-RIDE/dsp/cdsp/libbitml_nsp_73nb_skel.so ${D}${datadir}/qcom/v73
+    ln -s ../v73/libbitml_nsp_73nb_skel.so ${D}${datadir}/qcom/v75/libbitml_nsp_73nb_skel.so
 
     # Remove OpenCL-dependent libraries when opencl is not enabled.
     if ${@bb.utils.contains('DISTRO_FEATURES', 'opencl', 'false', 'true', d)}; then

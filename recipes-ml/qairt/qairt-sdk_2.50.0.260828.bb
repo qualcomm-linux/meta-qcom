@@ -56,45 +56,20 @@ do_compile[noexec] = "1"
 COMPATIBLE_MACHINE = "^$"
 COMPATIBLE_MACHINE:aarch64 = "(.*)"
 
+inherit qcom-hexagon
+
 do_install() {
     install -d ${D}${includedir}
     install -d ${D}${libdir}
-    install -d ${D}${datadir}/qcom/qcs615/Qualcomm/QCS615-RIDE/dsp/cdsp
-    install -d ${D}${datadir}/qcom/qcm6490/Thundercomm/RB3gen2/dsp/cdsp
-    install -d ${D}${datadir}/qcom/sa8775p/Qualcomm/SA8775P-RIDE/dsp/cdsp
-    install -d ${D}${datadir}/qcom/sa8775p/Qualcomm/SA8775P-RIDE/dsp/cdsp1
-    install -d ${D}${datadir}/qcom/qcs8300/Qualcomm/QCS8300-RIDE/dsp/cdsp
-    install -d ${D}${datadir}/qcom/x1e80100/Qualcomm/Hamoa-IoT-EVK/dsp/cdsp
-    install -d ${D}${datadir}/qcom/shikra/Qualcomm/Shikra-CQS-EVK/dsp/cdsp
     install -d ${D}${bindir}
 
     cp -r ${S}/include/* ${D}${includedir}
     cp -r ${S}/lib/${PLATFORM_DIR}/* ${D}${libdir}
 
-    # These installation paths for the Hexagon libraries were decided based on
-    # the recommendations from FastRPC team and taking FastCV as a reference.
-    # They may change later, so keep the PACKAGES entries generic.
-    cp -r ${S}/lib/hexagon-v66/unsigned/* ${D}${datadir}/qcom/qcs615/Qualcomm/QCS615-RIDE/dsp/cdsp
-    cp -r ${S}/lib/hexagon-v68/unsigned/* ${D}${datadir}/qcom/qcm6490/Thundercomm/RB3gen2/dsp/cdsp
-    cp -r ${S}/lib/hexagon-v73/unsigned/* ${D}${datadir}/qcom/sa8775p/Qualcomm/SA8775P-RIDE/dsp/cdsp
-    cp -r ${S}/lib/hexagon-v75/unsigned/* ${D}${datadir}/qcom/qcs8300/Qualcomm/QCS8300-RIDE/dsp/cdsp
-
-    # Shikra CQS-EVK uses the same v66 binaries as QCS615-RIDE.
-    for lib in ${D}${datadir}/qcom/qcs615/Qualcomm/QCS615-RIDE/dsp/cdsp/*; do \
-        ln -s ${datadir}/qcom/qcs615/Qualcomm/QCS615-RIDE/dsp/cdsp/$(basename $lib) \
-        ${D}${datadir}/qcom/shikra/Qualcomm/Shikra-CQS-EVK/dsp/cdsp/$(basename $lib); \
-    done
-
-    # Hamoa IoT EVK uses the same v73 binaries as SA8775P-RIDE.
-    for lib in ${D}${datadir}/qcom/sa8775p/Qualcomm/SA8775P-RIDE/dsp/cdsp/*; do \
-        ln -s ${datadir}/qcom/sa8775p/Qualcomm/SA8775P-RIDE/dsp/cdsp/$(basename $lib) \
-        ${D}${datadir}/qcom/x1e80100/Qualcomm/Hamoa-IoT-EVK/dsp/cdsp/$(basename $lib); \
-    done
-
-    # SA8775P-RIDE cdsp1 is an alias for cdsp used by some FastRPC clients.
-    for lib in ${D}${datadir}/qcom/sa8775p/Qualcomm/SA8775P-RIDE/dsp/cdsp/*; do \
-        ln -s ../cdsp/$(basename $lib) \
-        ${D}${datadir}/qcom/sa8775p/Qualcomm/SA8775P-RIDE/dsp/cdsp1/$(basename $lib); \
+    for dir in ${S}/lib/hexagon-v*; do
+        arch=${dir##*/hexagon-}
+        install -d ${D}${datadir}/qcom/${arch}
+        cp -r ${dir}/unsigned/* ${D}${datadir}/qcom/${arch}
     done
 
     cp -r ${S}/bin/${PLATFORM_DIR}/* ${D}${bindir}
@@ -128,36 +103,5 @@ INSANE_SKIP:${PN} += "already-stripped"
 SOLIBS = ".so"
 FILES_SOLIBSDEV = ""
 
-PACKAGES += "\
-    ${PN}-hexagon-v66 \
-    ${PN}-hexagon-v68 \
-    ${PN}-hexagon-v73 \
-    ${PN}-hexagon-v75 \
-"
-
-FILES:${PN}-hexagon-v66 += "${datadir}/qcom/qcs615/Qualcomm/QCS615-RIDE/dsp/cdsp"
-FILES:${PN}-hexagon-v66 += "${datadir}/qcom/shikra/Qualcomm/Shikra-CQS-EVK/dsp/cdsp"
-FILES:${PN}-hexagon-v68 += "${datadir}/qcom/qcm6490/Thundercomm/RB3gen2/dsp/cdsp"
-FILES:${PN}-hexagon-v73 += "${datadir}/qcom/sa8775p/Qualcomm/SA8775P-RIDE/dsp/cdsp"
-FILES:${PN}-hexagon-v73 += "${datadir}/qcom/sa8775p/Qualcomm/SA8775P-RIDE/dsp/cdsp1"
-FILES:${PN}-hexagon-v73 += "${datadir}/qcom/x1e80100/Qualcomm/Hamoa-IoT-EVK/dsp/cdsp"
-FILES:${PN}-hexagon-v75 += "${datadir}/qcom/qcs8300/Qualcomm/QCS8300-RIDE/dsp/cdsp"
-
 RDEPENDS:${PN} += "fastrpc"
-RRECOMMENDS:${PN} += "${PN}-hexagon-v66 ${PN}-hexagon-v68 ${PN}-hexagon-v73 ${PN}-hexagon-v75"
-
-# File based runtime depends are not applicable for Hexagon libraries.
-SKIP_FILEDEPS:${PN}-hexagon-v66 = "1"
-SKIP_FILEDEPS:${PN}-hexagon-v68 = "1"
-SKIP_FILEDEPS:${PN}-hexagon-v73 = "1"
-SKIP_FILEDEPS:${PN}-hexagon-v75 = "1"
-
-# Skip QA checks that don’t apply to prebuilt Hexagon DSP/HTP libraries.
-INSANE_SKIP:${PN}-hexagon-v66 += "arch libdir ldflags file-rdeps"
-INSANE_SKIP:${PN}-hexagon-v68 += "arch libdir ldflags file-rdeps"
-INSANE_SKIP:${PN}-hexagon-v73 += "arch libdir ldflags file-rdeps"
-INSANE_SKIP:${PN}-hexagon-v75 += "arch libdir ldflags file-rdeps"
-
-# Hexagon libraries include .so symlinks but are runtime artifacts.
-INSANE_SKIP:${PN}-hexagon-v66 += "dev-so"
-INSANE_SKIP:${PN}-hexagon-v73 += "dev-so"
+RRECOMMENDS:${PN} += "packagegroup-qcom-hexagon-qairt"
