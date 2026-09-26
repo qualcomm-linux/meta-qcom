@@ -1,0 +1,29 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Ricardo Salveti <ricardo.salveti@oss.qualcomm.com>
+Date: Fri, 25 Sep 2026 23:32:26 +0000
+Subject: [PATCH] sota_qcom: default to the meta-qcom wic layout
+
+qcom machines that build a wic image (e.g. an SD card image) should use
+the qcomflash based layout from meta-qcom instead of sdimage-sota.wks.
+
+Assisted-by: Claude Code:claude-opus-5-5
+Signed-off-by: Ricardo Salveti <ricardo.salveti@oss.qualcomm.com>
+Upstream-Status: Pending
+---
+ classes/sota_qcom.bbclass | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/classes/sota_qcom.bbclass b/classes/sota_qcom.bbclass
+index 7137c2f..5645cd3 100644
+--- a/classes/sota_qcom.bbclass
++++ b/classes/sota_qcom.bbclass
+@@ -16,6 +16,9 @@ QCOM_ESP_IMAGE = ""
+ QCOM_ESP_FILE = "${IMGDEPLOYDIR}/${IMAGE_LINK_NAME}.ota-esp"
+ IMAGE_QCOMFLASH_FS_TYPE = "ota-ext4"
+ 
++# wic images use the qcomflash partition layout from meta-qcom
++WKS_FILE:sota ?= "qcom-flat.wks.in"
++
+ EXTRA_IMAGECMD:ota-esp = "-s 1 -S ${QCOM_VFAT_SECTOR_SIZE}"
+ 
+ UKI_IMAGE_CLASS = "uki"
