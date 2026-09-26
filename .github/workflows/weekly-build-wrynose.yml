@@ -1,0 +1,26 @@
+name: Weekly Build Dispatcher (wrynose)
+
+on:
+  schedule:
+  # NOTE - changes to the cron spec should be pushed by https://github.com/quic-yocto-ci
+  # so that build notification emails will be sent out properly.
+  # At 23:22 UTC on Saturday - the slot the nightly dispatcher gives up, so
+  # that the weekly build takes over Saturday's nightly run on wrynose just
+  # like the weekly build does on this branch.
+  - cron: "22 23 * * 6"
+
+permissions:
+  contents: read
+
+jobs:
+  trigger-build:
+    runs-on: ubuntu-latest
+    permissions:
+      actions: write
+    steps:
+      - name: Trigger Weekly Build
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          gh workflow run --repo "${GH_REPO}" --ref wrynose weekly-build.yml
