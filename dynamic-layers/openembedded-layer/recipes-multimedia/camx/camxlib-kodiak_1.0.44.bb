@@ -8,7 +8,7 @@ LICENSE = "LicenseRef-LICENSE.qcom-2"
 LIC_FILES_CHKSUM = "file://usr/share/doc/${BPN}/LICENSE.QCOM-2.txt;md5=165287851294f2fb8ac8cbc5e24b02b0 \
                     file://usr/share/doc/${BPN}/NOTICE;md5=04facc2e07e3d41171a931477be0c690"
 
-PBT_BUILD_DATE = "260825"
+PBT_BUILD_DATE = "260923.1"
 PBT_BRANCH = "master"
 SRC_URI = " \
    https://qartifactory-edge.qualcomm.com/artifactory/qsc_releases/software/chip/component/camx.qclinux.0.0/${PBT_BUILD_DATE}/prebuilt_yocto_${PBT_BRANCH}/${BPN}_${PV}_armv8-2a.tar.gz;name=camxlib \
@@ -16,15 +16,14 @@ SRC_URI = " \
    https://qartifactory-edge.qualcomm.com/artifactory/qsc_releases/software/chip/component/camx.qclinux.0.0/${PBT_BUILD_DATE}/prebuilt_yocto_${PBT_BRANCH}/chicdk-kodiak_${PV}_armv8-2a.tar.gz;name=chicdk \
    https://qartifactory-edge.qualcomm.com/artifactory/qsc_releases/software/chip/component/camx.qclinux.0.0/${PBT_BUILD_DATE}/prebuilt_yocto_${PBT_BRANCH}/camxtest-kodiak_${PV}_armv8-2a.tar.gz;name=camxtest \
    "
-SRC_URI[camxlib.sha256sum] = "694c66493b5459bde8734ba416673ec93e5abdbabef5cbd9f86a60a52e09eb1b"
-SRC_URI[camx.sha256sum] = "7ab9838704139cbb52bc9c9c0277edaa2eabadf6dfd6719cf8aa93a4e7d9f29b"
-SRC_URI[chicdk.sha256sum] = "b0800ae386afa8f3ddac704d5e67a6f71d9a270acb3e2bc793a5b56a6d829417"
-SRC_URI[camxtest.sha256sum] = "26653dcaa7974c6b44fa5f3dc8560cd8d7f8b33c8ceae337ed0e43fb49d3e2a1"
+SRC_URI[camxlib.sha256sum] = "baa32a3605049f517154bbf45e913acb032fed83d600e733923c0210c763d0e0"
+SRC_URI[camx.sha256sum] = "a19edb0653176efaabb99e466d55bd39c9215ed5c7b356ed1d6d1122040c3eae"
+SRC_URI[chicdk.sha256sum] = "d50ca564d490cbe83493618a19f8784192a4f35c54d340adcdfb5eea0293c820"
+SRC_URI[camxtest.sha256sum] = "49bb39f272098298e95b4ebe5a85633e5bfe2f8c685785e983f5e1c2e1af9bc1"
 
 S = "${UNPACKDIR}"
 
 DEPENDS += "glib-2.0 fastrpc protobuf libxml2 qmi-framework sensinghub qcom-sensors-binaries"
-
 DEPENDS += " \
     ${@bb.utils.contains('DISTRO_FEATURES', 'opengl', 'virtual/egl virtual/libgles2', '', d)} \
     ${@bb.utils.contains('DISTRO_FEATURES', 'opencl', 'virtual/libopencl1', '', d)} \
@@ -74,6 +73,9 @@ do_install:append() {
     rm -f ${D}${libdir}/camx/kodiak/hw/*${SOLIBSDEV}
     rm -f ${D}${libdir}/camx/kodiak/camera/*${SOLIBSDEV}
 
+    # Remove  legacy libcamera* libs from the staged image
+    rm -f ${D}${libdir}/libcamera*
+
     install -m 0644 ${S}/usr/share/doc/${BPN}/NOTICE ${D}${datadir}/doc/${BPN}
     install -m 0644 ${S}/usr/share/doc/${BPN}/LICENSE.QCOM-2.txt ${D}${datadir}/doc/${BPN}
 
@@ -93,7 +95,7 @@ do_install:append() {
 PACKAGE_BEFORE_PN += "camx-kodiak chicdk-kodiak ${PN}-skel"
 RDEPENDS:${PN} += "chicdk-kodiak ${PN}-skel"
 RDEPENDS:${PN}-dev += "camxcommon-headers-dev"
-RRECOMMENDS:${PN} += "${@bb.utils.contains('DISTRO_FEATURES', 'opencl', 'virtual-opencl-icd', '', d)} sensinghub qcom-sensors-binaries"
+RRECOMMENDS:${PN} += "sensinghub"
 
 FILES:camx-kodiak = "\
     ${libdir}/libcamx_hardware_kodiak*${SOLIBS} \

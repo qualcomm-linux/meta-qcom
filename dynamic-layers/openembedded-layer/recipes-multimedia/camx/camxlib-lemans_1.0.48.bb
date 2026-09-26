@@ -1,16 +1,18 @@
 PLATFORM = "lemans"
-PBT_BUILD_DATE = "260825"
+PBT_BUILD_DATE = "260923.1"
 
 require common.inc
 
-SRC_URI[camxlib.sha256sum] = "d786afdae167643ad5feaad745ed14b741001060cf41e6174fe4f37cee8077f5"
-SRC_URI[camx.sha256sum] = "fd57a206aa1ae4dd6ac95f71ceb2812f995b5ebbf32322fe693186c7359b9770"
-SRC_URI[chicdk.sha256sum] = "31b7582c5c8f2f8a3412e9b99f3b689afda6b53efd1504d8864097ab73fd9c31"
-SRC_URI[camxcommon.sha256sum] = "e2a8645a8ae22182cd62e612ecbb1d098b7fcee4e75e42778b79a88b2587bcfb"
-SRC_URI[camxtest.sha256sum] = "628a94a198b5269812169e3bfbedf285b68cd3190e7102d9f076654fef3b9915"
+SRC_URI[camxlib.sha256sum] = "879effa1e098bc03be369c97150f573714b2e0606bfb0d046dd9c5d798949247"
+SRC_URI[camx.sha256sum] = "3f4af362350c86e66a347e6669ea99416242b0b3f73b7e880fff59e7ec164e03"
+SRC_URI[chicdk.sha256sum] = "60c67688fb3bbe8e6e28500279cd18e6c1e63c482aaa5c1707f15aea9e10a92a"
+SRC_URI[camxcommon.sha256sum] = "8604a02c9815d6b4b89d2dd7e192c6cfc2a7af11aca40be1176758e0896f1d1b"
+SRC_URI[camxtest.sha256sum] = "b09e54e0267f66dfd87aa0aedd03b94a83a044b4a0707146c526c784327ab3b0"
 
-DEPENDS += "${@bb.utils.contains('DISTRO_FEATURES', 'opencl', 'virtual/libopencl1', '', d)}"
-DEPENDS += "${@bb.utils.contains('DISTRO_FEATURES', 'opengl', 'virtual/egl virtual/libgles2', '', d)}"
+DEPENDS += " \
+    ${@bb.utils.contains('DISTRO_FEATURES', 'opencl', 'virtual/libopencl1', '', d)} \
+    ${@bb.utils.contains('DISTRO_FEATURES', 'opengl', 'virtual/egl virtual/libgles2', '', d)} \
+"
 
 do_install:append() {
     # Copy json only when /etc folder exists in ${S}
@@ -22,9 +24,6 @@ do_install:append() {
     cp -r ${S}/usr/share/camx ${D}${datadir}
     # copy skel file
     cp -r ${S}/usr/share/qcom ${D}${datadir}
-    install -d ${D}${datadir}/qcom/qcs8300/Qualcomm/QCS8300-RIDE/dsp/cdsp
-    ln -sr ${D}${datadir}/qcom/sa8775p/Qualcomm/SA8775P-RIDE/dsp/cdsp/libbitml_nsp_73nb_skel.so \
-        ${D}${datadir}/qcom/qcs8300/Qualcomm/QCS8300-RIDE/dsp/cdsp/libbitml_nsp_73nb_skel.so
 
     # Remove OpenCL-dependent libraries when opencl is not enabled.
     if ${@bb.utils.contains('DISTRO_FEATURES', 'opencl', 'false', 'true', d)}; then
@@ -37,10 +36,9 @@ do_install:append() {
 RPROVIDES:${PN} = "camxlib-monaco"
 PACKAGE_BEFORE_PN += "camx-nhx ${PN}-skel"
 RDEPENDS:${PN} += "${PN}-skel"
-RRECOMMENDS:${PN} += "${@bb.utils.contains('DISTRO_FEATURES', 'opencl', 'virtual-opencl-icd', '', d)}"
 
 FILES:camx-nhx = "\
-    ${bindir}/nhx.sh \
+    ${bindir}/camera-nhx \
     ${sysconfdir}/camera/test/NHX/ \
 "
 FILES:${PN}-skel = "\
