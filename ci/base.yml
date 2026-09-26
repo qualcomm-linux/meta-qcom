@@ -21,9 +21,12 @@ repos:
       uboot-sign-spl-bss-padding:
         repo: meta-qcom
         path: patches/oe-core/0003-uboot-sign-keep-the-SPL-BSS-padding-when-reassembling.patch
-      shirka-wlan-fw:
+      001-shirka-wlan-fw:
         repo: meta-qcom
         path: patches/oe-core/0001-linux-firmware-backport-shikra-wlan-firmware-support.patch
+      002-nord-wlan-fw:
+        repo: meta-qcom
+        path: patches/oe-core/0002-linux-firmware-backport-nord-wlan-firmware-support.patch
     layers:
       meta:
 
