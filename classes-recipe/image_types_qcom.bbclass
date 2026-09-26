@@ -43,6 +43,17 @@ do_image_qcomflash[depends] += "${@ ['', '${QCOM_PARTITION_CONF}:do_deploy'][d.g
 				${@'abl2esp:do_deploy' if d.getVar('ABL_SIGNATURE_VERSION') else  ''}"
 IMAGE_TYPEDEP:qcomflash += "${IMAGE_QCOMFLASH_FS_TYPE}"
 
+# Shell functions run from ${QCOMFLASH_DIR} after all artefacts are in
+# place and before the tarball is created.  Listed as vardeps so they end
+# up in the task's run script.
+QCOMFLASH_PRE_TAR_HOOKS ?= ""
+create_qcomflash_pkg[vardeps] += "${QCOMFLASH_PRE_TAR_HOOKS}"
+
+# Add the signed VIP digest table (qcomflash-vip.bbclass); defaults to on
+# whenever firmware signing is on.
+QCOMFLASH_VIP ??= "${QCOM_FIRMWARE_SIGN_ENABLE}"
+inherit_defer ${@'qcomflash-vip' if d.getVar('QCOMFLASH_VIP') == '1' else ''}
+
 deploy_partition_files() {
     for pbin in $1/gpt_main*.bin $1/gpt_backup*.bin \
                 $1/gpt_both*.bin $1/zeros_*.bin \
@@ -207,6 +218,10 @@ create_qcomflash_pkg() {
             [ -f "${DEPLOY_DIR_IMAGE}/${QCOM_CAPSULE_FIRMWARE}.cap" ]; then
         install -m 0644 "${DEPLOY_DIR_IMAGE}/${QCOM_CAPSULE_FIRMWARE}.cap" .
     fi
+
+    for hook in ${QCOMFLASH_PRE_TAR_HOOKS}; do
+        ${hook}
+    done
 
     # Create symlink to ${QCOMFLASH_DIR} dir
     ln -rsf ${QCOMFLASH_DIR} ${IMGDEPLOYDIR}/${IMAGE_LINK_NAME}.qcomflash
