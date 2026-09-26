@@ -21,9 +21,9 @@ meaningless there).
    ```
 
 3. Run the CI-equivalent checks (see below).
-4. Open a GitHub pull request targeting **wrynose**, following the
-   `[Backport wrynose]` subject convention (see [Commit messages for
-   backports](#commit-messages-for-backports)).
+4. When the user asks for the pull request, open it against **wrynose**,
+   following the `[Backport wrynose]` subject convention (see [Commit
+   messages for backports](#commit-messages-for-backports)).
 5. Use PR discussion for review iteration.
 
 ## Before opening/updating a backport PR
