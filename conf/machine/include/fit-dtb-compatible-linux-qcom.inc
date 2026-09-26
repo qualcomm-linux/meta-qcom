@@ -83,31 +83,6 @@ FIT_DTB_COMPATIBLE[qcom_qcs9100-qam-r2.0-camx] = \
 FIT_DTB_COMPATIBLE[qcom_qcs9100-qam-r2.0-camx-staging] = \
     "qcs9100-ride-r3 sa8775p-ride-camx lemans-staging"
 
-FIT_DTB_COMPATIBLE[qcom_sa8775p-qam-el2gh-staging] = \
-    "sa8775p-ride lemans-staging"
-FIT_DTB_COMPATIBLE[qcom_sa8775p-qam-staging] = \
-    "sa8775p-ride lemans-el2 lemans-staging"
-FIT_DTB_COMPATIBLE[qcom_sa8775p-qam-el2gh-camx] = \
-    "sa8775p-ride sa8775p-ride-camx"
-FIT_DTB_COMPATIBLE[qcom_sa8775p-qam-el2gh-camx-staging] = \
-    "sa8775p-ride sa8775p-ride-camx lemans-staging"
-FIT_DTB_COMPATIBLE[qcom_sa8775p-qam-camx] = \
-    "sa8775p-ride sa8775p-ride-camx lemans-el2 lemans-camx-el2"
-FIT_DTB_COMPATIBLE[qcom_sa8775p-qam-camx-staging] = \
-    "sa8775p-ride sa8775p-ride-camx lemans-el2 lemans-camx-el2 lemans-staging"
-FIT_DTB_COMPATIBLE[qcom_sa8775p-qam-r2.0-el2gh-staging] = \
-    "sa8775p-ride-r3 lemans-staging"
-FIT_DTB_COMPATIBLE[qcom_sa8775p-qam-r2.0-staging] = \
-    "sa8775p-ride-r3 lemans-el2 lemans-staging"
-FIT_DTB_COMPATIBLE[qcom_sa8775p-qam-r2.0-el2gh-camx] = \
-    "sa8775p-ride-r3 sa8775p-ride-camx"
-FIT_DTB_COMPATIBLE[qcom_sa8775p-qam-r2.0-el2gh-camx-staging] = \
-    "sa8775p-ride-r3 sa8775p-ride-camx lemans-staging"
-FIT_DTB_COMPATIBLE[qcom_sa8775p-qam-r2.0-camx] = \
-    "sa8775p-ride-r3 sa8775p-ride-camx lemans-el2 lemans-camx-el2"
-FIT_DTB_COMPATIBLE[qcom_sa8775p-qam-r2.0-camx-staging] = \
-    "sa8775p-ride-r3 sa8775p-ride-camx lemans-el2 lemans-camx-el2 lemans-staging"
-
 # ---------- monaco ----------
 
 # Add entries for combinations whose overlays are available only in

@@ -58,9 +58,6 @@ FIT_DTB_COMPATIBLE[qcom_qcs9075-iot-subtype1] = \
 FIT_DTB_COMPATIBLE[qcom_qcs9100-qam] = "qcs9100-ride lemans-el2"
 FIT_DTB_COMPATIBLE[qcom_qcs9100-qam-r2.0] = "qcs9100-ride-r3 lemans-el2"
 
-FIT_DTB_COMPATIBLE[qcom_sa8775p-qam] = "sa8775p-ride lemans-el2"
-FIT_DTB_COMPATIBLE[qcom_sa8775p-qam-r2.0] = "sa8775p-ride-r3 lemans-el2"
-
 # ---------- monaco ----------
 FIT_DTB_COMPATIBLE[qcom_qcs8275-iot] = \
     "monaco-evk monaco-evk-camera-imx577 monaco-el2"
