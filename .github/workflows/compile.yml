@@ -52,6 +52,7 @@ jobs:
   reusable_compile_job:
     if: inputs.enabled
     runs-on: [self-hosted, qcom-u2404, amd64]
+    timeout-minutes: 480
     name: ${{ inputs.name }}
     steps:
       - uses: actions/checkout@v6
