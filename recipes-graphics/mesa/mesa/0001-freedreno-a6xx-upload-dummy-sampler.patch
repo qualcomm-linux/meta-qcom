@@ -1,0 +1,75 @@
+From 6d5d27b387e77389e0f46e2452e708b153b4b696 Mon Sep 17 00:00:00 2001
+From: Kajal Kajal <kkajal@qti.qualcomm.com>
+Date: Mon, 27 Jul 2026 20:40:10 +0530
+Subject: [PATCH] freedreno/a6xx: upload a dummy sampler when textures but no
+ samplers bound
+
+
+A compute kernel that samples an image (ir3 lowers CL image reads to a
+sampled isam fetch reading sampler #0) faults the GPU when no sampler is
+bound. rusticl binds the image as a texture but, for a direct CL image
+read, binds no sampler object, leaving tex->num_samplers at 0.
+
+build_texture_state() only allocated the sampler descriptor BO and
+programmed SP_*_SAMPLER_BASE when num_samplers > 0. With zero samplers
+the base was left at 0 while the shader still issued a sampled fetch,
+causing the SP to read sampler descriptor #0 from address 0 and trigger
+a GPU fault.
+
+Fix by uploading at least one (dummy) sampler whenever the shader will
+do texture fetches (num_textures > 0), matching the long-standing a4xx
+handling in fd4_emit.c.
+
+Upstream-Status: Backport [https://gitlab.freedesktop.org/mesa/mesa/-/commit/6d5d27b387e77389e0f46e2452e708b153b4b696]
+Fixes: ./cl_conformance_cts_api
+Signed-off-by: Kajal Kajal <kkajal@qti.qualcomm.com>
+Part-of: <https://gitlab.freedesktop.org/mesa/mesa/-/merge_requests/43269>
+---
+ .../drivers/freedreno/a6xx/fd6_texture.cc       | 17 +++++++++++------
+ 1 file changed, 11 insertions(+), 6 deletions(-)
+
+diff --git a/src/gallium/drivers/freedreno/a6xx/fd6_texture.cc b/src/gallium/drivers/freedreno/a6xx/fd6_texture.cc
+index 393e353ccd11..3b589568e263 100644
+--- a/src/gallium/drivers/freedreno/a6xx/fd6_texture.cc
++++ b/src/gallium/drivers/freedreno/a6xx/fd6_texture.cc
+@@ -649,18 +649,23 @@ build_texture_state(struct fd_context *ctx, mesa_shader_stage type,
+    struct fd_bo *tex_desc = NULL, *samp_desc = NULL;
+    fd_cs cs(ctx->pipe, 32 * 4);
+ 
+-   if (tex->num_samplers > 0) {
+-      samp_desc = fd_bo_new(ctx->dev, tex->num_samplers * 4 * 4,
++   unsigned num_samplers = tex->num_samplers;
++   if (num_samplers == 0 && tex->num_textures > 0)
++      num_samplers = 1;
++
++   if (num_samplers > 0) {
++      samp_desc = fd_bo_new(ctx->dev, num_samplers * 4 * 4,
+                             FD_BO_GPUREADONLY | FD_BO_HINT_COMMAND,
+                             "samp desc");
+       uint32_t *buf = (uint32_t *)fd_bo_map(samp_desc);
+       fd_bo_mark_for_dump(samp_desc);
+ 
+-      for (unsigned i = 0; i < tex->num_samplers; i++) {
++      for (unsigned i = 0; i < num_samplers; i++) {
+          static const struct fd6_sampler_stateobj dummy_sampler = {};
+          const struct fd6_sampler_stateobj *sampler =
+-            tex->samplers[i] ? fd6_sampler_stateobj(tex->samplers[i])
+-                             : &dummy_sampler;
++            (i < tex->num_samplers && tex->samplers[i])
++               ? fd6_sampler_stateobj(tex->samplers[i])
++               : &dummy_sampler;
+          memcpy(buf, sampler->descriptor, 4 * 4);
+          buf += 4;
+       }
+@@ -738,7 +743,7 @@ build_texture_state(struct fd_context *ctx, mesa_shader_stage type,
+             .state_type = ST6_SHADER,
+             .state_src = SS6_INDIRECT,
+             .state_block = stage2sb(type),
+-            .num_unit = tex->num_samplers,
++            .num_unit = num_samplers,
+          ))
+          .add(CP_LOAD_STATE6_EXT_SRC_ADDR(samp_desc));
+ 
+-- 
+GitLab
+
