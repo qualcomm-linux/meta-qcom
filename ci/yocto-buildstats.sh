@@ -57,3 +57,22 @@ CMD="$CMD | tee buildstats.log"
 
 echo $CMD
 eval $CMD
+
+_ncdu(){
+    du -sk $1/*/* | \
+    sort -rn | \
+    sed "s/^/$2 /" | \
+    awk '{ \
+        printf "%3s%% %6.2f", int(100*$2/$1), $2/(1024*1024); \
+        n=split($3,recipe,"/"); printf " %-20s ", recipe[n]; \
+        for(i=0; i<$2/10000; i++) printf "#"; print " " \
+    }'
+}
+
+CCACHE_TOP_DIR=$(bitbake-getvar --value CCACHE_TOP_DIR --ignore-undefined)
+if [ -d "$CCACHE_TOP_DIR" ]; then
+    CCACHE_SIZE=$(du -sk $CCACHE_TOP_DIR | awk '{ print $1 }')
+    CCACHE_SIZE_GB=$(echo $CCACHE_SIZE | awk '{ printf "%.2f", $1/(1024*1024)}')
+    echo "Ccache size (${CCACHE_SIZE_GB}GB) [$CCACHE_TOP_DIR] ..."
+    _ncdu $CCACHE_TOP_DIR $CCACHE_SIZE | cat
+fi
