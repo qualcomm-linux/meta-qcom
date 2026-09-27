@@ -140,6 +140,12 @@ jobs:
           echo "DL_DIR=${CACHE_DIR}/downloads" >> $GITHUB_ENV
           # use a single shared sstate cache folder, cleaned up by mtime
           echo "SSTATE_DIR=${CACHE_DIR}/sstate-cache" >> $GITHUB_ENV
+          # use a single shared hashserv folder
+          echo "BB_HASHSERVE_DB_DIR=\${SSTATE_DIR}/hashserv" >> $GITHUB_ENV
+
+      - name: Create Directories
+        run: |
+          mkdir -p $BB_HASHSERVE_DB_DIR
 
       - name: Run Yocto patchreview
         run: |
