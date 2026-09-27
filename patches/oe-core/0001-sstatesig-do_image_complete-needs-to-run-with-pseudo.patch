@@ -1,0 +1,47 @@
+From ee405c653f6795940bf10941b0287bc4559a55c9 Mon Sep 17 00:00:00 2001
+From: Jose Quaresma <quaresma.jose@gmail.com>
+Date: Thu, 13 Jul 2023 11:02:44 +0000
+Subject: [PATCH] sstatesig: do_image_complete needs to run with pseudo disbale
+
+sstate_report_unihash function from sstate.bbclass needs to
+run with pseudo disbaled when running do_image_complete task.
+This is because it have the deploy content with uid and gid
+of the user that run bitbake on the build machine.
+
+By default the creation of sstate is skiped in the task do_image_complete
+in the image.bbclass using SSTATE_SKIP_CREATION:task-image-complete=1
+so the issue is not triggered.
+
+There are some situation when is useful to store the image artifacts on the
+sstate cache for future reuse and speedup the build without need to pruduce
+the same image again. These cases are especially useful in the case of the
+initramfs images used by the kernel.
+
+The issue can be reproduced in oe-core with:
+ echo "SSTATE_SKIP_CREATION:task-image-complete = '0'" >> meta/recipes-core/images/core-image-minimal-initramfs.bb
+ bitbake core-image-minimal-initramfs -C do_image_complete
+
+Upstream-Status: Pending
+
+Signed-off-by: Jose Quaresma <jose.quaresma@foundries.io>
+Signed-off-by: Jose Quaresma <jose.quaresma@oss.qualcomm.com>
+---
+ meta/lib/oe/sstatesig.py | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/meta/lib/oe/sstatesig.py b/meta/lib/oe/sstatesig.py
+index f016fc6770..d81c94a488 100644
+--- a/meta/lib/oe/sstatesig.py
++++ b/meta/lib/oe/sstatesig.py
+@@ -561,7 +561,7 @@ def OEOuthashBasic(path, sigfile, task, d):
+     corebase = d.getVar("COREBASE")
+     tmpdir = d.getVar("TMPDIR")
+     include_owners = os.environ.get('PSEUDO_DISABLED') == '0'
+-    if "package_write_" in task or task == "package_qa":
++    if "package_write_" in task or task == "package_qa" or task == "image_complete":
+         include_owners = False
+     include_timestamps = False
+     include_root = True
+-- 
+2.55.0
+
