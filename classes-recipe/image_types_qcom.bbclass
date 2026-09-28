@@ -43,6 +43,11 @@ do_image_qcomflash[depends] += "${@ ['', '${QCOM_PARTITION_CONF}:do_deploy'][d.g
 				${@'abl2esp:do_deploy' if d.getVar('ABL_SIGNATURE_VERSION') else  ''}"
 IMAGE_TYPEDEP:qcomflash += "${IMAGE_QCOMFLASH_FS_TYPE}"
 
+# The tarball is created by a postfunc, so a class that adds files to the
+# bundle can prepend its own postfunc and run after every artefact is in
+# place (see qcomflash-vip.bbclass).
+do_image_qcomflash[postfuncs] += "create_qcomflash_tarball"
+
 deploy_partition_files() {
     for pbin in $1/gpt_main*.bin $1/gpt_backup*.bin \
                 $1/gpt_both*.bin $1/zeros_*.bin \
@@ -208,12 +213,14 @@ create_qcomflash_pkg() {
         install -m 0644 "${DEPLOY_DIR_IMAGE}/${QCOM_CAPSULE_FIRMWARE}.cap" .
     fi
 
-    # Create symlink to ${QCOMFLASH_DIR} dir
-    ln -rsf ${QCOMFLASH_DIR} ${IMGDEPLOYDIR}/${IMAGE_LINK_NAME}.qcomflash
+}
 
+create_qcomflash_tarball() {
     # Create qcomflash tarball
     ${IMAGE_CMD_TAR} --numeric-owner --transform="s,^\./,${IMAGE_BASENAME}-${MACHINE}/," -cf- . | pigz -p ${BB_NUMBER_THREADS} -6 -n --rsyncable > ${IMGDEPLOYDIR}/${IMAGE_NAME}.qcomflash.tar.gz
     ln -sf ${IMAGE_NAME}.qcomflash.tar.gz ${IMGDEPLOYDIR}/${IMAGE_LINK_NAME}.qcomflash.tar.gz
 }
+create_qcomflash_tarball[dirs] = "${QCOMFLASH_DIR}"
+create_qcomflash_tarball[vardepsexclude] += "BB_NUMBER_THREADS DATETIME"
 
 create_qcomflash_pkg[vardepsexclude] += "BB_NUMBER_THREADS DATETIME"
