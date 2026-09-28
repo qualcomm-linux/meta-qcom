@@ -18,6 +18,7 @@ inherit cmake pkgconfig systemd
 
 DEPENDS += "\
     camxcommon-headers \
+    camxmetadata \
     gtest \
     protobuf \
     protobuf-native \
