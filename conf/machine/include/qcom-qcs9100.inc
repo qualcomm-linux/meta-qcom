@@ -32,3 +32,5 @@ QCOM_UBOOT_SPL_FIT_TEE ?= "optee-os-qcom-lemans"
 # Platform name for the SWIV annotation of the firmware ELFs (U-Boot SPL and
 # TF-A BL2).
 QCOM_FW_SWIV_PLATFORM ?= "lemans"
+
+QCOM_FIRMWARE_SIGN_SECPROFILE ?= "lemans_security_profile.xml"
