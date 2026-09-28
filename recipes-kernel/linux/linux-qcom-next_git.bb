@@ -18,8 +18,8 @@ KERNEL_PAHOLE ?= '${@oe.utils.vartrue("DEBUG_BUILD", bb.utils.contains("BBFILE_C
 do_configure[depends] += '${@oe.utils.vartrue("KERNEL_PAHOLE", "pahole-native:do_populate_sysroot", "", d)}'
 EXTRA_OEMAKE += '${@oe.utils.vartrue("KERNEL_PAHOLE", "", "PAHOLE=false", d)}'
 
-# tag: qcom-next-7.3-rc2-20260926
-SRCREV ?= "d929a0ce2571cbae95b2afacf3a02ad60ac36e14"
+# tag: qcom-next-7.3-rc2-20260928
+SRCREV ?= "e428097a36d210c50991063f17ee0848e9eb68a8"
 
 SRCBRANCH ?= "nobranch=1"
 SRCBRANCH:class-devupstream ?= "branch=qcom-next"
