@@ -1,5 +1,3 @@
-inherit allarch
-
 FILES:${PN} += "${nonarch_base_libdir}/firmware/"
 
 # Firmware files are pre-compiled, pre-stripped, and not target architecture executables.
@@ -77,6 +75,19 @@ firmware_qcom_decompress() {
 do_install:append() {
     firmware_qcom_compress
 }
+
+# Optional secure-boot signing (QCOM_FIRMWARE_SIGN_ENABLE) of the blobs
+# under ${D}${FW_QCOM_BASE_PATH}, uncompressed for signing and compressed
+# again afterwards.  Unsigned firmware is the same for every machine;
+# signed firmware is bound to its Security Profile and keys.
+inherit qcom-firmware-sign
+inherit_defer ${@'allarch' if d.getVar('QCOM_FIRMWARE_SIGN_ENABLE') != '1' else ''}
+PACKAGE_ARCH = "${MACHINE_ARCH}"
+
+QCOM_FIRMWARE_SIGN_DIRS = "${D}${FW_QCOM_BASE_PATH}"
+do_qcom_firmware_sign[prefuncs] += "firmware_qcom_decompress"
+do_qcom_firmware_sign[postfuncs] += "firmware_qcom_compress"
+do_qcom_firmware_sign[vardeps] += "FIRMWARE_COMPRESSION"
 
 INHIBIT_PACKAGE_DEBUG_SPLIT = "1"
 INHIBIT_PACKAGE_STRIP = "1"
