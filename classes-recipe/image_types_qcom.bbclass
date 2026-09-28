@@ -43,6 +43,17 @@ do_image_qcomflash[depends] += "${@ ['', '${QCOM_PARTITION_CONF}:do_deploy'][d.g
 				${@'abl2esp:do_deploy' if d.getVar('ABL_SIGNATURE_VERSION') else  ''}"
 IMAGE_TYPEDEP:qcomflash += "${IMAGE_QCOMFLASH_FS_TYPE}"
 
+# Single disk image (e.g. SD card) with the qcomflash partition layout. The
+# wks is generated from the qcom-ptool partitions.xml and the partitions are
+# filled with the files from the qcomflash directory.
+QCOM_WKS_FILE = "qcom-flat.wks.in"
+WKS_FILE ?= "${QCOM_WKS_FILE}"
+WKS_FILE_DEPENDS ?= "${@'' if qcom_wks_in_use(d) else '${WKS_FILE_DEPENDS_DEFAULT} ${WKS_FILE_DEPENDS_BOOTLOADERS}'}"
+IMAGE_TYPEDEP:wic += "qcomflash"
+do_image_wic[depends] += "${@ ['', '${QCOM_PARTITION_CONF}:do_deploy'][d.getVar('QCOM_PARTITION_CONF') != '']}"
+do_image_wic[prefuncs] += "qcom_write_partitions_wks"
+do_image_wic[file-checksums] += "${@bb.utils.which(d.getVar('BBPATH'), 'lib/qcom/partitions_wks.py')}:True"
+
 deploy_partition_files() {
     for pbin in $1/gpt_main*.bin $1/gpt_backup*.bin \
                 $1/gpt_both*.bin $1/zeros_*.bin \
@@ -217,3 +228,52 @@ create_qcomflash_pkg() {
 }
 
 create_qcomflash_pkg[vardepsexclude] += "BB_NUMBER_THREADS DATETIME"
+
+def qcom_wks_in_use(d):
+    """True when the wic image is built from the qcom layout."""
+    wks = d.getVar('WKS_TEMPLATE_PATH') or d.getVar('WKS_FULL_PATH') or ''
+    return os.path.basename(wks) == d.getVar('QCOM_WKS_FILE')
+qcom_wks_in_use[vardeps] = "WKS_FILE WKS_FILES QCOM_WKS_FILE"
+qcom_wks_in_use[vardepsexclude] = "WKS_TEMPLATE_PATH WKS_FULL_PATH"
+
+python qcom_write_partitions_wks() {
+    import shutil
+    from qcom.partitions_wks import generate_wks, PartitionsWksError
+
+    attrs_file = os.path.join(d.getVar('WORKDIR'), 'qcom-partitions.attrs')
+    if os.path.exists(attrs_file):
+        os.remove(attrs_file)
+    if not qcom_wks_in_use(d):
+        return
+
+    # The qcomflash directory is only in IMGDEPLOYDIR when do_image_qcomflash
+    # ran in this build, otherwise it was already deployed.
+    link = d.getVar('IMAGE_LINK_NAME') + '.qcomflash'
+    dirs = [os.path.join(d.getVar(v), link) for v in ('IMGDEPLOYDIR', 'DEPLOY_DIR_IMAGE')]
+    file_dir = next((os.path.realpath(p) for p in dirs if os.path.isdir(p)), None)
+    if not file_dir:
+        bb.fatal("No qcomflash directory found in %s" % ' or '.join(dirs))
+
+    xml = os.path.join(d.getVar('DEPLOY_DIR_IMAGE'), d.getVar('QCOM_PARTITION_FILES_SUBDIR'), 'partitions.xml')
+    try:
+        wks, attributes = generate_wks(xml, file_dir)
+    except (OSError, PartitionsWksError) as e:
+        bb.fatal("Unable to generate the wic layout from %s: %s" % (xml, e))
+
+    workdir = d.getVar('WORKDIR')
+    wks_file = os.path.join(workdir, 'qcom-partitions.wks')
+    with open(wks_file, 'w') as f:
+        f.write(wks)
+    with open(attrs_file, 'w') as f:
+        f.write(''.join('%d %s\n' % attr for attr in attributes))
+    shutil.copy(wks_file, os.path.join(d.getVar('IMGDEPLOYDIR'), d.getVar('IMAGE_BASENAME') + '-qcom-partitions.wks'))
+}
+
+# wic cannot set arbitrary GPT attribute bits, apply the ones qcom-ptool sets
+IMAGE_CMD:wic:append() {
+	if [ -e "${WORKDIR}/qcom-partitions.attrs" ]; then
+		while read num attrs; do
+			sfdisk --part-attrs "${IMGDEPLOYDIR}/${IMAGE_NAME}.wic" "$num" "$attrs"
+		done < "${WORKDIR}/qcom-partitions.attrs"
+	fi
+}

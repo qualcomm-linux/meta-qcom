@@ -79,4 +79,4 @@ if [ -n "$DL_DIR" ]; then
     echo "DL_DIR = \"$DL_DIR\"" >> conf/local.conf
 fi
 
-oe-selftest --run-tests "$TEST_CASES"
+oe-selftest --run-tests $TEST_CASES

@@ -50,6 +50,13 @@ repos:
 
   meta-updater:
     url: https://github.com/uptane/meta-updater
+    patches:
+      wks-default-weak:
+        repo: meta-qcom
+        path: patches/meta-updater/0001-sota.bbclass-make-the-WKS_FILE-default-weak.patch
+      wks-sota-qcom:
+        repo: meta-qcom
+        path: patches/meta-updater/0002-sota_qcom-default-to-the-meta-qcom-wic-layout.patch
 
   meta-security:
     url: https://git.yoctoproject.org/meta-security
