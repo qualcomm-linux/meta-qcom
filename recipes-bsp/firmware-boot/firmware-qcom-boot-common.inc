@@ -37,4 +37,13 @@ do_deploy() {
 }
 addtask deploy before do_build after do_install
 
-inherit allarch
+# Optional secure-boot signing of the boot binaries, in place, before
+# do_deploy (QCOM_FIRMWARE_SIGN_ENABLE).  The recipes are allarch unless
+# signing is on, which binds the images to the machine's Security Profile,
+# keys and fuse ids.
+inherit qcom-firmware-sign
+inherit_defer ${@'allarch' if d.getVar('QCOM_FIRMWARE_SIGN_ENABLE') != '1' else ''}
+PACKAGE_ARCH = "${QCOM_FIRMWARE_SIGN_PACKAGE_ARCH}"
+
+QCOM_FIRMWARE_SIGN_DIRS = "${QCOM_BOOT_BINARY_DIRS}"
+QCOM_FIRMWARE_SIGN_SUFFIXES = "mbn elf melf"
