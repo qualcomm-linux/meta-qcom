@@ -50,21 +50,32 @@ python() {
         bb.error("%s: split firmware-qcom packages engaged, but FW_QCOM_NAME is not defined" % pn)
 }
 
-do_install:append() {
-    for fw in $(find ${D}${FW_QCOM_BASE_PATH} -type f)
+firmware_qcom_compress() {
+    for fw in $(find ${D}${FW_QCOM_BASE_PATH} -type f ! -name '*.jsn' 2>/dev/null)
     do
-        if [ "${fw%%jsn}" = "${fw}" ]
-        then
-            case "${FIRMWARE_COMPRESSION}" in
-                zst | zstd)
-                    zstd --compress --rm ${fw}
-                    ;;
-                xz)
-                    xz --compress --check=crc32 ${fw}
-                    ;;
-            esac
-        fi
+        case "${FIRMWARE_COMPRESSION}" in
+            zst | zstd)
+                zstd --compress --rm ${fw}
+                ;;
+            xz)
+                xz --compress --check=crc32 ${fw}
+                ;;
+        esac
     done
+}
+
+# Undo firmware_qcom_compress, whatever FIRMWARE_COMPRESSION was when the
+# blobs were compressed.
+firmware_qcom_decompress() {
+    if [ ! -d "${D}${FW_QCOM_BASE_PATH}" ]; then
+        return
+    fi
+    find ${D}${FW_QCOM_BASE_PATH} -type f -name '*.zst' -exec zstd --decompress --rm {} \;
+    find ${D}${FW_QCOM_BASE_PATH} -type f -name '*.xz' -exec xz --decompress {} \;
+}
+
+do_install:append() {
+    firmware_qcom_compress
 }
 
 INHIBIT_PACKAGE_DEBUG_SPLIT = "1"
