@@ -6,7 +6,7 @@ LICENSE = "BSD-3-Clause"
 LIC_FILES_CHKSUM = "file://LICENSE.txt;md5=b67986b6880754696d418dbaa2cf51d1"
 DEPENDS = "libbsd libyaml"
 
-SRCREV = "228d98b5f143ed917789cde017a8aa548e65b80b"
+SRCREV = "d247519650fe5cb16de6c78edaa95bcc4be25073"
 SRC_URI = "\
     git://github.com/qualcomm/fastrpc.git;branch=main;protocol=https;tag=v${PV} \
     file://run-ptest \
@@ -56,7 +56,7 @@ INSANE_SKIP:${PN} = "dev-so"
 PACKAGE_BEFORE_PN += "${PN}-tests"
 
 FILES:${PN}-tests += " \
-    ${bindir}/dsp_check \
+    ${bindir}/fastrpc-healthcheck \
     ${bindir}/fastrpc_test \
     ${libdir}/fastrpc_test/*.so \
     ${datadir}/fastrpc_test \
