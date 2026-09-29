@@ -7,6 +7,8 @@ DEPENDS += "qtestsign-native"
 # the dependency both ways would make bitbake reject the task graph.
 DEPENDS += "${@bb.utils.contains('QCOM_UBOOT_SPL_FIT', '1', '', 'u-boot-qcom', d)}"
 
+DEPENDS += "${@'swiv-build-utility-native' if d.getVar('QCOM_FW_SWIV_PLATFORM') else ''}"
+
 PV = "2.15.0-qcom+git"
 
 SRC_TAG = "tag=qcom-next-2.15-20260804"
@@ -44,5 +46,15 @@ do_install:append() {
 
         qtestsign -v6 aboot -o ${D}${FIRMWARE_DIR}/fip.elf ${D}${FIRMWARE_DIR}/fip_unsigned.elf
         rm -f ${D}${FIRMWARE_DIR}/fip_unsigned.elf
+
+        bl2_elf=${D}${FIRMWARE_DIR}/bl2.elf
+        if [ -n "${QCOM_FW_SWIV_PLATFORM}" ]; then
+            swiv_build_utility ${D}${FIRMWARE_DIR}/bl2-swiv.elf ${D}${FIRMWARE_DIR}/bl2.elf ${QCOM_FW_SWIV_PLATFORM}
+            bl2_elf=${D}${FIRMWARE_DIR}/bl2-swiv.elf
+        fi
+        qtestsign -v6 tz -o ${D}${FIRMWARE_DIR}/bl2.mbn $bl2_elf
+        rm -f ${D}${FIRMWARE_DIR}/bl2-swiv.elf
     fi
 }
+
+FILES:${PN} += "${FIRMWARE_DIR}/*.mbn"
