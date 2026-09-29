@@ -9,4 +9,7 @@ LIC_FILES_CHKSUM = "\
 
 SRCREV = "bbb0e6b59143e052dbf26b371ee239ab4b0881b0"
 
-SRC_URI += "file://0001-Revert-qcs615-update-adsp-dynamic-modules-for-QCS615.patch"
+SRC_URI += "\
+    file://0001-Revert-qcs615-update-adsp-dynamic-modules-for-QCS615.patch \
+    file://0001-qcs8300-restore-the-CDSP-links-of-Monza-and-IQ-8275-.patch \
+"
