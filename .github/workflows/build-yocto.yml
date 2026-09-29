@@ -167,8 +167,9 @@ jobs:
         run: |
           echo "CACHE_DIR=${{env.CACHE_DIR}}" >> $GITHUB_OUTPUT
 
-  # Builds the common core (native tools, toolchain, generic world) once,
-  # so the compile_stage2 seeds reuse it instead of each building it.
+  # Fetches the sources for all the compile jobs and builds the common core
+  # (native tools, toolchain, generic world) once, so the compile_stage2
+  # seeds reuse it instead of each building it.
   compile_stage1:
     needs: [kas-setup, github-cache-check, compile-env]
     if: |
@@ -181,6 +182,8 @@ jobs:
     uses: $/.github/workflows/compile.yml
     with:
       name: qcom-armv8a/nodistro
+      # The catchall distro covers the recipes of every other distro.
+      fetch_distro_yaml: ci/qcom-distro-catchall.yml
       world: true
       machine: 'qcom-armv8a'
       distro_yaml: ''
