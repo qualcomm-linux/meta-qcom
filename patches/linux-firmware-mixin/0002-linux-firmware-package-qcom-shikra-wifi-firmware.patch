@@ -1,0 +1,52 @@
+From 767af767ad07f93bda1ce7f3c9e03c44f9bb8074 Mon Sep 17 00:00:00 2001
+From: Viswanath Kraleti <viswanath.kraleti@oss.qualcomm.com>
+Date: Mon, 28 Sep 2026 14:54:15 +0530
+Subject: [PATCH] linux-firmware: package qcom-shikra-wifi firmware
+
+Split the Shikra-specific ath10k WCN3990 hw1.0 WiFi firmware out
+of the generic linux-firmware-ath10k-wcn3990 package into its own
+linux-firmware-qcom-shikra-wifi package, matching the existing
+per-board split already done for QCM2290/QRB4210.
+
+Signed-off-by: Viswanath Kraleti <viswanath.kraleti@oss.qualcomm.com>
+Upstream-Status: Submitted [https://patchwork.yoctoproject.org/project/oe-core/patch/20260928085924.3023725-1-viswanath.kraleti@oss.qualcomm.com/]
+---
+ recipes-kernel/linux-firmware/linux-firmware_20260910.bb | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/recipes-kernel/linux-firmware/linux-firmware_20260910.bb b/recipes-kernel/linux-firmware/linux-firmware_20260910.bb
+index 7b7004d..abaacda 100644
+--- a/recipes-kernel/linux-firmware/linux-firmware_20260910.bb
++++ b/recipes-kernel/linux-firmware/linux-firmware_20260910.bb
+@@ -587,6 +587,7 @@ PACKAGES =+ "${PN}-amphion-vpu-license ${PN}-amphion-vpu \
+              ${PN}-atheros-license ${PN}-ar5523 ${PN}-ar9170 ${PN}-ath6k ${PN}-ath9k ${PN}-ath3k \
+              ${PN}-carl9170 \
+              ${PN}-qcom-qcm2290-wifi ${PN}-qcom-qrb4210-wifi ${PN}-qcom-sdm845-modem \
++             ${PN}-qcom-shikra-wifi \
+              ${PN}-ar3k-license ${PN}-ar3k \
+              ${PN}-ath10k-license ${PN}-ath10k \
+              ${PN}-ath10k-qca4019 \
+@@ -2467,6 +2468,7 @@ LICENSE:${PN}-qcom-shikra-compute = "Firmware-qcom-2"
+ LICENSE:${PN}-qcom-shikra-audio = "Firmware-qcom-2"
+ LICENSE:${PN}-qcom-shikra-modem = "Firmware-qcom-2"
+ LICENSE:${PN}-qcom-shikra-qupv3fw = "Firmware-qcom"
++LICENSE:${PN}-qcom-shikra-wifi = "Firmware-qualcommAthos-ath10k"
+ LICENSE:${PN}-qcom-sm8150-adreno = "Firmware-qcom"
+ LICENSE:${PN}-qcom-sm8250-adreno = "Firmware-qcom"
+ LICENSE:${PN}-qcom-sm8250-audio = "Firmware-qcom"
+@@ -2644,6 +2646,7 @@ FILES:${PN}-qcom-shikra-compute = "${firmwaredir}/qcom/shikra/cdsp*.*"
+ FILES:${PN}-qcom-shikra-audio = "${nonarch_base_libdir}/firmware/qcom/shikra/lpaicp*.*"
+ FILES:${PN}-qcom-shikra-modem = "${nonarch_base_libdir}/firmware/qcom/shikra/cqs/qdsp6sw.mbn*"
+ FILES:${PN}-qcom-shikra-qupv3fw = "${firmwaredir}/qcom/shikra/qupv3fw.elf*"
++FILES:${PN}-qcom-shikra-wifi = "${firmwaredir}/qcom/shikra/wlanmdsp.mbn* ${firmwaredir}/ath10k/WCN3990/hw1.0/shikra/*"
+ FILES:${PN}-qcom-sm8150-adreno = "${firmwaredir}/qcom/sm8150/a640*.*"
+ FILES:${PN}-qcom-sm8250-adreno = "${firmwaredir}/qcom/sm8250/a650*.*"
+ FILES:${PN}-qcom-sm8250-audio = "${firmwaredir}/qcom/sm8250/adsp*.*"
+@@ -2822,6 +2825,7 @@ RDEPENDS:${PN}-qcom-shikra-compute = "${PN}-qcom-2-license"
+ RDEPENDS:${PN}-qcom-shikra-audio = "${PN}-qcom-2-license"
+ RDEPENDS:${PN}-qcom-shikra-modem = "${PN}-qcom-2-license"
+ RDEPENDS:${PN}-qcom-shikra-qupv3fw = "${PN}-qcom-license"
++RDEPENDS:${PN}-qcom-shikra-wifi = "${PN}-ath10k-license"
+ RDEPENDS:${PN}-qcom-sm8150-adreno = "${PN}-qcom-license"
+ RDEPENDS:${PN}-qcom-sm8250-adreno = "${PN}-qcom-license"
+ RDEPENDS:${PN}-qcom-sm8250-audio = "${PN}-qcom-license"
