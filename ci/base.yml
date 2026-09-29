@@ -30,6 +30,9 @@ repos:
       003-shikra-wlan-fw-link:
         repo: meta-qcom
         path: patches/oe-core/0003-linux-firmware-backport-patch-to-symlink-shikra-wifi.patch
+      004-revert-qcs615-adsp:
+        repo: meta-qcom
+        path: patches/oe-core/0004-linux-firmware-revert-qcs615-ADSP-firmware-to-fix-au.patch
     layers:
       meta:
 
