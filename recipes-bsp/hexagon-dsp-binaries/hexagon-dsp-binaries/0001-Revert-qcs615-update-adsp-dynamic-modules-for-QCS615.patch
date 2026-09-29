@@ -1,0 +1,32 @@
+From 3563b7ba0659552d7e8aba0e5ec5ff7ed22666b6 Mon Sep 17 00:00:00 2001
+From: Venkata Kota <venkata.kota@oss.qualcomm.com>
+Date: Mon, 28 Sep 2026 09:27:16 +0530
+Subject: [PATCH] Revert "qcs615: update adsp dynamic modules for QCS615 RIDE
+ platform"
+
+This reverts commit 8a2c0b762d5333f52a2a7275d9c15eccd91ea667.
+This is to address the regression post SVA Activation in Audio
+
+Upstream-Status: Backport [https://github.com/linux-msm/dsp-binaries/commit/3563b7ba0659552d7e8aba0e5ec5ff7ed22666b6]
+
+Only the config.txt change is kept, the 00084.1 binaries are left in
+the tree but no longer installed.
+
+Signed-off-by: Venkata Kota <venkata.kota@oss.qualcomm.com>
+---
+ config.txt | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/config.txt b/config.txt
+index 765c9bf..96f6836 100644
+--- a/config.txt
++++ b/config.txt
+@@ -55,7 +55,7 @@ Install: qcs8300/Qualcomm/QCS8300-RIDE	cdsp	cdsp-DSP.AT.1.0.1-00204-LEMANS-1
+ Link: sa8775p/Qualcomm/SA8775P-RIDE/dsp/gdsp0	qcs8300/Qualcomm/QCS8300-RIDE/dsp/gdsp0
+ 
+ # QCS615 RIDE
+-Install: qcs615/Qualcomm/QCS615-RIDE	adsp	ADSP.VT.5.2.c6-00084.1-SM6150-1
++Install: qcs615/Qualcomm/QCS615-RIDE	adsp	ADSP.VT.5.2.c6-00073-SM6150-1
+ Install: qcs615/Qualcomm/QCS615-RIDE	cdsp	CDSP.VT.2.2.c4-00019-SM6150-1
+ 
+ # Hamoa IoT EVK
