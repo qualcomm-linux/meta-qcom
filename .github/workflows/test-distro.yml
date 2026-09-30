@@ -285,11 +285,6 @@ jobs:
           summary_title: "${{ inputs.distro_name }}${{ inputs.distro_suffix }}"
           lava_base_url: https://${{ env.LAVA_URL }}
 
-      - name: Download Summary
-        uses: actions/download-artifact@v7
-        with:
-          artifact-ids: ${{ steps.generate-summary.outputs.artifact_id }}
-
       - name: Publish Test Job Details
         env:
           INPUTS_DISTRO_NAME: "${{ inputs.distro_name }}"
