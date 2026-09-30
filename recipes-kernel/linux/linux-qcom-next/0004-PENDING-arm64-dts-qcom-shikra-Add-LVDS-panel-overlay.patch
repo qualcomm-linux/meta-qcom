@@ -1,0 +1,170 @@
+From de43e2bc091e79fceafa9ecc9f7d34fdcb353f69 Mon Sep 17 00:00:00 2001
+From: Anand Tiwari <anand.tiwari@oss.qualcomm.com>
+Date: Thu, 10 Sep 2026 12:48:33 +0530
+Subject: [PATCH 4/5] PENDING: arm64: dts: qcom: shikra: Add LVDS panel overlay
+ support
+
+Shikra IQS EVKs can optionally be fitted with an AUO G133HAN01 LVDS
+panel driven through a TI SN65DSI84 DSI-to-LVDS bridge on i2c3.
+
+Add a devicetree overlay that describes the SN65DSI84 bridge and the
+AUO G133HAN01 panel, and disable HDMI.
+
+Signed-off-by: Anand Tiwari <anand.tiwari@oss.qualcomm.com>
+Signed-off-by: Mohit Dsor <mohit.dsor@oss.qualcomm.com>
+Upstream-Status: Backport [https://github.com/qualcomm-linux/kernel/commit/ff7424ff89a3f3b5cae04db45e759a9b36569a3d]
+---
+ arch/arm64/boot/dts/qcom/Makefile             |   2 +
+ .../shikra-iqs-evk-lvds-auo,g133han01.dtso    | 123 ++++++++++++++++++
+ 2 files changed, 125 insertions(+)
+ create mode 100644 arch/arm64/boot/dts/qcom/shikra-iqs-evk-lvds-auo,g133han01.dtso
+
+diff --git a/arch/arm64/boot/dts/qcom/Makefile b/arch/arm64/boot/dts/qcom/Makefile
+index ff961c947786..c64c3269349a 100644
+--- a/arch/arm64/boot/dts/qcom/Makefile
++++ b/arch/arm64/boot/dts/qcom/Makefile
+@@ -405,10 +405,12 @@ dtb-$(CONFIG_ARCH_QCOM)	+= shikra-iqs-evk-imx577-camera.dtb
+ shikra-cqm-evk-hdmi-dtbs	:= shikra-cqm-evk.dtb shikra-cqm-cqs-evk-hdmi.dtbo
+ shikra-cqs-evk-hdmi-dtbs	:= shikra-cqs-evk.dtb shikra-cqm-cqs-evk-hdmi.dtbo
+ shikra-iqs-evk-dlc-panel-dtbs	:= shikra-iqs-evk.dtb shikra-iqs-evk-dlc-panel.dtbo
++shikra-iqs-evk-lvds-auo,g133han01-dtbs  := shikra-iqs-evk.dtb shikra-iqs-evk-lvds-auo,g133han01.dtbo
+ 
+ dtb-$(CONFIG_ARCH_QCOM)	+= shikra-cqm-evk-hdmi.dtb
+ dtb-$(CONFIG_ARCH_QCOM)	+= shikra-cqs-evk-hdmi.dtb
+ dtb-$(CONFIG_ARCH_QCOM)	+= shikra-iqs-evk-dlc-panel.dtb
++dtb-$(CONFIG_ARCH_QCOM)	+= shikra-iqs-evk-lvds-auo,g133han01.dtb
+ 
+ dtb-$(CONFIG_ARCH_QCOM)	+= sm4250-oneplus-billie2.dtb
+ dtb-$(CONFIG_ARCH_QCOM)	+= sm4450-qrd.dtb
+diff --git a/arch/arm64/boot/dts/qcom/shikra-iqs-evk-lvds-auo,g133han01.dtso b/arch/arm64/boot/dts/qcom/shikra-iqs-evk-lvds-auo,g133han01.dtso
+new file mode 100644
+index 000000000000..0ea14847bc8d
+--- /dev/null
++++ b/arch/arm64/boot/dts/qcom/shikra-iqs-evk-lvds-auo,g133han01.dtso
+@@ -0,0 +1,123 @@
++// SPDX-License-Identifier: BSD-3-Clause
++/*
++ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
++ */
++
++/dts-v1/;
++/plugin/;
++
++#include <dt-bindings/gpio/gpio.h>
++#include <dt-bindings/interrupt-controller/irq.h>
++
++&{/} {
++	backlight: backlight {
++		compatible = "gpio-backlight";
++		gpios = <&pm8150_gpios 1 GPIO_ACTIVE_HIGH>;
++		default-on;
++	};
++
++	panel-lvds {
++		compatible = "auo,g133han01";
++		power-supply = <&vreg_lvds_3p3>;
++
++		ports {
++			#address-cells = <1>;
++			#size-cells = <0>;
++
++			port@0 {
++				reg = <0>;
++				dual-lvds-odd-pixels;
++
++				lvds_panel_out_a: endpoint {
++					remote-endpoint = <&sn65dsi84_out_a>;
++				};
++			};
++
++			port@1 {
++				reg = <1>;
++				dual-lvds-even-pixels;
++
++				lvds_panel_out_b: endpoint {
++					remote-endpoint = <&sn65dsi84_out_b>;
++				};
++			};
++		};
++	};
++
++	vreg_bridge_1p8: regulator-bridge-1p8 {
++		compatible = "regulator-fixed";
++		regulator-name = "vreg_bridge_1p8";
++		regulator-min-microvolt = <1800000>;
++		regulator-max-microvolt = <1800000>;
++        };
++
++	vreg_lvds_3p3: regulator-lvds-3p3 {
++		compatible = "regulator-fixed";
++		regulator-name = "vreg_lvds_3p3";
++		regulator-min-microvolt = <3300000>;
++		regulator-max-microvolt = <3300000>;
++	};
++};
++
++&hdmi_connector {
++	status = "disabled";
++};
++
++&i2c3 {
++	#address-cells = <1>;
++	#size-cells = <0>;
++
++	sn65dsi84: bridge@2c {
++		compatible = "ti,sn65dsi84";
++		reg = <0x2c>;
++		enable-gpios = <&tlmm 76 GPIO_ACTIVE_HIGH>;
++		interrupts-extended = <&tlmm 85 IRQ_TYPE_EDGE_FALLING>;
++		vcc-supply = <&vreg_bridge_1p8>;
++		ti,ref-clk-src = <1>;
++
++		pinctrl-0 = <&bridge_irq_pin &bridge_rst_pin>;
++		pinctrl-names = "default";
++
++		ports {
++			#address-cells = <1>;
++			#size-cells = <0>;
++
++			port@0 {
++				reg = <0>;
++
++				sn65dsi84_in: endpoint {
++					remote-endpoint = <&mdss_dsi0_out>;
++					data-lanes = <1 2 3 4>;
++				};
++			};
++
++			port@2 {
++				reg = <2>;
++
++				sn65dsi84_out_a: endpoint {
++					remote-endpoint = <&lvds_panel_out_a>;
++					ti,lvds-vod-swing-data-microvolt = <150000 261000>;
++					ti,lvds-vod-swing-clock-microvolt = <117000 204000>;
++				};
++			};
++
++			port@3 {
++				reg = <3>;
++
++				sn65dsi84_out_b: endpoint {
++					remote-endpoint = <&lvds_panel_out_b>;
++					ti,lvds-vod-swing-data-microvolt = <150000 261000>;
++					ti,lvds-vod-swing-clock-microvolt = <117000 204000>;
++				};
++			};
++		};
++	};
++};
++
++&lt9611uxd {
++	status = "disabled";
++};
++
++&mdss_dsi0_out {
++	remote-endpoint = <&sn65dsi84_in>;
++};
+-- 
+2.43.0
+

@@ -29,6 +29,11 @@ SRC_URI = "git://github.com/qualcomm-linux/kernel.git;${SRCBRANCH};protocol=http
 # Additional kernel configs.
 SRC_URI += " \
     file://configs/bsp-additions.cfg \
+    file://0001-PENDING-arm64-dts-qcom-shikra-iqs-evk-Rename-HDMI-br.patch \
+    file://0002-PENDING-arm64-dts-qcom-shikra-Add-DSI-HDMI-overlay-s.patch \
+    file://0003-PENDING-arm64-dts-qcom-shikra-Add-DLC-panel-overlay-.patch \
+    file://0004-PENDING-arm64-dts-qcom-shikra-Add-LVDS-panel-overlay.patch \
+    file://0005-PENDING-arm64-dts-qcom-shikra-iqs-evk-Remove-unused-.patch \
 "
 
 # To build tip of qcom-next branch set preferred

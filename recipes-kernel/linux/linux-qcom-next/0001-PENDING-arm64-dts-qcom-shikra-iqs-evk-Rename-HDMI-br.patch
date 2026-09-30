@@ -1,0 +1,107 @@
+From 57f7f0b4877deac966842b5258f311553d910be0 Mon Sep 17 00:00:00 2001
+From: Mohit Dsor <mohit.dsor@oss.qualcomm.com>
+Date: Thu, 10 Sep 2026 14:17:34 +0530
+Subject: [PATCH 1/5] PENDING: arm64: dts: qcom: shikra-iqs-evk: Rename HDMI
+ bridge regulators and pinctrl
+
+Rename lt9611-specific regulator and pinctrl labels to more generic
+names since these are shared with other DSI panel interfaces.
+
+- vreg_lt9611_vcc -> vreg_disp_3p3
+- vreg_lt9611_vdd removed (vdd now sourced from pm8150_s4)
+- hdmi_reg_en -> lcd_bias_en
+- lt9611_irq_pin -> bridge_irq_pin
+- lt9611_rst_pin -> bridge_rst_pin
+- Add hdmi_connector label to hdmi-connector node
+
+Signed-off-by: Mohit Dsor <mohit.dsor@oss.qualcomm.com>
+Upstream-Status: Backport [https://github.com/qualcomm-linux/kernel/commit/113631c2fbec3db86aa1b35ff9192ad64dcaaba6]
+---
+ arch/arm64/boot/dts/qcom/shikra-iqs-evk.dts | 28 ++++++++-------------
+ 1 file changed, 10 insertions(+), 18 deletions(-)
+
+diff --git a/arch/arm64/boot/dts/qcom/shikra-iqs-evk.dts b/arch/arm64/boot/dts/qcom/shikra-iqs-evk.dts
+index 1f310b3f0773..e7587df01d1c 100644
+--- a/arch/arm64/boot/dts/qcom/shikra-iqs-evk.dts
++++ b/arch/arm64/boot/dts/qcom/shikra-iqs-evk.dts
+@@ -28,7 +28,7 @@ chosen {
+ 		stdout-path = "serial0:115200n8";
+ 	};
+ 
+-	hdmi-connector {
++	hdmi_connector: hdmi-connector {
+ 		compatible = "hdmi-connector";
+ 		type = "a";
+ 
+@@ -108,25 +108,17 @@ platform {
+ 		};
+ 	};
+ 
+-	vreg_lt9611_vcc: regulator-lt9611-vcc {
++	vreg_disp_3p3: regulator-disp-3p3 {
+ 		compatible = "regulator-fixed";
+-		regulator-name = "lt9611_vcc";
++		regulator-name = "vreg_disp_3p3";
+ 		regulator-min-microvolt = <3300000>;
+ 		regulator-max-microvolt = <3300000>;
+ 		gpio = <&pm8150_gpios 4 GPIO_ACTIVE_HIGH>;
+ 		enable-active-high;
+-		pinctrl-0 = <&hdmi_reg_en>;
++		pinctrl-0 = <&lcd_bias_en>;
+ 		pinctrl-names = "default";
+ 	};
+ 
+-	vreg_lt9611_vdd: regulator-lt9611-vdd {
+-		compatible = "regulator-fixed";
+-		regulator-name = "lt9611_vdd";
+-		regulator-min-microvolt = <1800000>;
+-		regulator-max-microvolt = <1800000>;
+-		regulator-always-on;
+-	};
+-
+ 	vreg_wcn_3p3: regulator-wcn-3p3 {
+ 		compatible = "regulator-fixed";
+ 		regulator-name = "wcn_3p3";
+@@ -399,10 +391,10 @@ lt9611uxd: lt9611uxd@41 {
+ 		reg = <0x41>;
+ 		interrupts-extended = <&tlmm 85 IRQ_TYPE_EDGE_FALLING>;
+ 		reset-gpios = <&tlmm 76 GPIO_ACTIVE_LOW>;
+-		vcc-supply = <&vreg_lt9611_vcc>;
+-		vdd-supply = <&vreg_lt9611_vdd>;
++		vcc-supply = <&vreg_disp_3p3>;
++		vdd-supply = <&pm8150_s4>;
+ 
+-		pinctrl-0 = <&lt9611_irq_pin &lt9611_rst_pin>;
++		pinctrl-0 = <&bridge_irq_pin &bridge_rst_pin>;
+ 		pinctrl-names = "default";
+ 
+ 		ports {
+@@ -448,7 +440,7 @@ &mdss_dsi0_phy {
+ };
+ 
+ &pm8150_gpios {
+-	hdmi_reg_en: hdmi-reg-en-state {
++	lcd_bias_en: lcd-bias-en-state {
+ 		pins = "gpio4";
+ 		function = PMIC_GPIO_FUNC_NORMAL;
+ 		bias-disable;
+@@ -833,14 +825,14 @@ &wifi {
+ };
+ 
+ &tlmm {
+-	lt9611_irq_pin: lt9611-irq-state {
++	bridge_irq_pin: bridge-irq-state {
+ 		pins = "gpio85";
+ 		function = "gpio";
+ 		drive-strength = <2>;
+ 		bias-disable;
+ 	};
+ 
+-	lt9611_rst_pin: lt9611-rst-state {
++	bridge_rst_pin: bridge-rst-state {
+ 		pins = "gpio76";
+ 		function = "gpio";
+ 		drive-strength = <8>;
+-- 
+2.43.0
+

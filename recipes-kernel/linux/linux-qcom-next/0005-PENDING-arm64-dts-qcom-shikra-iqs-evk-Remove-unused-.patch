@@ -1,0 +1,47 @@
+From 920b058c7cccbee86133292b8340d7c904375990 Mon Sep 17 00:00:00 2001
+From: Anand Tiwari <anand.tiwari@oss.qualcomm.com>
+Date: Mon, 14 Sep 2026 20:48:29 +0530
+Subject: [PATCH 5/5] PENDING: arm64: dts: qcom: shikra-iqs-evk: Remove unused
+ lvds property
+
+Few unused lvds properties were removed.
+
+Signed-off-by: Anand Tiwari <anand.tiwari@oss.qualcomm.com>
+Upstream-Status: Backport [https://github.com/qualcomm-linux/kernel/commit/e428097a36d210c50991063f17ee0848e9eb68a8]
+---
+ .../boot/dts/qcom/shikra-iqs-evk-lvds-auo,g133han01.dtso     | 5 -----
+ 1 file changed, 5 deletions(-)
+
+diff --git a/arch/arm64/boot/dts/qcom/shikra-iqs-evk-lvds-auo,g133han01.dtso b/arch/arm64/boot/dts/qcom/shikra-iqs-evk-lvds-auo,g133han01.dtso
+index 0ea14847bc8d..6b7ed24872d1 100644
+--- a/arch/arm64/boot/dts/qcom/shikra-iqs-evk-lvds-auo,g133han01.dtso
++++ b/arch/arm64/boot/dts/qcom/shikra-iqs-evk-lvds-auo,g133han01.dtso
+@@ -73,7 +73,6 @@ sn65dsi84: bridge@2c {
+ 		enable-gpios = <&tlmm 76 GPIO_ACTIVE_HIGH>;
+ 		interrupts-extended = <&tlmm 85 IRQ_TYPE_EDGE_FALLING>;
+ 		vcc-supply = <&vreg_bridge_1p8>;
+-		ti,ref-clk-src = <1>;
+ 
+ 		pinctrl-0 = <&bridge_irq_pin &bridge_rst_pin>;
+ 		pinctrl-names = "default";
+@@ -96,8 +95,6 @@ port@2 {
+ 
+ 				sn65dsi84_out_a: endpoint {
+ 					remote-endpoint = <&lvds_panel_out_a>;
+-					ti,lvds-vod-swing-data-microvolt = <150000 261000>;
+-					ti,lvds-vod-swing-clock-microvolt = <117000 204000>;
+ 				};
+ 			};
+ 
+@@ -106,8 +103,6 @@ port@3 {
+ 
+ 				sn65dsi84_out_b: endpoint {
+ 					remote-endpoint = <&lvds_panel_out_b>;
+-					ti,lvds-vod-swing-data-microvolt = <150000 261000>;
+-					ti,lvds-vod-swing-clock-microvolt = <117000 204000>;
+ 				};
+ 			};
+ 		};
+-- 
+2.43.0
+
