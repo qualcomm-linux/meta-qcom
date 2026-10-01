@@ -17,6 +17,10 @@ on:
         required: false
         type: boolean
         default: true
+      fetch_distro_yaml:
+        required: false
+        type: string
+        default: ''
       world:
         required: false
         type: boolean
@@ -105,6 +109,25 @@ jobs:
         run: |
           mkdir $KAS_WORK_DIR
           $KAS_CONTAINER dump --resolve-env --resolve-local --resolve-refs ${KAS_YAMLS} > kas-build.yml
+
+      - name: Kas fetch sources
+        if: inputs.fetch_distro_yaml
+        shell: bash
+        run: |
+          # Download the common sources once, before the later compile jobs
+          # write the same files into the shared DL_DIR at the same time.
+          KAS_YAMLS=${KAS_YAMLS}:${INPUTS_FETCH_DISTRO_YAML}:ci/world.yml \
+            ci/kas-container-shell-helper.sh ci/fetch-sources.sh
+        env:
+          INPUTS_FETCH_DISTRO_YAML: ${{ inputs.fetch_distro_yaml }}
+
+      - name: Kas fetch sources (buildstats)
+        if: inputs.fetch_distro_yaml
+        shell: bash
+        run: |
+          ci/kas-container-shell-helper.sh ci/yocto-buildstats.sh
+          rename.ul -va buildstats buildstats-fetch $KAS_WORK_DIR/build/buildstats*
+          mv $KAS_WORK_DIR/build/buildstats* .
 
       - name: Kas build world
         if:  inputs.world
