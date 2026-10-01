@@ -1,0 +1,44 @@
+From 208a18030ad8c5acca1d9d09aedeb506d89030d9 Mon Sep 17 00:00:00 2001
+From: Dmitry Baryshkov <dmitry.baryshkov@oss.qualcomm.com>
+Date: Tue, 29 Sep 2026 22:11:42 +0300
+Subject: [PATCH] qcs8300: restore the CDSP links of Monza and IQ-8275-EVK
+
+Commit 9ffc4fbaee49 ("qcs8300: drop separate adsp/gdsp0 binaries")
+made the IQ-8275-EVK and Monza CDSP libs to point to SA8775P-RIDE, but
+the CDSP firmware used on those boards comes from the QCS8300-RIDE.
+Despite two firmware files having the same version, they come from
+different builds. As such, using SA8775P libs with the QCS8300 one
+doesn't work and prevents FastRPC driver from starting user PD (as
+fastrpc_sell can't be authenticated). Point CDSP links back to the
+QCS8300-RIDE dir to restore FastRPC functionality.
+
+Fixes: 9ffc4fbaee49 ("qcs8300: drop separate adsp/gdsp0 binaries")
+Assisted-by: Claude:claude-opus-5
+Signed-off-by: Dmitry Baryshkov <dmitry.baryshkov@oss.qualcomm.com>
+Upstream-Status: Submitted [https://github.com/linux-msm/hexagon-dsp-binaries/pull/117]
+---
+ config.txt | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/config.txt b/config.txt
+index 765c9bf9fe96..15b79b7db68c 100644
+--- a/config.txt
++++ b/config.txt
+@@ -92,12 +92,12 @@ Link: shikra/Qualcomm/Shikra-CQS-EVK/dsp/cdsp	shikra/Qualcomm/Shikra-IQS-EVK/dsp
+ 
+ # Arduino Monza
+ Link: sa8775p/Qualcomm/SA8775P-RIDE/dsp/adsp	qcs8300/Arduino/Monza/dsp/adsp
+-Link: sa8775p/Qualcomm/SA8775P-RIDE/dsp/cdsp	qcs8300/Arduino/Monza/dsp/cdsp
++Link: qcs8300/Qualcomm/QCS8300-RIDE/dsp/cdsp	qcs8300/Arduino/Monza/dsp/cdsp
+ Link: sa8775p/Qualcomm/SA8775P-RIDE/dsp/gdsp0	qcs8300/Arduino/Monza/dsp/gdsp0
+ 
+ # IQ8275 EVK
+ Link: sa8775p/Qualcomm/SA8775P-RIDE/dsp/adsp	qcs8300/Qualcomm/IQ8275-EVK/dsp/adsp
+-Link: sa8775p/Qualcomm/SA8775P-RIDE/dsp/cdsp	qcs8300/Qualcomm/IQ8275-EVK/dsp/cdsp
++Link: qcs8300/Qualcomm/QCS8300-RIDE/dsp/cdsp	qcs8300/Qualcomm/IQ8275-EVK/dsp/cdsp
+ Link: sa8775p/Qualcomm/SA8775P-RIDE/dsp/gdsp0	qcs8300/Qualcomm/IQ8275-EVK/dsp/gdsp0
+ 
+ # IQ9075 EVK
+-- 
+2.53.0
+
