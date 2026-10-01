@@ -17,6 +17,7 @@ UKI_CMDLINE += "${@d.getVar('KERNEL_CMDLINE_EXTRA') or ''}"
 KERNEL_DEVICETREE = ""
 KERNEL_DEVICETREE:glymur-crd = "${QCOM_DTB_DEFAULT}.dtb"
 KERNEL_DEVICETREE:kaanapali-mtp = "${QCOM_DTB_DEFAULT}.dtb"
+KERNEL_DEVICETREE:mahua-crd = "${QCOM_DTB_DEFAULT}.dtb"
 KERNEL_DEVICETREE:sm8750-mtp = "${QCOM_DTB_DEFAULT}.dtb"
 
 setup_efi_folder() {
