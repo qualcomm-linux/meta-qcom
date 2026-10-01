@@ -6,7 +6,7 @@ LICENSE = "BSD-3-Clause-Clear"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=8e1eb38e3de3966193d29f31f5d7e684"
 
 SRC_URI = "git://github.com/quic/cbsp-boot-utilities.git;protocol=https;branch=main"
-SRCREV = "a19e5b6f75cd4aa08aa5ced82f9767f1858d766d"
+SRCREV = "8a0f1deef97beae600910506bfba488976465828"
 
 S = "${UNPACKDIR}/${BPN}-${PV}/uefi_capsule_generation"
 
@@ -14,10 +14,8 @@ inherit python_poetry_core native
 
 DEPENDS += " \
     dtc-native \
-    edk2-basetools-native \
     python3-dtc-native \
     python3-pyelftools-native \
-    python3-requests-native \
 "
 
 # FvUpdate.xml ships alongside pyproject.toml (not inside the Python
