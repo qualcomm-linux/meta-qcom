@@ -26,7 +26,7 @@ repos:
 
   meta-ai:
     url: https://github.com/qualcomm-linux/meta-ai
-    branch: main
+    branch: wrynose
 
   meta-virtualization:
     url: https://git.yoctoproject.org/meta-virtualization
