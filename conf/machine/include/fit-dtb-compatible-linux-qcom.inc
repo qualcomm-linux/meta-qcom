@@ -73,6 +73,8 @@ FIT_DTB_COMPATIBLE[qcom_qcs9075-iot-subtype3-el2gh-staging] = \
     "lemans-draco-evk lemans-staging"
 FIT_DTB_COMPATIBLE[qcom_qcs9075-iot-subtype3-staging] = \
     "lemans-draco-evk lemans-el2 lemans-staging"
+FIT_DTB_COMPATIBLE[qcom_qcs9075-iot-subtype3-camx] = \
+    "lemans-draco-evk lemans-draco-evk-camx lemans-el2 lemans-camx-el2"
 
 FIT_DTB_COMPATIBLE[qcom_qcs9100-qam-el2gh-staging] = \
     "qcs9100-ride lemans-staging"
