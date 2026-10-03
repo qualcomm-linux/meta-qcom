@@ -76,8 +76,9 @@ jobs:
       - name: Download event file
         uses: actions/download-artifact@v7
         with:
+            name: Event File
             run-id: ${{ github.event.workflow_run.id }}
-            path: artifacts
+            path: artifacts/Event File
             github-token: ${{ github.token }}
 
       - name: "List files"
