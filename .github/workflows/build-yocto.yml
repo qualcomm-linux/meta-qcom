@@ -137,9 +137,12 @@ jobs:
 
       - name: Setup cache variables (used by oe-selftest)
         run: |
+          # Job-local git clone dirs, as in ci/ci.yml; passed via KAS_OPTS as
+          # kas-container only forwards a fixed set of environment variables.
           echo "DL_DIR=${CACHE_DIR}/downloads" >> $GITHUB_ENV
           # use a single shared sstate cache folder, cleaned up by mtime
           echo "SSTATE_DIR=${CACHE_DIR}/sstate-cache" >> $GITHUB_ENV
+          echo "KAS_OPTS=--runtime-args --env=GIT_CLONEDIR_JOB_LOCAL=1" >> $GITHUB_ENV
 
       - name: Run Yocto patchreview
         run: |
@@ -164,17 +167,44 @@ jobs:
         run: |
           echo "CACHE_DIR=${{env.CACHE_DIR}}" >> $GITHUB_OUTPUT
 
-  compile_warm_up:
+  # Builds the common core (native tools, toolchain, generic world) once,
+  # so the compile_stage2 seeds reuse it instead of each building it.
+  compile_stage1:
     needs: [kas-setup, github-cache-check, compile-env]
     if: |
       github.repository_owner == 'qualcomm-linux' &&
       (inputs.skip_if_github_cached != true || needs.github-cache-check.outputs.cache_hit != 'true')
+    permissions:
+      contents: read
+      packages: read
+      actions: read
+    uses: $/.github/workflows/compile.yml
+    with:
+      name: qcom-armv8a/nodistro
+      world: true
+      machine: 'qcom-armv8a'
+      distro_yaml: ''
+      distro_name: 'nodistro'
+      kernel_yaml: ''
+      kernel_dirname: ''
+      cache_dir: ${{ needs.compile-env.outputs.CACHE_DIR }}
+      profile: ${{ inputs.profile }}
+
+  # One seed build per distro family and target tune.
+  compile_stage2:
+    needs: [github-cache-check, compile_stage1, compile-env]
+    if: |
+      github.repository_owner == 'qualcomm-linux' &&
+      (inputs.skip_if_github_cached != true || needs.github-cache-check.outputs.cache_hit != 'true')
+    permissions:
+      contents: read
+      packages: read
+      actions: read
     strategy:
       fail-fast: true
       matrix:
         machine:
           - glymur-crd
-          - qcom-armv8a
           - rb3gen2-core-kit
         distro:
           - name: nodistro
@@ -185,7 +215,17 @@ jobs:
           - type: default
             dirname: ""
             yamlfile: ""
-    uses: ./.github/workflows/compile.yml
+        include:
+          # qcom-armv8a nodistro is built by compile_stage1
+          - machine: qcom-armv8a
+            distro:
+                name: qcom-distro
+                yamlfile: ':ci/qcom-distro.yml'
+            kernel:
+                type: default
+                dirname: ""
+                yamlfile: ""
+    uses: $/.github/workflows/compile.yml
     with:
       name: ${{ matrix.machine }}/${{ matrix.distro.name }}${{ matrix.kernel.dirname }}
       # One world build per machine and distro family is enough for compile
@@ -205,11 +245,15 @@ jobs:
       profile: ${{ inputs.profile }}
 
   compile_sdk:
-    needs: [github-cache-check, compile_warm_up, compile-env]
+    needs: [github-cache-check, compile_stage2, compile-env]
     if: |
       github.repository_owner == 'qualcomm-linux' &&
       (inputs.skip_if_github_cached != true || needs.github-cache-check.outputs.cache_hit != 'true')
-    uses: ./.github/workflows/compile.yml
+    permissions:
+      contents: read
+      packages: read
+      actions: read
+    uses: $/.github/workflows/compile.yml
     with:
       name: qcom-armv8a/qcom-distro-sdk
       sdk: true
@@ -223,11 +267,15 @@ jobs:
       cache_dir: ${{ needs.compile-env.outputs.CACHE_DIR }}
       profile: ${{ inputs.profile }}
 
-  compile:
-    needs: [github-cache-check, compile_warm_up, compile-env]
+  compile_stage3:
+    needs: [github-cache-check, compile_stage2, compile-env]
     if: |
       github.repository_owner == 'qualcomm-linux' &&
       (inputs.skip_if_github_cached != true || needs.github-cache-check.outputs.cache_hit != 'true')
+    permissions:
+      contents: read
+      packages: read
+      actions: read
     strategy:
       fail-fast: false
       matrix:
@@ -289,7 +337,7 @@ jobs:
                 name: performance
             kernel:
                 type: rt-6.18-distro-kvm
-          # Exclude jobs from compile_warm_up
+          # Exclude jobs from compile_stage2
           - machine: glymur-crd
             distro:
                 name: nodistro
@@ -466,7 +514,7 @@ jobs:
                 type: u-boot-qcom-fit
                 dirname: "_u-boot-qcom-fit"
                 yamlfile: ":ci/u-boot-qcom.yml:ci/kernel-fit-image.yml"
-    uses: ./.github/workflows/compile.yml
+    uses: $/.github/workflows/compile.yml
     with:
       name: ${{ matrix.machine }}/${{ matrix.distro.name }}${{ matrix.kernel.dirname }}
       # Which profiles build this entry. Entries without distro.profile are
@@ -492,7 +540,7 @@ jobs:
       profile: ${{ inputs.profile }}
 
   publish_summary:
-    needs: [github-cache-check, compile, compile_sdk]
+    needs: [github-cache-check, compile_stage3, compile_sdk]
     if: |
       always() && github.repository_owner == 'qualcomm-linux' &&
       (inputs.skip_if_github_cached != true || needs.github-cache-check.outputs.cache_hit != 'true')
@@ -502,18 +550,18 @@ jobs:
         with:
           persist-credentials: false
 
-      - uses: ./.github/actions/print-build-output
+      - uses: $/.github/actions/print-build-output
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           pattern: build-url*
 
   github-cache-save:
-    needs: [github-cache-check, compile, compile_sdk]
+    needs: [github-cache-check, compile_stage3, compile_sdk]
     if: |
       github.repository_owner == 'qualcomm-linux' &&
       inputs.skip_if_github_cached == true &&
       needs.github-cache-check.outputs.cache_hit != 'true' &&
-      needs.compile.result == 'success'
+      needs.compile_stage3.result == 'success'
     runs-on: ubuntu-latest
     steps:
       - name: Create build success marker
@@ -527,7 +575,7 @@ jobs:
 
   build_successful:
     if: github.repository_owner == 'qualcomm-linux'
-    needs: [compile, compile_sdk]
+    needs: [compile_stage3, compile_sdk]
     runs-on: ubuntu-latest
     steps:
       - name: Build completed successfully

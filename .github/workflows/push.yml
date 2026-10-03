@@ -14,16 +14,17 @@ jobs:
       contents: read
       packages: read
       actions: read
-    uses: ./.github/workflows/build-yocto.yml
+    uses: $/.github/workflows/build-yocto.yml
   test:
     permissions:
       contents: read
       actions: read
       checks: write
       pull-requests: write
-    uses: ./.github/workflows/test.yml
+    uses: $/.github/workflows/test.yml
     needs: [build]
-    secrets: inherit
+    secrets:
+      LAVATOKEN: ${{ secrets.LAVATOKEN }}
     with:
       build_id: ${{ github.run_id }}
   publish-test-results:
@@ -33,9 +34,10 @@ jobs:
       actions: read
       checks: write
       pull-requests: write
-    uses: ./.github/workflows/publish-results.yml
+    uses: $/.github/workflows/publish-results.yml
     needs: test
-    secrets: inherit
+    secrets:
+      TEST_REPORTING_APP_TOKEN: ${{ secrets.TEST_REPORTING_APP_TOKEN }}
     with:
       workflow_id: ${{ github.run_id }}
       event_name: ${{ github.event_name }}
