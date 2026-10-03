@@ -22,7 +22,7 @@ SRC_URI = " \
     https://qartifactory-edge.qualcomm.com/artifactory/qsc_releases/software/chip/component/camx.qclinux.0.0/${PBT_BUILD_DATE}/prebuilt_yocto_${PBT_BRANCH}/camx-${PLATFORM}_${PV}_armv8-2a.tar.gz;name=camx \
     https://qartifactory-edge.qualcomm.com/artifactory/qsc_releases/software/chip/component/camx.qclinux.0.0/${PBT_BUILD_DATE}/prebuilt_yocto_${PBT_BRANCH}/chicdk-${PLATFORM}_${PV}_armv8-2a.tar.gz;name=chicdk \
     https://qartifactory-edge.qualcomm.com/artifactory/qsc_releases/software/chip/component/camx.qclinux.0.0/${PBT_BUILD_DATE}/prebuilt_yocto_${PBT_BRANCH}/camxcommon-${PLATFORM}_${PV}_armv8-2a.tar.gz;name=camxcommon \
-    https://qartifactory-edge.qualcomm.com/artifactory/qsc_releases/software/chip/component/camx.qclinux.0.0/${PBT_BUILD_DATE}/prebuilt_yocto_${PBT_BRANCH}/camxtest-${PLATFORM}_1.0.38_armv8-2a.tar.gz;name=camxtest \
+    https://qartifactory-edge.qualcomm.com/artifactory/qsc_releases/software/chip/component/camx.qclinux.0.0/${PBT_BUILD_DATE}/prebuilt_yocto_${PBT_BRANCH}/camxtest-${PLATFORM}_${PV}_armv8-2a.tar.gz;name=camxtest \
 "
 
 S = "${UNPACKDIR}"
@@ -41,10 +41,10 @@ do_install:append() {
     install -d ${D}${datadir}/doc/chicdk-${PLATFORM}
 
     cp -r ${S}/usr/lib/* ${D}${libdir}
-    # Install bin files only if /usr/bin exists in ${S}
-    if [ -d "${S}${bindir}" ]; then
+    # Install camera-nhx files only if /usr/bin exists in ${S}
+    if [ -f "${S}${bindir}/camera-nhx" ]; then
         install -d ${D}${bindir}
-        cp -r ${S}/usr/bin/* ${D}${bindir}
+        cp -r ${S}/usr/bin/camera-nhx ${D}${bindir}
     fi
     # Install camera-nhx files only if /usr/libexec exists in ${S}
     if [ -d "${S}${libexecdir}" ]; then
@@ -56,6 +56,9 @@ do_install:append() {
     rm -f ${D}${libdir}/camx/${PLATFORM}/camera/components/*${SOLIBSDEV}
     rm -f ${D}${libdir}/camx/${PLATFORM}/hw/*${SOLIBSDEV}
     rm -f ${D}${libdir}/camx/${PLATFORM}/camera/*${SOLIBSDEV}
+
+    # Remove legacy libcamera* libs from the staged image
+    rm -f ${D}${libdir}/libcamera*
 
     # Base docs
     install -m 0644 ${S}/usr/share/doc/${BPN}/NOTICE \
