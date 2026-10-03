@@ -29,5 +29,6 @@ UBOOT_FIT_UBOOT_ENTRYPOINT ?= "0xaf400000"
 QCOM_UBOOT_SPL_FIT_ATF ?= "trusted-firmware-a-qcom-lemans-evk"
 QCOM_UBOOT_SPL_FIT_TEE ?= "optee-os-qcom-lemans"
 
-# Platform name for the SWIV annotation of the SPL ELF.
-QCOM_UBOOT_SPL_SWIV_PLATFORM ?= "lemans"
+# Platform name for the SWIV annotation of the firmware ELFs (U-Boot SPL and
+# TF-A BL2).
+QCOM_FW_SWIV_PLATFORM ?= "lemans"
