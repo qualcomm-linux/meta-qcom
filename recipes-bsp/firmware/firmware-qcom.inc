@@ -1,5 +1,3 @@
-inherit allarch
-
 FILES:${PN} += "${nonarch_base_libdir}/firmware/"
 
 # Firmware files are pre-compiled, pre-stripped, and not target architecture executables.
@@ -50,22 +48,46 @@ python() {
         bb.error("%s: split firmware-qcom packages engaged, but FW_QCOM_NAME is not defined" % pn)
 }
 
-do_install:append() {
-    for fw in $(find ${D}${FW_QCOM_BASE_PATH} -type f)
+firmware_qcom_compress() {
+    for fw in $(find ${D}${FW_QCOM_BASE_PATH} -type f ! -name '*.jsn' 2>/dev/null)
     do
-        if [ "${fw%%jsn}" = "${fw}" ]
-        then
-            case "${FIRMWARE_COMPRESSION}" in
-                zst | zstd)
-                    zstd --compress --rm ${fw}
-                    ;;
-                xz)
-                    xz --compress --check=crc32 ${fw}
-                    ;;
-            esac
-        fi
+        case "${FIRMWARE_COMPRESSION}" in
+            zst | zstd)
+                zstd --compress --rm ${fw}
+                ;;
+            xz)
+                xz --compress --check=crc32 ${fw}
+                ;;
+        esac
     done
 }
+
+# Undo firmware_qcom_compress, whatever FIRMWARE_COMPRESSION was when the
+# blobs were compressed.
+firmware_qcom_decompress() {
+    if [ ! -d "${D}${FW_QCOM_BASE_PATH}" ]; then
+        return
+    fi
+    find ${D}${FW_QCOM_BASE_PATH} -type f -name '*.zst' -exec zstd --decompress --rm {} \;
+    find ${D}${FW_QCOM_BASE_PATH} -type f -name '*.xz' -exec xz --decompress {} \;
+}
+
+do_install:append() {
+    firmware_qcom_compress
+}
+
+# Optional secure-boot signing (QCOM_FIRMWARE_SIGN_ENABLE) of the blobs
+# under ${D}${FW_QCOM_BASE_PATH}, uncompressed for signing and compressed
+# again afterwards.  Unsigned firmware is the same for every machine;
+# signed firmware is bound to its Security Profile and keys.
+inherit qcom-firmware-sign
+inherit_defer ${@'allarch' if d.getVar('QCOM_FIRMWARE_SIGN_ENABLE') != '1' else ''}
+PACKAGE_ARCH = "${MACHINE_ARCH}"
+
+QCOM_FIRMWARE_SIGN_DIRS = "${D}${FW_QCOM_BASE_PATH}"
+do_qcom_firmware_sign[prefuncs] += "firmware_qcom_decompress"
+do_qcom_firmware_sign[postfuncs] += "firmware_qcom_compress"
+do_qcom_firmware_sign[vardeps] += "FIRMWARE_COMPRESSION"
 
 INHIBIT_PACKAGE_DEBUG_SPLIT = "1"
 INHIBIT_PACKAGE_STRIP = "1"
