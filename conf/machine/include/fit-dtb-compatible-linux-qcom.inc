@@ -65,6 +65,14 @@ FIT_DTB_COMPATIBLE[qcom_qcs9075-iot-subtype1-staging-emmc] = \
     "lemans-evk lemans-evk-ifp-mezzanine lemans-staging lemans-el2 lemans-evk-staging lemans-evk-emmc"
 FIT_DTB_COMPATIBLE[qcom_qcs9075-iot-subtype1-el2gh-staging-emmc] = \
     "lemans-evk lemans-evk-ifp-mezzanine lemans-staging lemans-evk-staging lemans-evk-emmc"
+FIT_DTB_COMPATIBLE[qcom_qcs9075-iot-subtype3] = \
+    "lemans-draco-evk lemans-el2 lemans-draco-evk-camx lemans-camx-el2"
+FIT_DTB_COMPATIBLE[qcom_qcs9075-iot-subtype3-el2gh] = \
+    "lemans-draco-evk"
+FIT_DTB_COMPATIBLE[qcom_qcs9075-iot-subtype3-el2gh-staging] = \
+    "lemans-draco-evk lemans-staging"
+FIT_DTB_COMPATIBLE[qcom_qcs9075-iot-subtype3-staging] = \
+    "lemans-draco-evk lemans-el2 lemans-staging"
 
 FIT_DTB_COMPATIBLE[qcom_qcs9100-qam-el2gh-staging] = \
     "qcs9100-ride lemans-staging"
