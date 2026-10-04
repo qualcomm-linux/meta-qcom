@@ -14,6 +14,11 @@ QCOM_UBOOT_SPL_FIT ?= "0"
 QCOM_UBOOT_SPL_IMAGE ?= "u-boot-spl-${UBOOT_CONFIG_DEFAULT}.mbn"
 QCOM_UBOOT_FIT_IMAGE ?= "u-boot-fitImage"
 
+QCOM_TFA_FIP_FLASH ?= "0"
+QCOM_TFA_RECIPE ?= ""
+QCOM_TFA_FIP_IMAGE ?= "fip.elf"
+QCOM_TFA_TZ_IMAGE ?= "bl2.mbn"
+
 QCOM_ESP_IMAGE ?= "${@bb.utils.contains("MACHINE_FEATURES", "efi", "esp-qcom-image", "", d)}"
 QCOM_ESP_FILE ?= "${@'${DEPLOY_DIR_IMAGE}/${QCOM_ESP_IMAGE}-${MACHINE}${IMAGE_NAME_SUFFIX}.vfat' if d.getVar('QCOM_ESP_IMAGE') else ''}"
 
@@ -40,6 +45,7 @@ do_image_qcomflash[depends] += "${@ ['', '${QCOM_PARTITION_CONF}:do_deploy'][d.g
 				${@'virtual/kernel:do_qcom_img_deploy' if 'linux-qcom-bootimg' in (d.getVar('KERNEL_CLASSES') or '').split() else ''} \
 				${@'virtual/bootloader:do_deploy' if d.getVar('PREFERRED_PROVIDER_virtual/bootloader') else  ''} \
 				${@'${QCOM_ESP_IMAGE}:do_image_complete' if d.getVar('QCOM_ESP_IMAGE') != '' else  ''} \
+				${@'${QCOM_TFA_RECIPE}:do_deploy' if d.getVar('QCOM_TFA_FIP_FLASH') == '1' else  ''} \
 				${@'abl2esp:do_deploy' if d.getVar('ABL_SIGNATURE_VERSION') else  ''}"
 IMAGE_TYPEDEP:qcomflash += "${IMAGE_QCOMFLASH_FS_TYPE}"
 
@@ -132,18 +138,27 @@ create_qcomflash_pkg() {
         # bootloader selection
         bootloader_bin="${DEPLOY_DIR_IMAGE}/${QCOM_BOOT_FILES_SUBDIR}/uefi.elf"
         bootloader_provider='${PREFERRED_PROVIDER_virtual/bootloader}'
-        case "$bootloader_provider" in
-            u-boot*)
-                if [ "${QCOM_UBOOT_SPL_FIT}" = "1" ]; then
-                    bootloader_bin="${DEPLOY_DIR_IMAGE}/${QCOM_UBOOT_FIT_IMAGE}"
-                    if [ -f "${DEPLOY_DIR_IMAGE}/${QCOM_UBOOT_SPL_IMAGE}" ]; then
-                        install -m 0644 "${DEPLOY_DIR_IMAGE}/${QCOM_UBOOT_SPL_IMAGE}" tz.mbn
+        if [ "${QCOM_TFA_FIP_FLASH}" = "1" ]; then
+            bootloader_bin="${DEPLOY_DIR_IMAGE}/${QCOM_TFA_RECIPE}/${QCOM_TFA_FIP_IMAGE}"
+            tz_image="${DEPLOY_DIR_IMAGE}/${QCOM_TFA_RECIPE}/${QCOM_TFA_TZ_IMAGE}"
+            if [ ! -f "$tz_image" ]; then
+                bbfatal "TF-A trust-zone image '$tz_image' not found; cannot flash FIP boot"
+            fi
+            install -m 0644 "$tz_image" tz.mbn
+        else
+            case "$bootloader_provider" in
+                u-boot*)
+                    if [ "${QCOM_UBOOT_SPL_FIT}" = "1" ]; then
+                        bootloader_bin="${DEPLOY_DIR_IMAGE}/${QCOM_UBOOT_FIT_IMAGE}"
+                        if [ -f "${DEPLOY_DIR_IMAGE}/${QCOM_UBOOT_SPL_IMAGE}" ]; then
+                            install -m 0644 "${DEPLOY_DIR_IMAGE}/${QCOM_UBOOT_SPL_IMAGE}" tz.mbn
+                        fi
+                    else
+                        bootloader_bin="${DEPLOY_DIR_IMAGE}/u-boot-${UBOOT_CONFIG_DEFAULT}.mbn"
                     fi
-                else
-                    bootloader_bin="${DEPLOY_DIR_IMAGE}/u-boot-${UBOOT_CONFIG_DEFAULT}.mbn"
-                fi
-                ;;
-        esac
+                    ;;
+            esac
+        fi
         if [ -f "${bootloader_bin}" ]; then
             install -m 0644 "${bootloader_bin}" uefi.elf
         fi

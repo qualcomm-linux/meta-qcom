@@ -971,15 +971,35 @@ class QcomFitImageMatrixTests(OESelftestTestCase):
         for dts_dir in arch_paths:
             if not os.path.isdir(dts_dir):
                 continue
-            for _, _, files in os.walk(dts_dir):
+            for root, _, files in os.walk(dts_dir):
                 for fname in files:
                     if fname.endswith(".dts"):
                         outputs.add(os.path.splitext(fname)[0] + ".dtb")
                     elif fname.endswith(".dtso"):
                         outputs.add(os.path.splitext(fname)[0] + ".dtbo")
+                    elif fname == "Makefile":
+                        outputs |= self._makefile_dtb_targets(
+                            os.path.join(root, fname))
 
         self.__class__._provider_outputs_cache[provider] = outputs
         return outputs
+
+    # Kernel DT Makefiles synthesise composite DTBs (a base .dtb merged with
+    # one or more .dtbo overlays via fdtoverlay) through "<name>-dtbs := ..."
+    # rules.  These outputs, e.g. qcs6490-rb3gen2-el2.dtb and lemans-evk-el2.dtb,
+    # have no matching .dts source, so collect them from the Makefile too.
+    _DTBS_RULE_RE = re.compile(
+        r'^\s*([\w.,+-]+)-dtbs\s*[:+]?=', re.MULTILINE)
+
+    def _makefile_dtb_targets(self, makefile_path):
+        try:
+            with open(makefile_path) as f:
+                content = f.read()
+        except OSError:
+            return set()
+        content = content.replace('\\\n', ' ')
+        return {f"{m.group(1)}.dtb"
+                for m in self._DTBS_RULE_RE.finditer(content)}
 
     def _provider_machine(self, provider):
         if provider in self.__class__._provider_machine_cache:

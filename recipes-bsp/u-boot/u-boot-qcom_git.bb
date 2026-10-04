@@ -65,7 +65,7 @@ uboot_assemble_fitimage_helper:append() {
         (unset LDFLAGS CFLAGS; oe_runmake -C ${S} O=${B}/${builddir} ${UBOOT_MAKE_OPTS} spl/u-boot-spl.elf)
 
         export CRYPTOGRAPHY_OPENSSL_NO_LEGACY=1
-        swiv_build_utility u-boot-spl-swiv.elf spl/u-boot-spl.elf ${QCOM_UBOOT_SPL_SWIV_PLATFORM}
+        swiv_build_utility u-boot-spl-swiv.elf spl/u-boot-spl.elf ${QCOM_FW_SWIV_PLATFORM}
         qtestsign -${mbn_header} tz -o u-boot-spl.mbn u-boot-spl-swiv.elf
         rm -f u-boot-spl-swiv.elf
     fi
