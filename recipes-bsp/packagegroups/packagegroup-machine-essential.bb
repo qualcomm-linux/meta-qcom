@@ -199,6 +199,7 @@ RRECOMMENDS:${PN}-qcom-qcs6490-soc += " \
     kernel-module-pmic-glink \
     kernel-module-pmic-glink-altmode \
     kernel-module-pwrseq-qcom-wcn \
+    kernel-module-qcom-refgen-regulator \
     kernel-module-snd-soc-lpass-sc7280 \
     kernel-module-snd-soc-sc7280 \
     kernel-module-snd-soc-wsa883x \
@@ -216,6 +217,7 @@ RRECOMMENDS:${PN}-qcom-qcs8300-soc += " \
     kernel-module-phy-qcom-sgmii-eth \
     kernel-module-pwrseq-qcom-wcn \
     kernel-module-qca808x \
+    kernel-module-qcom-refgen-regulator \
     kernel-module-stmmac-platform \
     kernel-module-videocc-sa8775p \
 "
@@ -231,6 +233,7 @@ RRECOMMENDS:${PN}-qcom-qcs9100-soc += " \
     kernel-module-phy-qcom-sgmii-eth \
     kernel-module-pwrseq-qcom-wcn \
     kernel-module-qca808x \
+    kernel-module-qcom-refgen-regulator \
     kernel-module-stmmac-platform \
     kernel-module-videocc-sa8775p \
 "
