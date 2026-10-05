@@ -3,5 +3,5 @@ header:
 
 repos:
   meta-dpdk:
-    branch: master
+    branch: wrynose
     url: https://git.yoctoproject.org/meta-dpdk

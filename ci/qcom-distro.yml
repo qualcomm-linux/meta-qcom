@@ -32,7 +32,6 @@ repos:
 
   meta-audioreach:
     url: https://github.com/AudioReach/meta-audioreach
-    branch: master
 
   meta-selinux:
     url: https://git.yoctoproject.org/meta-selinux
