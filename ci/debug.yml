@@ -9,4 +9,4 @@ local_conf_header:
 
   cmdline-dbg: |
     KERNEL_CMDLINE_EXTRA_FTRACE = "ftrace=tracing_on trace_buf_size=5M trace_event=timer:timer_expire_entry,timer:timer_expire_exit,timer:hrtimer_cancel,timer:hrtimer_expire_entry,timer:hrtimer_expire_exit,timer:hrtimer_init,timer:hrtimer_start,irq:*,workqueue:*,sched:sched_migrate_task,sched:sched_pi_setprio,sched:sched_switch,sched:sched_wakeup,sched:sched_wakeup_new,power:clock_set_rate,power:clock_enable,power:clock_disable,power:cpu_frequency,regulator:*,thermal:thermal_zone_trip,thermal:thermal_temperature,thermal:cdev_update,rpmh:rpmh_send_msg"
-    KERNEL_CMDLINE_EXTRA:append = " ${KERNEL_CMDLINE_EXTRA_FTRACE}"
+    KERNEL_CMDLINE_EXTRA:append = " qcom_scm.download_mode=1 ${KERNEL_CMDLINE_EXTRA_FTRACE}"
