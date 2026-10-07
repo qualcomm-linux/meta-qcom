@@ -1,13 +1,13 @@
 PLATFORM = "hamoa"
-PBT_BUILD_DATE = "260826"
+PBT_BUILD_DATE = "260923.1"
 
 require common.inc
 
-SRC_URI[camxlib.sha256sum] = "70208241d530536878c202ac512f4e39019827b9feb2ba9177d904416dbab198"
-SRC_URI[camx.sha256sum] = "7d2d59c06788a57487b43a0c6792b62822c8992718c15ab5811cdd03b169fc79"
-SRC_URI[chicdk.sha256sum] = "5896081c3200da9c497079e217cae2c616cfd610ea2f2c80a6c5a636052de6bf"
-SRC_URI[camxcommon.sha256sum] = "76b94b2af3ad33cf6ffcb768dfe42e85352adf231488e42b99de5575d191100e"
-SRC_URI[camxtest.sha256sum] = "ccf1b6430bb494b34a0db616c7f1f7940fed925531c76f1a8ed2a7211381609c"
+SRC_URI[camxlib.sha256sum] = "04bd4401dce3471badba3756f7d72c442c70e5ea81a48c5c9e042202f2575149"
+SRC_URI[camx.sha256sum] = "cba9487e3ada7f9649685b81bf6ea17c8c40d7ce169284b2dae3fcf3cdbeec0d"
+SRC_URI[chicdk.sha256sum] = "25142ac658c6d1eedb78c451c65a5b6fa94da2bae68e5b5c13c3a6c600b3e65c"
+SRC_URI[camxcommon.sha256sum] = "8d7e0bac9f6050451d5c280af38067fff2a0cfe444f9b67074e30a9f0f1a378b"
+SRC_URI[camxtest.sha256sum] = "3e25601ae086f050902cb6a231141fc3d7adb54c61d0d57ffecd745e308c177b"
 
 do_install:append() {
     # copy skel file
