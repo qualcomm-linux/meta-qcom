@@ -1,0 +1,39 @@
+From 98bd935f6966e00b4de33d98d190fc496eef0b7b Mon Sep 17 00:00:00 2001
+From: Sangeetha Pokala <psangeet@qti.qualcomm.com>
+Date: Wed, 23 Sep 2026 12:12:07 +0530
+Subject: [PATCH] freedreno: Enable A753 and A735
+
+Add initial support for A753 and A735.
+Verified weston, glmark2-es2-wayland and vkmark.
+
+Upstream-Status: Backport [https://gitlab.freedesktop.org/mesa/mesa/-/commit/19c877f9b75a65baf736b5ceda7445617a1b019c]
+Signed-off-by: Sangeetha Pokala <psangeet@qti.qualcomm.com>
+---
+ src/freedreno/common/freedreno_devices.py | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
+
+diff --git a/src/freedreno/common/freedreno_devices.py b/src/freedreno/common/freedreno_devices.py
+index 41e3cec31f2..4563a72197e 100644
+--- a/src/freedreno/common/freedreno_devices.py
++++ b/src/freedreno/common/freedreno_devices.py
+@@ -1207,7 +1207,8 @@ add_gpus([
+ 
+ add_gpus([
+         GPUId(chip_id=0xffff43030c00, name="Adreno X1-45"),
+-        GPUId(chip_id=0x43030B00, name="FD735")
++        GPUId(chip_id=0x43030B00, name="FD735"),
++        GPUId(chip_id=0xffff43030E01, name="Adreno (TM) 735"),
+     ], A6xxGPUInfo(
+         CHIP.A7XX,
+         [a7xx_base, a7xx_gen2, GPUProps(enable_tp_ubwc_flag_hint = True)],
+@@ -1378,6 +1379,7 @@ add_gpus([
+ add_gpus([
+         GPUId(chip_id=0x43051401, name="FD750"), # KGSL, no speedbin data
+         GPUId(chip_id=0xffff43051401, name="FD750"), # Default no-speedbin fallback
++        GPUId(chip_id=0xffff43051701, name="Adreno (TM) 753"),
+     ], A6xxGPUInfo(
+         CHIP.A7XX,
+         [a7xx_base, a7xx_gen3],
+-- 
+2.34.1
+
