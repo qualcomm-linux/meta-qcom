@@ -119,7 +119,7 @@ jobs:
         # of devices
         timeout-minutes: 120
         id: submit
-        uses: foundriesio/lava-action@v13
+        uses: foundriesio/lava-action@2392ee48130c6d99c97bb91cddb46d1fcde43f3e # v14
         with:
           lava_token: ${{ secrets.LAVATOKEN }}
           lava_url: ${{ env.LAVA_URL }}
@@ -241,7 +241,7 @@ jobs:
         # It may spend some time in LAVA queue as there is a limited number
         # of devices
         timeout-minutes: 120
-        uses: foundriesio/lava-action@v13
+        uses: foundriesio/lava-action@2392ee48130c6d99c97bb91cddb46d1fcde43f3e # v14
         with:
           lava_token: ${{ secrets.LAVATOKEN }}
           lava_url: ${{ env.LAVA_URL }}
