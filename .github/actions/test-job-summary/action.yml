@@ -281,29 +281,30 @@ runs:
           echo "" >> "${INPUTS_SUMMARY_FILE_NAME}"
           echo "" >> "${INPUTS_SUMMARY_FILE_NAME}"
 
+          # The matrix is wide and long, so the text is shrunk with <sub>
+          # (summaries drop style attributes) and the board names and test
+          # names are repeated at the bottom and on the right, to keep them
+          # in sight while scrolling.
+          print_board_row() {
+            printf "| <sub>%s</sub> |" "Test"
+            for D in $DEVICES; do
+              printf " <sub>%s</sub> |" "$D"
+            done
+            printf " <sub>%s</sub> |\n" "Test"
+          }
+
           # Print header row
-          printf "| %s |" "Test"
-          printf "| %s |" "Test" >> "${INPUTS_SUMMARY_FILE_NAME}"
-          for D in $DEVICES; do
-            printf " %s |" "$D"
-            printf " %s |" "$D" >> "${INPUTS_SUMMARY_FILE_NAME}"
-          done
-          echo
-          echo "" >> "${INPUTS_SUMMARY_FILE_NAME}"
+          print_board_row | tee -a "${INPUTS_SUMMARY_FILE_NAME}"
 
           ## Print separator
-          printf "| ---- |"
-          printf "| ---- |" >> "${INPUTS_SUMMARY_FILE_NAME}"
+          printf "| ---- |" | tee -a "${INPUTS_SUMMARY_FILE_NAME}"
           for _ in $DEVICES; do
-            printf " ---- |"
-            printf " ---- |" >> "${INPUTS_SUMMARY_FILE_NAME}"
+            printf " ---- |" | tee -a "${INPUTS_SUMMARY_FILE_NAME}"
           done
-          echo
-          echo "" >> "${INPUTS_SUMMARY_FILE_NAME}"
+          printf " ---- |\n" | tee -a "${INPUTS_SUMMARY_FILE_NAME}"
 
           for R in $RESULTS; do
-            printf "| %s |" "$R"
-            printf "| %s |" "$R" >> "${INPUTS_SUMMARY_FILE_NAME}"
+            printf "| <sub>%s</sub> |" "$R" | tee -a "${INPUTS_SUMMARY_FILE_NAME}"
 
             for D in $DEVICES; do
               VALUE=$(echo "$INPUT" | jq -r --arg d "$D" --arg r "$R" '.[$d][$r].status // ""')
@@ -334,11 +335,13 @@ runs:
                       LABEL="${LABEL:0:${COMMENT_WIDTH}}..."
                   fi
               fi
-              printf " %s [%s](%s) |" "$CHECKMARK" "$LABEL" "$TARGET"
-              printf " %s [%s](%s) |" "$CHECKMARK" "$LABEL" "$TARGET" >> "${INPUTS_SUMMARY_FILE_NAME}"
+              printf " <sub>%s [%s](%s)</sub> |" "$CHECKMARK" "$LABEL" "$TARGET" | tee -a "${INPUTS_SUMMARY_FILE_NAME}"
             done
-            echo "" >> "${INPUTS_SUMMARY_FILE_NAME}"
+            printf " <sub>%s</sub> |\n" "$R" | tee -a "${INPUTS_SUMMARY_FILE_NAME}"
           done
+
+          # Print footer row
+          print_board_row | tee -a "${INPUTS_SUMMARY_FILE_NAME}"
           echo "" >> "${INPUTS_SUMMARY_FILE_NAME}"
           echo "</details>" >> "${INPUTS_SUMMARY_FILE_NAME}"
           # Print the entries of the known failures list that were applied,
