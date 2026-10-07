@@ -44,6 +44,14 @@ on:
         required: false
         type: string
         description: "Pull request URL. Added to the LAVA job metadata for PR builds"
+      kernel:
+        required: false
+        type: string
+        description: "Kernel flavour under test, used to filter the known failures list"
+      known_failures_file:
+        required: false
+        type: string
+        description: "Known failures list, relative to the repository root. See ci/known-failures/README.md"
     outputs:
       summary_id:
         description: "ID of the test summary artifact"
@@ -284,6 +292,8 @@ jobs:
           summary_file_name: "${{ inputs.distro_name }}${{ inputs.distro_suffix }}-test_job_summary"
           summary_title: "${{ inputs.distro_name }}${{ inputs.distro_suffix }}"
           lava_base_url: https://${{ env.LAVA_URL }}
+          known_failures_file: ${{ inputs.known_failures_file }}
+          kernel: ${{ inputs.kernel }}
 
       - name: Publish Test Job Details
         env:
