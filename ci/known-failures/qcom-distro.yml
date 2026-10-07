@@ -1,0 +1,40 @@
+# Known failures for qcom-distro, see README.md for the format.
+
+hamoa-iot-evk:
+  # the v4l2 encoder times out, so the decode tests have no stream to play
+  - test: GStreamer_Video_Encode_h264_480p
+    comment: https://github.com/qualcomm-linux/meta-qcom/issues/3347
+  - test: GStreamer_Video_Encode_h265_480p
+    comment: https://github.com/qualcomm-linux/meta-qcom/issues/3347
+  - test: GStreamer_Video_Decode_h264_480p
+    comment: https://github.com/qualcomm-linux/meta-qcom/issues/3347
+  - test: GStreamer_Video_Decode_h265_480p
+    comment: https://github.com/qualcomm-linux/meta-qcom/issues/3347
+
+lemans-evk:
+  # no ALSA capture device is registered
+  - test: AudioRecord_Config01
+    comment: https://github.com/qualcomm-linux/meta-qcom/issues/1531
+    kernels:
+      - linux-qcom-next
+  - test: AudioRecord_Config03
+    comment: https://github.com/qualcomm-linux/meta-qcom/issues/1531
+    kernels:
+      - linux-qcom-next
+  - test: AudioRecord_Config05
+    comment: https://github.com/qualcomm-linux/meta-qcom/issues/1531
+    kernels:
+      - linux-qcom-next
+  - test: AudioRecord_Config07
+    comment: https://github.com/qualcomm-linux/meta-qcom/issues/1531
+    kernels:
+      - linux-qcom-next
+  - test: AudioRecord_Config09
+    comment: https://github.com/qualcomm-linux/meta-qcom/issues/1531
+    kernels:
+      - linux-qcom-next
+
+sm8750-mtp:
+  # average FPS stays around 81 on a 120 Hz display, below the 102 threshold
+  - test: weston-simple-egl
+    comment: average FPS below the refresh rate threshold
