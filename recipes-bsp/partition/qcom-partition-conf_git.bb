@@ -3,7 +3,7 @@ DESCRIPTION = "GPT partition binaries and QDL scripts for Qualcomm reference dev
 
 require qcom-ptool.inc
 
-DEPENDS = "qcom-ptool-native"
+DEPENDS = "qcom-ptool-native python3-jsonschema-native python3-pyyaml-native"
 
 inherit deploy allarch
 
