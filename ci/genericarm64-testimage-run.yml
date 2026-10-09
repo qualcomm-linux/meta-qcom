@@ -1,0 +1,13 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/siemens/kas/master/kas/schema-kas.json
+
+header:
+  version: 14
+  includes:
+  - ci/genericarm64-testimage.yml
+
+local_conf_header:
+  test: |
+    # running testimage automatically
+    TESTIMAGE_AUTO = "1"
+    # excluding initramfs images
+    TESTIMAGE_AUTO:pn-core-image-initramfs-boot = "0"

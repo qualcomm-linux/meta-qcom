@@ -51,7 +51,7 @@ jobs:
 
       - name: Run kas lock
         run: |
-          ${KAS_CONTAINER} lock ci/base.yml:ci/qcom-distro.yml:ci/meta-arm.yml
+          ${KAS_CONTAINER} lock ci/base.yml:ci/qcom-distro.yml:ci/meta-arm.yml:ci/meta-yocto.yml
 
       - name: Upload kas
         uses: actions/upload-artifact@v6
@@ -166,6 +166,56 @@ jobs:
         id: compile_env
         run: |
           echo "CACHE_DIR=${{env.CACHE_DIR}}" >> $GITHUB_OUTPUT
+
+  testimage:
+    needs: [kas-setup, github-cache-check, compile-env]
+    if: |
+      github.repository_owner == 'qualcomm-linux' &&
+      (inputs.skip_if_github_cached != true || needs.github-cache-check.outputs.cache_hit != 'true')
+    strategy:
+      fail-fast: false
+      matrix:
+        machine:
+          - genericarm64-testimage
+        distro:
+          - name: nodistro
+            yamlfile: ""
+    uses: ./.github/workflows/compile.yml
+    with:
+      run_on: arm64
+      name: ${{ matrix.machine }}/${{ matrix.distro.name }}
+      world: false
+      machine: ${{matrix.machine}}
+      distro_yaml: ${{matrix.distro.yamlfile}}
+      distro_name: ${{matrix.distro.name}}
+      kernel_yaml: ''
+      kernel_dirname: ''
+      cache_dir: ${{ needs.compile-env.outputs.CACHE_DIR }}
+
+  testimage-run:
+    needs: [testimage, github-cache-check, compile-env]
+    if: |
+      github.repository_owner == 'qualcomm-linux' &&
+      (inputs.skip_if_github_cached != true || needs.github-cache-check.outputs.cache_hit != 'true')
+    strategy:
+      fail-fast: false
+      matrix:
+        machine:
+          - genericarm64-testimage-run
+        distro:
+          - name: nodistro
+            yamlfile: ""
+    uses: ./.github/workflows/compile.yml
+    with:
+      run_on: arm64-metal
+      name: ${{ matrix.machine }}/${{ matrix.distro.name }}
+      world: false
+      machine: ${{matrix.machine}}
+      distro_yaml: ${{matrix.distro.yamlfile}}
+      distro_name: ${{matrix.distro.name}}
+      kernel_yaml: ''
+      kernel_dirname: ''
+      cache_dir: ${{ needs.compile-env.outputs.CACHE_DIR }}
 
   # Builds the common core (native tools, toolchain, generic world) once,
   # so the compile_stage2 seeds reuse it instead of each building it.
@@ -548,7 +598,7 @@ jobs:
       profile: ${{ inputs.profile }}
 
   publish_summary:
-    needs: [github-cache-check, compile_stage3, compile_sdk]
+    needs: [github-cache-check, compile_stage3, compile_sdk, testimage-run]
     if: |
       always() && github.repository_owner == 'qualcomm-linux' &&
       (inputs.skip_if_github_cached != true || needs.github-cache-check.outputs.cache_hit != 'true')
@@ -564,7 +614,7 @@ jobs:
           pattern: build-url*
 
   github-cache-save:
-    needs: [github-cache-check, compile_stage3, compile_sdk]
+    needs: [github-cache-check, compile_stage3, compile_sdk, testimage-run]
     if: |
       github.repository_owner == 'qualcomm-linux' &&
       inputs.skip_if_github_cached == true &&
@@ -583,7 +633,7 @@ jobs:
 
   build_successful:
     if: github.repository_owner == 'qualcomm-linux'
-    needs: [compile_stage3, compile_sdk]
+    needs: [compile_stage3, compile_sdk, testimage-run]
     runs-on: ubuntu-latest
     steps:
       - name: Build completed successfully
