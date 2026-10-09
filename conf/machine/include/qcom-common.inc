@@ -24,6 +24,13 @@ PREFERRED_PROVIDER_virtual/kernel ??= "linux-yocto"
 VIRTUAL-RUNTIME_qcom-capsule-firmware ?= ""
 MACHINE_EXTRA_RRECOMMENDS += "${VIRTUAL-RUNTIME_qcom-capsule-firmware}"
 
+# Hexagon versions for which DSP libraries can be packaged
+QCOM_HEXAGON_KNOWN_ARCHS = "v66 v68 v69 v73 v75 v79 v81 v85"
+
+# Hexagon versions of the DSPs on the SoC, used to select the DSP libraries.
+# Empty selects the libraries for all Hexagon versions.
+QCOM_HEXAGON_ARCHS = ""
+
 # Device Trees specific to linux-qcom family of kernels
 LINUX_QCOM_KERNEL_DEVICETREE ??= ""
 KERNEL_DEVICETREE:append:pn-linux-qcom = " ${LINUX_QCOM_KERNEL_DEVICETREE}"
