@@ -1,0 +1,56 @@
+From 6cf91c16869bc55d1074db1117ddeb486d3f9029 Mon Sep 17 00:00:00 2001
+From: Valentine Burley <valentine.burley@collabora.com>
+Date: Mon, 3 Aug 2026 11:49:27 +0200
+Subject: [PATCH] tu: Bump conformanceVersion
+
+conformanceVersion is actually unrelated to the official CTS conformance
+process in Khronos. It just reports the latest CTS version
+that the driver can pass, and is also unrelated to the Vulkan API version.
+
+For bragging rights, let's match the latest Turnip conformance submission
+though: https://www.khronos.org/conformance/adopters/conformant-products/vulkan#submission_993
+
+This run is from a6xx, but a7xx could also pass CTS, and a8xx should not
+be too far off, so drop the per-gen guard and report 1.4.6.1 globally.
+
+Upstream-Status: Backport [https://gitlab.freedesktop.org/mesa/mesa/-/commit/6cf91c16869bc55d1074db1117ddeb486d3f9029]
+Signed-off-by: Valentine Burley <valentine.burley@collabora.com>
+---
+ src/freedreno/vulkan/tu_device.cc | 21 ++++++---------------
+ 1 file changed, 6 insertions(+), 15 deletions(-)
+
+diff --git a/src/freedreno/vulkan/tu_device.cc b/src/freedreno/vulkan/tu_device.cc
+index 6c5d368a14ab..b2abd51a0e46 100644
+--- a/src/freedreno/vulkan/tu_device.cc
++++ b/src/freedreno/vulkan/tu_device.cc
+@@ -1027,21 +1027,12 @@ tu_get_physical_device_properties_1_2(struct tu_physical_device *pdevice,
+    memset(p->driverInfo, 0, sizeof(p->driverInfo));
+    snprintf(p->driverInfo, VK_MAX_DRIVER_INFO_SIZE,
+             "Mesa " PACKAGE_VERSION MESA_GIT_SHA1);
+-   if (pdevice->info->chip >= 7) {
+-      p->conformanceVersion = (VkConformanceVersion) {
+-         .major = 1,
+-         .minor = 4,
+-         .subminor = 0,
+-         .patch = 0,
+-      };
+-   } else {
+-      p->conformanceVersion = (VkConformanceVersion) {
+-         .major = 1,
+-         .minor = 2,
+-         .subminor = 7,
+-         .patch = 1,
+-      };
+-   }
++   p->conformanceVersion = (VkConformanceVersion) {
++      .major = 1,
++      .minor = 4,
++      .subminor = 6,
++      .patch = 1,
++   };
+ 
+    p->denormBehaviorIndependence =
+       VK_SHADER_FLOAT_CONTROLS_INDEPENDENCE_ALL;
+-- 
+2.34.1
+
