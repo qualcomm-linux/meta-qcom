@@ -1,0 +1,76 @@
+From f940f8a7e4667948ca0c6709089744bd46075f94 Mon Sep 17 00:00:00 2001
+From: Wenwen Fu <wenwfu@qti.qualcomm.com>
+Date: Wed, 19 Aug 2026 10:07:34 +0800
+Subject: [PATCH] kernel: allow module loaders to use net_admin
+
+The qrtr and qrtr_smd kernel modules register the PF_QIPCRTR network
+protocol family during module initialization. This requires
+CAP_NET_ADMIN, but systemd-modules-load runs in systemd_modules_load_t
+without that capability.
+
+Loading the modules from modules-load.d therefore fails with EPERM. The
+denial is hidden by dontaudit rules and can be observed with
+semodule -DB:
+
+  avc: denied { net_admin } for comm="systemd-modules" capability=12
+  scontext=system_u:system_r:systemd_modules_load_t:s0
+  tcontext=system_u:system_r:systemd_modules_load_t:s0 tclass=capability
+
+Gate CAP_NET_ADMIN behind the disabled-by-default
+kernel_module_load_net_admin tunable for domains that can load kernel
+modules, so systems that do not preload such modules retain the existing
+restrictions.
+
+Upstream-Status: Backport [https://github.com/SELinuxProject/refpolicy/commit/f940f8a7e4667948ca0c6709089744bd46075f94]
+
+Signed-off-by: Wenwen Fu <wenwfu@qti.qualcomm.com>
+---
+ policy/modules/kernel/kernel.te | 12 ++++++++++++
+ testing/sechecker.ini           |  1 +
+ 2 files changed, 13 insertions(+)
+
+diff --git a/policy/modules/kernel/kernel.te b/policy/modules/kernel/kernel.te
+index 6917215c6..648b92ec1 100644
+--- a/policy/modules/kernel/kernel.te
++++ b/policy/modules/kernel/kernel.te
+@@ -16,6 +16,14 @@ gen_require(`
+ ## </desc>
+ gen_bool(secure_mode_insmod, false)
+ 
++## <desc>
++## <p>
++## Allow domains that can load kernel modules to use the net_admin
++## capability during module initialization.
++## </p>
++## </desc>
++gen_tunable(kernel_module_load_net_admin, false)
++
+ # assertion related attributes
+ attribute can_load_kernmodule;
+ attribute can_receive_kernel_messages;
+@@ -591,6 +599,10 @@ if(secure_mode_insmod) {
+ 	kernel_search_key(can_load_kernmodule)
+ }
+ 
++if (!secure_mode_insmod && kernel_module_load_net_admin) {
++	allow can_load_kernmodule self:capability net_admin;
++}
++
+ ########################################
+ #
+ # Rules for unconfined access to this module
+diff --git a/testing/sechecker.ini b/testing/sechecker.ini
+index dd154e75e..6896939e8 100644
+--- a/testing/sechecker.ini
++++ b/testing/sechecker.ini
+@@ -245,6 +245,7 @@ exempt_source = arpwatch_t
+                 blueman_t
+                 bluetooth_t
+                 brctl_t
++                can_load_kernmodule # Conditional access (kernel_module_load_net_admin)
+                 cgred_t
+                 chronyd_t           # Conditional access (chronyd_hwtimestamp)
+                 condor_startd_t
+-- 
+2.43.0
+
