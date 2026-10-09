@@ -137,6 +137,15 @@ FIT_DTB_COMPATIBLE[qcom_qcs8300-adp-camx] = \
 FIT_DTB_COMPATIBLE[qcom_qcs8300-adp-camx-staging] = \
     "qcs8300-ride qcs8300-ride-camx monaco-el2 monaco-camx-el2 monaco-staging"
 
+FIT_DTB_COMPATIBLE[qcom_qcs8275-iot-subtype5] = \
+    "monaco-draco-ac-evk monaco-el2"
+FIT_DTB_COMPATIBLE[qcom_qcs8275-iot-subtype5-el2gh] = \
+    "monaco-draco-ac-evk"
+FIT_DTB_COMPATIBLE[qcom_qcs8275-iot-subtype5-el2gh-staging] = \
+    "monaco-draco-ac-evk monaco-staging"
+FIT_DTB_COMPATIBLE[qcom_qcs8275-iot-subtype5-staging] = \
+    "monaco-draco-ac-evk monaco-el2 monaco-staging"
+
 # ---------- talos ----------
 FIT_DTB_COMPATIBLE[qcom_qcs615-adp-el2gh-staging] = \
     "qcs615-ride talos-staging"
