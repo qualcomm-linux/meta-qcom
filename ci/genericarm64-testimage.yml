@@ -6,6 +6,9 @@ header:
   - ci/genericarm64.yml
 
 local_conf_header:
+  testimage-deps: |
+    # we need to build all dependencies before the execution to avoid using the the bare metal machine to building
+    do_image[depends] += "${TESTIMAGEDEPENDS}"
   testimage: |
     INHERIT:remove = "create-spdx"
     # enable testimage
