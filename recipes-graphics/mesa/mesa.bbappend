@@ -6,6 +6,7 @@ SRC_URI:append:qcom = " \
     file://0001-freedreno-a6xx-upload-dummy-sampler.patch \
     file://0002-rusticl-emit-image-texture-barriers.patch \
     file://0003-freedreno-a6xx-enable-f16-infinities.patch \
+    file://0001-tu-Bump-conformanceVersion.patch \
 "
 
 # Enable freedreno driver
