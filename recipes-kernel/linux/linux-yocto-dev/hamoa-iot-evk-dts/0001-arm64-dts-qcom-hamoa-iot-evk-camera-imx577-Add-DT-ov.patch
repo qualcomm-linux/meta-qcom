@@ -1,4 +1,4 @@
-From 0e32a7a5147c38db1f5e2b2887da503ae4684eb7 Mon Sep 17 00:00:00 2001
+From 4b62f1100f4727f127bf39f8148e11e53787c1a0 Mon Sep 17 00:00:00 2001
 From: Wenmeng Liu <wenmeng.liu@oss.qualcomm.com>
 Date: Fri, 27 Feb 2026 13:29:40 +0800
 Subject: [PATCH] arm64: dts: qcom: hamoa-iot-evk-camera-imx577: Add DT overlay
@@ -19,11 +19,11 @@ Upstream-Status: Submitted [https://lore.kernel.org/all/20260227-hamoa_evk-v1-2-
  create mode 100644 arch/arm64/boot/dts/qcom/hamoa-iot-evk-camera-imx577.dtso
 
 diff --git a/arch/arm64/boot/dts/qcom/Makefile b/arch/arm64/boot/dts/qcom/Makefile
-index 4ba8e7306419..0db43898a782 100644
+index 1c86e7e98f55..a8e443fba7d5 100644
 --- a/arch/arm64/boot/dts/qcom/Makefile
 +++ b/arch/arm64/boot/dts/qcom/Makefile
-@@ -17,6 +17,11 @@ dtb-$(CONFIG_ARCH_QCOM)	+= apq8096-ifc6640.dtb
- dtb-$(CONFIG_ARCH_QCOM)	+= eliza-mtp.dtb
+@@ -19,6 +19,11 @@ dtb-$(CONFIG_ARCH_QCOM)	+= eliza-mtp.dtb
+ dtb-$(CONFIG_ARCH_QCOM)	+= glymur-asus-zenbook-a16-ux3607oa.dtb
  dtb-$(CONFIG_ARCH_QCOM)	+= glymur-crd.dtb
  dtb-$(CONFIG_ARCH_QCOM)	+= hamoa-iot-evk.dtb
 +dtb-$(CONFIG_ARCH_QCOM)	+= hamoa-iot-evk-camera-imx577.dtbo
@@ -122,10 +122,10 @@ index 000000000000..f45a7fbd14b1
 +	status = "okay";
 +};
 diff --git a/arch/arm64/boot/dts/qcom/hamoa-iot-evk.dts b/arch/arm64/boot/dts/qcom/hamoa-iot-evk.dts
-index 460f27dcd6f6..28d662e1b6cd 100644
+index 9fa86bb6438e..c4c04cfdb557 100644
 --- a/arch/arm64/boot/dts/qcom/hamoa-iot-evk.dts
 +++ b/arch/arm64/boot/dts/qcom/hamoa-iot-evk.dts
-@@ -1320,6 +1320,22 @@ right_tweeter: speaker@0,1 {
+@@ -1351,6 +1351,22 @@ right_tweeter: speaker@0,1 {
  };
  
  &tlmm {
@@ -145,9 +145,9 @@ index 460f27dcd6f6..28d662e1b6cd 100644
 +		};
 +	};
 +
- 	edp_reg_en: edp-reg-en-state {
- 		pins = "gpio70";
+ 	ec_int_n_default: ec-int-n-state {
+ 		pins = "gpio66";
  		function = "gpio";
 -- 
-2.34.1
+2.43.0
 
