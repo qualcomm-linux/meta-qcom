@@ -4,10 +4,10 @@ on:
   schedule:
   # NOTE - changes to the cron spec should be pushed by https://github.com/quic-yocto-ci
   # so that build notification emails will be sent out properly.
-  # At 2:22 UTC on Saturday - the slot the nightly dispatcher gives up, so
-  # that the weekly build takes over Saturday's nightly run on wrynose just
-  # like the weekly build does on this branch.
-  - cron: "22 2 * * 6"
+  # At 2:22 UTC on Wednesday and Saturday - the slots the nightly dispatcher
+  # gives up, so that the weekly build takes over the nightly run on wrynose
+  # those two days just like the weekly build does on this branch.
+  - cron: "22 2 * * 3,6"
 
 permissions:
   contents: read

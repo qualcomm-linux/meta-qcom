@@ -6,11 +6,11 @@ on:
   schedule:
   # NOTE - changes to the cron spec should be pushed by https://github.com/quic-yocto-ci
   # so that build notification emails will be sent out properly.
-  # At 0:23 UTC on Saturday - picked a random "minute" as top of hour can be
-  # busy in github. The weekly build repeats the whole nightly matrix and adds
-  # the entries that are too expensive to build every night, so it takes over
-  # Saturday's nightly slot and its results are published well before Monday.
-  - cron: "23 0 * * 6"
+  # At 0:23 UTC on Wednesday and Saturday - picked a random "minute" as top of
+  # hour can be busy in github. The weekly build repeats the whole nightly
+  # matrix and adds the entries that are too expensive to build every night,
+  # so it takes over the nightly slot on those two days.
+  - cron: "23 0 * * 3,6"
 
 permissions:
   contents: read
