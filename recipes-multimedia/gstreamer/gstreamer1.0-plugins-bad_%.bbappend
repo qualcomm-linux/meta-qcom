@@ -7,3 +7,5 @@ SRC_URI:append:qcom = " \
     file://0002-waylandsink-Release-pending-buffers-during-PAUSED-to.patch \
     file://0003-waylandsink-support-gap-buffers.patch \
 "
+PACKAGECONFIG[gtk3] = "-Dgtk3=enabled,-Dgtk3=disabled,gtk+3"
+PACKAGECONFIG:append = " gtk3"
