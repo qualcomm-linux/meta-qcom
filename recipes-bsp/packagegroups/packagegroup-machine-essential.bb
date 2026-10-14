@@ -5,6 +5,7 @@ inherit packagegroup
 PACKAGES = " \
     ${PN}-board-generic \
     ${PN}-qcom-generic \
+    ${PN}-qcom-eliza-soc \
     ${PN}-qcom-glymur-soc \
     ${PN}-qcom-hamoa-soc \
     ${PN}-qcom-purwa-soc \
@@ -99,6 +100,17 @@ RRECOMMENDS:${PN}-qcom-generic += " \
 "
 
 # The packagegroups below are SoC specific
+
+RRECOMMENDS:${PN}-qcom-eliza-soc += " \
+    ${PN}-board-generic \
+    ${PN}-qcom-generic \
+    kernel-module-ath12k \
+    kernel-module-dispcc-eliza \
+    kernel-module-gpucc-eliza \
+    kernel-module-pwrseq-qcom-wcn \
+    kernel-module-tcsrcc-eliza \
+    kernel-module-videocc-eliza \
+"
 
 RRECOMMENDS:${PN}-qcom-glymur-soc += " \
     ${PN}-board-generic \
