@@ -8,7 +8,7 @@ on:
   # so that build notification emails will be sent out properly.
   # At 0:23 UTC on Sunday, Monday, Tuesday, Thursday and Friday - picked a
   # random "minute" as top of hour can be busy in github. Wednesday and
-  # Saturday are covered by the weekly build, which builds a superset of
+  # Saturday are covered by the extended build, which builds a superset of
   # this matrix.
   - cron: "23 0 * * 0,1,2,4,5"
 
