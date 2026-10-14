@@ -497,6 +497,14 @@ jobs:
                 type: kernel-fit
                 dirname: "_kernel-fit"
                 yamlfile: ":ci/kernel-fit-image.yml"
+          - machine: shikra-evk-open-fw
+            distro:
+                name: qcom-distro-kvm
+                yamlfile: ':ci/qcom-distro-kvm.yml'
+            kernel:
+                type: default
+                dirname: ""
+                yamlfile: ""
           - machine: rb3gen2-core-kit
             distro:
                 name: nodistro
