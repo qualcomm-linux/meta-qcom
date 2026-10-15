@@ -310,3 +310,6 @@ FIT_DTB_COMPATIBLE[qcom_shikracqm-itp-hdmi] = "shikra-cqm-evk shikra-cqm-cqs-evk
 FIT_DTB_COMPATIBLE[qcom_shikracqs-itp-hdmi] = "shikra-cqs-evk shikra-cqm-cqs-evk-hdmi"
 FIT_DTB_COMPATIBLE[qcom_shikraiqs-itp-dlc] = "shikra-iqs-evk shikra-iqs-evk-dlc-panel"
 FIT_DTB_COMPATIBLE[qcom_shikraiqs-itp-lvds-auo-g133han01] = "shikra-iqs-evk shikra-iqs-evk-lvds-auo_g133han01"
+FIT_DTB_COMPATIBLE[qcom_shikracqs-itp-camx] = "shikra-cqs-evk shikra-cqs-evk-camx"
+FIT_DTB_COMPATIBLE[qcom_shikraiqs-itp-camx] = "shikra-iqs-evk shikra-iqs-evk-camx"
+FIT_DTB_COMPATIBLE[qcom_shikracqm-itp-camx] = "shikra-cqm-evk shikra-cqm-evk-camx"
