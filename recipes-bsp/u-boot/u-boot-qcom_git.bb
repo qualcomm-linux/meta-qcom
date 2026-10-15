@@ -8,6 +8,8 @@ QCOM_UBOOT_SPL_FIT_ATF ?= ""
 QCOM_UBOOT_SPL_FIT_TEE ?= ""
 QCOM_UBOOT_SPL_FIT_FIRMWARE ?= ""
 QCOM_UBOOT_SPL_FIT_XBL_SEC ?= ""
+# Firmware type the SPL is signed as when QCOM_FW_SWIV_PLATFORM is unset.
+QCOM_SPL_FW_TYPE ?= "tz"
 
 # The SPL cannot load an ELF whole, so boot firmware releases ship SHRM, QcLib,
 # RPM and the like split per PT_LOAD segment, with a manifest.json giving each
@@ -138,9 +140,13 @@ uboot_assemble_fitimage_helper:append() {
         (unset LDFLAGS CFLAGS; oe_runmake -C ${S} O=${B}/${builddir} ${UBOOT_MAKE_OPTS} spl/u-boot-spl.elf)
 
         export CRYPTOGRAPHY_OPENSSL_NO_LEGACY=1
-        swiv_build_utility u-boot-spl-swiv.elf spl/u-boot-spl.elf ${QCOM_FW_SWIV_PLATFORM}
-        qtestsign -${mbn_header} tz -o u-boot-spl.mbn u-boot-spl-swiv.elf
-        rm -f u-boot-spl-swiv.elf
+        if [ -n "${QCOM_FW_SWIV_PLATFORM}" ]; then
+            swiv_build_utility u-boot-spl-swiv.elf spl/u-boot-spl.elf ${QCOM_FW_SWIV_PLATFORM}
+            qtestsign -${mbn_header} tz -o u-boot-spl.mbn u-boot-spl-swiv.elf
+            rm -f u-boot-spl-swiv.elf
+        else
+            qtestsign -${mbn_header} ${QCOM_SPL_FW_TYPE} -o u-boot-spl.mbn spl/u-boot-spl.elf
+        fi
     fi
 }
 
