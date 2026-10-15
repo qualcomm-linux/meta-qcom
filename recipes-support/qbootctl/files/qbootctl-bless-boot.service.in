@@ -11,6 +11,7 @@
 
 [Unit]
 Description=Mark the Current Boot slot as Good
+ConditionPathExists=/dev/disk/by-partlabel/boot_a
 DefaultDependencies=no
 Requires=boot-complete.target
 After=local-fs.target boot-complete.target
