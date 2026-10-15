@@ -30,6 +30,9 @@ repos:
       004-revert-qcs615-adsp:
         repo: meta-qcom
         path: patches/oe-core/0004-linux-firmware-revert-qcs615-ADSP-firmware-to-fix-au.patch
+      005-nord-wlan-fw:
+        repo: meta-qcom
+        path: patches/oe-core/0005-linux-firmware-backport-nord-wlan-firmware-support.patch
     layers:
       meta:
 
