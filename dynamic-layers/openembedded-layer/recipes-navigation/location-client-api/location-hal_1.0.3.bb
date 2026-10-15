@@ -11,7 +11,7 @@ LICENSE = "BSD-3-Clause-Clear"
 LIC_FILES_CHKSUM = "file://LICENSE.txt;md5=2998c54c288b081076c9af987bdf4838"
 
 SRC_URI = "git://github.com/qualcomm-linux/location-hal-qcom.git;protocol=https;branch=location.lnx.0.0;tag=v${PV}"
-SRCREV  = "96b21c90da387747155debb9f482fa11eed9bf74"
+SRCREV  = "ac4769de2f3de3e91b95e2523eb33da7993942d8"
 
 inherit autotools pkgconfig useradd
 
