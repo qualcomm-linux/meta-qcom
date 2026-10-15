@@ -4,7 +4,7 @@ LICENSE = "GPL-2.0-only"
 LIC_FILES_CHKSUM = "file://COPYING;md5=b234ee4d69f5fce4486a80fdaf4a4263"
 
 SRC_URI = "git://github.com/msm8916-mainline/qtestsign.git;branch=main;protocol=https"
-SRCREV = "ce6ba20f4ead008e5b522a81179c98dd48ccf06e"
+SRCREV = "0eef3b552b1ada848f22bad38ab2e40407307c5b"
 
 INHIBIT_DEFAULT_DEPS = "1"
 
@@ -19,7 +19,6 @@ do_install() {
 
     rm ${D}${PYTHON_SITEPACKAGES_DIR}/qtestsign/README.md
     rm ${D}${PYTHON_SITEPACKAGES_DIR}/qtestsign/COPYING
-    rm ${D}${PYTHON_SITEPACKAGES_DIR}/qtestsign/requirements.txt
 
     ln -sr ${D}${PYTHON_SITEPACKAGES_DIR}/qtestsign/qtestsign.py ${D}${bindir}/qtestsign
 }
