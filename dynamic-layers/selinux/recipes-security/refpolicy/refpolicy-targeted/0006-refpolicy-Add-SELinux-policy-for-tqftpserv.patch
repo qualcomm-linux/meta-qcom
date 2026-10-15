@@ -1,0 +1,88 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Shravan Kumar Kondi <kondishr@qti.qualcomm.com>
+Date: Wed, 26 Aug 2026 00:00:00 +0530
+Subject: [PATCH] refpolicy: Add SELinux policy for tqftpserv
+
+Upstream-Status: Backport [https://github.com/SELinuxProject/refpolicy/pull/1213]
+
+tqftpserv is the Qualcomm TFTP server for modem remote firmware and
+persistent-data transfers over QRTR (AF_QIPCRTR sockets). It currently
+runs under the generic initrc_t domain, lacking the process isolation
+and least-privilege permissions required under SELinux enforcing mode.
+
+Define a new policy module tqftpserv to transition the service into
+its own confined domain tqftpserv_t on exec:
+- Allow the specific qipcrtr_socket operations tqftpserv performs
+  (create/connect/getattr/read/setopt/write) for QRTR modem IPC
+- Allow dac_read_search for reading remoteproc firmware paths that may
+  lack world search/execute bits on read-only firmware mounts
+- Allow read-only access to sysfs (dev_read_sysfs) for
+  translate_readonly()'s walk of /sys/class/remoteproc and its read of
+  the firmware_class sysfs path knob
+- Give tqftpserv's persistent state directory its own type,
+  tqftpserv_var_lib_t, and allow tqftpserv to manage it
+
+Signed-off-by: Shravan Kumar Kondi <kondishr@qti.qualcomm.com>
+---
+ policy/modules/services/tqftpserv.fc |  2 ++
+ policy/modules/services/tqftpserv.if |  1 +
+ policy/modules/services/tqftpserv.te | 31 ++++++++++++++++++++++++++++++
+ 3 files changed, 34 insertions(+)
+ create mode 100644 policy/modules/services/tqftpserv.fc
+ create mode 100644 policy/modules/services/tqftpserv.if
+ create mode 100644 policy/modules/services/tqftpserv.te
+
+diff --git a/policy/modules/services/tqftpserv.fc b/policy/modules/services/tqftpserv.fc
+new file mode 100644
+index 000000000..a8c1e2f3d
+--- /dev/null
++++ b/policy/modules/services/tqftpserv.fc
+@@ -0,0 +1,2 @@
++/usr/bin/tqftpserv	--	gen_context(system_u:object_r:tqftpserv_exec_t,s0)
++/var/lib/tqftpserv(/.*)?	gen_context(system_u:object_r:tqftpserv_var_lib_t,s0)
+diff --git a/policy/modules/services/tqftpserv.if b/policy/modules/services/tqftpserv.if
+new file mode 100644
+index 000000000..fa1308ba4
+--- /dev/null
++++ b/policy/modules/services/tqftpserv.if
+@@ -0,0 +1,1 @@
++## <summary>tqftpserv - Qualcomm TFTP server for modem remote filesystem access</summary>
+diff --git a/policy/modules/services/tqftpserv.te b/policy/modules/services/tqftpserv.te
+new file mode 100644
+index 000000000..7e4d9c1a2
+--- /dev/null
++++ b/policy/modules/services/tqftpserv.te
+@@ -0,0 +1,31 @@
++policy_module(tqftpserv)
++
++type tqftpserv_t;
++type tqftpserv_exec_t;
++init_daemon_domain(tqftpserv_t, tqftpserv_exec_t)
++
++# QRTR socket for modem IPC (TFTP-style firmware/data transfer protocol).
++# tqftpserv always opens sockets with an ephemeral port (qrtr_open(0)) and
++# never binds to a fixed/reserved QRTR port, so net_admin is not required.
++allow tqftpserv_t self:qipcrtr_socket { create connect getattr read setopt write };
++
++# dac_read_search: traverse remoteproc firmware directories that may lack
++# world search/execute bits on read-only firmware mounts.
++allow tqftpserv_t self:capability dac_read_search;
++
++# translate_readonly() walks /sys/class/remoteproc and reads the
++# firmware_class sysfs path knob to locate remoteproc firmware images.
++dev_read_sysfs(tqftpserv_t)
++
++# Persistent read/write state (systemd StateDirectory=tqftpserv,
++# translate_readwrite() in translate.c) lives in its own type instead of
++# the generic var_lib_t, so tqftpserv can't reach other services' data
++# under /var/lib.
++type tqftpserv_var_lib_t;
++files_type(tqftpserv_var_lib_t)
++files_search_var_lib(tqftpserv_t)
++manage_dirs_pattern(tqftpserv_t, tqftpserv_var_lib_t, tqftpserv_var_lib_t)
++manage_files_pattern(tqftpserv_t, tqftpserv_var_lib_t, tqftpserv_var_lib_t)
++# translate_readonly() serves firmware blobs out of /lib/firmware, which
++# falls under the generic lib_t catch-all owned by the libraries module.
++libs_read_lib_files(tqftpserv_t)
+--
+2.34.1
