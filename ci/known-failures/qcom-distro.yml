@@ -1,0 +1,17 @@
+# Known failures for qcom-distro, see README.md for the format.
+
+hamoa-iot-evk:
+  # ADSP crashes in a loop with QUP_ERR_FATAL, so no FastRPC session can be
+  # opened on it
+  - test: fastrpc_test
+    comment: https://github.com/qualcomm-linux/meta-qcom/issues/3311
+    kernels:
+      - linux-qcom-6.18
+
+qcs6490-rb3gen2:
+  # a new FastRPC session on the CDSP unsigned PD fails with 0x80000600
+  # after a few runs, while fastrpc logs remote heap unmap errors
+  - test: fastrpc_test
+    comment: https://github.com/qualcomm-linux/meta-qcom/issues/3312
+    kernels:
+      - linux-qcom-next
