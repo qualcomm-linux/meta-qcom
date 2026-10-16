@@ -1,0 +1,11 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/siemens/kas/master/kas/schema-kas.json
+
+header:
+  version: 14
+
+repos:
+  meta-yocto:
+    url: https://github.com/yoctoproject/meta-yocto
+    branch: master
+    layers:
+      meta-yocto-bsp:

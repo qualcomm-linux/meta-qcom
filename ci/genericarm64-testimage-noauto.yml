@@ -1,0 +1,13 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/siemens/kas/master/kas/schema-kas.json
+
+header:
+  version: 14
+  includes:
+  - ci/genericarm64-testimage.yml
+
+local_conf_header:
+  testimage-noauto: |
+    # disable auto run of testimage task
+    TESTIMAGE_AUTO = "0"
+    # build all dependencies to avoid using the bare metal machine to building
+    EXTRA_IMAGEDEPENDS += "${TESTIMAGEDEPENDS}"
