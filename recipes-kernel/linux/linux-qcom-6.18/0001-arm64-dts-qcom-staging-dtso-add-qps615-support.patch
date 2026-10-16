@@ -1,0 +1,125 @@
+From 81a5ce63f603b31c198625011494b502d46e1433 Mon Sep 17 00:00:00 2001
+From: Sai Karthik Reddy Pulluru <saikarth@hu-saikarth-hyd.qualcomm.com>
+Date: Tue, 29 Sep 2026 11:07:32 +0530
+Subject: [PATCH] arm64-dts-qcom-staging-dtso-add-qps615-support_latest
+
+Signed-off-by: Sai Karthik Reddy Pulluru <saikarth@hu-saikarth-hyd.qualcomm.com>
+Upstream-Status: Pending
+---
+ arch/arm64/boot/dts/qcom/Makefile             |  1 +
+ .../boot/dts/qcom/hamoa-evk-staging.dtso      | 92 +++++++++++++++++++
+ 2 files changed, 93 insertions(+)
+ create mode 100644 arch/arm64/boot/dts/qcom/hamoa-evk-staging.dtso
+
+diff --git a/arch/arm64/boot/dts/qcom/Makefile b/arch/arm64/boot/dts/qcom/Makefile
+index 9056576bdf7b..318a4cec5254 100644
+--- a/arch/arm64/boot/dts/qcom/Makefile
++++ b/arch/arm64/boot/dts/qcom/Makefile
+@@ -546,6 +546,7 @@ dtb-$(CONFIG_ARCH_QCOM) += talos-evk-staging.dtbo
+ dtb-$(CONFIG_ARCH_QCOM) += kodiak-staging.dtbo
+
+ dtb-$(CONFIG_ARCH_QCOM) += hamoa-staging.dtbo
++dtb-$(CONFIG_ARCH_QCOM) += hamoa-evk-staging.dtbo
+
+ dtb-$(CONFIG_ARCH_QCOM) += purwa-staging.dtbo
+
+diff --git a/arch/arm64/boot/dts/qcom/hamoa-evk-staging.dtso b/arch/arm64/boot/dts/qcom/hamoa-evk-staging.dtso
+new file mode 100644
+index 000000000000..da08ed3279b7
+--- /dev/null
++++ b/arch/arm64/boot/dts/qcom/hamoa-evk-staging.dtso
+@@ -0,0 +1,92 @@
++// SPDX-License-Identifier: BSD-3-Clause
++/*
++ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
++ */
++
++/dts-v1/;
++/plugin/;
++
++#include <dt-bindings/gpio/gpio.h>
++
++/*
++ * With QPS615 installed, the m.2 E-key slot is occupied by the QPS615
++ * PCIe switch (pci1179,0623) instead of a WCN7850 WLAN chip. The WiFi
++ * endpoint behind downstream port 1 is not populated on this board.
++ */
++&pcie4_port0 {
++	reset-gpios = <&tlmm 146 GPIO_ACTIVE_LOW>;
++	wake-gpios = <&tlmm 148 GPIO_ACTIVE_LOW>;
++
++	pci@0,0 {
++		reg = <0x10000 0x0 0x0 0x0 0x0>;
++		#address-cells = <3>;
++		#size-cells = <2>;
++		device_type = "pci";
++		ranges;
++		bus-range = <0x2 0xff>;
++		aspm-no-l1;
++		aspm-no-l0s;
++
++		pcie@1,0 {
++			reg = <0x20800 0x0 0x0 0x0 0x0>;
++			#address-cells = <3>;
++			#size-cells = <2>;
++			device_type = "pci";
++			ranges;
++			bus-range = <0x3 0x3>;
++			aspm-no-l1;
++			aspm-no-l0s;
++		};
++
++		pcie@2,0 {
++			reg = <0x21000 0x0 0x0 0x0 0x0>;
++			#address-cells = <3>;
++			#size-cells = <2>;
++			device_type = "pci";
++			ranges;
++			bus-range = <0x4 0x4>;
++			aspm-no-l1;
++			aspm-no-l0s;
++		};
++
++		pci@3,0 {
++			reg = <0x21800 0x0 0x0 0x0 0x0>;
++			#address-cells = <3>;
++			#size-cells = <2>;
++			device_type = "pci";
++			ranges;
++			bus-range = <0x5 0xff>;
++			aspm-no-l1;
++			aspm-no-l0s;
++
++			qps615: pci@0,0 {
++				reg = <0x50000 0x0 0x0 0x0 0x0>;
++				#address-cells = <3>;
++				#size-cells = <2>;
++				device_type = "pci";
++				ranges;
++				aspm-no-l1;
++				aspm-no-l0s;
++
++				gpio-controller;
++				#gpio-cells = <2>;
++
++				phy-reset-gpios = <&qps615 0 GPIO_ACTIVE_LOW>;
++				reset-deassert-us = <221000>;
++			};
++
++			pci@0,1 {
++				reg = <0x50100 0x0 0x0 0x0 0x0>;
++				#address-cells = <3>;
++				#size-cells = <2>;
++				device_type = "pci";
++				ranges;
++				aspm-no-l1;
++				aspm-no-l0s;
++
++				phy-reset-gpios = <&qps615 1 GPIO_ACTIVE_LOW>;
++				reset-deassert-us = <20000>;
++			};
++		};
++	};
++};
+--
+2.34.1
