@@ -260,50 +260,94 @@ runs:
             | map(select(. == "boot")) + (map(select(. != "boot")) | sort_by(ascii_downcase))
             | .[]')
 
-          # Print collapsible box
-          echo "<details>" >> "${INPUTS_SUMMARY_FILE_NAME}"
-          # Print section summary
+          # The failures come first, as they are what the reader is looking
+          # for, followed by the known failures and then all the results.
+          # Each one is a section of its own, folded away.
+          if [ "${INPUTS_SUMMARY_TITLE}" != "" ]; then
+            echo "### ${INPUTS_SUMMARY_TITLE}" >> "${INPUTS_SUMMARY_FILE_NAME}"
+            echo "" >> "${INPUTS_SUMMARY_FILE_NAME}"
+          fi
+
           TOTAL_PASS=$(echo "${INPUT}" | jq '[.. | objects | select(.status? == "pass")] | length')
           TOTAL_KNOWN_FAIL=$(echo "${INPUT}" | jq '[.. | objects | select(.status? == "known failure")] | length')
           # an unexpected pass counts as a failure: the known failures list is
           # out of date and has to be updated
           TOTAL_FAIL=$(echo "${INPUT}" | jq '[.. | objects | select(.status? == "fail" or .status? == "unexpected pass")] | length')
           TOTAL=$(echo "${INPUT}" | jq '[.. | objects | select(.result)] | length')
-          SUMMARY_TITLE=""
-          if [ "${INPUTS_SUMMARY_TITLE}" != "" ]; then
-            SUMMARY_TITLE="${INPUTS_SUMMARY_TITLE}<br/>"
-          fi
           KNOWN_SUMMARY=""
           if [ "${TOTAL_KNOWN_FAIL}" -gt 0 ]; then
             KNOWN_SUMMARY="Known failures: $TOTAL_KNOWN_FAIL | "
           fi
-          echo "<summary>${SUMMARY_TITLE}Pass: $TOTAL_PASS | ${KNOWN_SUMMARY}Fail: $TOTAL_FAIL | Total: $TOTAL </summary>" >> "${INPUTS_SUMMARY_FILE_NAME}"
+          echo "Pass: $TOTAL_PASS | ${KNOWN_SUMMARY}Fail: $TOTAL_FAIL | Total: $TOTAL" >> "${INPUTS_SUMMARY_FILE_NAME}"
+          echo "" >> "${INPUTS_SUMMARY_FILE_NAME}"
+
+          # Print the failures, counted the same way as in the totals
+          FAIL_ROWS=$(echo "$INPUT" | jq -r '
+            to_entries[] | .key as $device | .value | to_entries[]
+            | select(.value.status == "fail" or .value.status == "unexpected pass")
+            | "| \($device) | \(.key) | :x: [\(.value.status)](\(.value.url // "")) |"' | sort)
+          echo "<details>" >> "${INPUTS_SUMMARY_FILE_NAME}"
+          if [ -n "${FAIL_ROWS}" ]; then
+            echo "<summary>Failures ($(echo "${FAIL_ROWS}" | wc -l))</summary>" >> "${INPUTS_SUMMARY_FILE_NAME}"
+            echo "" >> "${INPUTS_SUMMARY_FILE_NAME}"
+            echo "| Device | Test | Status |" >> "${INPUTS_SUMMARY_FILE_NAME}"
+            echo "| ---- | ---- | ---- |" >> "${INPUTS_SUMMARY_FILE_NAME}"
+            echo "${FAIL_ROWS}" >> "${INPUTS_SUMMARY_FILE_NAME}"
+          else
+            echo "<summary>Failures (0)</summary>" >> "${INPUTS_SUMMARY_FILE_NAME}"
+            echo "" >> "${INPUTS_SUMMARY_FILE_NAME}"
+            echo "No failures." >> "${INPUTS_SUMMARY_FILE_NAME}"
+          fi
+          echo "" >> "${INPUTS_SUMMARY_FILE_NAME}"
+          echo "</details>" >> "${INPUTS_SUMMARY_FILE_NAME}"
+
+          # Print the entries of the known failures list that were applied,
+          # together with the issue each one is annotated with
+          KNOWN_ROWS=$(echo "$INPUT" | jq -r '
+            to_entries[] | .key as $device | .value | to_entries[]
+            | select(.value.status == "known failure" or .value.status == "unexpected pass")
+            | "| \($device) | \(.key) | \(.value.status) | \(.value.comment // "") |"' | sort)
+          if [ -n "${KNOWN_ROWS}" ]; then
+            echo "<details>" >> "${INPUTS_SUMMARY_FILE_NAME}"
+            echo "<summary>Known failures ($(echo "${KNOWN_ROWS}" | wc -l))</summary>" >> "${INPUTS_SUMMARY_FILE_NAME}"
+            echo "" >> "${INPUTS_SUMMARY_FILE_NAME}"
+            echo "| Device | Test | Status | Comment |" >> "${INPUTS_SUMMARY_FILE_NAME}"
+            echo "| ---- | ---- | ---- | ---- |" >> "${INPUTS_SUMMARY_FILE_NAME}"
+            echo "${KNOWN_ROWS}" >> "${INPUTS_SUMMARY_FILE_NAME}"
+            echo "" >> "${INPUTS_SUMMARY_FILE_NAME}"
+            echo "</details>" >> "${INPUTS_SUMMARY_FILE_NAME}"
+          fi
+
+          # Print the results of every test on every board
+          echo "<details>" >> "${INPUTS_SUMMARY_FILE_NAME}"
+          echo "<summary>All results</summary>" >> "${INPUTS_SUMMARY_FILE_NAME}"
           echo "" >> "${INPUTS_SUMMARY_FILE_NAME}"
           echo "" >> "${INPUTS_SUMMARY_FILE_NAME}"
+
+          # The matrix is wide and long, so the text is shrunk with <sub>
+          # (summaries drop style attributes) and the board names and test
+          # names are repeated at the bottom and on the right, to keep them
+          # in sight while scrolling.
+          print_board_row() {
+            printf "| <sub>%s</sub> |" "Test"
+            for D in $DEVICES; do
+              printf " <sub>%s</sub> |" "$D"
+            done
+            printf " <sub>%s</sub> |\n" "Test"
+          }
 
           # Print header row
-          printf "| %s |" "Test"
-          printf "| %s |" "Test" >> "${INPUTS_SUMMARY_FILE_NAME}"
-          for D in $DEVICES; do
-            printf " %s |" "$D"
-            printf " %s |" "$D" >> "${INPUTS_SUMMARY_FILE_NAME}"
-          done
-          echo
-          echo "" >> "${INPUTS_SUMMARY_FILE_NAME}"
+          print_board_row | tee -a "${INPUTS_SUMMARY_FILE_NAME}"
 
           ## Print separator
-          printf "| ---- |"
-          printf "| ---- |" >> "${INPUTS_SUMMARY_FILE_NAME}"
+          printf "| ---- |" | tee -a "${INPUTS_SUMMARY_FILE_NAME}"
           for _ in $DEVICES; do
-            printf " ---- |"
-            printf " ---- |" >> "${INPUTS_SUMMARY_FILE_NAME}"
+            printf " ---- |" | tee -a "${INPUTS_SUMMARY_FILE_NAME}"
           done
-          echo
-          echo "" >> "${INPUTS_SUMMARY_FILE_NAME}"
+          printf " ---- |\n" | tee -a "${INPUTS_SUMMARY_FILE_NAME}"
 
           for R in $RESULTS; do
-            printf "| %s |" "$R"
-            printf "| %s |" "$R" >> "${INPUTS_SUMMARY_FILE_NAME}"
+            printf "| <sub>%s</sub> |" "$R" | tee -a "${INPUTS_SUMMARY_FILE_NAME}"
 
             for D in $DEVICES; do
               VALUE=$(echo "$INPUT" | jq -r --arg d "$D" --arg r "$R" '.[$d][$r].status // ""')
@@ -334,29 +378,15 @@ runs:
                       LABEL="${LABEL:0:${COMMENT_WIDTH}}..."
                   fi
               fi
-              printf " %s [%s](%s) |" "$CHECKMARK" "$LABEL" "$TARGET"
-              printf " %s [%s](%s) |" "$CHECKMARK" "$LABEL" "$TARGET" >> "${INPUTS_SUMMARY_FILE_NAME}"
+              printf " <sub>%s [%s](%s)</sub> |" "$CHECKMARK" "$LABEL" "$TARGET" | tee -a "${INPUTS_SUMMARY_FILE_NAME}"
             done
-            echo "" >> "${INPUTS_SUMMARY_FILE_NAME}"
+            printf " <sub>%s</sub> |\n" "$R" | tee -a "${INPUTS_SUMMARY_FILE_NAME}"
           done
+
+          # Print footer row
+          print_board_row | tee -a "${INPUTS_SUMMARY_FILE_NAME}"
           echo "" >> "${INPUTS_SUMMARY_FILE_NAME}"
           echo "</details>" >> "${INPUTS_SUMMARY_FILE_NAME}"
-          # Print the entries of the known failures list that were applied,
-          # together with the issue each one is annotated with
-          KNOWN_ROWS=$(echo "$INPUT" | jq -r '
-            to_entries[] | .key as $device | .value | to_entries[]
-            | select(.value.status == "known failure" or .value.status == "unexpected pass")
-            | "| \($device) | \(.key) | \(.value.status) | \(.value.comment // "") |"' | sort)
-          if [ -n "${KNOWN_ROWS}" ]; then
-            echo "<details>" >> "${INPUTS_SUMMARY_FILE_NAME}"
-            echo "<summary>Known failures ($(echo "${KNOWN_ROWS}" | wc -l))</summary>" >> "${INPUTS_SUMMARY_FILE_NAME}"
-            echo "" >> "${INPUTS_SUMMARY_FILE_NAME}"
-            echo "| Device | Test | Status | Comment |" >> "${INPUTS_SUMMARY_FILE_NAME}"
-            echo "| ---- | ---- | ---- | ---- |" >> "${INPUTS_SUMMARY_FILE_NAME}"
-            echo "${KNOWN_ROWS}" >> "${INPUTS_SUMMARY_FILE_NAME}"
-            echo "" >> "${INPUTS_SUMMARY_FILE_NAME}"
-            echo "</details>" >> "${INPUTS_SUMMARY_FILE_NAME}"
-          fi
 
           echo "<details>" >> "${INPUTS_SUMMARY_FILE_NAME}"
           echo "<summary>All jobs summary</summary>" >> "${INPUTS_SUMMARY_FILE_NAME}"
