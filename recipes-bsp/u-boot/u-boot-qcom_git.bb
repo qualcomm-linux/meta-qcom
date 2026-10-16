@@ -7,6 +7,7 @@ QCOM_UBOOT_SPL_FIT ?= "0"
 QCOM_UBOOT_SPL_FIT_ATF ?= ""
 QCOM_UBOOT_SPL_FIT_TEE ?= ""
 QCOM_UBOOT_SPL_FIT_FIRMWARE ?= ""
+QCOM_UBOOT_SPL_FIT_XBL_SEC ?= ""
 
 # The SPL cannot load an ELF whole, so boot firmware releases ship SHRM, QcLib,
 # RPM and the like split per PT_LOAD segment, with a manifest.json giving each
@@ -23,10 +24,11 @@ QCOM_UBOOT_SPL_FIT_SEGMENTS ?= ""
 DEPENDS += "${@bb.utils.contains('QCOM_UBOOT_SPL_FIT', '1', '${QCOM_UBOOT_SPL_FIT_ATF} ${QCOM_UBOOT_SPL_FIT_TEE} ${QCOM_UBOOT_SPL_FIT_FIRMWARE} swiv-build-utility-native', '', d)}"
 
 # Blobs packed into the FIT besides BL31, OP-TEE and U-Boot proper (PMIC/DCB
-# configs, SHRM, QcLib, ...) come from the boot firmware recipe named in
-# QCOM_UBOOT_SPL_FIT_FIRMWARE. It only deploys them, so besides DEPENDS also
-# order do_compile after its do_deploy. The files staged are the
-# UBOOT_FIT_LOADABLE_FILENAME varflags of the UBOOT_FIT_LOADABLES entries.
+# configs, SHRM, QcLib, ...) and the XBL-sec ELF linked into the SPL come from
+# the boot firmware recipe named in QCOM_UBOOT_SPL_FIT_FIRMWARE. It only
+# deploys them, so besides DEPENDS also order do_compile after its do_deploy.
+# The FIT files staged are the UBOOT_FIT_LOADABLE_FILENAME varflags of the
+# UBOOT_FIT_LOADABLES entries.
 do_compile[depends] += "${@'%s:do_deploy' % d.getVar('QCOM_UBOOT_SPL_FIT_FIRMWARE') if d.getVar('QCOM_UBOOT_SPL_FIT_FIRMWARE') else ''}"
 QCOM_UBOOT_SPL_FIT_FILES = "${@' '.join(filter(None, (d.getVarFlag('UBOOT_FIT_LOADABLE_FILENAME', image) for image in (d.getVar('UBOOT_FIT_LOADABLES') or '').split())))}"
 
@@ -59,6 +61,16 @@ python __anonymous() {
                 mbn_header = ""
 
             d.appendVar('BOARD_MBN_HEADER', mbn_header + " ? ")
+}
+
+# QCOM_UBOOT_SPL_FIT_XBL_SEC names the XBL-sec ELF in the boot firmware
+# deployment, as CONFIG_QCOM_XBL_SEC_ELF expects it at the top of the source
+# tree. xbl_sec.elf is linked from it, so it has to be in place before
+# uboot_compile_config's first oe_runmake call.
+do_compile:prepend() {
+    if [ -n "${QCOM_UBOOT_SPL_FIT_XBL_SEC}" ]; then
+        install -m 0644 ${DEPLOY_DIR_IMAGE}/${QCOM_BOOT_FILES_SUBDIR}/${QCOM_UBOOT_SPL_FIT_XBL_SEC} ${S}/${QCOM_UBOOT_SPL_FIT_XBL_SEC}
+    fi
 }
 
 uboot_compile_config:append() {
