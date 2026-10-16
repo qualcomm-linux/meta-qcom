@@ -12,6 +12,18 @@ on:
     types:
       - completed
 
+# Cancel an in-flight test run for a PR when a newer commit (re)triggers the
+# build. This stops an orphaned commit's run from continuing to publish the
+# "Test Results" check and PR comment after the PR head has moved on, so the
+# only surviving results belong to the current head. Re-running failed jobs on
+# an existing run keeps the same run id and is therefore not cancelled.
+# Concurrency groups are shared by every workflow of the repository, so the
+# group name must differ from the one in test-pr.yml, which runs for the same
+# builds.
+concurrency:
+  group: test-pr-wrynose-${{ github.event.workflow_run.head_repository.full_name }}-${{ github.event.workflow_run.head_branch }}
+  cancel-in-progress: true
+
 permissions:
   contents: read
 
@@ -23,6 +35,8 @@ jobs:
       actions: read
     outputs:
       branch: ${{ steps.branch.outputs.value }}
+      pr_number: ${{ steps.branch.outputs.pr_number }}
+      pr_url: ${{ steps.branch.outputs.pr_url }}
     steps:
       # github.event.workflow_run.pull_requests is empty for PRs opened from
       # forked repositories, so the target branch can't be read from the event
@@ -40,6 +54,14 @@ jobs:
           BRANCH=$(jq -r '.pull_request.base.ref // "master"' event.json)
           echo "::notice title=Target branch::Resolved target branch: $BRANCH"
           echo "value=$BRANCH" >> "$GITHUB_OUTPUT"
+          # PR number and URL are taken from the pull_request event payload and
+          # forwarded to the test workflow so they can be embedded in the LAVA
+          # test job metadata section.
+          PR_NUMBER=$(jq -r '.number // .pull_request.number // ""' event.json)
+          PR_URL=$(jq -r '.pull_request.html_url // ""' event.json)
+          echo "::notice title=Pull request::PR #${PR_NUMBER} (${PR_URL})"
+          echo "pr_number=$PR_NUMBER" >> "$GITHUB_OUTPUT"
+          echo "pr_url=$PR_URL" >> "$GITHUB_OUTPUT"
 
   test-wrynose:
     needs: determine-target-branch
@@ -54,6 +76,8 @@ jobs:
       LAVATOKEN: ${{ secrets.LAVATOKEN }}
     with:
       build_id: ${{ github.event.workflow_run.id }}
+      pr_number: ${{ needs.determine-target-branch.outputs.pr_number }}
+      pr_url: ${{ needs.determine-target-branch.outputs.pr_url }}
 
   comment-on-pr:
     name: "Comment on PR"
@@ -104,10 +128,17 @@ jobs:
           echo "pr_number=$PR_NUMBER" >> $GITHUB_OUTPUT
 
       - name: Comment on PR
-        uses: thollander/actions-comment-pull-request@24bffb9b452ba05a4f3f77933840a6a841d1b32b # v3
+        uses: marocchino/sticky-pull-request-comment@5770ad5eb8f42dd2c4f34da00c94c5381e49af88 # v3.0.5
         with:
-          file-path: pr-comment.txt
-          pr-number: ${{ steps.pr_comment_prep.outputs.pr_number }}
+          path: pr-comment.txt
+          number_force: ${{ steps.pr_comment_prep.outputs.pr_number }}
+          # Post a fresh comment on every run (GitHub only notifies on
+          # comment creation) and minimize the previous tagged comment as
+          # outdated instead of deleting it, so the retry history stays
+          # visible (collapsed) in the PR timeline.
+          header: test-results
+          hide_and_recreate: true
+          hide_classify: OUTDATED
 
   publish-test-results:
     permissions:
