@@ -25,6 +25,7 @@ UBOOT_FIT_TEE_ENTRYPOINT ?= "0xA1400000"
 UBOOT_FIT_UBOOT_LOADADDRESS ?= "0x87980000"
 UBOOT_FIT_UBOOT_ENTRYPOINT ?= "0x87980000"
 
-# Recipes providing BL31 and OP-TEE for the FIT.
+# Recipes providing BL31, OP-TEE and the XBL-sec ELF for the SPL FIT boot flow.
 QCOM_UBOOT_SPL_FIT_ATF ?= "trusted-firmware-a-qcom-shikra"
 QCOM_UBOOT_SPL_FIT_TEE ?= "optee-os-qcom-shikra"
+QCOM_UBOOT_SPL_FIT_XBL_SEC ?= "firmware-qcom-boot-shikra"

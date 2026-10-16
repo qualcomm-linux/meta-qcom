@@ -6,9 +6,15 @@ DEPENDS += "bc-native dtc-native gnutls-native python3-pyelftools-native qtestsi
 QCOM_UBOOT_SPL_FIT ?= "0"
 QCOM_UBOOT_SPL_FIT_ATF ?= ""
 QCOM_UBOOT_SPL_FIT_TEE ?= ""
+QCOM_UBOOT_SPL_FIT_XBL_SEC ?= ""
 
 # BL31 and OP-TEE go into the FIT, swiv annotates the SPL before signing.
 DEPENDS += "${@bb.utils.contains('QCOM_UBOOT_SPL_FIT', '1', '${QCOM_UBOOT_SPL_FIT_ATF} ${QCOM_UBOOT_SPL_FIT_TEE} swiv-build-utility-native', '', d)}"
+
+# qc_sec.mbn is a prebuilt the SPL links in as the XBL-sec ELF segment; it is
+# deploy-only (no sysroot staging), so fetch it from the firmware recipe's
+# deploy directory instead of DEPENDS.
+do_compile[depends] += "${@'%s:do_deploy' % d.getVar('QCOM_UBOOT_SPL_FIT_XBL_SEC') if d.getVar('QCOM_UBOOT_SPL_FIT_XBL_SEC') else ''}"
 
 COMPATIBLE_MACHINE:aarch64 = "(qcom)"
 
@@ -39,6 +45,14 @@ python __anonymous() {
                 mbn_header = ""
 
             d.appendVar('BOARD_MBN_HEADER', mbn_header + " ? ")
+}
+
+# xbl_sec.elf is linked from qc_sec.mbn at the top of the source tree, so it
+# has to be in place before uboot_compile_config's first oe_runmake call.
+do_compile:prepend() {
+    if [ -n "${QCOM_UBOOT_SPL_FIT_XBL_SEC}" ]; then
+        install -m 0644 ${DEPLOY_DIR_IMAGE}/${QCOM_BOOT_FILES_SUBDIR}/qc_sec.mbn ${S}/qc_sec.mbn
+    fi
 }
 
 uboot_compile_config:append() {
