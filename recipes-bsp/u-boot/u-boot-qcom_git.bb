@@ -6,16 +6,21 @@ DEPENDS += "bc-native dtc-native gnutls-native python3-pyelftools-native qtestsi
 QCOM_UBOOT_SPL_FIT ?= "0"
 QCOM_UBOOT_SPL_FIT_ATF ?= ""
 QCOM_UBOOT_SPL_FIT_TEE ?= ""
+QCOM_UBOOT_SPL_FIT_XBL_SEC ?= ""
 QCOM_UBOOT_SPL_FIT_EXTRA_LOADABLES ?= ""
 
 # BL31 and OP-TEE go into the FIT, swiv annotates the SPL before signing.
 DEPENDS += "${@bb.utils.contains('QCOM_UBOOT_SPL_FIT', '1', '${QCOM_UBOOT_SPL_FIT_ATF} ${QCOM_UBOOT_SPL_FIT_TEE} swiv-build-utility-native', '', d)}"
 
-# QCOM_UBOOT_SPL_FIT_EXTRA_LOADABLES is a space-separated list of "recipe:filename"
-# entries for further blobs (PMIC/DCB configs, SHRM, QcLib, ...) that ride along in
-# the FIT as loadables. Each file is deploy-only, so pull in its providing recipe
-# via a task dependency instead of DEPENDS.
-do_compile[depends] += "${@' '.join(sorted(set('%s:do_deploy' % entry.split(':', 1)[0] for entry in d.getVar('QCOM_UBOOT_SPL_FIT_EXTRA_LOADABLES').split()))) if d.getVar('QCOM_UBOOT_SPL_FIT') == '1' else ''}"
+# QCOM_UBOOT_SPL_FIT_EXTRA_LOADABLES (space-separated list of "recipe:filename"
+# entries for PMIC/DCB configs, SHRM, QcLib, ... loaded from the FIT) and
+# QCOM_UBOOT_SPL_FIT_XBL_SEC (the recipe providing qc_sec.mbn, linked into the
+# SPL as the XBL-sec ELF segment) both name deploy-only recipes, so order
+# do_compile after each one's do_deploy instead of pulling them in via DEPENDS.
+do_compile[depends] += "${@' '.join(sorted(set( \
+    (['%s:do_deploy' % entry.split(':', 1)[0] for entry in d.getVar('QCOM_UBOOT_SPL_FIT_EXTRA_LOADABLES').split()] if d.getVar('QCOM_UBOOT_SPL_FIT') == '1' else []) + \
+    (['%s:do_deploy' % d.getVar('QCOM_UBOOT_SPL_FIT_XBL_SEC')] if d.getVar('QCOM_UBOOT_SPL_FIT_XBL_SEC') else []) \
+)))}"
 
 COMPATIBLE_MACHINE:aarch64 = "(qcom)"
 
@@ -47,6 +52,14 @@ python __anonymous() {
                 mbn_header = ""
 
             d.appendVar('BOARD_MBN_HEADER', mbn_header + " ? ")
+}
+
+# xbl_sec.elf is linked from qc_sec.mbn at the top of the source tree, so it
+# has to be in place before uboot_compile_config's first oe_runmake call.
+do_compile:prepend() {
+    if [ -n "${QCOM_UBOOT_SPL_FIT_XBL_SEC}" ]; then
+        install -m 0644 ${DEPLOY_DIR_IMAGE}/${QCOM_BOOT_FILES_SUBDIR}/qc_sec.mbn ${S}/qc_sec.mbn
+    fi
 }
 
 uboot_compile_config:append() {
