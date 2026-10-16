@@ -1,0 +1,56 @@
+From b560c7527a66b8fa90817a92b16b323493fb394d Mon Sep 17 00:00:00 2001
+From: Wenwen Fu <wenwfu@qti.qualcomm.com>
+Date: Sat, 12 Sep 2026 22:37:30 +0800
+Subject: [PATCH] initramfs-framework: avoid processes when parsing cmdline
+
+Use POSIX shell parameter expansion instead of external cut and sed
+while parsing kernel command-line parameters. This keeps the parser
+compatible with /bin/sh implementations that do not support Bash-style
+pattern substitution while avoiding per-parameter processes.
+
+On QEMU, cmdline parsing decreased from 1.381871 s to 0.056985 s,
+a 95.9% reduction.
+
+Tested with dash and BusyBox sh syntax checks and QEMU.
+
+AI-Generated: OpenAI Codex
+Signed-off-by: Wenwen Fu <wenwfu@qti.qualcomm.com>
+Signed-off-by: Antonin Godard <antonin.godard@bootlin.com>
+Signed-off-by: Richard Purdie <richard.purdie@linuxfoundation.org>
+Upstream-Status: Backport [https://github.com/openembedded/openembedded-core/commit/b560c7527a66b8fa90817a92b16b323493fb394d]
+---
+ .../initrdscripts/initramfs-framework/init        | 15 +++++++++++----
+ 1 file changed, 11 insertions(+), 4 deletions(-)
+
+diff --git a/meta/recipes-core/initrdscripts/initramfs-framework/init b/meta/recipes-core/initrdscripts/initramfs-framework/init
+index e3bf97bba9..e03685175f 100755
+--- a/meta/recipes-core/initrdscripts/initramfs-framework/init
++++ b/meta/recipes-core/initrdscripts/initramfs-framework/init
+@@ -100,13 +100,20 @@ for p in `cat /proc/cmdline`; do
+ 		continue
+ 	fi
+ 
+-	opt=`echo $p | cut -d'=' -f1`
+-	opt=`echo $opt | sed -e 'y/.-/__/'`
+-	if [ "`echo $p | cut -d'=' -f1`" = "$p" ]; then
++	key=${p%%=*}
++	opt=$key
++	while :; do
++		case "$opt" in
++			*.*) opt=${opt%%.*}_${opt#*.} ;;
++			*-*) opt=${opt%%-*}_${opt#*-} ;;
++			*) break ;;
++		esac
++	done
++	if [ "$key" = "$p" ]; then
+ 		# opt parameter
+ 		eval "bootparam_${opt}=true"
+ 	else
+-		value="`echo $p | cut -d'=' -f2-`"	# Option value
++		value=${p#*=}	# Option value
+ 		value_lstripped=${value#\"}
+ 		value_rstripped=${value%\"}
+ 
+-- 
+2.43.0
+

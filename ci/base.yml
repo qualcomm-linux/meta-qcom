@@ -14,6 +14,28 @@ repos:
 
   oe-core:
     url: https://github.com/openembedded/openembedded-core
+    patches:
+      001-initramfs-root-only-udev-trigger:
+        repo: meta-qcom
+        path: patches/oe-core/0001-initramfs-framework-add-opt-in-root-only-udev-trigger.patch
+      002-initramfs-label-root-only-udev-trigger:
+        repo: meta-qcom
+        path: patches/oe-core/0002-initramfs-framework-support-label-with-root-only-udev-trigger.patch
+      003-busybox-findfs:
+        repo: meta-qcom
+        path: patches/oe-core/0003-busybox-enable-findfs-for-initramfs-label-support.patch
+      004-initramfs-rootfs-no-external-commands:
+        repo: meta-qcom
+        path: patches/oe-core/0004-initramfs-framework-avoid-external-commands-in-rootfs-resolution.patch
+      005-initramfs-efivarfs-opt-out:
+        repo: meta-qcom
+        path: patches/oe-core/0005-initramfs-framework-allow-opting-out-of-efivarfs-mount.patch
+      006-initramfs-cmdline-no-processes:
+        repo: meta-qcom
+        path: patches/oe-core/0006-initramfs-framework-avoid-processes-when-parsing-cmdline.patch
+      007-initramfs-module-loop-no-external-commands:
+        repo: meta-qcom
+        path: patches/oe-core/0007-initramfs-framework-avoid-external-commands-in-module-loop.patch
     layers:
       meta:
 

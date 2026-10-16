@@ -1,0 +1,55 @@
+From 9147744020f9b948f656a116ac03a9656e5a254b Mon Sep 17 00:00:00 2001
+From: Wenwen Fu <wenwfu@qti.qualcomm.com>
+Date: Mon, 14 Sep 2026 15:10:41 +0800
+Subject: [PATCH] initramfs-framework: allow opting out of efivarfs mount
+
+The initramfs mounts efivarfs before parsing the kernel command line.
+This was added so EFI metadata is available to early consumers such
+as mdadm when assembling Intel VROC RAID root devices.
+
+On systems where the real root filesystem mounts efivarfs later, the
+early mount is redundant and adds work to the initramfs critical path.
+Allow these systems to opt out with initramfs.efivarfs=0.
+
+Parse the command line before deciding whether to mount efivarfs.
+Keep the existing mount behavior by default for initramfs users that
+need EFI variables before switch_root.
+
+Signed-off-by: Wenwen Fu <wenwfu@qti.qualcomm.com>
+Signed-off-by: Richard Purdie <richard.purdie@linuxfoundation.org>
+Upstream-Status: Backport [https://github.com/openembedded/openembedded-core/commit/9147744020f9b948f656a116ac03a9656e5a254b]
+---
+ .../initrdscripts/initramfs-framework/init             | 10 ++++++----
+ 1 file changed, 6 insertions(+), 4 deletions(-)
+
+diff --git a/meta/recipes-core/initrdscripts/initramfs-framework/init b/meta/recipes-core/initrdscripts/initramfs-framework/init
+index 67590ad765..e3bf97bba9 100755
+--- a/meta/recipes-core/initrdscripts/initramfs-framework/init
++++ b/meta/recipes-core/initrdscripts/initramfs-framework/init
+@@ -87,10 +87,6 @@ mount -t sysfs sysfs /sys
+ mount -t tmpfs tmpfs /run
+ mkdir -p /run/lock
+ 
+-if [ -d $EFI_DIR ];then
+-	mount -t efivarfs none /sys/firmware/efi/efivars
+-fi
+-
+ # populate bootparam environment
+ for p in `cat /proc/cmdline`; do
+ 	if [ -n "$quoted" ]; then
+@@ -130,6 +126,12 @@ for p in `cat /proc/cmdline`; do
+ 	fi
+ done
+ 
++# Keep efivarfs available in the initramfs by default.  Systems which
++# provide it from the real root filesystem can opt out of the early mount.
++if [ "${bootparam_initramfs_efivarfs:-1}" != "0" ] && [ -d "$EFI_DIR" ]; then
++	mount -t efivarfs none /sys/firmware/efi/efivars
++fi
++
+ # use /dev with devtmpfs
+ if grep -q devtmpfs /proc/filesystems; then
+ 	mkdir -p /dev
+-- 
+2.43.0
+

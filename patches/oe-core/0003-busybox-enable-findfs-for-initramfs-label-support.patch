@@ -1,0 +1,60 @@
+From c2b681e39421ae5b4fea917b3c3ed69bd1020b6c Mon Sep 17 00:00:00 2001
+From: Wenwen Fu <wenwfu@qti.qualcomm.com>
+Date: Tue, 8 Sep 2026 22:08:57 +0800
+Subject: [PATCH] busybox: enable findfs for initramfs LABEL support
+
+Use the BusyBox findfs applet for initramfs-framework root=LABEL=
+resolution and drop the util-linux-findfs runtime dependency. This keeps
+the root-only udev trigger implementation lightweight and removes the
+util-linux signature exception.
+
+Signed-off-by: Wenwen Fu <wenwfu@qti.qualcomm.com>
+Signed-off-by: Richard Purdie <richard.purdie@linuxfoundation.org>
+Upstream-Status: Backport [https://github.com/openembedded/openembedded-core/commit/c2b681e39421ae5b4fea917b3c3ed69bd1020b6c]
+---
+ meta/conf/layer.conf                                       | 1 -
+ meta/recipes-core/busybox/busybox/defconfig                | 2 +-
+ meta/recipes-core/initrdscripts/initramfs-framework_1.0.bb | 2 +-
+ 3 files changed, 2 insertions(+), 3 deletions(-)
+
+diff --git a/meta/conf/layer.conf b/meta/conf/layer.conf
+index 1ad34b430d..b91ce3e437 100644
+--- a/meta/conf/layer.conf
++++ b/meta/conf/layer.conf
+@@ -61,7 +61,6 @@ SIGGEN_EXCLUDE_SAFE_RECIPE_DEPS += " \
+   initramfs-framework->${VIRTUAL-RUNTIME_base-utils} \
+   initramfs-framework->eudev \
+   initramfs-framework->systemd \
+-  initramfs-framework->util-linux \
+   initramfs-module-install-efi->dosfstools \
+   initramfs-module-install-efi->e2fsprogs \
+   initramfs-module-install-efi->parted \
+diff --git a/meta/recipes-core/busybox/busybox/defconfig b/meta/recipes-core/busybox/busybox/defconfig
+index 1f4b5e3d1e..a282370a8f 100644
+--- a/meta/recipes-core/busybox/busybox/defconfig
++++ b/meta/recipes-core/busybox/busybox/defconfig
+@@ -634,7 +634,7 @@ CONFIG_FEATURE_FDISK_WRITABLE=y
+ # CONFIG_FEATURE_OSF_LABEL is not set
+ # CONFIG_FEATURE_GPT_LABEL is not set
+ # CONFIG_FEATURE_FDISK_ADVANCED is not set
+-# CONFIG_FINDFS is not set
++CONFIG_FINDFS=y
+ CONFIG_FLOCK=y
+ # CONFIG_FDFLUSH is not set
+ # CONFIG_FREERAMDISK is not set
+diff --git a/meta/recipes-core/initrdscripts/initramfs-framework_1.0.bb b/meta/recipes-core/initrdscripts/initramfs-framework_1.0.bb
+index 936cd0c995..2ec03bc34c 100644
+--- a/meta/recipes-core/initrdscripts/initramfs-framework_1.0.bb
++++ b/meta/recipes-core/initrdscripts/initramfs-framework_1.0.bb
+@@ -88,7 +88,7 @@ RDEPENDS:initramfs-module-mdev = "${PN}-base busybox-mdev"
+ FILES:initramfs-module-mdev = "/init.d/01-mdev"
+ 
+ SUMMARY:initramfs-module-udev = "initramfs support for udev"
+-RDEPENDS:initramfs-module-udev = "${PN}-base udev util-linux-findfs"
++RDEPENDS:initramfs-module-udev = "${PN}-base udev"
+ FILES:initramfs-module-udev = "/init.d/01-udev"
+ 
+ SUMMARY:initramfs-module-e2fs = "initramfs support for ext4/ext3/ext2 filesystems"
+-- 
+2.43.0
+

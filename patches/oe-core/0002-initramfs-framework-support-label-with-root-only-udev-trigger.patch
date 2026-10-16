@@ -1,0 +1,82 @@
+From fda394c2b91b3c66545f75dc13f7e8649e3cdb6d Mon Sep 17 00:00:00 2001
+From: Wenwen Fu <wenwfu@qti.qualcomm.com>
+Date: Fri, 28 Aug 2026 22:21:21 +0800
+Subject: [PATCH] initramfs-framework: support LABEL with root-only udev
+ trigger
+
+Filesystem labels are not available in kernel uevents. Add
+util-linux-findfs to initramfs-module-udev and use findfs to resolve
+root=LABEL= to a device. Read the kernel-provided PARTUUID from sysfs
+and trigger only that partition, falling back to a full trigger if the
+label cannot be resolved safely. Keeping findfs out of the BusyBox
+defconfig avoids increasing BusyBox for unrelated users.
+
+Exclude the util-linux dependency from signature propagation because
+this allarch recipe only invokes findfs at runtime.
+
+Tested with bitbake -p, the core-image-minimal-initramfs dependency
+graph, and the sstatetests.SStateHashSameSigs2.test_sstate_allarch_samesigs
+selftest.
+
+AI-Generated: OpenAI Codex
+Signed-off-by: Wenwen Fu <wenwfu@qti.qualcomm.com>
+Signed-off-by: Mathieu Dubois-Briand <mathieu.dubois-briand@bootlin.com>
+Signed-off-by: Richard Purdie <richard.purdie@linuxfoundation.org>
+Upstream-Status: Backport [https://github.com/openembedded/openembedded-core/commit/fda394c2b91b3c66545f75dc13f7e8649e3cdb6d]
+---
+ meta/conf/layer.conf                                 |  1 +
+ .../initrdscripts/initramfs-framework/udev           | 12 ++++++++++++
+ .../initrdscripts/initramfs-framework_1.0.bb         |  2 +-
+ 3 files changed, 14 insertions(+), 1 deletion(-)
+
+diff --git a/meta/conf/layer.conf b/meta/conf/layer.conf
+index b91ce3e437..1ad34b430d 100644
+--- a/meta/conf/layer.conf
++++ b/meta/conf/layer.conf
+@@ -61,6 +61,7 @@ SIGGEN_EXCLUDE_SAFE_RECIPE_DEPS += " \
+   initramfs-framework->${VIRTUAL-RUNTIME_base-utils} \
+   initramfs-framework->eudev \
+   initramfs-framework->systemd \
++  initramfs-framework->util-linux \
+   initramfs-module-install-efi->dosfstools \
+   initramfs-module-install-efi->e2fsprogs \
+   initramfs-module-install-efi->parted \
+diff --git a/meta/recipes-core/initrdscripts/initramfs-framework/udev b/meta/recipes-core/initrdscripts/initramfs-framework/udev
+index 8f67e78a7c..85c5ba1178 100644
+--- a/meta/recipes-core/initrdscripts/initramfs-framework/udev
++++ b/meta/recipes-core/initrdscripts/initramfs-framework/udev
+@@ -43,6 +43,18 @@ udev_trigger_root_device() {
+ 		PARTUUID=?*)
+ 			root_match="PARTUUID=${bootparam_root#PARTUUID=}"
+ 			;;
++		LABEL=?*)
++			# The kernel does not export the filesystem LABEL in the
++			# uevent, so resolve it to a device node with findfs and
++			# match on that device's kernel-provided PARTUUID.
++			root_label="${bootparam_root#LABEL=}"
++			root_dev=$(findfs "LABEL=$root_label" 2>/dev/null) || return 1
++			[ -n "$root_dev" ] || return 1
++			root_partuuid=$(sed -n 's/^PARTUUID=//p' \
++				"/sys/class/block/${root_dev#/dev/}/uevent" 2>/dev/null)
++			[ -n "$root_partuuid" ] || return 1
++			root_match="PARTUUID=$root_partuuid"
++			;;
+ 		*)
+ 			return 1
+ 			;;
+diff --git a/meta/recipes-core/initrdscripts/initramfs-framework_1.0.bb b/meta/recipes-core/initrdscripts/initramfs-framework_1.0.bb
+index 2ec03bc34c..936cd0c995 100644
+--- a/meta/recipes-core/initrdscripts/initramfs-framework_1.0.bb
++++ b/meta/recipes-core/initrdscripts/initramfs-framework_1.0.bb
+@@ -88,7 +88,7 @@ RDEPENDS:initramfs-module-mdev = "${PN}-base busybox-mdev"
+ FILES:initramfs-module-mdev = "/init.d/01-mdev"
+ 
+ SUMMARY:initramfs-module-udev = "initramfs support for udev"
+-RDEPENDS:initramfs-module-udev = "${PN}-base udev"
++RDEPENDS:initramfs-module-udev = "${PN}-base udev util-linux-findfs"
+ FILES:initramfs-module-udev = "/init.d/01-udev"
+ 
+ SUMMARY:initramfs-module-e2fs = "initramfs support for ext4/ext3/ext2 filesystems"
+-- 
+2.43.0
+

@@ -1,0 +1,51 @@
+From f7097b98a32ff3b672e5340767cb2ca2709dfd9a Mon Sep 17 00:00:00 2001
+From: Wenwen Fu <wenwfu@qti.qualcomm.com>
+Date: Sat, 12 Sep 2026 22:37:45 +0800
+Subject: [PATCH] initramfs-framework: avoid external commands in module loop
+
+Use shell pattern matching and parameter expansion to skip backup
+modules and derive module names without invoking sed, basename, or cut
+during initramfs module loading.
+
+On QEMU, backup filtering decreased from 104.529 ms to 3.731 ms,
+and module name parsing decreased from 115.657 ms to 4.071 ms.
+Together, these stages decreased from 220.186 ms to 7.802 ms.
+
+Tested with dash and BusyBox sh syntax checks and QEMU.
+
+AI-Generated: OpenAI Codex
+Signed-off-by: Wenwen Fu <wenwfu@qti.qualcomm.com>
+Signed-off-by: Antonin Godard <antonin.godard@bootlin.com>
+Signed-off-by: Richard Purdie <richard.purdie@linuxfoundation.org>
+Upstream-Status: Backport [https://github.com/openembedded/openembedded-core/commit/f7097b98a32ff3b672e5340767cb2ca2709dfd9a]
+---
+ .../initrdscripts/initramfs-framework/init           | 12 ++++++++----
+ 1 file changed, 8 insertions(+), 4 deletions(-)
+
+diff --git a/meta/recipes-core/initrdscripts/initramfs-framework/init b/meta/recipes-core/initrdscripts/initramfs-framework/init
+index e03685175f..5dbf32a12d 100755
+--- a/meta/recipes-core/initrdscripts/initramfs-framework/init
++++ b/meta/recipes-core/initrdscripts/initramfs-framework/init
+@@ -154,11 +154,15 @@ mkdir $ROOTFS_DIR
+ # Load and run modules
+ for m in $MODULES_DIR/*; do
+ 	# Skip backup files
+-	if [ "`echo $m | sed -e 's/\~$//'`" != "$m" ]; then
+-		continue
+-	fi
++	case "$m" in
++		*~)
++			continue
++			;;
++	esac
+ 
+-	module=`basename $m | cut -d'-' -f 2`
++	module=${m##*/}
++	module=${module#*-}
++	module=${module%%-*}
+ 	debug "Loading module $module"
+ 
+ 	# pre hooks
+-- 
+2.43.0
+
