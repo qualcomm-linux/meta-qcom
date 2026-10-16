@@ -7,6 +7,8 @@ require conf/machine/include/qcom-common.inc
 DEFAULTTUNE = "armv8-2a-crypto"
 require conf/machine/include/arm/arch-armv8-2a.inc
 
+QCOM_HEXAGON_ARCHS = "v75"
+
 # Disable PAuth via cmdline to allow all cores to boot with KVM.
 # More details at https://lore.kernel.org/all/3fcf6614-ee83-4a06-9024-83573b2e642e@quicinc.com/
 KERNEL_CMDLINE_EXTRA:append = " arm64.nopauth"

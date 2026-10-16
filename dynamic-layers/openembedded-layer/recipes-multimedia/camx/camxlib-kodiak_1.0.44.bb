@@ -58,8 +58,8 @@ do_install:append() {
 
     # copy Deep Learning based binary
     cp -r ${S}/usr/share/camx ${D}${datadir}
-    # copy skel file
-    cp -r ${S}/usr/share/qcom ${D}${datadir}
+    install -d ${D}${datadir}/qcom/hexagon/v68
+    install -m 0644 ${S}/usr/share/qcom/qcm6490/Thundercomm/RB3gen2/dsp/cdsp/libbitml_nsp_v2_skel.so ${D}${datadir}/qcom/hexagon/v68
 
     # Install bin files only if /usr/bin exists in ${S}
     if [ -d "${S}${libexecdir}" ]; then
