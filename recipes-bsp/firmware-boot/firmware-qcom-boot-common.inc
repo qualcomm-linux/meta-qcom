@@ -37,4 +37,9 @@ do_deploy() {
 }
 addtask deploy before do_build after do_install
 
-inherit allarch
+# Optional secure-boot signing of the boot binaries, in place, before
+# do_deploy (QCOM_FIRMWARE_SIGN_ENABLE).
+inherit qcom-firmware-sign
+
+QCOM_FIRMWARE_SIGN_DIRS = "${QCOM_BOOT_BINARY_DIRS}"
+QCOM_FIRMWARE_SIGN_SUFFIXES = "mbn elf melf"
