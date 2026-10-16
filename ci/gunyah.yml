@@ -2,9 +2,7 @@
 
 header:
   version: 14
-  includes:
-   - ci/qcom-distro.yml
 
 local_conf_header:
-  kvm: |
-        MACHINE_FEATURES:append = " kvm"
+  gunyah: |
+        MACHINE_FEATURES:remove = "kvm"
