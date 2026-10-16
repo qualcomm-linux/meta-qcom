@@ -8,7 +8,7 @@ on:
       profile:
         required: false
         type: string
-        default: "full" # values: pr | full | weekly
+        default: "full" # values: pr | full | extended
       sdk:
         required: false
         type: boolean
@@ -204,9 +204,9 @@ jobs:
           elif [[ "$GITHUB_EVENT_NAME" = "push" ]]; then
             echo "OBJECT_TAG=retention=15d" >> $GITHUB_ENV
             echo "BUILD_TYPE=buildType=PUSH" >> $GITHUB_ENV
-          elif [[ "${INPUTS_PROFILE}" = "weekly" ]]; then
+          elif [[ "${INPUTS_PROFILE}" = "extended" ]]; then
             echo "OBJECT_TAG=retention=15d" >> $GITHUB_ENV
-            echo "BUILD_TYPE=buildType=WEEKLY" >> $GITHUB_ENV
+            echo "BUILD_TYPE=buildType=EXTENDED" >> $GITHUB_ENV
           elif [[ "$GITHUB_WORKFLOW" == *"Nightly Build"* ]]; then
             echo "OBJECT_TAG=retention=15d" >> $GITHUB_ENV
             echo "BUILD_TYPE=buildType=NIGHTLY" >> $GITHUB_ENV

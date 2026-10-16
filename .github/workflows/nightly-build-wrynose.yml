@@ -4,12 +4,13 @@ on:
   schedule:
   # NOTE - changes to the cron spec should be pushed by https://github.com/quic-yocto-ci
   # so that build notification emails will be sent out properly.
-  # At 2:22 UTC from Sunday to Friday - picked a random "minute" as top of hour
-  # can be busy in github. Kept 2 hours after the master nightly/weekly build
-  # (0:23 UTC) so the two branches do not build at the same time. Saturday is
-  # covered by the weekly build dispatcher, which triggers a superset of this
-  # matrix on wrynose.
-  - cron: "22 2 * * 0-5"
+  # At 2:22 UTC on Sunday, Monday, Tuesday, Thursday and Friday - picked a
+  # random "minute" as top of hour can be busy in github. Kept 2 hours after
+  # the master nightly/extended build (0:23 UTC) so the two branches do not
+  # build at the same time. Wednesday and Saturday are covered by the
+  # extended build dispatcher, which triggers a superset of this matrix on
+  # wrynose.
+  - cron: "22 2 * * 0,1,2,4,5"
 
 permissions:
   checks: write
