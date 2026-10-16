@@ -1,0 +1,100 @@
+From 570e8bb737a7c19e66b1191a88a5ea83698eb0c1 Mon Sep 17 00:00:00 2001
+From: Ricardo Salveti <ricardo.salveti@oss.qualcomm.com>
+Date: Thu, 15 Oct 2026 20:39:29 +0000
+Subject: [PATCH] systemd: fix the audit type list generation when
+ cross-compiling
+
+systemd 262 passes the libaudit includedir from pkg-config when
+generating the audit type list. pkg-config does not prefix that variable
+with the sysroot, so the cross compiler gets -I/usr/include and fails
+with -Werror=poison-system-directories whenever the audit PACKAGECONFIG
+is enabled, as meta-selinux does.
+
+Backport the fix submitted upstream.
+
+Upstream-Status: Submitted [https://github.com/systemd/systemd/pull/44204]
+Assisted-by: Claude Code:claude-opus-5-5
+Signed-off-by: Ricardo Salveti <ricardo.salveti@oss.qualcomm.com>
+---
+ ...ass-I-usr-include-to-the-audit-type-.patch | 56 +++++++++++++++++++
+ meta/recipes-core/systemd/systemd_262.bb      |  1 +
+ 2 files changed, 57 insertions(+)
+ create mode 100644 meta/recipes-core/systemd/systemd/0004-journal-do-not-pass-I-usr-include-to-the-audit-type-.patch
+
+diff --git a/meta/recipes-core/systemd/systemd/0004-journal-do-not-pass-I-usr-include-to-the-audit-type-.patch b/meta/recipes-core/systemd/systemd/0004-journal-do-not-pass-I-usr-include-to-the-audit-type-.patch
+new file mode 100644
+index 0000000000..cb3ef3473f
+--- /dev/null
++++ b/meta/recipes-core/systemd/systemd/0004-journal-do-not-pass-I-usr-include-to-the-audit-type-.patch
+@@ -0,0 +1,56 @@
++From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
++From: Ricardo Salveti <ricardo.salveti@oss.qualcomm.com>
++Date: Wed, 14 Oct 2026 22:42:20 +0000
++Subject: [PATCH] journal: do not pass -I/usr/include to the audit type list
++ generator
++
++pkg-config applies PKG_CONFIG_SYSROOT_DIR only to the -I/-L flags in
++Cflags/Libs, not to variables queried with --variable (pkgconf behaves
++the same way in its freedesktop-compatible mode, which OpenEmbedded
++enables). When cross-compiling, the includedir variable therefore yields
++the unprefixed /usr/include, which GCC rejects when built with
++-Werror=poison-system-directories, as OpenEmbedded does:
++
++  cc1: error: include location "/usr/include" is unsafe for cross-compilation [-Werror=poison-system-directories]
++
++The error is justified: GCC does not apply --sysroot to a plain
++-I/usr/include, so it puts the build host's headers ahead of the
++sysroot's. For native builds the flag is merely redundant, as GCC
++ignores -I for a directory that is already a system include directory,
++and pkg-config itself filters it out of its --cflags output for the same
++reason. Hence, skip it, and keep passing the directory only when
++libaudit is installed elsewhere.
++
++Follow-up for 0d06dbabc364fe58e4bd1b9696f3c5b823620dbc.
++
++Upstream-Status: Submitted [https://github.com/systemd/systemd/pull/44204]
++Signed-off-by: Ricardo Salveti <ricardo.salveti@oss.qualcomm.com>
++---
++ src/journal/meson.build | 11 +++++++----
++ 1 file changed, 7 insertions(+), 4 deletions(-)
++
++diff --git a/src/journal/meson.build b/src/journal/meson.build
++index a27b359b61..26281522d5 100644
++--- a/src/journal/meson.build
+++++ b/src/journal/meson.build
++@@ -33,10 +33,13 @@ systemd_journald_export_sources += journald_gperf_c
++ generate_audit_type_list = files('generate-audit_type-list.sh')
++ generate_audit_type_command = [env, 'bash', generate_audit_type_list, cpp]
++ if libaudit.found()
++-        generate_audit_type_command += [
++-                '-include', 'libaudit.h',
++-                '-I' + libaudit.get_variable('includedir'),
++-        ]
+++        generate_audit_type_command += ['-include', 'libaudit.h']
+++        # Skip -I/usr/include: it is redundant, and cross toolchains built with
+++        # -Werror=poison-system-directories reject it.
+++        libaudit_includedir = libaudit.get_variable('includedir')
+++        if libaudit_includedir != '/usr/include'
+++                generate_audit_type_command += ['-I' + libaudit_includedir]
+++        endif
++ endif
++ generate_audit_type_command += system_include_args
++ 
++-- 
++2.43.0
++
+diff --git a/meta/recipes-core/systemd/systemd_262.bb b/meta/recipes-core/systemd/systemd_262.bb
+index d613f01c58..6f5c4ba663 100644
+--- a/meta/recipes-core/systemd/systemd_262.bb
++++ b/meta/recipes-core/systemd/systemd_262.bb
+@@ -37,6 +37,7 @@ SRC_URI += "file://touchscreen.rules \
+            file://coredumpd-kernel-version.conf \
+            file://0001-binfmt-Don-t-install-dependency-links-at-install-tim.patch \
+            file://0003-Do-not-create-var-log-README.patch \
++           file://0004-journal-do-not-pass-I-usr-include-to-the-audit-type-.patch \
+            "
+ 
+ PAM_PLUGINS = " \
+-- 
+2.43.0
+
