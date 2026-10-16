@@ -10,6 +10,7 @@ QCOM_UBOOT_SPL_FIT ?= "0"
 QCOM_UBOOT_SPL_FIT_ATF ?= ""
 QCOM_UBOOT_SPL_FIT_TEE ?= ""
 QCOM_UBOOT_SPL_FIT_FIRMWARE ?= ""
+QCOM_UBOOT_SPL_FIT_XBL_SEC ?= ""
 QCOM_SPL_FW_TYPE ?= "tz"
 
 # Boot firmware directory of ELFs split per PT_LOAD segment, with a
@@ -57,6 +58,14 @@ python __anonymous() {
                 mbn_header = ""
 
             d.appendVar('BOARD_MBN_HEADER', mbn_header + " ? ")
+}
+
+# The SPL links the XBL-sec ELF from the top of the source tree, so copy it
+# there before the first build.
+do_compile:prepend() {
+    if [ -n "${QCOM_UBOOT_SPL_FIT_XBL_SEC}" ]; then
+        install -m 0644 ${DEPLOY_DIR_IMAGE}/${QCOM_BOOT_FILES_SUBDIR}/${QCOM_UBOOT_SPL_FIT_XBL_SEC} ${S}/${QCOM_UBOOT_SPL_FIT_XBL_SEC}
+    fi
 }
 
 uboot_compile_config:append() {

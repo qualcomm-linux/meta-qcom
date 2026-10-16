@@ -10,9 +10,11 @@ UBOOT_FIT_TEE_ENTRYPOINT ?= "0xa1400000"
 UBOOT_FIT_UBOOT_LOADADDRESS ?= "0x9f400000"
 UBOOT_FIT_UBOOT_ENTRYPOINT ?= "0x9f400000"
 
-# Recipes providing BL31 and OP-TEE
+# Recipes providing BL31, OP-TEE and the boot firmware, and its XBL-sec ELF
 QCOM_UBOOT_SPL_FIT_ATF ?= "trusted-firmware-a-qcom-shikra"
 QCOM_UBOOT_SPL_FIT_TEE ?= "optee-os-qcom-shikra"
+QCOM_UBOOT_SPL_FIT_FIRMWARE ?= "firmware-qcom-boot-shikra"
+QCOM_UBOOT_SPL_FIT_XBL_SEC ?= "qc_sec.mbn"
 
 # The SPL loads the image data stored after the FIT
 UBOOT_FIT_MKIMAGE_EXTRA_OPTS ?= "-E"
