@@ -10,7 +10,7 @@ COMPATIBLE_MACHINE = "(qcom)"
 
 LINUX_QCOM_FIT_DTB_COMPATIBLE = "conf/machine/include/fit-dtb-compatible-linux-qcom.inc"
 
-LINUX_VERSION ?= "7.2"
+LINUX_VERSION ?= "7.2+7.3-rc4"
 
 PV = "${LINUX_VERSION}+git"
 
@@ -18,8 +18,8 @@ KERNEL_PAHOLE ?= '${@oe.utils.vartrue("DEBUG_BUILD", bb.utils.contains("BBFILE_C
 do_configure[depends] += '${@oe.utils.vartrue("KERNEL_PAHOLE", "pahole-native:do_populate_sysroot", "", d)}'
 EXTRA_OEMAKE += '${@oe.utils.vartrue("KERNEL_PAHOLE", "", "PAHOLE=false", d)}'
 
-# tag: qcom-next-7.2-20260826
-SRCREV ?= "d49c33864d06e9672dce57738be8851384578fcf"
+# tag: qcom-next-7.3-rc4-20261014
+SRCREV ?= "1a0586064ee1fbcefe49b6382ee17a236c590879"
 
 SRCBRANCH ?= "nobranch=1"
 SRCBRANCH:class-devupstream ?= "branch=qcom-next"
@@ -29,11 +29,6 @@ SRC_URI = "git://github.com/qualcomm-linux/kernel.git;${SRCBRANCH};protocol=http
 # Additional kernel configs.
 SRC_URI += " \
     file://configs/bsp-additions.cfg \
-    file://0001-PENDING-arm64-dts-qcom-shikra-iqs-evk-Rename-HDMI-br.patch \
-    file://0002-PENDING-arm64-dts-qcom-shikra-Add-DSI-HDMI-overlay-s.patch \
-    file://0003-PENDING-arm64-dts-qcom-shikra-Add-DLC-panel-overlay-.patch \
-    file://0004-PENDING-arm64-dts-qcom-shikra-Add-LVDS-panel-overlay.patch \
-    file://0005-PENDING-arm64-dts-qcom-shikra-iqs-evk-Remove-unused-.patch \
 "
 
 # To build tip of qcom-next branch set preferred
