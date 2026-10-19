@@ -1,0 +1,30 @@
+From 1ab484963f6854256809f1efa7a3a79d8a4885cf Mon Sep 17 00:00:00 2001
+From: Harsh Sharma <hsharm@qti.qualcomm.com>
+Date: Mon, 26 Oct 2026 03:32:56 -0700
+Subject: [PATCH 8/9] netlink: release socket on SO_PASSCRED setup failure
+
+setup_netlink_socket() leaves a valid socket object assigned when
+SO_PASSCRED configuration fails. Clear the socket before returning
+an error to avoid leaking resources and leaving stale state behind.
+
+Upstream-Status: Submitted [https://gitlab.freedesktop.org/mobile-broadband/ModemManager/-/merge_requests/1452]
+Signed-off-by: Harsh Sharma <hsharm@qti.qualcomm.com>
+---
+ src/mm-netlink.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/src/mm-netlink.c b/src/mm-netlink.c
+index 004b4d4f..5e31162b 100644
+--- a/src/mm-netlink.c
++++ b/src/mm-netlink.c
+@@ -564,6 +564,7 @@ setup_netlink_socket (MMNetlink  *self,
+         g_set_error (error, G_IO_ERROR, g_io_error_from_errno (errsv),
+                      "Could not set netlink socket options: %s",
+                      g_strerror (errsv));
++        g_clear_object (&self->socket);
+         return FALSE;
+     }
+ 
+-- 
+2.34.1
+
