@@ -1,0 +1,14 @@
+Upstream-Status: Pending
+
+diff --git a/src/mm-netlink.c b/src/mm-netlink.c
+index a71b699f..e0e2f3bd 100644
+--- a/src/mm-netlink.c
++++ b/src/mm-netlink.c
+@@ -561,6 +561,7 @@ setup_netlink_socket (MMNetlink  *self,
+         g_set_error (error, G_IO_ERROR, g_io_error_from_errno (errsv),
+                      "Could not set netlink socket options: %s",
+                      g_strerror (errsv));
++        g_clear_object (&self->socket);
+         return FALSE;
+     }
+ 

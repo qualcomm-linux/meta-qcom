@@ -1,0 +1,54 @@
+Upstream-Status: Pending
+
+diff --git a/src/mm-port-qmi.c b/src/mm-port-qmi.c
+index 67afdae1..542d91ab 100644
+--- a/src/mm-port-qmi.c
++++ b/src/mm-port-qmi.c
+@@ -1174,9 +1174,10 @@ static MMPortQmiKernelDataMode
+ load_current_kernel_data_modes (MMPortQmi *self,
+                                 QmiDevice *device)
+ {
+-    /* For BAM-DMUX based setups, raw-ip only and no multiplexing */
++    /* For BAM-DMUX based setups with QMAP mux-id support (Phase 2 kernel),
++     * report MUX_RMNET so modem_create_bearer_list() enables multiplexed bearers. */
+     if (g_strcmp0 (self->priv->net_driver, "bam-dmux") == 0)
+-        return MM_PORT_QMI_KERNEL_DATA_MODE_RAW_IP;
++        return (MM_PORT_QMI_KERNEL_DATA_MODE_RAW_IP | MM_PORT_QMI_KERNEL_DATA_MODE_MUX_RMNET);
+ 
+     /* For IPA based setups, always rmnet multiplexing */
+     if (g_strcmp0 (self->priv->net_driver, "ipa") == 0)
+@@ -1213,9 +1214,10 @@ static MMPortQmiKernelDataMode
+ load_supported_kernel_data_modes (MMPortQmi *self,
+                                   QmiDevice *device)
+ {
+-    /* For BAM-DMUX based setups, raw-ip only and no multiplexing */
++    /* For BAM-DMUX based setups with QMAP mux-id support (Phase 2 kernel),
++     * report MUX_RMNET so modem_create_bearer_list() enables multiplexed bearers. */
+     if (g_strcmp0 (self->priv->net_driver, "bam-dmux") == 0)
+-        return MM_PORT_QMI_KERNEL_DATA_MODE_RAW_IP;
++        return (MM_PORT_QMI_KERNEL_DATA_MODE_RAW_IP | MM_PORT_QMI_KERNEL_DATA_MODE_MUX_RMNET);
+ 
+     /* For IPA based setups, always rmnet multiplexing */
+     if (g_strcmp0 (self->priv->net_driver, "ipa") == 0)
+@@ -1604,12 +1606,16 @@ sync_wda_data_format (GTask *task)
+     qmi_message_wda_set_data_format_input_set_uplink_data_aggregation_protocol (input, ctx->wda_ul_dap_requested, NULL);
+     qmi_message_wda_set_data_format_input_set_downlink_data_aggregation_protocol (input, ctx->wda_dl_dap_requested, NULL);
+     if (ctx->wda_dl_dap_requested != QMI_WDA_DATA_AGGREGATION_PROTOCOL_DISABLED) {
+-        if ((g_strcmp0 (self->priv->net_driver, "qmi_wwan") == 0) &&
+-            (ctx->kernel_data_modes_supported & MM_PORT_QMI_KERNEL_DATA_MODE_MUX_RMNET))
+-            qmi_message_wda_set_data_format_input_set_downlink_data_aggregation_max_size (input, DEFAULT_DOWNLINK_DATA_AGGREGATION_MAX_SIZE_QMI_WWAN_RMNET, NULL);
+-        else
++        if (g_strcmp0 (self->priv->net_driver, "bam-dmux") == 0) {
++        qmi_message_wda_set_data_format_input_set_downlink_data_aggregation_max_size (input, 2048, NULL);
++        qmi_message_wda_set_data_format_input_set_downlink_data_aggregation_max_datagrams (input, 1, NULL);
++          }
++        else if ((g_strcmp0 (self->priv->net_driver, "qmi_wwan") == 0) &&
++            (ctx->kernel_data_modes_supported & MM_PORT_QMI_KERNEL_DATA_MODE_MUX_RMNET)){
++            qmi_message_wda_set_data_format_input_set_downlink_data_aggregation_max_size (input, DEFAULT_DOWNLINK_DATA_AGGREGATION_MAX_SIZE_QMI_WWAN_RMNET, NULL);}
++        else{
+             qmi_message_wda_set_data_format_input_set_downlink_data_aggregation_max_size (input, DEFAULT_DOWNLINK_DATA_AGGREGATION_MAX_SIZE, NULL);
+-        qmi_message_wda_set_data_format_input_set_downlink_data_aggregation_max_datagrams (input, DEFAULT_DOWNLINK_DATA_AGGREGATION_MAX_DATAGRAMS, NULL);
++        qmi_message_wda_set_data_format_input_set_downlink_data_aggregation_max_datagrams (input, DEFAULT_DOWNLINK_DATA_AGGREGATION_MAX_DATAGRAMS, NULL);}
+     }
+     if (ctx->use_endpoint)
+         qmi_message_wda_set_data_format_input_set_endpoint_info (input, self->priv->endpoint_type, self->priv->endpoint_interface_number, NULL);

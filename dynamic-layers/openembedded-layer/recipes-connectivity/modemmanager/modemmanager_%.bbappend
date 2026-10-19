@@ -21,4 +21,8 @@ SRC_URI:append:qcom = " \
     file://0003-bearer-qmi-use-BindMuxDataPort-for-BAM-DMUX-WDS-client.patch \
     file://0004-plugins-qcom-soc-send-DPM-open-port-during-enabling.patch \
     file://0005-plugins-qcom-soc-replace-sio_port_per_port_number.patch \
+    file://0006-bearer-qmi-use-per-bearer-mux-id-for-MPDP.patch \
+    file://0007-port-qmi-enable-mux-rmnet-and-bam-dmux-dl-aggregation.patch \
+    file://0008-netlink-clear-socket-on-passcred-failure.patch \
+    file://0009-qcom-soc-share-primary-qmi-port-for-mpdp.patch \
 "

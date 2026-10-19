@@ -1,0 +1,69 @@
+Upstream-Status: Pending
+
+diff --git a/src/plugins/qcom-soc/mm-broadband-modem-qmi-qcom-soc.c b/src/plugins/qcom-soc/mm-broadband-modem-qmi-qcom-soc.c
+index 7643b89c..e3899d66 100644
+--- a/src/plugins/qcom-soc/mm-broadband-modem-qmi-qcom-soc.c
++++ b/src/plugins/qcom-soc/mm-broadband-modem-qmi-qcom-soc.c
+@@ -33,41 +33,16 @@ G_DEFINE_TYPE (MMBroadbandModemQmiQcomSoc, mm_broadband_modem_qmi_qcom_soc, MM_T
+ 
+ /*****************************************************************************/
+ 
+-static const QmiSioPort sio_port_per_port_number[] = {
+-    QMI_SIO_PORT_A2_MUX_RMNET0,
+-    QMI_SIO_PORT_A2_MUX_RMNET1,
+-    QMI_SIO_PORT_A2_MUX_RMNET2,
+-    QMI_SIO_PORT_A2_MUX_RMNET3,
+-    QMI_SIO_PORT_A2_MUX_RMNET4,
+-    QMI_SIO_PORT_A2_MUX_RMNET5,
+-    QMI_SIO_PORT_A2_MUX_RMNET6,
+-    QMI_SIO_PORT_A2_MUX_RMNET7
+-};
+-
+ static MMPortQmi *
+ peek_port_qmi_for_data_bam_dmux (MMBroadbandModemQmi  *self,
+-                                 MMPort               *data,
+-                                 MMQmiDataEndpoint    *out_endpoint,
+-                                 GError              **error)
++                                  MMPort               *data,
++                                  MMQmiDataEndpoint    *out_endpoint,
++                                  GError              **error)
+ {
+-    MMPortQmi      *found = NULL;
+-    MMKernelDevice *net_port;
+-    gint            net_port_number;
+-
+-    net_port = mm_port_peek_kernel_device (data);
+-
+-    /* The dev_port notified by the bam-dmux driver indicates which SIO port we should be using */
+-    net_port_number = mm_kernel_device_get_attribute_as_int (net_port, "dev_port");
+-    if (net_port_number < 0 || net_port_number >= (gint) G_N_ELEMENTS (sio_port_per_port_number)) {
+-        g_set_error (error,
+-                     MM_CORE_ERROR,
+-                     MM_CORE_ERROR_NOT_FOUND,
+-                     "Couldn't find SIO port number for 'net/%s'",
+-                     mm_port_get_device (data));
+-        return NULL;
+-    }
++    MMPortQmi *found;
+ 
+-    /* Find one QMI port, we don't care which one */
++    /* For MPDP, all bearers share the primary QMI port.
++     * The mux_id assigned by the bearer-list logic differentiates them. */
+     found = mm_broadband_modem_qmi_peek_port_qmi (self);
+ 
+     if (!found)
+@@ -77,11 +52,9 @@ peek_port_qmi_for_data_bam_dmux (MMBroadbandModemQmi  *self,
+                      "Couldn't find any QMI port for 'net/%s'",
+                      mm_port_get_device (data));
+     else if (out_endpoint) {
+-        /* WDS Bind (Mux) Data Port must be called with the correct endpoint
+-         * interface number/SIO port to make multiplexing work with BAM-DMUX */
+-        out_endpoint->type = QMI_DATA_ENDPOINT_TYPE_BAM_DMUX;
+-        out_endpoint->interface_number = net_port_number;
+-        out_endpoint->sio_port = QMI_SIO_PORT_NONE;
++        out_endpoint->type             = QMI_DATA_ENDPOINT_TYPE_BAM_DMUX;
++        out_endpoint->interface_number = 0;
++        out_endpoint->sio_port         = QMI_SIO_PORT_NONE;
+     }
+ 
+     return found;
