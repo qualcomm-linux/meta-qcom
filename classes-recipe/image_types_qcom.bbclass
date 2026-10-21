@@ -59,6 +59,9 @@ do_image_qcomflash[postfuncs] += "create_qcomflash_tarball"
 QCOMFLASH_VIP ??= "${QCOM_FIRMWARE_SIGN_ENABLE}"
 inherit_defer ${@'qcomflash-vip' if d.getVar('QCOMFLASH_VIP') == '1' else ''}
 
+# Add the Fuse Blower images (qcomflash-fuse-blower.bbclass) when enabled.
+inherit_defer ${@'qcomflash-fuse-blower' if d.getVar('QCOM_FUSE_BLOWER_ENABLE') == '1' else ''}
+
 deploy_partition_files() {
     for pbin in $1/gpt_main*.bin $1/gpt_backup*.bin \
                 $1/gpt_both*.bin $1/zeros_*.bin \
