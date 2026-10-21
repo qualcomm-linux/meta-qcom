@@ -1,0 +1,137 @@
+From cfb2558de3958c0a973d57d3481043d91da538db Mon Sep 17 00:00:00 2001
+From: Shuai Zhang <shuai.zhang@oss.qualcomm.com>
+Date: Tue, 20 Oct 2026 20:12:45 +0800
+Subject: [PATCH] Bluetooth: hci_qca: Reopen port after power on for QCA2066
+
+QCA2066 needs the serial port reopened after the controller is powered
+on, otherwise the host and the device run into RTS/CTS synchronization
+issues.
+
+Move the reopen into qca_setup(), right after qca_power_on(), so that
+the close/open sequence has a single owner. qca_power_on() and
+qca_regulator_init() no longer touch the port.
+
+Track whether the port is open with HCI_UART_PROTO_READY: set it after
+every successful open and clear it when an open fails, so that a port
+which is already closed is never closed again.
+
+Signed-off-by: Shuai Zhang <shuai.zhang@oss.qualcomm.com>
+---
+ drivers/bluetooth/hci_qca.c  | 29 ++++++++++++++++++++++++-----
+ drivers/bluetooth/hci_uart.h | 14 ++++++++++++++
+ 2 files changed, 38 insertions(+), 5 deletions(-)
+
+diff --git a/drivers/bluetooth/hci_qca.c b/drivers/bluetooth/hci_qca.c
+index 086604ca2b..9d5040bcba 100644
+--- a/drivers/bluetooth/hci_qca.c
++++ b/drivers/bluetooth/hci_qca.c
+@@ -1757,12 +1757,15 @@ static int qca_port_reopen(struct hci_uart *hu)
+ 	 * Without this, we will have RTS and CTS synchronization
+ 	 * issues.
+ 	 */
+-	serdev_device_close(hu->serdev);
++	if (test_bit(HCI_UART_PROTO_READY, &hu->flags))
++		serdev_device_close(hu->serdev);
+ 	ret = serdev_device_open(hu->serdev);
+ 	if (ret) {
++		hci_uart_port_closed(hu);
+ 		bt_dev_err(hu->hdev, "failed to open port");
+ 		return ret;
+ 	}
++	hci_uart_port_opened(hu);
+ 
+ 	hci_uart_set_flow_control(hu, false);
+ 
+@@ -1782,16 +1785,21 @@ static int qca_regulator_init(struct hci_uart *hu)
+ 	qcadev = serdev_device_get_drvdata(hu->serdev);
+ 
+ 	if (!qcadev->bt_power->vregs_on) {
+-		serdev_device_close(hu->serdev);
++		if (test_bit(HCI_UART_PROTO_READY, &hu->flags))
++			serdev_device_close(hu->serdev);
+ 		ret = qca_regulator_enable(qcadev);
+-		if (ret)
++		if (ret) {
++			hci_uart_port_closed(hu);
+ 			return ret;
++		}
+ 
+ 		ret = serdev_device_open(hu->serdev);
+ 		if (ret) {
++			hci_uart_port_closed(hu);
+ 			bt_dev_err(hu->hdev, "failed to open port");
+ 			return ret;
+ 		}
++		hci_uart_port_opened(hu);
+ 	}
+ 
+ 	switch (soc_type) {
+@@ -1840,7 +1848,7 @@ static int qca_regulator_init(struct hci_uart *hu)
+ 		break;
+ 	}
+ 
+-	return qca_port_reopen(hu);
++	return 0;
+ }
+ 
+ static int qca_power_on(struct hci_dev *hdev)
+@@ -1980,6 +1988,14 @@ static int qca_setup(struct hci_uart *hu)
+ 	if (ret)
+ 		goto out;
+ 
++	if (hu->serdev) {
++		ret = qca_port_reopen(hu);
++		if (ret) {
++			qca_power_off(hu);
++			return ret;
++		}
++	}
++
+ 	clear_bit(QCA_SSR_TRIGGERED, &qca->flags);
+ 
+ 	switch (soc_type) {
+@@ -2067,12 +2083,15 @@ static int qca_setup(struct hci_uart *hu)
+ 		if (retries < MAX_INIT_RETRIES) {
+ 			bt_dev_warn(hdev, "Retry BT power ON:%d", retries);
+ 			if (hu->serdev) {
+-				serdev_device_close(hu->serdev);
++				if (test_bit(HCI_UART_PROTO_READY, &hu->flags))
++					serdev_device_close(hu->serdev);
+ 				ret = serdev_device_open(hu->serdev);
+ 				if (ret) {
++					hci_uart_port_closed(hu);
+ 					bt_dev_err(hdev, "failed to open port");
+ 					return ret;
+ 				}
++				hci_uart_port_opened(hu);
+ 			}
+ 			retries++;
+ 			goto retry;
+diff --git a/drivers/bluetooth/hci_uart.h b/drivers/bluetooth/hci_uart.h
+index 48ac7ca933..2670144acc 100644
+--- a/drivers/bluetooth/hci_uart.h
++++ b/drivers/bluetooth/hci_uart.h
+@@ -92,6 +92,20 @@ struct hci_uart {
+ #define HCI_UART_NO_SUSPEND_NOTIFIER	3
+ #define HCI_UART_PROTO_INIT		4
+ 
++static inline void hci_uart_port_opened(struct hci_uart *hu)
++{
++	percpu_down_write(&hu->proto_lock);
++	set_bit(HCI_UART_PROTO_READY, &hu->flags);
++	percpu_up_write(&hu->proto_lock);
++}
++
++static inline void hci_uart_port_closed(struct hci_uart *hu)
++{
++	percpu_down_write(&hu->proto_lock);
++	clear_bit(HCI_UART_PROTO_READY, &hu->flags);
++	percpu_up_write(&hu->proto_lock);
++}
++
+ /* TX states  */
+ #define HCI_UART_SENDING	1
+ #define HCI_UART_TX_WAKEUP	2
+-- 
+2.34.1
+
