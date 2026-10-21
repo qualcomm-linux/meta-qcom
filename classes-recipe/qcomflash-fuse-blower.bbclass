@@ -4,10 +4,13 @@
 #
 # Add the Fuse Blower images of firmware-qcom-fuse-blower to the qcomflash
 # bundle under fuse/, each with a rawprogram XML that programs only the
-# secdata partition.  The main rawprogram set is left alone, so a normal
-# flash never fuses a device; fusing is a separate, explicit step:
+# secdata partition and, when the bundle carries VIP tables, a signed
+# digest table for a device that already enforces secure boot.  The main
+# rawprogram set is left alone, so a normal flash never fuses a device;
+# fusing is a separate, explicit step:
 #
-#   qdl --allow-fusing prog_firehose_ddr.elf fuse/rawprogram_secdata-<stage>.xml
+#   qdl --allow-fusing [--vip-table-path fuse/vip-tables-<stage>] \
+#       prog_firehose_ddr.elf fuse/rawprogram_secdata-<stage>.xml
 #
 # image_types_qcom.bbclass inherits this class when QCOM_FUSE_BLOWER_ENABLE
 # is "1".
@@ -40,5 +43,10 @@ create_qcomflash_fuse_blower() {
             printf '%s\n' "${entry}" | sed "s/filename=\"[^\"]*\"/filename=\"${image}\"/"
             echo '</data>'
         } > "${fusedir}/rawprogram_secdata-${stage}.xml"
+
+        if [ "${QCOMFLASH_VIP}" = "1" ]; then
+            qcomflash_vip_sign_table "${fusedir}/vip-tables-${stage}" \
+                "${QCOMFLASH_FUSE_BLOWER_SUBDIR}/rawprogram_secdata-${stage}.xml"
+        fi
     done
 }

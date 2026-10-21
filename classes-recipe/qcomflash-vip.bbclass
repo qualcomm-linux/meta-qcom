@@ -31,20 +31,24 @@ do_image_qcomflash[file-checksums] += "${@qcom_firmware_sign_key_checksums(d)}"
 do_image_qcomflash[postfuncs] =+ "create_qcomflash_vip_table"
 create_qcomflash_vip_table[dirs] = "${QCOMFLASH_DIR}"
 
-create_qcomflash_vip_table() {
+# Write the signed VIP digest table for the XMLs given after the output
+# directory $1, computed with the firehose programmer in the current
+# directory.
+qcomflash_vip_sign_table() {
+    vipdir="$1"
+    shift
+
     qcom_firmware_sign_check_prereqs
 
     if [ ! -f "${QCOM_VIP_FIREHOSE}" ]; then
         bbfatal "qcomflash-vip: firehose programmer ${QCOM_VIP_FIREHOSE} not found in ${QCOMFLASH_DIR}"
     fi
 
-    vipdir="${QCOMFLASH_DIR}/${QCOMFLASH_VIP_SUBDIR}"
     install -d "${vipdir}"
 
     if ! "${QCOM_VIP_QDL}" --allow-fusing --dry-run \
             --create-digests="${vipdir}" \
-            "${QCOM_VIP_FIREHOSE}" \
-            rawprogram*.xml patch*.xml; then
+            "${QCOM_VIP_FIREHOSE}" "$@"; then
         bbfatal "qcomflash-vip: qdl digest generation failed"
     fi
 
@@ -62,4 +66,8 @@ create_qcomflash_vip_table() {
     # No verify-root: the profiles mark VIP <oem_vouch_for_disallowed/>,
     # which makes sectools reject an OEM-only signature the boot ROM accepts.
     qcom_sign_only_file "${vipdir}/DigestsToSign.bin.mbn"
+}
+
+create_qcomflash_vip_table() {
+    qcomflash_vip_sign_table "${QCOMFLASH_DIR}/${QCOMFLASH_VIP_SUBDIR}" rawprogram*.xml patch*.xml
 }
