@@ -16,7 +16,7 @@ enable_adbd_at_boot () {
     touch ${IMAGE_ROOTFS}/etc/usb-debugging-enabled
 }
 
-ROOTFS_POSTPROCESS_COMMAND += "${@bb.utils.contains('IMAGE_FEATURES', [ 'enable-adbd' ], 'enable_adbd_at_boot; ', '',d)}"
+ROOTFS_POSTPROCESS_COMMAND += "${@bb.utils.contains('IMAGE_FEATURES', [ 'enable-adbd' ], 'enable_adbd_at_boot', '',d)}"
 
 addtask oelayer_check before do_build
 do_oelayer_check[nostamp] = "1"
