@@ -1,0 +1,67 @@
+Upstream-Status: Pending
+
+diff --git a/src/mm-bearer-qmi.c b/src/mm-bearer-qmi.c
+index 0cee9f72..00bfea16 100644
+--- a/src/mm-bearer-qmi.c
++++ b/src/mm-bearer-qmi.c
+@@ -2066,13 +2066,18 @@ connect_context_step (GTask *task)
+     } /* fall through */
+ 
+     case CONNECT_STEP_BIND_DATA_PORT_IPV4:
+-        /* BAM-DMUX: BindMuxDataPort with BAM_DMUX type, ep-id=0, mux-id=0 */
++        /* BAM-DMUX: BindMuxDataPort with BAM_DMUX type, ep-id=0.
++         * Use real per-bearer mux_id for MPDP; fall back to 0 for SPDP
++         * (when kernel QMAP support is absent and mux_id is unbound). */
+         if (g_strcmp0 (mm_port_qmi_get_net_driver (ctx->qmi), "bam-dmux") == 0) {
+             g_autoptr(QmiMessageWdsBindMuxDataPortInput) bam_input = NULL;
+             bam_input = qmi_message_wds_bind_mux_data_port_input_new ();
+             qmi_message_wds_bind_mux_data_port_input_set_endpoint_info (
+                 bam_input, QMI_DATA_ENDPOINT_TYPE_BAM_DMUX, 0, NULL);
+-            qmi_message_wds_bind_mux_data_port_input_set_mux_id (bam_input, 0, NULL);
++            qmi_message_wds_bind_mux_data_port_input_set_mux_id (
++                bam_input,
++                ctx->mux_id != QMI_DEVICE_MUX_ID_UNBOUND ? ctx->mux_id : 1,
++                NULL);
+             qmi_client_wds_bind_mux_data_port (ctx->client_ipv4,
+                                                bam_input, 10,
+                                                g_task_get_cancellable (task),
+@@ -2226,13 +2231,18 @@ connect_context_step (GTask *task)
+     } /* fall through */
+ 
+     case CONNECT_STEP_BIND_DATA_PORT_IPV6:
+-        /* BAM-DMUX: BindMuxDataPort with BAM_DMUX type, ep-id=0, mux-id=0 */
++        /* BAM-DMUX: BindMuxDataPort with BAM_DMUX type, ep-id=0.
++         * Use real per-bearer mux_id for MPDP; fall back to 0 for SPDP
++         * (when kernel QMAP support is absent and mux_id is unbound). */
+         if (g_strcmp0 (mm_port_qmi_get_net_driver (ctx->qmi), "bam-dmux") == 0) {
+             g_autoptr(QmiMessageWdsBindMuxDataPortInput) bam_input = NULL;
+             bam_input = qmi_message_wds_bind_mux_data_port_input_new ();
+             qmi_message_wds_bind_mux_data_port_input_set_endpoint_info (
+                 bam_input, QMI_DATA_ENDPOINT_TYPE_BAM_DMUX, 0, NULL);
+-            qmi_message_wds_bind_mux_data_port_input_set_mux_id (bam_input, 0, NULL);
++            qmi_message_wds_bind_mux_data_port_input_set_mux_id (
++                bam_input,
++                ctx->mux_id != QMI_DEVICE_MUX_ID_UNBOUND ? ctx->mux_id : 1,
++                NULL);
+             qmi_client_wds_bind_mux_data_port (ctx->client_ipv6,
+                                                bam_input, 10,
+                                                g_task_get_cancellable (task),
+@@ -2467,12 +2477,16 @@ load_settings_from_bearer (MMBearerQmi         *self,
+     if (!max_multiplexed_bearers)
+         multiplex_supported = FALSE;
+ 
+-    /* If no multiplex setting given by the user, assume none; unless in IPA */
++    /* If no multiplex setting given by the user, assume none; unless in IPA.
++     * BAM-DMUX firmware never grants downlink QMAP (confirmed: it silently
++     * downgrades every asymmetric request to dl=disabled, and the one
++     * symmetric qmap/qmap request that would actually enable it times out),
++     * so forcing multiplex there only breaks plain single-PDN connects. */
+     ctx->multiplex = mm_bearer_properties_get_multiplex (properties);
+     if (ctx->multiplex == MM_BEARER_MULTIPLEX_SUPPORT_UNKNOWN) {
+         if (mm_context_get_test_multiplex_requested ())
+             ctx->multiplex = MM_BEARER_MULTIPLEX_SUPPORT_REQUESTED;
+-        else if (!g_strcmp0 (data_port_driver, "ipa"))
++        else if (!g_strcmp0 (data_port_driver, "ipa") || !g_strcmp0 (data_port_driver, "bam-dmux"))
+             ctx->multiplex = MM_BEARER_MULTIPLEX_SUPPORT_REQUIRED;
+         else
+             ctx->multiplex = MM_BEARER_MULTIPLEX_SUPPORT_NONE;
