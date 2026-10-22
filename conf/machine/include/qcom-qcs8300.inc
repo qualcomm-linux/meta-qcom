@@ -18,6 +18,8 @@ MACHINE_ESSENTIAL_EXTRA_RRECOMMENDS += " \
 
 MACHINE_EXTRA_RRECOMMENDS += " \
     packagegroup-qcom-boot-additional \
+    qcom-rtss-mailbox-dlkm \
+    qcom-rtss-mailbox-umd-utils \
 "
 
 QCOM_FIRMWARE_SIGN_SECPROFILE ?= "monaco_security_profile.xml"
