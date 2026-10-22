@@ -1,0 +1,39 @@
+From 747b80ff86db1e1397d9ee7618fea96bc0b9fee8 Mon Sep 17 00:00:00 2001
+From: Ricardo Salveti <ricardo.salveti@oss.qualcomm.com>
+Date: Mon, 12 Oct 2026 11:15:14 +0000
+Subject: [meta-security][PATCH] python3-tpm2-pytss: update for PYPI_PACKAGE
+ change
+
+The pypi class has slightly changed the semantics of the PYPI_PACKAGE
+variable[1], now PYPI_PACKAGE is the normalised package name and the new
+variable PYPI_PACKAGE_SDIST is used when the source tarball doesn't match.
+
+The 2.3.0 sdist on PyPI is still named tpm2-pytss-2.3.0, not the
+tpm2_pytss-2.3.0 the class now expects by default, so replace the
+now-redundant PYPI_PACKAGE assignment with PYPI_PACKAGE_SDIST, otherwise
+do_fetch fails.
+
+[1] oe-core 98049bf86b6 ("classes/pypi: change PYPI_PACKAGE to be normalised")
+
+Upstream-Status: Submitted [https://lists.yoctoproject.org/g/yocto-patches/message/5002]
+Signed-off-by: Ricardo Salveti <ricardo.salveti@oss.qualcomm.com>
+---
+ meta-tpm/recipes-tpm2/tpm2-pytss/python3-tpm2-pytss_2.3.0.bb | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/meta-tpm/recipes-tpm2/tpm2-pytss/python3-tpm2-pytss_2.3.0.bb b/meta-tpm/recipes-tpm2/tpm2-pytss/python3-tpm2-pytss_2.3.0.bb
+index 44c6ed2..60de4a6 100644
+--- a/meta-tpm/recipes-tpm2/tpm2-pytss/python3-tpm2-pytss_2.3.0.bb
++++ b/meta-tpm/recipes-tpm2/tpm2-pytss/python3-tpm2-pytss_2.3.0.bb
+@@ -4,7 +4,7 @@ HOMEPAGE = "https://github.com/tpm2-software/tpm2-pytss"
+ LICENSE = "BSD-2-Clause"
+ LIC_FILES_CHKSUM = "file://LICENSE;md5=500b2e742befc3da00684d8a1d5fd9da"
+ 
+-PYPI_PACKAGE = "tpm2-pytss"
++PYPI_PACKAGE_SDIST = "tpm2-pytss"
+ 
+ SRC_URI[sha256sum] = "20071129379656f5f3c3bc16d364612672b147d81191fb4eb9f9ff9fbee48410"
+ 
+-- 
+2.43.0
+

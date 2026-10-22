@@ -16,6 +16,7 @@ repos:
 
   meta-openembedded:
     url: https://github.com/openembedded/meta-openembedded
+    branch: master-next
     layers:
       meta-filesystems:
       meta-gnome:
@@ -56,6 +57,10 @@ repos:
 
   meta-security:
     url: https://git.yoctoproject.org/meta-security
+    patches:
+      tpm2-pytss-pypi-sdist:
+        repo: meta-qcom
+        path: patches/security/0001-python3-tpm2-pytss-update-for-PYPI_PACKAGE-change.patch
     layers:
       .:
       meta-tpm:
