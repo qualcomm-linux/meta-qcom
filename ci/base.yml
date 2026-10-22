@@ -21,6 +21,9 @@ repos:
       uboot-sign-spl-bss-padding:
         repo: meta-qcom
         path: patches/oe-core/0003-uboot-sign-keep-the-SPL-BSS-padding-when-reassembling.patch
+      001-bump-linux-firmware:
+        repo: meta-qcom
+        path: patches/oe-core/0001-linux-firmware-upgrade-20260916-20261019.patch
     layers:
       meta:
 
