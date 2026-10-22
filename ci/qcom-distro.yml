@@ -12,6 +12,16 @@ defaults:
 repos:
   meta-qcom-distro:
     url: https://github.com/qualcomm-linux/meta-qcom-distro
+    patches:
+      p1:
+        repo: meta-qcom
+        path: patches/meta-qcom-distro/0001-wpa-supplicant-drop-backport-pieces.patch
+      p2:
+        repo: meta-qcom
+        path: patches/meta-qcom-distro/0002-hostapd-prefer-the-lts-connectivity-mixin-version.patch
+      p3:
+        repo: meta-qcom
+        path: patches/meta-qcom-distro/0003-wpa-supplicant-prefer-the-lts-connectivity-mixin-ver.patch
 
   meta-openembedded:
     url: https://github.com/openembedded/meta-openembedded

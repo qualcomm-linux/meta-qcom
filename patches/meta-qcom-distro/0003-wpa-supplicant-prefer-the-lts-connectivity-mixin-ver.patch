@@ -1,0 +1,27 @@
+From 80606391938aefe3f373f86add19a7c24343a828 Mon Sep 17 00:00:00 2001
+From: Jose Quaresma <jose.quaresma@oss.qualcomm.com>
+Date: Tue, 27 Oct 2026 09:38:19 +0000
+Subject: [PATCH 3/3] wpa-supplicant: prefer the lts-connectivity-mixin version
+
+The version provided by lts-connectivity-mixin is not used by default
+and needs to be explicitly defined.
+
+Upstream-Status: Submitted [https://github.com/qualcomm-linux/meta-qcom-distro/pull/458]
+
+Signed-off-by: Jose Quaresma <jose.quaresma@oss.qualcomm.com>
+---
+ recipes-connectivity/wpa-supplicant/wpa-supplicant_%.bbappend | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/recipes-connectivity/wpa-supplicant/wpa-supplicant_%.bbappend b/recipes-connectivity/wpa-supplicant/wpa-supplicant_%.bbappend
+index 911d954..ed37bf0 100644
+--- a/recipes-connectivity/wpa-supplicant/wpa-supplicant_%.bbappend
++++ b/recipes-connectivity/wpa-supplicant/wpa-supplicant_%.bbappend
+@@ -1 +1,4 @@
++# use latest version from the lts-connectivity-mixin layer
++DEFAULT_PREFERENCE:layer-lts-connectivity-mixin:qcom-distro = "1"
++
+ PACKAGECONFIG:append:qcom-distro = " suiteb"
+-- 
+2.56.0
+
