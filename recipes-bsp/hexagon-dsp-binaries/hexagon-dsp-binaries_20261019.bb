@@ -3,13 +3,8 @@ require hexagon-dsp-binaries.inc
 LIC_FILES_CHKSUM = "\
     file://LICENSE.qcom;md5=56e86b6c508490dadc343f39468b5f5e \
     file://LICENSE.qcom-2;md5=165287851294f2fb8ac8cbc5e24b02b0 \
-    file://WHENCE;md5=b2fd488228ec207288e54d0714985a6a  \
+    file://WHENCE;md5=9edf3da315e1f616727194ad0a03ecd9  \
     file://conf.d/hexagon-dsp-binaries-qualcomm-iq9075-evk.yaml;endline=2;md5=077232564320a8fce4ea446daad3d726 \
 "
 
-SRCREV = "bbb0e6b59143e052dbf26b371ee239ab4b0881b0"
-
-SRC_URI += "\
-    file://0001-Revert-qcs615-update-adsp-dynamic-modules-for-QCS615.patch \
-    file://0001-qcs8300-restore-the-CDSP-links-of-Monza-and-IQ-8275-.patch \
-"
+SRCREV = "38f254d4da12aeaa4d82b7e855979b6a5d6aee22"
