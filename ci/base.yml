@@ -24,6 +24,9 @@ repos:
       001-bump-linux-firmware:
         repo: meta-qcom
         path: patches/oe-core/0001-linux-firmware-upgrade-20260916-20261019.patch
+      002-nord-gpu-firmware:
+        repo: meta-qcom
+        path: patches/oe-core/0002-linux-firmware-backport-qcom-nord-gpu-firmware.patch
     layers:
       meta:
 
