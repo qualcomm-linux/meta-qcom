@@ -278,6 +278,16 @@ runs:
             KNOWN_SUMMARY="Known failures: $TOTAL_KNOWN_FAIL | "
           fi
           echo "<summary>${SUMMARY_TITLE}Pass: $TOTAL_PASS | ${KNOWN_SUMMARY}Fail: $TOTAL_FAIL | Total: $TOTAL </summary>" >> "${INPUTS_SUMMARY_FILE_NAME}"
+          # The title and the totals are also saved on their own, for the
+          # test results comment on the pull request
+          SHORT_SUMMARY_FILE_NAME="${INPUTS_SUMMARY_FILE_NAME}-short.md"
+          : > "${SHORT_SUMMARY_FILE_NAME}"
+          if [ "${INPUTS_SUMMARY_TITLE}" != "" ]; then
+            echo "### ${INPUTS_SUMMARY_TITLE}" >> "${SHORT_SUMMARY_FILE_NAME}"
+            echo "" >> "${SHORT_SUMMARY_FILE_NAME}"
+          fi
+          echo "Pass: $TOTAL_PASS | ${KNOWN_SUMMARY}Fail: $TOTAL_FAIL | Total: $TOTAL" >> "${SHORT_SUMMARY_FILE_NAME}"
+          echo "" >> "${SHORT_SUMMARY_FILE_NAME}"
           echo "" >> "${INPUTS_SUMMARY_FILE_NAME}"
           echo "" >> "${INPUTS_SUMMARY_FILE_NAME}"
 
@@ -381,6 +391,8 @@ runs:
         id: upload-summary
         uses: actions/upload-artifact@v6
         with:
-          path: "${{ inputs.summary_file_name }}"
+          path: |
+            ${{ inputs.summary_file_name }}
+            ${{ inputs.summary_file_name }}-short.md
           name: "${{ inputs.summary_file_name }}"
 
