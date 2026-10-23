@@ -1,0 +1,134 @@
+From 87328661b86bde2777ab4cb46b418a35de7443d0 Mon Sep 17 00:00:00 2001
+From: Gopikishan Thawre <gopikishan.thawre@oss.qualcomm.com>
+Date: Tue, 6 Oct 2026 15:33:23 +0530
+Subject: [PATCH 3/3] PENDING: arm64: dts: qcom: Add LeMans Draco EVK board
+
+Add the device tree for the LeMans Draco EVK platform which combines
+the LeMans Draco EVK SoM and Draco carrier board.
+This device tree adds board-specific peripheral configuration on top
+of the SoM, including:
+- I2C GPIO expanders (TCA6416/PCA9534) on i2c2 and i2c18
+- EEPROM with MAC address nvmem layout on i2c2
+- TLMM interrupt pin configuration for GPIO expanders
+
+Signed-off-by: Gopikishan Thawre <gthawre@qti.qualcomm.com>
+---
+ arch/arm64/boot/dts/qcom/Makefile             |  5 ++
+ arch/arm64/boot/dts/qcom/lemans-draco-evk.dts | 89 +++++++++++++++++++
+ 2 files changed, 94 insertions(+)
+ create mode 100644 arch/arm64/boot/dts/qcom/lemans-draco-evk.dts
+
+diff --git a/arch/arm64/boot/dts/qcom/Makefile b/arch/arm64/boot/dts/qcom/Makefile
+index 1c86e7e98f55..b5dd54fda7a3 100644
+--- a/arch/arm64/boot/dts/qcom/Makefile
++++ b/arch/arm64/boot/dts/qcom/Makefile
+@@ -45,6 +45,11 @@ dtb-$(CONFIG_ARCH_QCOM)	+= ipq9650-rdp488.dtb
+ dtb-$(CONFIG_ARCH_QCOM)	+= kaanapali-mtp.dtb
+ dtb-$(CONFIG_ARCH_QCOM)	+= kaanapali-qrd.dtb
+ dtb-$(CONFIG_ARCH_QCOM)	+= lemans-evk.dtb
++dtb-$(CONFIG_ARCH_QCOM)	+= lemans-draco-evk.dtb
++
++lemans-draco-evk-el2-dtbs := lemans-draco-evk.dtb lemans-el2.dtbo
++
++dtb-$(CONFIG_ARCH_QCOM)	+= lemans-draco-evk-el2.dtb
+
+ lemans-evk-camera-csi1-imx577-dtbs	:= lemans-evk.dtb lemans-evk-camera-csi1-imx577.dtbo
+ lemans-evk-camera-dtbs	:= lemans-evk.dtb lemans-evk-camera.dtbo
+diff --git a/arch/arm64/boot/dts/qcom/lemans-draco-evk.dts b/arch/arm64/boot/dts/qcom/lemans-draco-evk.dts
+new file mode 100644
+index 000000000000..a8265df21216
+--- /dev/null
++++ b/arch/arm64/boot/dts/qcom/lemans-draco-evk.dts
+@@ -0,0 +1,89 @@
++// SPDX-License-Identifier: BSD-3-Clause
++/*
++ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
++ */
++/dts-v1/;
++
++#include "lemans-draco-evk-som.dtsi"
++
++/ {
++	model = "Qualcomm Technologies, Inc. Lemans Draco EVK";
++	compatible = "qcom,lemans-draco-evk", "qcom,qcs9100",
++		     "qcom,sa8775p";
++	chassis-type = "embedded";
++};
++
++&i2c2 {
++	status = "okay";
++
++	expander0: gpio@20 {
++		compatible = "ti,tca6416";
++		reg = <0x20>;
++		#gpio-cells = <2>;
++		gpio-controller;
++	};
++
++	expander1: gpio@21 {
++		compatible = "ti,tca6416";
++		reg = <0x21>;
++		#gpio-cells = <2>;
++		gpio-controller;
++	};
++
++	expander2: gpio@22 {
++		compatible = "ti,tca6416";
++		reg = <0x22>;
++		#gpio-cells = <2>;
++		gpio-controller;
++	};
++
++	expander3: gpio@23 {
++		compatible = "ti,tca6416";
++		reg = <0x23>;
++		#gpio-cells = <2>;
++		gpio-controller;
++	};
++
++	expander4: gpio@38 {
++		compatible = "nxp,pca9534";
++		reg = <0x38>;
++		#gpio-cells = <2>;
++		gpio-controller;
++	};
++
++	eeprom@50 {
++		compatible = "giantec,gt24c256c", "atmel,24c256";
++		reg = <0x50>;
++		pagesize = <64>;
++
++		nvmem-layout {
++			compatible = "fixed-layout";
++			#address-cells = <1>;
++			#size-cells = <1>;
++
++			mac_addr0: mac-addr@0 {
++				reg = <0x0 0x6>;
++			};
++		};
++	};
++};
++
++&tlmm {
++	expander_int: expander-int-state {
++		pins = "gpio22";
++		function = "gpio";
++		bias-pull-up;
++		input-enable;
++	};
++};
++
++&i2c18 {
++	status = "okay";
++
++	expander5: gpio@3c {
++		compatible = "nxp,pca9534";
++		reg = <0x3c>;
++		#gpio-cells = <2>;
++		gpio-controller;
++	};
++};
+--
+QUALCOMM INDIA, on behalf of Qualcomm Innovation Center, Inc. is a
+member of the Code Aurora Forum, hosted by The Linux Foundation
