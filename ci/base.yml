@@ -21,15 +21,12 @@ repos:
       uboot-sign-spl-bss-padding:
         repo: meta-qcom
         path: patches/oe-core/0003-uboot-sign-keep-the-SPL-BSS-padding-when-reassembling.patch
-      002-shikra-wifi-pkg:
+      001-bump-linux-firmware:
         repo: meta-qcom
-        path: patches/oe-core/0002-linux-firmware-package-qcom-shikra-wifi-firmware.patch
-      003-shikra-wlan-fw-link:
+        path: patches/oe-core/0001-linux-firmware-upgrade-20260916-20261019.patch
+      002-nord-gpu-firmware:
         repo: meta-qcom
-        path: patches/oe-core/0003-linux-firmware-backport-patch-to-symlink-shikra-wifi.patch
-      004-revert-qcs615-adsp:
-        repo: meta-qcom
-        path: patches/oe-core/0004-linux-firmware-revert-qcs615-ADSP-firmware-to-fix-au.patch
+        path: patches/oe-core/0002-linux-firmware-backport-qcom-nord-gpu-firmware.patch
     layers:
       meta:
 
