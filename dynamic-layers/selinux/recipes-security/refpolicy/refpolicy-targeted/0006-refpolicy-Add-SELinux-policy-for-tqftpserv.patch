@@ -1,0 +1,102 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Kondi Shravan Kumar <kondishr@qti.qualcomm.com>
+Date: Wed, 26 Aug 2026 00:00:00 +0530
+Subject: [PATCH] refpolicy: Add SELinux policy for tqftpserv
+
+tqftpserv is the Qualcomm TFTP server for dsp remote firmware load and
+persistent-data transfers over QRTR (AF_QIPCRTR sockets). It currently
+runs under the generic initrc_t domain, lacking the process isolation
+and least-privilege permissions required under SELinux enforcing mode.
+
+Define a new policy module tqftpserv to transition the service into
+its own confined domain tqftpserv_t on exec and add the required rules.
+
+Upstream-Status: Backport [https://github.com/SELinuxProject/refpolicy/commit/9a230ec442815dbbd912cb9fb92fa3cb0efe30eb]
+Assisted-by: Claude Code:claude-sonnet-5
+Signed-off-by: Kondi Shravan Kumar <kondishr@qti.qualcomm.com>
+---
+ policy/modules/services/tqftpserv.fc |  2 ++
+ policy/modules/services/tqftpserv.if |  8 ++++++++
+ policy/modules/services/tqftpserv.te | 47 +++++++++++++++++++++++++++++++++++++++++++++++++++
+ 3 files changed, 57 insertions(+)
+ create mode 100644 policy/modules/services/tqftpserv.fc
+ create mode 100644 policy/modules/services/tqftpserv.if
+ create mode 100644 policy/modules/services/tqftpserv.te
+
+diff --git a/policy/modules/services/tqftpserv.fc b/policy/modules/services/tqftpserv.fc
+new file mode 100644
+index 000000000..a8c1e2f3d
+--- /dev/null
++++ b/policy/modules/services/tqftpserv.fc
+@@ -0,0 +1,2 @@
++/usr/bin/tqftpserv	--	gen_context(system_u:object_r:tqftpserv_exec_t,s0)
++/var/lib/tqftpserv(/.*)?	gen_context(system_u:object_r:tqftpserv_var_lib_t,s0)
+diff --git a/policy/modules/services/tqftpserv.if b/policy/modules/services/tqftpserv.if
+new file mode 100644
+index 000000000..fa1308ba4
+--- /dev/null
++++ b/policy/modules/services/tqftpserv.if
+@@ -0,0 +1,8 @@
++## <summary>tqftpserv - Qualcomm TFTP server for modem remote filesystem access</summary>
++## <desc>
++## tqftpserv implements a TFTP server on top of the AF_QIPCRTR (QRTR) socket
++## family, serving firmware images from the Linux file system to other
++## processors (typically the modem remoteproc) on Qualcomm SoCs.
++##
++## https://github.com/linux-msm/tqftpserv
++## </desc>
+diff --git a/policy/modules/services/tqftpserv.te b/policy/modules/services/tqftpserv.te
+new file mode 100644
+index 000000000..7e4d9c1a2
+--- /dev/null
++++ b/policy/modules/services/tqftpserv.te
+@@ -0,0 +1,47 @@
++policy_module(tqftpserv)
++
++# tqftpserv is a TFTP server running on top of AF_QIPCRTR (QRTR) sockets. It
++# serves firmware images from /lib/firmware to the modem remoteproc over QRTR,
++# and stores small readwrite state under systemd's StateDirectory=tqftpserv.
++# https://github.com/linux-msm/tqftpserv
++
++########################################
++#
++# Declarations
++#
++
++type tqftpserv_t;
++type tqftpserv_exec_t;
++init_daemon_domain(tqftpserv_t, tqftpserv_exec_t)
++
++# Persistent read/write state (systemd StateDirectory=tqftpserv,
++# translate_readwrite() in translate.c) lives in its own type instead of
++# the generic var_lib_t, so tqftpserv can't reach other services' data under /var/lib.
++type tqftpserv_var_lib_t;
++files_type(tqftpserv_var_lib_t)
++
++########################################
++#
++# Local policy
++#
++
++# dac_read_search: traverse remoteproc firmware directories that may lack
++# world search/execute bits on read-only firmware mounts.
++allow tqftpserv_t self:capability dac_read_search;
++dontaudit tqftpserv_t self:capability net_admin;
++
++# QRTR socket for modem IPC (TFTP-style firmware/data transfer protocol).
++allow tqftpserv_t self:qipcrtr_socket { create connect getattr read setopt write };
++
++manage_dirs_pattern(tqftpserv_t, tqftpserv_var_lib_t, tqftpserv_var_lib_t)
++manage_files_pattern(tqftpserv_t, tqftpserv_var_lib_t, tqftpserv_var_lib_t)
++
++# translate_readonly() walks /sys/class/remoteproc and reads the
++# firmware_class sysfs path knob to locate remoteproc firmware images.
++dev_read_sysfs(tqftpserv_t)
++
++files_search_var_lib(tqftpserv_t)
++
++# translate_readonly() serves firmware blobs out of /lib/firmware, which
++# falls under the generic lib_t catch-all owned by the libraries module.
++libs_read_lib_files(tqftpserv_t)
+--
+2.34.1
