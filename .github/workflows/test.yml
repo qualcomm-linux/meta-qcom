@@ -14,6 +14,10 @@ on:
         required: false
         type: string
         description: "Pull request URL. Added to the LAVA job metadata for PR builds"
+      pr_head_sha:
+        required: false
+        type: string
+        description: "Head commit of the pull request. The known failures lists are read from it"
     outputs:
       summary_ids:
         description: "IDs of the test summary artifact"
@@ -80,6 +84,7 @@ jobs:
       distro_name: "qcom-distro"
       kernel: "linux-qcom-next"
       known_failures_file: "ci/known-failures/qcom-distro.yml"
+      known_failures_ref: "${{ inputs.pr_head_sha }}"
       lava_test_plans_ref: "${{ needs.prepare-env.outputs.lava-test-plans-ref }}"
       testkit_ref: "${{ needs.prepare-env.outputs.testkit-ref }}"
       pr_number: "${{ inputs.pr_number }}"
@@ -104,6 +109,7 @@ jobs:
       distro_suffix: "_linux-qcom-6.18"
       kernel: "linux-qcom-6.18"
       known_failures_file: "ci/known-failures/qcom-distro.yml"
+      known_failures_ref: "${{ inputs.pr_head_sha }}"
       lava_test_plans_ref: "${{ needs.prepare-env.outputs.lava-test-plans-ref }}"
       testkit_ref: "${{ needs.prepare-env.outputs.testkit-ref }}"
       pr_number: "${{ inputs.pr_number }}"
