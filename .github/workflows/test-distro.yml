@@ -44,6 +44,18 @@ on:
         required: false
         type: string
         description: "Pull request URL. Added to the LAVA job metadata for PR builds"
+      kernel:
+        required: false
+        type: string
+        description: "Kernel flavour under test, used to filter the known failures list"
+      known_failures_file:
+        required: false
+        type: string
+        description: "Known failures list, relative to the repository root. See ci/known-failures/README.md"
+      known_failures_ref:
+        required: false
+        type: string
+        description: "Commit to read the known failures list from, instead of the checked out one. Set to the head of a pull request"
     outputs:
       summary_id:
         description: "ID of the test summary artifact"
@@ -274,6 +286,22 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
 
+      # A pull request may update the known failures list along with the
+      # change that needs it. Take only that file from the pull request; it
+      # is read as data, the action that reads it stays the checked out one.
+      - name: Get known failures list from pull request
+        if: inputs.known_failures_file != '' && inputs.known_failures_ref != ''
+        env:
+          KNOWN_FAILURES_FILE: ${{ inputs.known_failures_file }}
+          KNOWN_FAILURES_REF: ${{ inputs.known_failures_ref }}
+        run: |
+          git fetch --no-tags origin "${KNOWN_FAILURES_REF}"
+          if git cat-file -e "FETCH_HEAD:${KNOWN_FAILURES_FILE}" 2>/dev/null; then
+              git show "FETCH_HEAD:${KNOWN_FAILURES_FILE}" > "${KNOWN_FAILURES_FILE}"
+          else
+              rm -f "${KNOWN_FAILURES_FILE}"
+          fi
+
       - name: Generate Summary
         id: generate-summary
         uses: $/.github/actions/test-job-summary
@@ -284,6 +312,8 @@ jobs:
           summary_file_name: "${{ inputs.distro_name }}${{ inputs.distro_suffix }}-test_job_summary"
           summary_title: "${{ inputs.distro_name }}${{ inputs.distro_suffix }}"
           lava_base_url: https://${{ env.LAVA_URL }}
+          known_failures_file: ${{ inputs.known_failures_file }}
+          kernel: ${{ inputs.kernel }}
 
       - name: Publish Test Job Details
         env:
