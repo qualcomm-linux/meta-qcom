@@ -54,10 +54,17 @@ IMAGE_TYPEDEP:qcomflash += "${IMAGE_QCOMFLASH_FS_TYPE}"
 # place (see qcomflash-vip.bbclass).
 do_image_qcomflash[postfuncs] += "create_qcomflash_tarball"
 
+# Flashing instructions for the bundle, written after the signing classes
+# below have added their files and ahead of the tarball.
+do_image_qcomflash[postfuncs] =+ "create_qcomflash_readme"
+
 # Add the signed VIP digest table (qcomflash-vip.bbclass); defaults to on
 # whenever firmware signing is on.
 QCOMFLASH_VIP ??= "${QCOM_FIRMWARE_SIGN_ENABLE}"
 inherit_defer ${@'qcomflash-vip' if d.getVar('QCOMFLASH_VIP') == '1' else ''}
+
+# Add the Fuse Blower images (qcomflash-fuse-blower.bbclass) when enabled.
+inherit_defer ${@'qcomflash-fuse-blower' if d.getVar('QCOM_FUSE_BLOWER_ENABLE') == '1' else ''}
 
 deploy_partition_files() {
     for pbin in $1/gpt_main*.bin $1/gpt_backup*.bin \
@@ -234,6 +241,59 @@ create_qcomflash_pkg() {
     fi
 
 }
+
+# README.flash.txt: the qdl steps for this bundle, in order, with the
+# fusing and VIP steps only when the bundle has them.
+create_qcomflash_readme() {
+    {
+        echo "# Flashing this build with qdl (https://github.com/linux-msm/qdl)"
+        echo "# from this directory, with the board in EDL mode (see docs/flashing.md"
+        echo "# in meta-qcom).  Add --serial=<chip serial> when more than one device"
+        echo "# is attached."
+        echo
+        n=1
+        if [ "${QCOMFLASH_VIP}" = "1" ]; then
+            echo "# $n. Blank board: flash the signed firmware and rootfs.  Nothing is"
+            echo "#    enforced yet, so no VIP table is needed."
+        else
+            echo "# $n. Flash the firmware and rootfs."
+        fi
+        echo "qdl prog_firehose_ddr.elf rawprogram*.xml patch*.xml"
+        n=$(expr $n + 1)
+
+        if [ "${QCOM_FUSE_BLOWER_ENABLE}" = "1" ]; then
+            set -- ${QCOM_FUSE_BLOWER_STAGES}
+            echo
+            echo "# $n. Blank board: program the \"$1\" image into secdata.  The next boot"
+            echo "#    blows the fuses listed in ${QCOMFLASH_FUSE_BLOWER_SUBDIR}/sec-$1.txt and the device"
+            echo "#    only accepts images signed with the OEM root.  This cannot be undone."
+            echo "qdl --allow-fusing prog_firehose_ddr.elf ${QCOMFLASH_FUSE_BLOWER_SUBDIR}/rawprogram_secdata-$1.xml"
+            n=$(expr $n + 1)
+            shift
+        fi
+
+        if [ "${QCOMFLASH_VIP}" = "1" ]; then
+            echo
+            echo "# $n. Fused board: later re-flashes need the signed digest table."
+            echo "qdl --vip-table-path ${QCOMFLASH_VIP_SUBDIR} prog_firehose_ddr.elf rawprogram*.xml patch*.xml"
+            n=$(expr $n + 1)
+        fi
+
+        for stage in "$@"; do
+            echo
+            echo "# $n. Fused board: program the \"${stage}\" image, listed in ${QCOMFLASH_FUSE_BLOWER_SUBDIR}/sec-${stage}.txt."
+            echo "#    This cannot be undone."
+            if [ "${QCOMFLASH_VIP}" = "1" ]; then
+                echo "qdl --allow-fusing --vip-table-path ${QCOMFLASH_FUSE_BLOWER_SUBDIR}/vip-tables-${stage} \\"
+                echo "    prog_firehose_ddr.elf ${QCOMFLASH_FUSE_BLOWER_SUBDIR}/rawprogram_secdata-${stage}.xml"
+            else
+                echo "qdl --allow-fusing prog_firehose_ddr.elf ${QCOMFLASH_FUSE_BLOWER_SUBDIR}/rawprogram_secdata-${stage}.xml"
+            fi
+            n=$(expr $n + 1)
+        done
+    } > README.flash.txt
+}
+create_qcomflash_readme[dirs] = "${QCOMFLASH_DIR}"
 
 create_qcomflash_tarball() {
     # Create qcomflash tarball
