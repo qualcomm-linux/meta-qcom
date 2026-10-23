@@ -53,6 +53,10 @@ on:
         required: true
         description: "Token used to submit jobs to the LAVA lab"
 
+env:
+  # LAVA instance the test jobs are submitted to and the results are read from
+  LAVA_URL: lava.infra.foundries.io
+
 jobs:
   prepare-boot-jobs:
     name: "Prepare boot jobs for ${{ inputs.distro_name }}"
@@ -115,10 +119,10 @@ jobs:
         # of devices
         timeout-minutes: 120
         id: submit
-        uses: foundriesio/lava-action@v13
+        uses: foundriesio/lava-action@2392ee48130c6d99c97bb91cddb46d1fcde43f3e # v14
         with:
           lava_token: ${{ secrets.LAVATOKEN }}
-          lava_url: 'lava.infra.foundries.io'
+          lava_url: ${{ env.LAVA_URL }}
           job_definition: ${{ matrix.target.path }}
           wait_for_job: true
           fail_action_on_failure: true
@@ -237,10 +241,10 @@ jobs:
         # It may spend some time in LAVA queue as there is a limited number
         # of devices
         timeout-minutes: 120
-        uses: foundriesio/lava-action@v13
+        uses: foundriesio/lava-action@2392ee48130c6d99c97bb91cddb46d1fcde43f3e # v14
         with:
           lava_token: ${{ secrets.LAVATOKEN }}
-          lava_url: 'lava.infra.foundries.io'
+          lava_url: ${{ env.LAVA_URL }}
           job_definition: ${{ matrix.target.path }}
           wait_for_job: true
           fail_action_on_failure: true
@@ -279,11 +283,7 @@ jobs:
           prefix: "${{ inputs.distro_name }}${{ inputs.distro_suffix }}-test-job*"
           summary_file_name: "${{ inputs.distro_name }}${{ inputs.distro_suffix }}-test_job_summary"
           summary_title: "${{ inputs.distro_name }}${{ inputs.distro_suffix }}"
-
-      - name: Download Summary
-        uses: actions/download-artifact@v7
-        with:
-          artifact-ids: ${{ steps.generate-summary.outputs.artifact_id }}
+          lava_base_url: https://${{ env.LAVA_URL }}
 
       - name: Publish Test Job Details
         env:

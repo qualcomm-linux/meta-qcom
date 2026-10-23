@@ -31,17 +31,21 @@ jobs:
     name: "Publish Tests Results"
     runs-on: ubuntu-latest
     steps:
-      - name: Download result files
-        uses: actions/download-artifact@v7
-        with:
-            run-id: ${{ inputs.workflow_id }}
-            path: artifacts
-            github-token: ${{ github.token }}
-
-      - name: Download result files PR
+      - name: Download event file PR
         if: ${{ github.run_id != inputs.workflow_id }}
         uses: actions/download-artifact@v7
         with:
+            name: Event File
+            run-id: ${{ inputs.workflow_id }}
+            path: artifacts/Event File
+            github-token: ${{ github.token }}
+
+      # The results are the only artifacts named after a LAVA job definition
+      # file (RESULT_NAME in .github/actions/lava-test-plans/action.yml).
+      - name: Download result files
+        uses: actions/download-artifact@v7
+        with:
+            pattern: "*.yaml"
             path: artifacts
             github-token: ${{ github.token }}
 
