@@ -12,6 +12,10 @@ defaults:
 repos:
   meta-qcom-distro:
     url: https://github.com/qualcomm-linux/meta-qcom-distro
+    patches:
+      fix-igt-pause:
+        repo: meta-qcom
+        path: patches/meta-qcom-distro/0001-wpa-supplicant-drop-backport-pieces.patch
 
   meta-openembedded:
     url: https://github.com/openembedded/meta-openembedded
@@ -44,6 +48,10 @@ repos:
     layers:
       .:
       meta-tpm:
+
+  meta-lts-mixins-connectivity:
+    url: https://github.com/qualcomm-linux/meta-lts-mixins
+    branch: wrynose/connectivity
 
 local_conf_header:
   virtualization:

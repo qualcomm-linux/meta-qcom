@@ -6,6 +6,8 @@ overrides:
             commit: 0f03c732a0a2d0506b41b1abe60b3f368b2300dc
         meta-lts-mixins:
             commit: 71dfb81bd98f59ca2127d39b100ecbb8ce1e0ba3
+        meta-lts-mixins-connectivity:
+            commit: 11c21825cb9409cbf152366c33d1f24efdbf7c2e
         bitbake:
             commit: dc2bb660a85e2e76ae4ce6e02baae73b28f0593d
         meta-arm:
