@@ -24,6 +24,9 @@ SRCREV ?= "1a0586064ee1fbcefe49b6382ee17a236c590879"
 SRCBRANCH ?= "nobranch=1"
 SRCBRANCH:class-devupstream ?= "branch=qcom-next"
 
+require linux-qcom-localversion.inc
+KERNEL_LOCALVERSION ?= "${@qcom_kernel_localversion(d)}"
+
 SRC_URI = "git://github.com/qualcomm-linux/kernel.git;${SRCBRANCH};protocol=https"
 
 # Additional kernel configs.
