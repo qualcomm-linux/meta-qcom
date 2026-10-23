@@ -10,9 +10,8 @@ SRC_URI[camxcommon.sha256sum] = "8d7e0bac9f6050451d5c280af38067fff2a0cfe444f9b67
 SRC_URI[camxtest.sha256sum] = "3e25601ae086f050902cb6a231141fc3d7adb54c61d0d57ffecd745e308c177b"
 
 do_install:append() {
-    # copy skel file
-    install -d ${D}${datadir}/qcom
-    cp -r ${S}/usr/share/qcom/x1e80100 ${D}${datadir}/qcom/
+    install -d ${D}${datadir}/qcom/hexagon/v73
+    install -m 0644 ${S}/usr/share/qcom/x1e80100/Qualcomm/Hamoa-IoT-EVK/dsp/cdsp/libhme_dsp_skel.so ${D}${datadir}/qcom/hexagon/v73
 }
 PACKAGE_BEFORE_PN += "${PN}-skel"
 RDEPENDS:${PN} += "${PN}-skel"

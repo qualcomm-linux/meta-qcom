@@ -7,6 +7,8 @@ require conf/machine/include/qcom-common.inc
 DEFAULTTUNE = "armv8-2a-crypto"
 require conf/machine/include/arm/arch-armv8-2a.inc
 
+QCOM_HEXAGON_ARCHS = "v73"
+
 MACHINE_ESSENTIAL_EXTRA_RRECOMMENDS += " \
     packagegroup-qcom-boot-essential \
     packagegroup-machine-essential-qcom-qcs9100-soc \
