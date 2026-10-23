@@ -387,6 +387,14 @@ jobs:
                 yamlfile: ""
           - machine: qcom-armv8a
             distro:
+                name: nodistro-altcfg
+                yamlfile: ':ci/test-oe-altcfg.yml'
+            kernel:
+                type: default
+                dirname:
+                yamlfile:
+          - machine: qcom-armv8a
+            distro:
                 name: qcom-distro
                 yamlfile: ':ci/qcom-distro.yml'
             kernel:

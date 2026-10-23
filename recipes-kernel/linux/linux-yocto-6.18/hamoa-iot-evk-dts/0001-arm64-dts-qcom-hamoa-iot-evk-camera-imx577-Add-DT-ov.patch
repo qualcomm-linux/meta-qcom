@@ -1,0 +1,153 @@
+From 0e32a7a5147c38db1f5e2b2887da503ae4684eb7 Mon Sep 17 00:00:00 2001
+From: Wenmeng Liu <wenmeng.liu@oss.qualcomm.com>
+Date: Fri, 27 Feb 2026 13:29:40 +0800
+Subject: [PATCH] arm64: dts: qcom: hamoa-iot-evk-camera-imx577: Add DT overlay
+
+Enable IMX577 via CCI on Hamoa EVK Core Kit.
+
+The Hamoa EVK board does not include a camera sensor
+by default, this DTSO has enabled the Arducam 12.3MP
+IMX577 Mini Camera Module on the CSI-1 interface.
+
+Signed-off-by: Wenmeng Liu <wenmeng.liu@oss.qualcomm.com>
+Upstream-Status: Submitted [https://lore.kernel.org/all/20260227-hamoa_evk-v1-2-36f895a24d8f@oss.qualcomm.com/]
+---
+ arch/arm64/boot/dts/qcom/Makefile             |  5 ++
+ .../dts/qcom/hamoa-iot-evk-camera-imx577.dtso | 81 +++++++++++++++++++
+ arch/arm64/boot/dts/qcom/hamoa-iot-evk.dts    | 16 ++++
+ 3 files changed, 102 insertions(+)
+ create mode 100644 arch/arm64/boot/dts/qcom/hamoa-iot-evk-camera-imx577.dtso
+
+diff --git a/arch/arm64/boot/dts/qcom/Makefile b/arch/arm64/boot/dts/qcom/Makefile
+index 4df3044639a4..5c1c6138e802 100644
+--- a/arch/arm64/boot/dts/qcom/Makefile
++++ b/arch/arm64/boot/dts/qcom/Makefile
+@@ -14,6 +14,11 @@ dtb-$(CONFIG_ARCH_QCOM)	+= apq8094-sony-xperia-kitakami-karin_windy.dtb
+ dtb-$(CONFIG_ARCH_QCOM)	+= apq8096-db820c.dtb
+ dtb-$(CONFIG_ARCH_QCOM)	+= apq8096-ifc6640.dtb
+ dtb-$(CONFIG_ARCH_QCOM)	+= hamoa-iot-evk.dtb
++dtb-$(CONFIG_ARCH_QCOM)	+= hamoa-iot-evk-camera-imx577.dtbo
++
++hamoa-iot-evk-camera-imx577-dtbs	:= hamoa-iot-evk.dtb hamoa-iot-evk-camera-imx577.dtbo
++
++dtb-$(CONFIG_ARCH_QCOM)	+= hamoa-iot-evk-camera-imx577.dtb
+ dtb-$(CONFIG_ARCH_QCOM)	+= ipq5018-rdp432-c2.dtb
+ dtb-$(CONFIG_ARCH_QCOM)	+= ipq5018-tplink-archer-ax55-v1.dtb
+ dtb-$(CONFIG_ARCH_QCOM)	+= ipq5332-rdp441.dtb
+diff --git a/arch/arm64/boot/dts/qcom/hamoa-iot-evk-camera-imx577.dtso b/arch/arm64/boot/dts/qcom/hamoa-iot-evk-camera-imx577.dtso
+new file mode 100644
+index 000000000000..f45a7fbd14b1
+--- /dev/null
++++ b/arch/arm64/boot/dts/qcom/hamoa-iot-evk-camera-imx577.dtso
+@@ -0,0 +1,81 @@
++// SPDX-License-Identifier: BSD-3-Clause
++/*
++ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
++ */
++
++/dts-v1/;
++/plugin/;
++
++#include <dt-bindings/clock/qcom,x1e80100-camcc.h>
++#include <dt-bindings/gpio/gpio.h>
++#include <dt-bindings/phy/phy.h>
++
++&{/} {
++	vreg_cam1_1p8: regulator-cam1 {
++		compatible = "regulator-fixed";
++		regulator-name = "vreg_cam1";
++		startup-delay-us = <1000>;
++		enable-active-high;
++		gpio = <&tlmm 19 GPIO_ACTIVE_HIGH>;
++	};
++};
++
++&camss {
++	status = "okay";
++
++	ports {
++		#address-cells = <1>;
++		#size-cells = <0>;
++
++		port@1 {
++			#address-cells = <1>;
++			#size-cells = <0>;
++
++			csiphy1_ep: endpoint@0 {
++				clock-lanes = <7>;
++				data-lanes = <0 1 2 3>;
++				remote-endpoint = <&imx577_ep>;
++			};
++		};
++	};
++};
++
++&cci0 {
++	status = "okay";
++};
++
++&cci0_i2c1 {
++	#address-cells = <1>;
++	#size-cells = <0>;
++
++	camera@1a {
++		compatible = "sony,imx577";
++		reg = <0x1a>;
++
++		reset-gpios = <&tlmm 110 GPIO_ACTIVE_LOW>;
++		pinctrl-0 = <&cam1_default>;
++		pinctrl-names = "default";
++
++		clocks = <&camcc CAM_CC_MCLK1_CLK>;
++		assigned-clocks = <&camcc CAM_CC_MCLK1_CLK>;
++		assigned-clock-rates = <24000000>;
++
++		dvdd-supply = <&vreg_cam1_1p8>;
++		dovdd-supply = <&vreg_l4m_1p8>;
++
++		port {
++			imx577_ep: endpoint {
++				link-frequencies = /bits/ 64 <600000000>;
++				data-lanes = <0 1 2 3>;
++				remote-endpoint = <&csiphy1_ep>;
++			};
++		};
++	};
++};
++
++&csiphy1 {
++	vdda-0p8-supply = <&vreg_l2c_0p8>;
++	vdda-1p2-supply = <&vreg_l1c_1p2>;
++
++	status = "okay";
++};
+diff --git a/arch/arm64/boot/dts/qcom/hamoa-iot-evk.dts b/arch/arm64/boot/dts/qcom/hamoa-iot-evk.dts
+index df8d6e5c1f45..513560694218 100644
+--- a/arch/arm64/boot/dts/qcom/hamoa-iot-evk.dts
++++ b/arch/arm64/boot/dts/qcom/hamoa-iot-evk.dts
+@@ -990,6 +990,22 @@ right_tweeter: speaker@0,1 {
+ };
+ 
+ &tlmm {
++	cam1_default: cam1-default-state {
++		mclk-pins {
++			pins = "gpio97";
++			function = "cam_mclk";
++			drive-strength = <2>;
++			bias-disable;
++		};
++
++		rst-pins {
++			pins = "gpio110";
++			function = "gpio";
++			drive-strength = <2>;
++			bias-disable;
++		};
++	};
++
+ 	edp_reg_en: edp-reg-en-state {
+ 		pins = "gpio70";
+ 		function = "gpio";
+-- 
+2.34.1
+
