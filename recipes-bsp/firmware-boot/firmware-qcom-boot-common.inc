@@ -10,6 +10,7 @@ BOOTBINARIES_IMMUTABLE ?= "${BOOTBINARIES}_immutable"
 QCOM_BOOT_BINARY_DIRS ?= "${S} ${UNPACKDIR}/${BOOTBINARIES_IMMUTABLE}"
 
 QCOM_BOOT_IMG_SUBDIR ?= ""
+QCOM_BOOT_SAIL_SUBDIR ?= ""
 
 INHIBIT_DEFAULT_DEPS = "1"
 
@@ -33,6 +34,18 @@ do_deploy() {
         find "${bootdir}" -maxdepth 1 -name '*.melf' -exec install -m 0644 {} ${DEPLOYDIR}/${QCOM_BOOT_IMG_SUBDIR} \;
         find "${bootdir}" -maxdepth 1 -name 'qsahara_*.xml' -exec install -m 0644 {} ${DEPLOYDIR}/${QCOM_BOOT_IMG_SUBDIR} \;
         find "${bootdir}" -maxdepth 1 -name '*.xz' -exec install -m 0644 {} ${DEPLOYDIR}/${QCOM_BOOT_IMG_SUBDIR} \;
+
+        # Some firmware releases ship a separate SAIL image, used to flash external NOR flash, in
+        # its own subdirectory. When present Deploy it under a matching subdirectory of DEPLOYDIR.
+        if [ -n "${QCOM_BOOT_SAIL_SUBDIR}" ] && [ -d "${bootdir}/${QCOM_BOOT_SAIL_SUBDIR}" ]; then
+            SAIL_FILES="gpt_backup0.bin gpt_main0.bin prog_firehose_ddr.elf patch0.xml rawprogram0.xml sailhyp.elf sailsw1.elf"
+
+            install -d ${DEPLOYDIR}/${QCOM_BOOT_IMG_SUBDIR}/${QCOM_BOOT_SAIL_SUBDIR}
+            for sail_file in ${SAIL_FILES}; do
+                [ -f "${bootdir}/${QCOM_BOOT_SAIL_SUBDIR}/${sail_file}" ] || continue
+                install -m 0644 ${bootdir}/${QCOM_BOOT_SAIL_SUBDIR}/${sail_file} ${DEPLOYDIR}/${QCOM_BOOT_IMG_SUBDIR}/${QCOM_BOOT_SAIL_SUBDIR}
+            done
+        fi
     done
 }
 addtask deploy before do_build after do_install
