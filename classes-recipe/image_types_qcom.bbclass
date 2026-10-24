@@ -202,7 +202,8 @@ create_qcomflash_pkg() {
             fi
 
             # cdt file
-            if [ -n "${QCOM_CDT_FILE}" ]; then
+            if [ -n "${QCOM_CDT_FILE}" ] && \
+                    [ -e "${DEPLOY_DIR_IMAGE}/${QCOM_BOOT_FILES_SUBDIR}/spinor/${QCOM_CDT_FILE}.bin" ]; then
                 install -m 0644 ${DEPLOY_DIR_IMAGE}/${QCOM_BOOT_FILES_SUBDIR}/spinor/${QCOM_CDT_FILE}.bin spinor/cdt.bin
             fi
 

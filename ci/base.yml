@@ -18,6 +18,9 @@ repos:
       fix-igt-pause:
         repo: meta-qcom
         path: patches/oe-core/0001-igt-gpu-tools-fix-build-on-non-x86-platforms.patch
+      nord-gpu-firmware:
+        repo: meta-qcom
+        path: patches/oe-core/0002-linux-firmware-backport-qcom-nord-gpu-firmware.patch
     layers:
       meta:
 
