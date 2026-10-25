@@ -6,9 +6,18 @@ DEPENDS += "bc-native dtc-native gnutls-native python3-pyelftools-native qtestsi
 QCOM_UBOOT_SPL_FIT ?= "0"
 QCOM_UBOOT_SPL_FIT_ATF ?= ""
 QCOM_UBOOT_SPL_FIT_TEE ?= ""
+QCOM_UBOOT_SPL_FIT_FIRMWARE ?= ""
 
 # BL31 and OP-TEE go into the FIT, swiv annotates the SPL before signing.
-DEPENDS += "${@bb.utils.contains('QCOM_UBOOT_SPL_FIT', '1', '${QCOM_UBOOT_SPL_FIT_ATF} ${QCOM_UBOOT_SPL_FIT_TEE} swiv-build-utility-native', '', d)}"
+DEPENDS += "${@bb.utils.contains('QCOM_UBOOT_SPL_FIT', '1', '${QCOM_UBOOT_SPL_FIT_ATF} ${QCOM_UBOOT_SPL_FIT_TEE} ${QCOM_UBOOT_SPL_FIT_FIRMWARE} swiv-build-utility-native', '', d)}"
+
+# Blobs packed into the FIT besides BL31, OP-TEE and U-Boot proper (PMIC/DCB
+# configs, SHRM, QcLib, ...) come from the boot firmware recipe named in
+# QCOM_UBOOT_SPL_FIT_FIRMWARE. It only deploys them, so besides DEPENDS also
+# order do_compile after its do_deploy. The files staged are the
+# UBOOT_FIT_LOADABLE_FILENAME varflags of the UBOOT_FIT_LOADABLES entries.
+do_compile[depends] += "${@'%s:do_deploy' % d.getVar('QCOM_UBOOT_SPL_FIT_FIRMWARE') if d.getVar('QCOM_UBOOT_SPL_FIT_FIRMWARE') else ''}"
+QCOM_UBOOT_SPL_FIT_FILES = "${@' '.join(filter(None, (d.getVarFlag('UBOOT_FIT_LOADABLE_FILENAME', image) for image in (d.getVar('UBOOT_FIT_LOADABLES') or '').split())))}"
 
 COMPATIBLE_MACHINE:aarch64 = "(qcom)"
 
@@ -46,6 +55,11 @@ uboot_compile_config:append() {
         # Where uboot-sign's /incbin/ defaults expect them.
         install -m 0644 ${RECIPE_SYSROOT}/firmware/${QCOM_UBOOT_SPL_FIT_ATF}/bl31.bin ${B}/${builddir}/bl31.bin
         install -m 0644 ${RECIPE_SYSROOT}${nonarch_base_libdir}/firmware/tee-raw.bin ${B}/${builddir}/tee-raw.bin
+        if [ -n "${QCOM_UBOOT_SPL_FIT_FIRMWARE}" ]; then
+            for fit_file in ${QCOM_UBOOT_SPL_FIT_FILES}; do
+                install -D -m 0644 ${DEPLOY_DIR_IMAGE}/${QCOM_BOOT_FILES_SUBDIR}/${fit_file} ${B}/${builddir}/${fit_file}
+            done
+        fi
     fi
 }
 
