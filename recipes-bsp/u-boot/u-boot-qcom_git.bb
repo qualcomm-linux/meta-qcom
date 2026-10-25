@@ -6,9 +6,16 @@ DEPENDS += "bc-native dtc-native gnutls-native python3-pyelftools-native qtestsi
 QCOM_UBOOT_SPL_FIT ?= "0"
 QCOM_UBOOT_SPL_FIT_ATF ?= ""
 QCOM_UBOOT_SPL_FIT_TEE ?= ""
+QCOM_UBOOT_SPL_FIT_EXTRA_LOADABLES ?= ""
 
 # BL31 and OP-TEE go into the FIT, swiv annotates the SPL before signing.
 DEPENDS += "${@bb.utils.contains('QCOM_UBOOT_SPL_FIT', '1', '${QCOM_UBOOT_SPL_FIT_ATF} ${QCOM_UBOOT_SPL_FIT_TEE} swiv-build-utility-native', '', d)}"
+
+# QCOM_UBOOT_SPL_FIT_EXTRA_LOADABLES is a space-separated list of "recipe:filename"
+# entries for further blobs (PMIC/DCB configs, SHRM, QcLib, ...) that ride along in
+# the FIT as loadables. Each file is deploy-only, so pull in its providing recipe
+# via a task dependency instead of DEPENDS.
+do_compile[depends] += "${@' '.join(sorted(set('%s:do_deploy' % entry.split(':', 1)[0] for entry in d.getVar('QCOM_UBOOT_SPL_FIT_EXTRA_LOADABLES').split()))) if d.getVar('QCOM_UBOOT_SPL_FIT') == '1' else ''}"
 
 COMPATIBLE_MACHINE:aarch64 = "(qcom)"
 
@@ -49,6 +56,10 @@ uboot_compile_config:append() {
         # Where uboot-sign's /incbin/ defaults expect them.
         install -m 0644 ${RECIPE_SYSROOT}/firmware/${QCOM_UBOOT_SPL_FIT_ATF}/bl31.bin ${B}/${builddir}/bl31.bin
         install -m 0644 ${RECIPE_SYSROOT}${nonarch_base_libdir}/firmware/tee-raw.bin ${B}/${builddir}/tee-raw.bin
+        for fit_extra_loadable in ${QCOM_UBOOT_SPL_FIT_EXTRA_LOADABLES}; do
+            fit_extra_loadable_file="${fit_extra_loadable#*:}"
+            install -m 0644 ${DEPLOY_DIR_IMAGE}/${QCOM_BOOT_FILES_SUBDIR}/${fit_extra_loadable_file} ${B}/${builddir}/${fit_extra_loadable_file}
+        done
     fi
 }
 
