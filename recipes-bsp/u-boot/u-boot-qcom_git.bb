@@ -7,6 +7,8 @@ QCOM_UBOOT_SPL_FIT ?= "0"
 QCOM_UBOOT_SPL_FIT_ATF ?= ""
 QCOM_UBOOT_SPL_FIT_TEE ?= ""
 QCOM_UBOOT_SPL_FIT_XBL_SEC ?= ""
+QCOM_UBOOT_SPL_FIT_EXTRA_LOADABLES ?= ""
+QCOM_UBOOT_SPL_FIT_PRE_DDR_LOADABLES ?= ""
 
 # BL31 and OP-TEE go into the FIT, swiv annotates the SPL before signing.
 DEPENDS += "${@bb.utils.contains('QCOM_UBOOT_SPL_FIT', '1', '${QCOM_UBOOT_SPL_FIT_ATF} ${QCOM_UBOOT_SPL_FIT_TEE} swiv-build-utility-native', '', d)}"
@@ -15,6 +17,13 @@ DEPENDS += "${@bb.utils.contains('QCOM_UBOOT_SPL_FIT', '1', '${QCOM_UBOOT_SPL_FI
 # deploy-only (no sysroot staging), so fetch it from the firmware recipe's
 # deploy directory instead of DEPENDS.
 do_compile[depends] += "${@'%s:do_deploy' % d.getVar('QCOM_UBOOT_SPL_FIT_XBL_SEC') if d.getVar('QCOM_UBOOT_SPL_FIT_XBL_SEC') else ''}"
+
+# QCOM_UBOOT_SPL_FIT_EXTRA_LOADABLES is a space-separated list of
+# "recipe:filename" entries for further blobs (PMIC/DCB configs, SHRM,
+# QcLib, ...) that ride along in the FIT as loadables. Like qc_sec.mbn
+# above, each file is deploy-only, so pull in its providing recipe via a
+# task dependency instead of DEPENDS.
+do_compile[depends] += "${@' '.join(sorted(set('%s:do_deploy' % entry.split(':', 1)[0] for entry in d.getVar('QCOM_UBOOT_SPL_FIT_EXTRA_LOADABLES').split()))) if d.getVar('QCOM_UBOOT_SPL_FIT') == '1' else ''}"
 
 COMPATIBLE_MACHINE:aarch64 = "(qcom)"
 
@@ -62,6 +71,10 @@ uboot_compile_config:append() {
         # Where uboot-sign's /incbin/ defaults expect them.
         install -m 0644 ${RECIPE_SYSROOT}/firmware/${QCOM_UBOOT_SPL_FIT_ATF}/bl31.bin ${B}/${builddir}/bl31.bin
         install -m 0644 ${RECIPE_SYSROOT}${nonarch_base_libdir}/firmware/tee-raw.bin ${B}/${builddir}/tee-raw.bin
+        for fit_extra_loadable in ${QCOM_UBOOT_SPL_FIT_EXTRA_LOADABLES}; do
+            fit_extra_loadable_file="${fit_extra_loadable#*:}"
+            install -m 0644 ${DEPLOY_DIR_IMAGE}/${QCOM_BOOT_FILES_SUBDIR}/${fit_extra_loadable_file} ${B}/${builddir}/${fit_extra_loadable_file}
+        done
     elif [ -n "${config_mbn_header}" ]; then
         export CRYPTOGRAPHY_OPENSSL_NO_LEGACY=1
         qtestsign -${config_mbn_header} aboot -o ${B}/${builddir}/u-boot.mbn ${B}/${builddir}/u-boot.elf
@@ -71,6 +84,17 @@ uboot_compile_config:append() {
 # Rebuild the SPL ELF after uboot-sign, add the SWIV segment and sign it as TZ.
 uboot_assemble_fitimage_helper:append() {
     if [ "${QCOM_UBOOT_SPL_FIT}" = "1" ]; then
+        # uboot-sign's uboot_fitimage_assemble() only emits one configurations
+        # node ("conf"/post-ddr). QCOM_UBOOT_SPL_FIT_PRE_DDR_LOADABLES instead
+        # needs a sibling "pre-ddr" node, which dtc refuses to merge from a
+        # second literal ITS block, so add it to the already-assembled FIT
+        # with fdtput (ships in dtc-native, already a DEPENDS) instead of
+        # duplicating uboot_fitimage_assemble() to insert it ourselves.
+        if [ -n "${QCOM_UBOOT_SPL_FIT_PRE_DDR_LOADABLES}" ]; then
+            fdtput -t s -p ${UBOOT_FITIMAGE_BINARY} /configurations/pre-ddr description "pre-ddr"
+            fdtput -t s -p ${UBOOT_FITIMAGE_BINARY} /configurations/pre-ddr loadables ${QCOM_UBOOT_SPL_FIT_PRE_DDR_LOADABLES}
+        fi
+
         mbn_header=$(uboot_config_get_indexed_value "${BOARD_MBN_HEADER}" $i)
         [ -n "${mbn_header}" ] || mbn_header="v6"
 
