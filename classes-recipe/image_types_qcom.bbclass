@@ -160,6 +160,11 @@ create_qcomflash_pkg() {
                 u-boot*)
                     if [ "${QCOM_UBOOT_SPL_FIT}" = "1" ]; then
                         bootloader_bin="${DEPLOY_DIR_IMAGE}/${QCOM_UBOOT_FIT_IMAGE}"
+                        if [ -f "${bootloader_bin}" ]; then
+                            # The SPL, not XBL, loads this FIT, under its own
+                            # name rather than the uefi.elf slot installed below.
+                            install -m 0644 "${bootloader_bin}" ${QCOM_UBOOT_FIT_IMAGE}
+                        fi
                         if [ -f "${DEPLOY_DIR_IMAGE}/${QCOM_UBOOT_SPL_IMAGE}" ]; then
                             install -m 0644 "${DEPLOY_DIR_IMAGE}/${QCOM_UBOOT_SPL_IMAGE}" tz.mbn
                         fi
