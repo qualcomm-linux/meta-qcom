@@ -30,7 +30,7 @@ env:
   # git sha, tag or branch in lava-test-plans repository
   LAVA_TEST_PLANS_REF: "78ad6b5b23ca9870282fae42c0083532355905c9"
   # CalVer tag in qcom-linux-testkit repository (format: testkit-YYYY.MM.DD)
-  TESTKIT_REF: "testkit-2026.10.12"
+  TESTKIT_REF: "testkit-2026.10.25"
 
 jobs:
   prepare-env:
