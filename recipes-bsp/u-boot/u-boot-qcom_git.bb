@@ -9,6 +9,39 @@ QCOM_UBOOT_SPL_FIT_TEE ?= ""
 QCOM_UBOOT_SPL_FIT_XBL_SEC ?= ""
 QCOM_UBOOT_SPL_FIT_EXTRA_LOADABLES ?= ""
 
+# The SPL cannot load an ELF whole, so each staged loadable listed here as
+# "name:image:entry_rule:arch[:os]" is split into one image node per PT_LOAD
+# segment, with the entry set on the first (first_only), first and last
+# (first_and_last) or every (own_load) segment. The nodes go to
+# fit-elf/<name>.dtsi and their names to fit-elf/<name>.loadables, which
+# UBOOT_FIT_USER_SETTINGS and the configurations read in with $(cat ...) as
+# uboot-sign writes the ITS.
+QCOM_UBOOT_SPL_FIT_ELFS ?= ""
+
+# Hash and signature subnodes for the image and configuration nodes a machine
+# adds through UBOOT_FIT_USER_SETTINGS and UBOOT_FIT_USER_CONFIGURATIONS, the
+# same uboot-sign.bbclass gives its own nodes, escaped for its printf "%b".
+def qcom_spl_fit_sign(d, conf):
+    if d.getVar('SPL_SIGN_ENABLE') != '1':
+        return ''
+
+    sign_alg = '%s,%s' % (d.getVar('UBOOT_FIT_HASH_ALG'), d.getVar('UBOOT_FIT_SIGN_ALG'))
+    signature = ['signature {', '    algo = "%s";' % sign_alg,
+                 '    key-name-hint = "%s";' % d.getVar('SPL_SIGN_KEYNAME')]
+    lines = []
+    if conf:
+        if d.getVar('SPL_SIGN_CONF') == '1':
+            lines += signature + ['    sign-images = "loadables";', '};']
+    else:
+        if d.getVar('SPL_SIGN_CONF') == '1':
+            lines += ['hash-1 {', '    algo = "%s";' % d.getVar('UBOOT_FIT_HASH_ALG'), '};']
+        if d.getVar('SPL_SIGN_INDIVIDUAL') == '1':
+            lines += signature + ['};']
+    return ''.join('            %s\\n' % line.replace('"', '\\"') for line in lines)
+
+QCOM_UBOOT_SPL_FIT_IMAGE_SIGN = "${@qcom_spl_fit_sign(d, False)}"
+QCOM_UBOOT_SPL_FIT_CONF_SIGN = "${@qcom_spl_fit_sign(d, True)}"
+
 # BL31 and OP-TEE go into the FIT, swiv annotates the SPL before signing.
 DEPENDS += "${@bb.utils.contains('QCOM_UBOOT_SPL_FIT', '1', '${QCOM_UBOOT_SPL_FIT_ATF} ${QCOM_UBOOT_SPL_FIT_TEE} swiv-build-utility-native', '', d)}"
 
@@ -35,6 +68,7 @@ SRC_URI += " \
     file://0001-Add-support-for-OpenSSL-Provider-API.patch \
     file://disable-eficapsule-tool.cfg \
     file://efi-rt-volatile-store.cfg \
+    file://qcom-spl-fit-elf.py \
     ${@bb.utils.contains('MACHINE_FEATURES', 'optee', 'file://tfa-optee.cfg', '', d)} \
     ${@bb.utils.contains('MACHINE_FEATURES', 'kvm', 'file://gunyah-exit.cfg', '', d)} \
     ${@bb.utils.contains('SPL_SIGN_ENABLE', '1', 'file://spl-fit-signature.cfg', '', d)} \
@@ -73,6 +107,14 @@ uboot_compile_config:append() {
             fit_extra_loadable_file="${fit_extra_loadable#*:}"
             install -m 0644 ${DEPLOY_DIR_IMAGE}/${QCOM_BOOT_FILES_SUBDIR}/${fit_extra_loadable_file} ${B}/${builddir}/${fit_extra_loadable_file}
         done
+
+        rm -rf ${B}/${builddir}/fit-elf
+        if [ -n "${QCOM_UBOOT_SPL_FIT_ELFS}" ]; then
+            (cd ${B}/${builddir} && nativepython3 ${UNPACKDIR}/qcom-spl-fit-elf.py \
+                --outdir fit-elf --address-cells ${UBOOT_FIT_ADDRESS_CELLS} \
+                --node-extra "$(printf "%b" "${QCOM_UBOOT_SPL_FIT_IMAGE_SIGN}")" \
+                ${QCOM_UBOOT_SPL_FIT_ELFS})
+        fi
     fi
 }
 
