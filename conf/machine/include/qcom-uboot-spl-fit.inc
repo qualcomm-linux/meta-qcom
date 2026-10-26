@@ -24,6 +24,11 @@ UBOOT_FIT_TEE = "1"
 UBOOT_FIT_CONF_FIRMWARE = "atf"
 UBOOT_FIT_CONF_DESC = "post-ddr"
 
+# The SPL takes the U-Boot dtb appended to the uboot image, not from a
+# separate fdt image, and loads the images from data stored after the FIT.
+UBOOT_FIT_FDT = "0"
+SPL_MKIMAGE_ARGS = "-E"
+
 # The XBL takes the SPL path only with this XBLConfig variant, which the boot
 # firmware ships next to the stock one.
 QCOM_XBL_CONFIG = "xbl_config_spl.elf"
