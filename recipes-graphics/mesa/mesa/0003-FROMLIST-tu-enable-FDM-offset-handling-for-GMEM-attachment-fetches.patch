@@ -1,0 +1,98 @@
+From b4b346ca400f7f4121cc185a1443a82e34166d3f Mon Sep 17 00:00:00 2001
+From: Lakshman Chandu Kondreddy <lkondred@qti.qualcomm.com>
+Date: Tue, 27 Oct 2026 10:04:59 +0530
+Subject: [PATCH 2/2] FROMLIST: tu: enable FDM offset handling for GMEM
+ attachment fetches
+
+When VK_QCOM_fragment_density_map_offset is enabled, GMEM attachment
+fetch coordinates can fall outside the original attachment bounds.
+
+On A850, TPL1_BIN_SIZE.FDM_OFFSET_EN disables TPL1 coordinate clamping
+for these fetches. Enable it when fragment density map offsets are
+active.
+
+Upstream-Status: Submitted [https://gitlab.freedesktop.org/mesa/mesa/-/merge_requests/45384]
+Signed-off-by: Lakshman Chandu Kondreddy <lkondred@qti.qualcomm.com>
+---
+ src/freedreno/common/freedreno_dev_info.h | 2 ++
+ src/freedreno/common/freedreno_devices.py | 1 +
+ src/freedreno/registers/adreno/a6xx.xml   | 5 +++--
+ src/freedreno/vulkan/tu_cmd_buffer.cc     | 7 ++++++-
+ 4 files changed, 12 insertions(+), 3 deletions(-)
+
+diff --git a/src/freedreno/common/freedreno_dev_info.h b/src/freedreno/common/freedreno_dev_info.h
+index 3a6eeed5dbf..41fdd9eab2c 100644
+--- a/src/freedreno/common/freedreno_dev_info.h
++++ b/src/freedreno/common/freedreno_dev_info.h
+@@ -491,6 +491,8 @@ struct fd_dev_info {
+ 
+       uint32_t max_texel_buffer_range_elements;
+       uint32_t max_storage_buffer_range_bytes;
++
++      bool has_fdm_offset_gmem_clamping_disable;
+    } props;
+ };
+ 
+diff --git a/src/freedreno/common/freedreno_devices.py b/src/freedreno/common/freedreno_devices.py
+index b7cc3afdde7..21a3d266d12 100644
+--- a/src/freedreno/common/freedreno_devices.py
++++ b/src/freedreno/common/freedreno_devices.py
+@@ -1521,6 +1521,7 @@ add_gpus([
+         [a7xx_base, a7xx_gen3, a8xx_base, a8xx_gen2,
+          GPUProps(
+              shading_rate_matches_vk = True,
++             has_fdm_offset_gmem_clamping_disable = True,
+          )],
+         num_ccu = 6,
+         num_slices = 3,
+diff --git a/src/freedreno/registers/adreno/a6xx.xml b/src/freedreno/registers/adreno/a6xx.xml
+index c26f1a950b7..4d84e6a013b 100644
+--- a/src/freedreno/registers/adreno/a6xx.xml
++++ b/src/freedreno/registers/adreno/a6xx.xml
+@@ -1332,8 +1332,9 @@ by a particular renderpass/blit.
+ 	</reg32>
+ 
+ 	<bitset name="a8xx_bin_size" inline="yes">
+-		<bitfield name="BINW" low="0" high="9" shr="5" type="uint"/>
+-		<bitfield name="BINH" low="16" high="26" shr="4" type="uint"/>
++		<bitfield name="BINW"          low="0"  high="9"  shr="5" type="uint"/>
++		<bitfield name="BINH"          low="16" high="26" shr="4" type="uint"/>
++		<bitfield name="FDM_OFFSET_EN" low="31" high="31" type="boolean"/>
+ 	</bitset>
+ 
+ 	<reg32 offset="0x0c02" name="VSC_BIN_SIZE" type="a8xx_bin_size" usage="cmd" variants="A8XX"/>
+diff --git a/src/freedreno/vulkan/tu_cmd_buffer.cc b/src/freedreno/vulkan/tu_cmd_buffer.cc
+index 6cf3050a995..1c2e705ede8 100644
+--- a/src/freedreno/vulkan/tu_cmd_buffer.cc
++++ b/src/freedreno/vulkan/tu_cmd_buffer.cc
+@@ -926,6 +926,7 @@ struct tu_bin_size_params {
+    enum a6xx_buffers_location buffers_location;
+    enum a6xx_lrz_feedback_mask lrz_feedback_zmode_mask;
+    bool force_lrz_dis;
++   bool fdm_offset_en;
+ };
+ 
+ template <chip CHIP>
+@@ -955,7 +956,8 @@ tu6_emit_bin_size(struct tu_cs *cs,
+    if (CHIP >= A8XX) {
+       tu_crb crb = cs->crb(13);
+ 
+-      crb.add(TPL1_BIN_SIZE(CHIP, .binw = bin_w, .binh = bin_h));
++      crb.add(TPL1_BIN_SIZE(CHIP, .binw = bin_w, .binh = bin_h,
++                                  .fdm_offset_en = p.fdm_offset_en));
+       crb.add(TPL1_A2D_BIN_SIZE(CHIP, .binw = bin_w, .binh = bin_h));
+       crb.add(SP_BIN_SIZE(CHIP, .binw = bin_w, .binh = bin_h));
+ 
+@@ -1500,6 +1502,9 @@ tu6_emit_bin_size_gmem(struct tu_cmd_buffer *cmd,
+                   LRZ_FEEDBACK_EARLY_Z_LATE_Z)
+                : LRZ_FEEDBACK_NONE,
+          .force_lrz_dis = CHIP >= A7XX && disable_lrz,
++         .fdm_offset_en =
++            phys_dev->info->props.has_fdm_offset_gmem_clamping_disable &&
++            tu_enable_fdm_offset(cmd),
+       });
+ 
+ }
+-- 
+2.34.1
+
