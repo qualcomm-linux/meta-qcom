@@ -145,6 +145,14 @@ FIT_DTB_COMPATIBLE[qcom_qcs8275-iot-subtype5-el2gh-staging] = \
     "monaco-draco-evk monaco-staging"
 FIT_DTB_COMPATIBLE[qcom_qcs8275-iot-subtype5-staging] = \
     "monaco-draco-evk monaco-el2 monaco-staging"
+FIT_DTB_COMPATIBLE[qcom_qcs8275-iot-subtype5-camx] = \
+    "monaco-draco-evk monaco-el2 monaco-draco-evk-camx monaco-camx-el2"
+FIT_DTB_COMPATIBLE[qcom_qcs8275-iot-subtype5-el2gh-camx] = \
+    "monaco-draco-evk monaco-draco-evk-camx"
+FIT_DTB_COMPATIBLE[qcom_qcs8275-iot-subtype5-el2gh-camx-staging] = \
+    "monaco-draco-evk monaco-draco-evk-camx  monaco-staging"
+FIT_DTB_COMPATIBLE[qcom_qcs8275-iot-subtype5-camx-staging] = \
+    "monaco-draco-evk monaco-el2 monaco-draco-evk-camx monaco-camx-el2  monaco-staging"
 
 # ---------- talos ----------
 FIT_DTB_COMPATIBLE[qcom_qcs615-adp-el2gh-staging] = \
