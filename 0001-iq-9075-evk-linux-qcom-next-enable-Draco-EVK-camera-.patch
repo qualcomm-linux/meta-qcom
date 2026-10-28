@@ -1,0 +1,41 @@
+From be160f952ccb04da4b57dc44a9da1193555e3f15 Mon Sep 17 00:00:00 2001
+From: Sushil Pratap Singh <sussin@qti.qualcomm.com>
+Date: Thu, 1 Oct 2026 13:40:29 +0530
+Subject: [PATCH] iq-9075-evk, linux-qcom-next: enable Draco EVK camera sensors
+
+fit-dtb-compatible: add subtype3 FIT DTB mappings for lemans-draco-evk-camx.
+
+Signed-off-by: Sushil Pratap Singh <sussin@qti.qualcomm.com>
+---
+ conf/machine/include/fit-dtb-compatible-linux-qcom.inc | 2 ++
+ conf/machine/iq-9075-evk.conf                          | 1 +
+ 2 files changed, 3 insertions(+)
+
+diff --git a/conf/machine/include/fit-dtb-compatible-linux-qcom.inc b/conf/machine/include/fit-dtb-compatible-linux-qcom.inc
+index 86e89fa4..22fd4dd2 100644
+--- a/conf/machine/include/fit-dtb-compatible-linux-qcom.inc
++++ b/conf/machine/include/fit-dtb-compatible-linux-qcom.inc
+@@ -73,6 +73,8 @@ FIT_DTB_COMPATIBLE[qcom_qcs9075-iot-subtype3-el2gh-staging] = \
+     "lemans-draco-evk lemans-staging"
+ FIT_DTB_COMPATIBLE[qcom_qcs9075-iot-subtype3-staging] = \
+     "lemans-draco-evk lemans-el2 lemans-staging"
++FIT_DTB_COMPATIBLE[qcom_qcs9075-iot-subtype3-camx] = \
++    "lemans-draco-evk lemans-draco-evk-camx lemans-el2 lemans-camx-el2"
+ 
+ FIT_DTB_COMPATIBLE[qcom_qcs9100-qam-el2gh-staging] = \
+     "qcs9100-ride lemans-staging"
+diff --git a/conf/machine/iq-9075-evk.conf b/conf/machine/iq-9075-evk.conf
+index 40e69324..a882f33b 100644
+--- a/conf/machine/iq-9075-evk.conf
++++ b/conf/machine/iq-9075-evk.conf
+@@ -17,6 +17,7 @@ KERNEL_DEVICETREE ?= " \
+ # These DTs are not upstreamed and currently exist only in linux-qcom kernels
+ LINUX_QCOM_KERNEL_DEVICETREE ?= " \
+                       qcom/lemans-evk-camx.dtbo \
++		      qcom/lemans-draco-evk-camx.dtbo \
+                       qcom/lemans-camx-el2.dtbo \
+                       qcom/lemans-evk-staging.dtbo \
+                       qcom/lemans-staging.dtbo \
+-- 
+2.34.1
+
