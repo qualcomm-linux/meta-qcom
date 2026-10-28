@@ -1,0 +1,41 @@
+From 6fbbaf8db39b62fa57cf788ec8427558cd3c8b16 Mon Sep 17 00:00:00 2001
+From: Linghui Wu <linghui.wu@oss.qualcomm.com>
+Date: Wed, 28 Oct 2026 16:00:00 +0800
+Subject: [PATCH] arm64: dts: qcom: shikra: Map WCSS firmware stream in EL2
+
+When Shikra runs Linux directly at EL2, Gunyah does not configure the
+IOMMU stream used by the WCSS firmware.  Without a wifi-firmware child
+node ath10k assumes that TrustZone manages this stream and skips creating
+the firmware IOMMU domain and identity mapping the WLAN MSA region.
+
+The first firmware access to the WLAN MSA then causes a non-secure SMMU
+global fault from stream ID 0x1a2, followed by a system NoC decode error
+from qxm_wcss and a secure watchdog reset.
+
+Describe the WCSS firmware stream in the EL2 overlay.  This makes ath10k
+attach stream ID 0x1a2 to its firmware domain and map the WLAN MSA at its
+physical address for firmware access.
+
+Upstream-Status: Pending
+
+Signed-off-by: Linghui Wu <linghui.wu@oss.qualcomm.com>
+---
+ arch/arm64/boot/dts/qcom/shikra-el2.dtso | 6 ++++++
+ 1 file changed, 6 insertions(+)
+
+diff --git a/arch/arm64/boot/dts/qcom/shikra-el2.dtso b/arch/arm64/boot/dts/qcom/shikra-el2.dtso
+index d2f3186bd47d..4d9e08d95d18 100644
+--- a/arch/arm64/boot/dts/qcom/shikra-el2.dtso
++++ b/arch/arm64/boot/dts/qcom/shikra-el2.dtso
+@@ -21,3 +21,9 @@
+ 		 <&apps_smmu 0x0366 0x0000>,
+ 		 <&apps_smmu 0x00e7 0x0000>;
+ };
++
++&wifi {
++	wifi-firmware {
++		iommus = <&apps_smmu 0x01a2 0x0001>;
++	};
++};
+-- 
+2.43.0
