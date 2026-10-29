@@ -7,6 +7,7 @@ LIC_FILES_CHKSUM = "file://adreno.c;beginline=1;endline=1;md5=fcab174c20ea2e2bc0
 SRCREV = "2b2d762c0b843c560d2ae2203f6b3cfe1474fb3f"
 SRC_URI = " \
     git://github.com/qualcomm-linux/kgsl.git;branch=gfx-kernel.le.0.0;protocol=https;tag=v${PV} \
+    file://0001-kgsl-build-Stub-out-governors-skipped-for-simple_ond.patch \
     file://kgsl.rules \
 "
 
