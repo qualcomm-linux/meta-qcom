@@ -34,6 +34,9 @@ do_install() {
     install -d ${D}${datadir}/qcom/shikra/Qualcomm/Shikra-CQS-EVK/dsp/cdsp
     install -d ${D}${datadir}/qcom/sm8750/Qualcomm/SM8750-MTP/dsp/cdsp
     install -d ${D}${datadir}/qcom/x1e80100/Qualcomm/Hamoa-IoT-EVK/dsp/cdsp
+    install -d ${D}${datadir}/qcom/hawi/Qualcomm/Hawi-MTP/dsp/cdsp
+    install -d ${D}${datadir}/qcom/maili/Qualcomm/Maili-MTP/dsp/cdsp
+    install -d ${D}${datadir}/qcom/nord/Qualcomm/SA8797P-Ride-Embedded/dsp/cdsp
 
     install -m 0755 ${S}/usr/lib/libfastcvopt.so.1.8.0 ${D}${libdir}
     install -m 0755 ${S}/usr/lib/libfastcvdsp_stub.so.1.8.0 ${D}${libdir}
@@ -57,6 +60,9 @@ do_install() {
     install -m 0644 ${S}/usr/share/dsp/cdsp/cv/v79/PAKALA/*.so ${D}${datadir}/qcom/sm8750/Qualcomm/SM8750-MTP/dsp/cdsp
     install -m 0644 ${S}/usr/share/dsp/cdsp/cv/v81/KAANAPALI/*.so ${D}${datadir}/qcom/kaanapali/Qualcomm/Kaanapali-MTP/dsp/cdsp
     install -m 0644 ${S}/usr/share/dsp/cdsp/cv/v81/GLYMUR/*.so ${D}${datadir}/qcom/glymur/Qualcomm/Glymur-CRD/dsp/cdsp
+    install -m 0644 ${S}/usr/share/dsp/cdsp/cv/v81/NORD/*.so ${D}${datadir}/qcom/nord/Qualcomm/SA8797P-Ride-Embedded/dsp/cdsp
+    install -m 0644 ${S}/usr/share/dsp/cdsp/cv/v85/HAWI/*.so ${D}${datadir}/qcom/hawi/Qualcomm/Hawi-MTP/dsp/cdsp
+    install -m 0644 ${S}/usr/share/dsp/cdsp/cv/v85/MAILI/*.so ${D}${datadir}/qcom/maili/Qualcomm/Maili-MTP/dsp/cdsp
 
     install -m 0755 ${S}/usr/bin/fastcv_simple_test64 ${D}${bindir}
 }
@@ -74,6 +80,9 @@ PACKAGES += "\
     ${PN}-shikra-evk-dsp \
     ${PN}-sm8750-mtp-dsp \
     ${PN}-thundercomm-rb3gen2-dsp \
+    ${PN}-hawi-mtp-dsp \
+    ${PN}-maili-mtp-dsp \
+    ${PN}-sa8797p-ride-embedded-dsp \
 "
 
 FILES:${PN}-dsp = "${libdir}/libfastcvdsp_stub.so.*"
@@ -89,6 +98,11 @@ RDEPENDS:${PN}-sa8775p-ride-dsp = "${PN}-dsp"
 RDEPENDS:${PN}-shikra-evk-dsp = "${PN}-dsp"
 RDEPENDS:${PN}-sm8750-mtp-dsp = "${PN}-dsp"
 RDEPENDS:${PN}-thundercomm-rb3gen2-dsp = "${PN}-dsp"
+RDEPENDS:${PN}-hawi-mtp-dsp = "${PN}-dsp"
+RDEPENDS:${PN}-maili-mtp-dsp = "${PN}-dsp"
+RDEPENDS:${PN}-sa8797p-ride-embedded-dsp = "${PN}-dsp"
+
+SKIP_FILEDEPS:${PN}-sa8797p-ride-embedded-dsp = "1"
 
 INSANE_SKIP:${PN}-glymur-crd-dsp = "arch libdir"
 INSANE_SKIP:${PN}-hamoa-iot-evk-dsp = "arch libdir"
@@ -99,7 +113,9 @@ INSANE_SKIP:${PN}-sa8775p-ride-dsp = "arch libdir"
 INSANE_SKIP:${PN}-shikra-evk-dsp = "arch libdir"
 INSANE_SKIP:${PN}-sm8750-mtp-dsp = "arch libdir"
 INSANE_SKIP:${PN}-thundercomm-rb3gen2-dsp = "arch libdir"
-
+INSANE_SKIP:${PN}-hawi-mtp-dsp = "arch libdir"
+INSANE_SKIP:${PN}-maili-mtp-dsp = "arch libdir"
+INSANE_SKIP:${PN}-sa8797p-ride-embedded-dsp = "arch libdir ldflags file-rdeps"
 
 ALLOW_EMPTY:${PN}-purwa-iot-evk-dsp = "1"
 
@@ -112,3 +128,6 @@ FILES:${PN}-sa8775p-ride-dsp += "${datadir}/qcom/sa8775p/Qualcomm/SA8775P-RIDE/d
 FILES:${PN}-shikra-evk-dsp += "${datadir}/qcom/shikra/Qualcomm/Shikra-CQS-EVK/dsp/cdsp"
 FILES:${PN}-sm8750-mtp-dsp += "${datadir}/qcom/sm8750/Qualcomm/SM8750-MTP/dsp/cdsp"
 FILES:${PN}-thundercomm-rb3gen2-dsp += "${datadir}/qcom/qcm6490/Thundercomm/RB3gen2/dsp"
+FILES:${PN}-hawi-mtp-dsp += "${datadir}/qcom/hawi/Qualcomm/Hawi-MTP/dsp/cdsp"
+FILES:${PN}-maili-mtp-dsp += "${datadir}/qcom/maili/Qualcomm/Maili-MTP/dsp/cdsp"
+FILES:${PN}-sa8797p-ride-embedded-dsp += "${datadir}/qcom/nord/Qualcomm/SA8797P-Ride-Embedded/dsp/cdsp"
