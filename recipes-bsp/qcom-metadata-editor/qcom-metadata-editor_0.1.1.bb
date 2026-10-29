@@ -9,7 +9,7 @@ LICENSE = "MIT"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=be497cfb223765dae07d1fa35204e4e2"
 
 SRC_URI = "git://github.com/imd-tec/${BPN}.git;branch=master;protocol=https;tag=v${PV}"
-SRCREV = "0d8766bf985bea89bfa774675aa6d7fd2aeb09be"
+SRCREV = "89a90acafe4de10e6a5a9ff41c6b54b6a969771b"
 
 inherit cargo cargo-update-recipe-crates
 
