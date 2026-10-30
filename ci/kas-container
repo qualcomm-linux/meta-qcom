@@ -1,0 +1,21 @@
+#!/bin/sh
+# Copyright (c) Qualcomm Innovation Center, Inc. All rights reserved.
+# SPDX-License-Identifier: MIT
+
+KAS_CONTAINER_IMAGE="${KAS_CONTAINER_IMAGE:-ghcr.io/siemens/kas/kas:latest}"
+KAS_CONTAINER_ENGINE="${KAS_CONTAINER_ENGINE:-docker}"
+KAS_CONTAINER_PATH="$(dirname "$(mktemp -u)")/kas-container-from-image-"
+
+# extract
+{
+  KAS_CONTAINE_ID=$(${KAS_CONTAINER_ENGINE} container create "${KAS_CONTAINER_IMAGE}")
+  KAS_CONTAINER_PATH="${KAS_CONTAINER_PATH}$(${KAS_CONTAINER_ENGINE} container inspect --format='{{.Image}}' "${KAS_CONTAINE_ID}")"
+  if ! [ -f "${KAS_CONTAINER_PATH}" ]; then
+    ${KAS_CONTAINER_ENGINE} container cp "${KAS_CONTAINE_ID}":/usr/local/bin/kas-container "${KAS_CONTAINER_PATH}" || exit
+  fi
+  ${KAS_CONTAINER_ENGINE} container rm "${KAS_CONTAINE_ID}"
+} > /dev/null
+
+# run it
+# shellcheck source=/dev/null
+. "${KAS_CONTAINER_PATH}"
