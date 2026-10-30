@@ -1,0 +1,30 @@
+#!/bin/sh
+# Copyright (c) Qualcomm Innovation Center, Inc. All rights reserved.
+# SPDX-License-Identifier: MIT
+
+# To keep your build reproducible set KAS_CONTAINER_IMAGE outside
+
+if ! command -v docker >/dev/null 2>&1
+then
+    echo "docker could not be found"
+    exit 1
+fi
+
+KAS_CONTAINER_HELPER=kas-container-helper
+KAS_CONTAINER_IMAGE=${KAS_CONTAINER_IMAGE:-ghcr.io/siemens/kas/kas:latest}
+KAS_CONTAINER="$(mktemp -t kas-container-XXXXXX)"
+
+function cleanup()
+{
+  rm -f -- $KAS_CONTAINER
+  docker rm ${KAS_CONTAINER_HELPER} &> /dev/null
+}
+trap cleanup EXIT
+
+# extract kas-container
+docker rm ${KAS_CONTAINER_HELPER} &> /dev/null
+docker container create --name ${KAS_CONTAINER_HELPER} ${KAS_CONTAINER_IMAGE}  > /dev/null
+docker container cp ${KAS_CONTAINER_HELPER}:/usr/local/bin/kas-container ${KAS_CONTAINER} > /dev/null
+
+# run it
+source $KAS_CONTAINER
