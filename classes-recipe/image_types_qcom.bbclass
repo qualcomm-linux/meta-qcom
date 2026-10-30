@@ -127,7 +127,10 @@ create_qcomflash_pkg() {
                 -name '*.fv' -o \
                 -name '*.img' -o \
                 -name 'cdt_*.bin' -o \
+                -name 'dcb.bin' -o \
+                -name 'dcp.bin' -o \
                 -name 'logfs_*.bin' -o \
+                -name 'psi.bin' -o \
                 -name 'qsahara_*.xml' -o \
                 -name 'sec.dat' -o \
                 -name 'soccp*.bin' -o \

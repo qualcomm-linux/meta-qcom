@@ -339,6 +339,7 @@ jobs:
       matrix:
         machine:
           - glymur-crd
+          - hawi-mtp
           - iq-615-evk
           - iq-8275-evk
           - iq-9075-evk
@@ -408,6 +409,12 @@ jobs:
                 name: qcom-distro
             kernel:
                 type: default
+          - machine: hawi-mtp
+            kernel:
+                type: 6.18
+          - machine: hawi-mtp
+            kernel:
+                type: rt-6.18-distro-kvm
           - machine: mahua-crd
             kernel:
                 type: 6.18
