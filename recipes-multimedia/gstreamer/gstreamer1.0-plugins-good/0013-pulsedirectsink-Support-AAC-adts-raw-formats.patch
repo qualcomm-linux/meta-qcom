@@ -1,0 +1,426 @@
+From 148e862e597255670afbb6ba8f9499f20127701a Mon Sep 17 00:00:00 2001
+From: Bala Sai Kosuri <bkosuri@qti.qualcomm.com>
+Date: Thu, 22 Oct 2026 09:11:43 +0530
+Subject: [PATCH] pulsedirectsink: Support AAC adts/raw formats
+
+Extend pulsedirectsink caps and format negotiation to accept
+MPEG-2/MPEG-4 AAC in ADTS and raw stream formats.
+Forward AAC codec_data from negotiated caps through the
+PulseAudio format info so the server side can recover raw AAC
+AudioSpecificConfig details.
+
+Buffer writes are aligned to the PulseAudio frame size and
+pending data is flushed on EOS so encoded data is written
+with the alignment expected by the server.
+
+Upstream-Status: Submitted [https://gitlab.freedesktop.org/gstreamer/gstreamer/-/merge_requests/12144]
+
+Signed-off-by: Bala Sai Kosuri <bkosuri@qti.qualcomm.com>
+---
+ ext/pulse/pulsedirectsink.c | 233 ++++++++++++++++++++++++++++++++----
+ ext/pulse/pulsedirectsink.h |  15 ++-
+ 2 files changed, 225 insertions(+), 23 deletions(-)
+
+diff --git a/ext/pulse/pulsedirectsink.c b/ext/pulse/pulsedirectsink.c
+index 90eda76..d4e7b0b 100644
+--- a/ext/pulse/pulsedirectsink.c
++++ b/ext/pulse/pulsedirectsink.c
+@@ -31,15 +31,19 @@
+  *
+  * Unlike #pulsesink, this element is built directly on #GstBaseSink and uses
+  * the PulseAudio extended-stream API, writing encoded frames straight to the
+- * server. It currently accepts parsed MP3 and passes it to PulseAudio as
+- * MPEG IEC 61937 encoded streams, making it suitable for
+- * compressed passthrough and DSP offload, where playout happens
+- * on the sink rather than the CPU. For linear PCM playback use #pulsesink.
++ * server. It currently accepts parsed MP3 and MPEG-2/MPEG-4 AAC in ADTS or
++ * raw stream formats, passing them to PulseAudio as IEC 61937 encoded streams.
++ * This makes it suitable for compressed passthrough and DSP offload, where
++ * playout happens on the sink rather than the CPU. For linear PCM playback use
++ * #pulsesink.
+  *
+  * ## Example pipelines
+  * |[
+  * gst-launch-1.0 -v filesrc location=example.mp3 ! mpegaudioparse ! pulsedirectsink
+  * ]| Play an MP3 file via compressed passthrough.
++ * |[
++ * gst-launch-1.0 -v filesrc location=example.aac ! aacparse ! pulsedirectsink
++ * ]| Play an AAC file via compressed passthrough.
+  *
+  */
+ 
+@@ -199,6 +203,9 @@ gst_pulsedirectsink_init (GstPulseDirectSink * psink)
+   psink->stream = NULL;
+   psink->format = NULL;
+   psink->properties = NULL;
++  psink->write_buffer = g_byte_array_new ();
++  psink->write_align = 1;
++
+ 
+   psink->tlength = DEFAULT_TLENGTH;
+   psink->minreq = DEFAULT_MINREQ;
+@@ -309,6 +316,9 @@ gst_pulsedirectsink_finalize (GObject * obj)
+   if (psink->properties)
+     gst_structure_free (psink->properties);
+ 
++  if (psink->write_buffer)
++    g_byte_array_unref (psink->write_buffer);
++
+   gst_caps_replace (&psink->caps, NULL);
+ 
+   G_OBJECT_CLASS (parent_class)->finalize (obj);
+@@ -460,6 +470,60 @@ state_failure:
+   }
+ }
+ 
++static GstFlowReturn
++gst_pulsedirectsink_write_data (GstPulseDirectSink * psink, const guint8 * data,
++    gsize size, gboolean flush)
++{
++  gsize write_size;
++
++  if (psink->write_align <= 1) {
++    if (size > 0 && pa_stream_write (psink->stream, data, size, NULL, 0,
++            PA_SEEK_RELATIVE) < 0)
++      goto write_failed;
++    return GST_FLOW_OK;
++  }
++
++  if (size > 0)
++    g_byte_array_append (psink->write_buffer, data, size);
++
++  write_size = psink->write_buffer->len;
++  if (flush) {
++    gsize padded_size = ((write_size + psink->write_align - 1) /
++        psink->write_align) * psink->write_align;
++    if (padded_size > write_size) {
++      gsize padding_size = padded_size - write_size;
++      guint8 *padding = g_malloc0 (padding_size);
++
++      g_byte_array_append (psink->write_buffer, padding, padding_size);
++      g_free (padding);
++      write_size = padded_size;
++    }
++  } else {
++    /* Write out whatever is already frame-aligned instead of holding back
++     * the whole buffer; keep only the sub-frame remainder
++     * (< write_align bytes) queued for next time. */
++    write_size -= write_size % psink->write_align;
++  }
++
++  if (write_size == 0)
++    return GST_FLOW_OK;
++
++  GST_LOG_OBJECT (psink, "Writing %" G_GSIZE_FORMAT " bytes", write_size);
++
++  if (pa_stream_write (psink->stream, psink->write_buffer->data, write_size,
++          NULL, 0, PA_SEEK_RELATIVE) < 0)
++    goto write_failed;
++
++  g_byte_array_remove_range (psink->write_buffer, 0, write_size);
++  return GST_FLOW_OK;
++
++write_failed:
++  GST_ELEMENT_ERROR (psink, RESOURCE, WRITE,
++      ("pa_stream_write() failed: %s",
++          pa_strerror (pa_context_errno (psink->context))), (NULL));
++  return GST_FLOW_ERROR;
++}
++
+ static GstFlowReturn
+ gst_pulsedirectsink_render (GstBaseSink * bsink, GstBuffer * buf)
+ {
+@@ -483,7 +547,7 @@ gst_pulsedirectsink_render (GstBaseSink * bsink, GstBuffer * buf)
+ 
+   gst_buffer_map (buf, &info, GST_MAP_READ);
+ 
+-  GST_LOG_OBJECT (psink, "Writing %" G_GSIZE_FORMAT " bytes", info.size);
++  GST_LOG_OBJECT (psink, "Received %" G_GSIZE_FORMAT " bytes", info.size);
+ 
+   pa_threaded_mainloop_lock (psink->mainloop);
+ 
+@@ -518,16 +582,7 @@ gst_pulsedirectsink_render (GstBaseSink * bsink, GstBuffer * buf)
+     }
+   }
+ 
+-  if (pa_stream_write (psink->stream, info.data, info.size, NULL, 0,
+-          PA_SEEK_RELATIVE) < 0) {
+-    GST_ELEMENT_ERROR (psink, RESOURCE, WRITE,
+-        ("pa_stream_write() failed: %s",
+-            pa_strerror (pa_context_errno (psink->context))), (NULL));
+-    ret = GST_FLOW_ERROR;
+-    goto unlock_and_done;
+-  }
+-
+-  ret = GST_FLOW_OK;
++  ret = gst_pulsedirectsink_write_data (psink, info.data, info.size, FALSE);
+ 
+ unlock_and_done:
+   pa_threaded_mainloop_unlock (psink->mainloop);
+@@ -582,6 +637,10 @@ gst_pulsedirectsink_destroy_stream (GstPulseDirectSink * psink)
+   GST_DEBUG_OBJECT (psink, "destroying the stream");
+ 
+   if (psink->stream) {
++    if (psink->write_buffer)
++      g_byte_array_set_size (psink->write_buffer, 0);
++    psink->write_align = 1;
++
+     if (psink->format) {
+       pa_format_info_free (psink->format);
+       psink->format = NULL;
+@@ -893,6 +952,7 @@ gst_pulsedirectsink_parse_caps (GstAudioRingBufferSpec * spec, GstCaps * caps)
+   const gchar *format;
+   GstStructure *structure;
+   GstAudioInfo info;
++  const GValue *value;
+ 
+   structure = gst_caps_get_structure (caps, 0);
+   gst_audio_info_init (&info);
+@@ -900,30 +960,61 @@ gst_pulsedirectsink_parse_caps (GstAudioRingBufferSpec * spec, GstCaps * caps)
+   format = gst_structure_get_name (structure);
+ 
+   if (g_str_equal (format, "audio/mpeg")) {
+-    gint mpegversion, layer, rate, channels;
++    gint mpegversion, rate, channels;
++    const gchar *stream_format = NULL;
+ 
+     if (!gst_structure_get_int (structure, "mpegversion", &mpegversion))
+       goto parse_error;
+-    if (!gst_structure_get_int (structure, "layer", &layer))
++
++    stream_format = gst_structure_get_string (structure, "stream-format");
++    if (mpegversion > 1 && !stream_format)
+       goto parse_error;
+ 
+     switch (mpegversion) {
+       case 1:
++      {
++        gint layer;
++
++        if (!gst_structure_get_int (structure, "layer", &layer) || layer != 3)
++          goto parse_error;
++
+         spec->type = GST_AUDIO_RING_BUFFER_FORMAT_TYPE_MPEG;
+         break;
++      }
++
++      case 2:
++        if (g_str_equal (stream_format, "raw"))
++          spec->type = GST_AUDIO_RING_BUFFER_FORMAT_TYPE_MPEG2_AAC_RAW;
++        else if (g_str_equal (stream_format, "adts"))
++          spec->type = GST_AUDIO_RING_BUFFER_FORMAT_TYPE_MPEG2_AAC;
++        else
++          goto parse_error;
++        break;
++
++      case 4:
++        if (g_str_equal (stream_format, "raw"))
++          spec->type = GST_AUDIO_RING_BUFFER_FORMAT_TYPE_MPEG4_AAC_RAW;
++        else if (g_str_equal (stream_format, "adts"))
++          spec->type = GST_AUDIO_RING_BUFFER_FORMAT_TYPE_MPEG4_AAC;
++        else
++          goto parse_error;
++        break;
+ 
+       default:
+         goto parse_error;
+     }
+ 
+-    if (layer != 3)
+-      goto parse_error;
+-
+     if (!gst_structure_get_int (structure, "rate", &rate))
+       goto parse_error;
+     if (!gst_structure_get_int (structure, "channels", &channels))
+       goto parse_error;
+ 
++    if ((spec->type == GST_AUDIO_RING_BUFFER_FORMAT_TYPE_MPEG2_AAC_RAW ||
++            spec->type == GST_AUDIO_RING_BUFFER_FORMAT_TYPE_MPEG4_AAC_RAW) &&
++        (!(value = gst_structure_get_value (structure, "codec_data")) ||
++            !GST_VALUE_HOLDS_BUFFER (value)))
++      goto parse_error;
++
+     info.rate = rate;
+     info.channels = channels;
+   } else {
+@@ -966,6 +1057,83 @@ gst_pulsedirectsink_get_times (GstBaseSink * bsink, GstBuffer * buffer,
+   }
+ }
+ 
++#if PA_CHECK_VERSION(3,99,0)
++static void
++gst_pulsedirectsink_set_codec_data (pa_format_info * format, GstCaps * caps)
++{
++  GstStructure *structure;
++  const GValue *value;
++  GstBuffer *codec_data;
++  GstMapInfo map;
++  gchar *hex_codec_data;
++  static const gchar hex[] = "0123456789abcdef";
++  gsize i;
++
++  if (!caps || gst_caps_is_empty (caps) || gst_caps_is_any (caps))
++    return;
++
++  structure = gst_caps_get_structure (caps, 0);
++  value = gst_structure_get_value (structure, "codec_data");
++  if (!value || !GST_VALUE_HOLDS_BUFFER (value))
++    return;
++
++  codec_data = gst_value_get_buffer (value);
++  if (!codec_data || !gst_buffer_map (codec_data, &map, GST_MAP_READ))
++    return;
++
++  hex_codec_data = g_malloc ((map.size * 2) + 1);
++  for (i = 0; i < map.size; i++) {
++    hex_codec_data[i * 2] = hex[(map.data[i] >> 4) & 0x0f];
++    hex_codec_data[(i * 2) + 1] = hex[map.data[i] & 0x0f];
++  }
++  hex_codec_data[map.size * 2] = '\0';
++
++  pa_format_info_set_prop_string (format, "codec_data", hex_codec_data);
++
++  g_free (hex_codec_data);
++  gst_buffer_unmap (codec_data, &map);
++}
++#endif
++
++static gboolean
++gst_pulsedirectsink_fill_format_info (GstAudioRingBufferSpec * spec,
++    pa_format_info ** f, guint * channels)
++{
++  if (gst_pulse_fill_format_info (spec, f, channels)) {
++#if PA_CHECK_VERSION(3,99,0)
++    if (spec->type == GST_AUDIO_RING_BUFFER_FORMAT_TYPE_MPEG2_AAC ||
++        spec->type == GST_AUDIO_RING_BUFFER_FORMAT_TYPE_MPEG4_AAC)
++      pa_format_info_set_prop_string (*f, "stream-format", "adts");
++    gst_pulsedirectsink_set_codec_data (*f, spec->caps);
++#endif
++    return TRUE;
++  }
++#if PA_CHECK_VERSION(3,99,0)
++  if (spec->type == GST_AUDIO_RING_BUFFER_FORMAT_TYPE_MPEG2_AAC_RAW ||
++      spec->type == GST_AUDIO_RING_BUFFER_FORMAT_TYPE_MPEG4_AAC_RAW) {
++    pa_format_info *format = pa_format_info_new ();
++
++    format->encoding = PA_ENCODING_MPEG2_AAC_IEC61937;
++    pa_format_info_set_prop_string (format, "stream-format", "raw");
++    gst_pulsedirectsink_set_codec_data (format, spec->caps);
++    pa_format_info_set_rate (format, GST_AUDIO_INFO_RATE (&spec->info));
++
++    if (!pa_format_info_valid (format)) {
++      pa_format_info_free (format);
++      return FALSE;
++    }
++
++    *f = format;
++    if (channels)
++      *channels = GST_AUDIO_INFO_CHANNELS (&spec->info);
++
++    return TRUE;
++  }
++#endif
++
++  return FALSE;
++}
++
+ static gboolean
+ gst_pulsedirectsink_create_stream (GstPulseDirectSink * psink)
+ {
+@@ -992,8 +1160,8 @@ gst_pulsedirectsink_create_stream (GstPulseDirectSink * psink)
+     goto unlock_and_fail;
+ 
+   /* convert the gstreamer sample spec to the pulseaudio format */
+-  if (!gst_pulse_fill_format_info (&spec, &psink->format, NULL))
+-    GST_LOG_OBJECT (psink, "Could not determine format");
++  if (!gst_pulsedirectsink_fill_format_info (&spec, &psink->format, NULL))
++    goto unsupported_format;
+ 
+   formats[0] = psink->format;
+ 
+@@ -1044,6 +1212,11 @@ gst_pulsedirectsink_create_stream (GstPulseDirectSink * psink)
+   if (!gst_pulsedirectsink_wait_for_stream_ready (psink, psink->stream))
+     goto connect_failed;
+ 
++  const pa_sample_spec *ss = pa_stream_get_sample_spec (psink->stream);
++  psink->write_align = pa_frame_size (ss);
++  GST_DEBUG_OBJECT (psink, "using write alignment of %" G_GSIZE_FORMAT,
++      psink->write_align);
++
+   g_free (psink->device);
+   psink->device = g_strdup (pa_stream_get_device_name (psink->stream));
+   GST_LOG_OBJECT (psink, "device name: %s", psink->device);
+@@ -1079,6 +1252,13 @@ stream_failed:
+             pa_strerror (pa_context_errno (psink->context))), (NULL));
+     goto unlock_and_fail;
+   }
++unsupported_format:
++  {
++    GST_ELEMENT_ERROR (psink, RESOURCE, SETTINGS,
++        ("Could not determine PulseAudio format for caps %" GST_PTR_FORMAT,
++            psink->caps), (NULL));
++    goto unlock_and_fail;
++  }
+ connect_failed:
+   {
+     int err = pa_context_errno (psink->context);
+@@ -1192,6 +1372,9 @@ gst_pulsedirectsink_event (GstBaseSink * bsink, GstEvent * event)
+ 
+       pa_threaded_mainloop_lock (psink->mainloop);
+ 
++      if (psink->write_buffer)
++        g_byte_array_set_size (psink->write_buffer, 0);
++
+       if (!(o = pa_stream_flush (psink->stream,
+                   gst_pulsedirectsink_stream_success_cb, psink))) {
+         GST_ERROR_OBJECT (psink, "pa_stream_flush(): %s",
+@@ -1242,6 +1425,12 @@ gst_pulsedirectsink_wait_event (GstBaseSink * bsink, GstEvent * event)
+ 
+       gst_pulsedirectsink_set_corked (psink, FALSE);
+ 
++      ret = gst_pulsedirectsink_write_data (psink, NULL, 0, TRUE);
++      if (ret != GST_FLOW_OK) {
++        pa_threaded_mainloop_unlock (psink->mainloop);
++        return ret;
++      }
++
+       if (!(o = pa_stream_trigger (psink->stream,
+           gst_pulsedirectsink_stream_success_cb, psink))) {
+         GST_ERROR_OBJECT (psink, "pa_stream_trigger(): %s",
+diff --git a/ext/pulse/pulsedirectsink.h b/ext/pulse/pulsedirectsink.h
+index 6545331..c5c8e3a 100644
+--- a/ext/pulse/pulsedirectsink.h
++++ b/ext/pulse/pulsedirectsink.h
+@@ -54,15 +54,28 @@ struct _GstPulseDirectSink
+ 
+   GstCaps *caps;
+   gboolean corked;
++  GByteArray *write_buffer;
++  gsize write_align;
+ 
+   GstStructure *properties;
+ 
+   gint unlocked;
+ };
+ 
++#if PA_CHECK_VERSION(3,99,0)
++#define PULSE_DIRECT_SINK_AAC_CAPS \
++  "audio/mpeg, mpegversion = (int) { 2, 4 }, " \
++    "framed = (boolean) true, stream-format = (string) adts;" \
++    "audio/mpeg, mpegversion = (int) { 2, 4 }, " \
++    "framed = (boolean) true, stream-format = (string) raw;"
++#else
++#define PULSE_DIRECT_SINK_AAC_CAPS ""
++#endif
++
+ #define PULSE_DIRECT_SINK_TEMPLATE_CAPS \
+   "audio/mpeg, mpegversion = (int) 1, layer = (int) 3, " \
+-    "mpegaudioversion = (int) [ 1, 3 ], parsed = (boolean) true;"
++    "mpegaudioversion = (int) [ 1, 3 ], parsed = (boolean) true;" \
++  PULSE_DIRECT_SINK_AAC_CAPS
+ 
+ G_END_DECLS
+ #endif /* __GST_PULSEDIRECTSINK_H__ */
+-- 
+2.34.1
+
