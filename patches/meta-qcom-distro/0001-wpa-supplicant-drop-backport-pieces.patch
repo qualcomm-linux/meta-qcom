@@ -1,0 +1,131 @@
+From c132c2e77bc94bb26d87dac28727289b34feebe7 Mon Sep 17 00:00:00 2001
+From: Jose Quaresma <jose.quaresma@oss.qualcomm.com>
+Date: Wed, 21 Oct 2026 09:43:52 +0100
+Subject: [PATCH 1/3] wpa-supplicant: drop backport pieces
+
+With the LTS mixins layer for connectivity we don't need anymore
+this backports because they are available in the layer.
+
+Upstream-Status: Submitted [https://github.com/qualcomm-linux/meta-qcom-distro/pull/458]
+
+Signed-off-by: Jose Quaresma <jose.quaresma@oss.qualcomm.com>
+---
+ .../wpa-supplicant/wpa-supplicant_%.bbappend  | 11 -------
+ ...t-Enable-MBO-in-defconfig-by-default.patch | 32 ------------------
+ ...t-Enable-WNM-in-defconfig-by-default.patch | 33 -------------------
+ .../wpa-supplicant/wpa-supplicant_%.bbappend  |  7 ----
+ 4 files changed, 83 deletions(-)
+ delete mode 100644 recipes-backports/wpa-supplicant/wpa-supplicant_%.bbappend
+ delete mode 100644 recipes-connectivity/wpa-supplicant/files/0001-wpa_supplicant-Enable-MBO-in-defconfig-by-default.patch
+ delete mode 100644 recipes-connectivity/wpa-supplicant/files/0001-wpa_supplicant-Enable-WNM-in-defconfig-by-default.patch
+
+diff --git a/recipes-backports/wpa-supplicant/wpa-supplicant_%.bbappend b/recipes-backports/wpa-supplicant/wpa-supplicant_%.bbappend
+deleted file mode 100644
+index b3420f0..0000000
+--- a/recipes-backports/wpa-supplicant/wpa-supplicant_%.bbappend
++++ /dev/null
+@@ -1,11 +0,0 @@
+-python __anonymous() {
+-    if "qcom-distro" in d.getVar("DISTROOVERRIDES").split(":"):
+-        d.setVarFlag("PACKAGECONFIG", "suiteb", ",,")
+-}
+-
+-do_configure:append:qcom-distro() {
+-    if ${@ bb.utils.contains('PACKAGECONFIG', 'suiteb', 'true', 'false', d) }; then
+-        echo 'CONFIG_SUITEB=y'   >> wpa_supplicant/.config
+-        echo 'CONFIG_SUITEB192=y' >> wpa_supplicant/.config
+-    fi
+-}
+diff --git a/recipes-connectivity/wpa-supplicant/files/0001-wpa_supplicant-Enable-MBO-in-defconfig-by-default.patch b/recipes-connectivity/wpa-supplicant/files/0001-wpa_supplicant-Enable-MBO-in-defconfig-by-default.patch
+deleted file mode 100644
+index 1a69954..0000000
+--- a/recipes-connectivity/wpa-supplicant/files/0001-wpa_supplicant-Enable-MBO-in-defconfig-by-default.patch
++++ /dev/null
+@@ -1,32 +0,0 @@
+-From 14f5b069a04c7f4851150d693e51b82e67bd5299 Mon Sep 17 00:00:00 2001
+-From: gaolez <gaole.zhang@oss.qualcomm.com>
+-Date: Mon, 8 Jun 2026 13:06:32 +0800
+-Subject: [PATCH] wpa_supplicant: Enable MBO in defconfig by default
+-
+-Wi-Fi Agile Multiband (MBO) is commonly deployed and provides useful
+-functionality for many devices. Enable CONFIG_MBO in
+-wpa_supplicant/defconfig so it is more likely to be built if this
+-documentation file is used as a starting point for a project build
+-configuration.
+-
+-Upstream-Status: Backport [14f5b069a04c7f4851150d693e51b82e67bd5299]
+-Signed-off-by: Gaole Zhang <gaole.zhang@oss.qualcomm.com>
+----
+- wpa_supplicant/defconfig | 2 +-
+- 1 file changed, 1 insertion(+), 1 deletion(-)
+-
+-diff --git a/wpa_supplicant/defconfig b/wpa_supplicant/defconfig
+-index 75832dbba..7aefe5413 100644
+---- a/wpa_supplicant/defconfig
+-+++ b/wpa_supplicant/defconfig
+-@@ -603,7 +603,7 @@ CONFIG_WIFI_DISPLAY=y
+- #CONFIG_ACS=y
+- 
+- # Support Multi Band Operation
+--#CONFIG_MBO=y
+-+CONFIG_MBO=y
+- 
+- # Fast Initial Link Setup (FILS) (IEEE 802.11ai)
+- #CONFIG_FILS=y
+--- 
+-2.34.1
+diff --git a/recipes-connectivity/wpa-supplicant/files/0001-wpa_supplicant-Enable-WNM-in-defconfig-by-default.patch b/recipes-connectivity/wpa-supplicant/files/0001-wpa_supplicant-Enable-WNM-in-defconfig-by-default.patch
+deleted file mode 100644
+index 062e28a..0000000
+--- a/recipes-connectivity/wpa-supplicant/files/0001-wpa_supplicant-Enable-WNM-in-defconfig-by-default.patch
++++ /dev/null
+@@ -1,33 +0,0 @@
+-From 91e87e3d509ffdf5342d4533e494e4be51e08a1f Mon Sep 17 00:00:00 2001
+-From: Gaole Zhang <gaole.zhang@oss.qualcomm.com>
+-Date: Tue, 16 Jun 2026 12:19:11 +0800
+-Subject: [PATCH] wpa_supplicant: Enable WNM in defconfig by default
+-
+-IEEE 802.11v WNM is widely used by access points to improve roaming
+-behavior and power efficiency. With CONFIG_WNM enabled, wpa_supplicant
+-can supports WNM related features such as BSS Transition Management and
+-WNM Sleep Mode. Enable CONFIG_WNM in wpa_supplicant/defconfig so it is
+-more likely to be built if this documentation file is used as a starting
+-point for a project build configuration.
+-
+-Upstream-Status: Backport [91e87e3d509ffdf5342d4533e494e4be51e08a1f]
+-Signed-off-by: Gaole Zhang <gaole.zhang@oss.qualcomm.com>
+----
+- wpa_supplicant/defconfig | 2 +-
+- 1 file changed, 1 insertion(+), 1 deletion(-)
+-
+-diff --git a/wpa_supplicant/defconfig b/wpa_supplicant/defconfig
+-index 0a22782e..4955854f 100644
+---- a/wpa_supplicant/defconfig
+-+++ b/wpa_supplicant/defconfig
+-@@ -511,7 +511,7 @@ CONFIG_IEEE80211BE=y
+-
+- # Wireless Network Management (IEEE Std 802.11v-2011)
+- # Note: This is experimental and not complete implementation.
+--#CONFIG_WNM=y
+-+CONFIG_WNM=y
+- 
+- # Interworking (IEEE 802.11u)
+- # This can be used to enable functionality to improve interworking with
+--- 
+-2.34.1
+diff --git a/recipes-connectivity/wpa-supplicant/wpa-supplicant_%.bbappend b/recipes-connectivity/wpa-supplicant/wpa-supplicant_%.bbappend
+index f763268..911d954 100644
+--- a/recipes-connectivity/wpa-supplicant/wpa-supplicant_%.bbappend
++++ b/recipes-connectivity/wpa-supplicant/wpa-supplicant_%.bbappend
+@@ -1,8 +1 @@
+-FILESEXTRAPATHS:prepend := "${THISDIR}/files:"
+-
+-SRC_URI:append:qcom-distro = " \
+-    file://0001-wpa_supplicant-Enable-MBO-in-defconfig-by-default.patch \
+-    file://0001-wpa_supplicant-Enable-WNM-in-defconfig-by-default.patch \
+-"
+-
+ PACKAGECONFIG:append:qcom-distro = " suiteb"
+-- 
+2.56.0
+

@@ -1,0 +1,27 @@
+From 41bc596d04d3c32e65b33a28aed70309bdedb3a1 Mon Sep 17 00:00:00 2001
+From: Jose Quaresma <jose.quaresma@oss.qualcomm.com>
+Date: Tue, 27 Oct 2026 09:38:06 +0000
+Subject: [PATCH 2/3] hostapd: prefer the lts-connectivity-mixin version
+
+The version provided by lts-connectivity-mixin is not used by default
+and needs to be explicitly defined.
+
+Upstream-Status: Submitted [https://github.com/qualcomm-linux/meta-qcom-distro/pull/458]
+
+Signed-off-by: Jose Quaresma <jose.quaresma@oss.qualcomm.com>
+---
+ recipes-connectivity/hostapd/hostapd_%.bbappend | 2 ++
+ 1 file changed, 2 insertions(+)
+ create mode 100644 recipes-connectivity/hostapd/hostapd_%.bbappend
+
+diff --git a/recipes-connectivity/hostapd/hostapd_%.bbappend b/recipes-connectivity/hostapd/hostapd_%.bbappend
+new file mode 100644
+index 0000000..74618fe
+--- /dev/null
++++ b/recipes-connectivity/hostapd/hostapd_%.bbappend
+@@ -0,0 +1,2 @@
++# use latest version from the lts-connectivity-mixin layer
++DEFAULT_PREFERENCE:layer-lts-connectivity-mixin:qcom-distro = "1"
+-- 
+2.56.0
+
