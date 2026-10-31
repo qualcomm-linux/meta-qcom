@@ -338,6 +338,7 @@ jobs:
       fail-fast: false
       matrix:
         machine:
+          - eliza-evk-emmc
           - glymur-crd
           - iq-615-evk
           - iq-8275-evk
@@ -398,6 +399,12 @@ jobs:
             kernel:
                 type: rt-6.18-distro-kvm
           # Exclude jobs from compile_stage2
+          - machine: eliza-evk-emmc
+            kernel:
+                type: 6.18
+          - machine: eliza-evk-emmc
+            kernel:
+                type: rt-6.18-distro-kvm
           - machine: glymur-crd
             distro:
                 name: nodistro
