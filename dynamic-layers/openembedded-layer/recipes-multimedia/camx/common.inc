@@ -60,6 +60,9 @@ do_install:append() {
     # Remove legacy libcamera* libs from the staged image
     rm -f ${D}${libdir}/libcamera*
 
+    # Remove unused CamX test utility static library from the staged image
+    rm -f ${D}${libdir}/libcamxtestcommonutils.a
+
     # Base docs
     install -m 0644 ${S}/usr/share/doc/${BPN}/NOTICE \
         ${D}${datadir}/doc/${BPN}
