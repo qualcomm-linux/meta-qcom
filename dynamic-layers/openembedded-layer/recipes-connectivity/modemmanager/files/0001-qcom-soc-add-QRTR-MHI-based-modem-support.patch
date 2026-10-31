@@ -80,7 +80,7 @@ index 64d983eb..79c9be24 100644
              ctx->multiplex = MM_BEARER_MULTIPLEX_SUPPORT_REQUESTED;
          else if (!g_strcmp0 (data_port_driver, "ipa"))
              ctx->multiplex = MM_BEARER_MULTIPLEX_SUPPORT_REQUIRED;
-+	    else if (!g_strcmp0 (data_port_driver, "mhi_net"))
++	    else if (!g_strcmp0 (data_port_driver, "mhi_net") || !g_strcmp0 (data_port_driver, "bam-dmux"))
 +	        ctx->multiplex = MM_BEARER_MULTIPLEX_SUPPORT_REQUESTED;	
          else
              ctx->multiplex = MM_BEARER_MULTIPLEX_SUPPORT_NONE;
