@@ -1,7 +1,7 @@
-From 8b3f0bfa7400c96a2fcded70b1de0a882913df52 Mon Sep 17 00:00:00 2001
+From c14e6b6b4c09ac71d8115ec9d7159c3262060674 Mon Sep 17 00:00:00 2001
 From: Dmitry Baryshkov <dmitry.baryshkov@oss.qualcomm.com>
 Date: Fri, 26 Jun 2026 23:09:09 +0300
-Subject: [PATCH] igt-gpu-tools: fix build on non-x86 platforms
+Subject: [PATCH v5] igt-gpu-tools: fix build on non-x86 platforms
 
 The "pause" assembly mnemonic is only available on IA-32 platforms,
 breaking e.g. debug IGT builds on ARM / AArch64. Guard this inline
@@ -12,20 +12,22 @@ FAILED: [code=1] tests/amdgpu/amd_basic.p/amd_basic.c.o
 Assembler messages:
 {standard input}:3702: Error: unknown mnemonic `pause' -- `pause'
 
+Upstream-Status: Submitted [https://lore.kernel.org/all/20261029093738.1507-2-jose.quaresma@oss.qualcomm.com/]
+
 Signed-off-by: Dmitry Baryshkov <dmitry.baryshkov@oss.qualcomm.com>
-Upstream-Status: Submitted [https://lore.kernel.org/r/20260626201256.112352-1-dmitry.baryshkov@oss.qualcomm.com/]
+Signed-off-by: Jose Quaresma <jose.quaresma@oss.qualcomm.com>
 ---
- ...t-pause-mnemonic-only-on-x86-x86_64-.patch | 36 +++++++++++++++++++
+ ...t-pause-mnemonic-only-on-x86-x86_64-.patch | 37 +++++++++++++++++++
  .../igt-gpu-tools/igt-gpu-tools_2.6.bb        |  1 +
- 2 files changed, 37 insertions(+)
+ 2 files changed, 38 insertions(+)
  create mode 100644 meta/recipes-graphics/igt-gpu-tools/igt-gpu-tools/0001-lib-amdgpu-insert-pause-mnemonic-only-on-x86-x86_64-.patch
 
 diff --git a/meta/recipes-graphics/igt-gpu-tools/igt-gpu-tools/0001-lib-amdgpu-insert-pause-mnemonic-only-on-x86-x86_64-.patch b/meta/recipes-graphics/igt-gpu-tools/igt-gpu-tools/0001-lib-amdgpu-insert-pause-mnemonic-only-on-x86-x86_64-.patch
 new file mode 100644
-index 000000000..1fdaad7b0
+index 0000000000..38582bf1d4
 --- /dev/null
 +++ b/meta/recipes-graphics/igt-gpu-tools/igt-gpu-tools/0001-lib-amdgpu-insert-pause-mnemonic-only-on-x86-x86_64-.patch
-@@ -0,0 +1,36 @@
+@@ -0,0 +1,37 @@
 +From dc072dc0fc680a055d0cdf5adfdccbab6d0566d6 Mon Sep 17 00:00:00 2001
 +From: Dmitry Baryshkov <dmitry.baryshkov@oss.qualcomm.com>
 +Date: Fri, 26 Jun 2026 22:34:06 +0300
@@ -41,7 +43,8 @@ index 000000000..1fdaad7b0
 +Assembler messages:
 +{standard input}:3702: Error: unknown mnemonic `pause' -- `pause'
 +
-+Upstream-Status: Pending [for internal clearance]
++Upstream-Status: Backport [https://gitlab.freedesktop.org/drm/igt-gpu-tools/-/commit/125c0289617f3c7ba7ee376ea1d8aabd2ff5afdc]
++
 +Signed-off-by: Dmitry Baryshkov <dmitry.baryshkov@oss.qualcomm.com>
 +---
 + tests/amdgpu/amd_basic.c | 2 ++
@@ -63,7 +66,7 @@ index 000000000..1fdaad7b0
 + }
 + 
 diff --git a/meta/recipes-graphics/igt-gpu-tools/igt-gpu-tools_2.6.bb b/meta/recipes-graphics/igt-gpu-tools/igt-gpu-tools_2.6.bb
-index d76c2355a..a46b002b8 100644
+index d76c2355a1..a46b002b83 100644
 --- a/meta/recipes-graphics/igt-gpu-tools/igt-gpu-tools_2.6.bb
 +++ b/meta/recipes-graphics/igt-gpu-tools/igt-gpu-tools_2.6.bb
 @@ -12,6 +12,7 @@ inherit meson pkgconfig
@@ -75,5 +78,5 @@ index d76c2355a..a46b002b8 100644
  
  DEPENDS += "libdrm libpciaccess cairo udev glib-2.0 procps libunwind kmod openssl elfutils alsa-lib json-c bison-native pciutils jansson"
 -- 
-2.43.0
+2.56.0
 
