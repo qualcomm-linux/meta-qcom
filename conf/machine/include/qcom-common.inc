@@ -8,7 +8,7 @@ require conf/machine/include/qcom-u-boot-common.inc
 MACHINE_FEATURES = "alsa bluetooth pci usbgadget usbhost wifi"
 
 QCOM_UEFI_BOOT ??= "${@bb.utils.contains('TUNE_FEATURES', 'aarch64', '1', '0', d)}"
-MACHINE_FEATURES += "${@'efi' if bb.utils.to_boolean(d.getVar('QCOM_UEFI_BOOT')) else ''}"
+MACHINE_FEATURES += "${@'efi vfat' if bb.utils.to_boolean(d.getVar('QCOM_UEFI_BOOT')) else ''}"
 
 XSERVER_OPENGL ?= " \
     xf86-video-modesetting \
