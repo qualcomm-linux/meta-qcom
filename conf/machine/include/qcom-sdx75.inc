@@ -4,6 +4,9 @@ require conf/machine/include/qcom-common.inc
 # SDX75 has no PCIe controller
 MACHINE_FEATURES:remove = "pci"
 
+# SDX75 boots from NAND without UEFI
+QCOM_UEFI_BOOT = "0"
+
 PREFERRED_PROVIDER_virtual/kernel ?= "linux-qcom-next"
 
 DEFAULTTUNE = "cortexa55"

@@ -7,6 +7,9 @@ require conf/machine/include/qcom-u-boot-common.inc
 # Set a default set of MACHINE_FEATURES, indivudual MACHINEs can append it
 MACHINE_FEATURES = "alsa bluetooth pci usbgadget usbhost wifi"
 
+QCOM_UEFI_BOOT ??= "${@bb.utils.contains('TUNE_FEATURES', 'aarch64', '1', '0', d)}"
+MACHINE_FEATURES += "${@'efi' if bb.utils.to_boolean(d.getVar('QCOM_UEFI_BOOT')) else ''}"
+
 XSERVER_OPENGL ?= " \
     xf86-video-modesetting \
     xserver-xorg-extension-glx \
