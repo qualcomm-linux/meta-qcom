@@ -1,0 +1,105 @@
+From 73c490dd1abc240bee7bc6de579fa2fccc8b4504 Mon Sep 17 00:00:00 2001
+From: Ricardo Salveti <ricardo.salveti@oss.qualcomm.com>
+Date: Sat, 24 Oct 2026 23:41:25 +0000
+Subject: [PATCH] kgsl: build: Stub out governors skipped for simple_ondemand
+
+Commits b47b4a8c ("kgsl: build: Skip governor files when simple_ondemand
+governor is selected") and e741eff3 ("kgsl: build: Fix governor name
+string comparison in Kbuild") stopped building governor_msm_adreno_tz.c
+and governor_gpubw_mon.c for simple_ondemand, but kgsl_pwrscale.h still
+declares their functions extern. msm_kgsl.ko then only links if the
+compiler inlines the static functions called once in kgsl_pwrscale.c and
+drops the msm-adreno-tz path, so kernels with
+CONFIG_DEBUG_SECTION_MISMATCH=y (which adds
+-fno-inline-functions-called-once) fail in modpost:
+
+  ERROR: modpost: msm_kgsl.ko: symbol 'msm_adreno_tz_init' undefined!
+  ERROR: modpost: msm_kgsl.ko: symbol 'devfreq_gpubw_exit' undefined!
+  ERROR: modpost: msm_kgsl.ko: symbol 'devfreq_gpubw_init' undefined!
+
+Set CONFIG_QCOM_KGSL_SKIP_MSM_GOVERNORS in a single place when
+simple_ondemand is selected, use it to skip the governor objects, and
+make the governor API, including msm_adreno_tz_reinit(), fall back to
+inline stubs when it is set.
+
+Assisted-by: Claude:claude-opus-5-5
+Signed-off-by: Ricardo Salveti <ricardo.salveti@oss.qualcomm.com>
+Upstream-Status: Submitted [https://github.com/qualcomm-linux/kgsl/pull/23]
+---
+ Kbuild               | 9 +++++++--
+ kgsl_pwrscale.h      | 6 ++++--
+ msm_adreno_devfreq.h | 7 +++++++
+ 3 files changed, 18 insertions(+), 4 deletions(-)
+
+diff --git a/Kbuild b/Kbuild
+index 46b32b3f..081dba9f 100644
+--- a/Kbuild
++++ b/Kbuild
+@@ -116,14 +116,19 @@ ifndef CONFIG_QCOM_KGSL_USE_SHMEM
+ 	msm_kgsl-y += kgsl_pool.o
+ endif
+ 
++ifeq ($(CONFIG_QCOM_ADRENO_DEFAULT_GOVERNOR),\"simple_ondemand\")
++	CONFIG_QCOM_KGSL_SKIP_MSM_GOVERNORS = y
++	ccflags-y += -DCONFIG_QCOM_KGSL_SKIP_MSM_GOVERNORS=1
++endif
++
+ ifndef CONFIG_DEVFREQ_GOV_QCOM_ADRENO_TZ
+-ifneq ($(CONFIG_QCOM_ADRENO_DEFAULT_GOVERNOR),\"simple_ondemand\")
++ifndef CONFIG_QCOM_KGSL_SKIP_MSM_GOVERNORS
+ 	msm_kgsl-y += governor_msm_adreno_tz.o
+ endif
+ endif
+ 
+ ifndef CONFIG_DEVFREQ_GOV_QCOM_GPUBW_MON
+-ifneq ($(CONFIG_QCOM_ADRENO_DEFAULT_GOVERNOR),\"simple_ondemand\")
++ifndef CONFIG_QCOM_KGSL_SKIP_MSM_GOVERNORS
+ 	msm_kgsl-y += governor_gpubw_mon.o
+ endif
+ endif
+diff --git a/kgsl_pwrscale.h b/kgsl_pwrscale.h
+index 6ee5bce2..3de4cf44 100644
+--- a/kgsl_pwrscale.h
++++ b/kgsl_pwrscale.h
+@@ -88,7 +88,8 @@ void kgsl_pwrscale_governor_enable(struct kgsl_device *device);
+ void kgsl_pwrscale_governor_disable(struct kgsl_device *device, bool turbo);
+ void kgsl_pwrscale_fast_bus_hint(bool on);
+ 
+-#if IS_ENABLED(CONFIG_DEVFREQ_GOV_QCOM_ADRENO_TZ)
++#if IS_ENABLED(CONFIG_DEVFREQ_GOV_QCOM_ADRENO_TZ) || \
++	IS_ENABLED(CONFIG_QCOM_KGSL_SKIP_MSM_GOVERNORS)
+ static inline int msm_adreno_tz_init(void)
+ {
+ 	return 0;
+@@ -103,7 +104,8 @@ int msm_adreno_tz_init(void);
+ void msm_adreno_tz_exit(void);
+ #endif
+ 
+-#if IS_ENABLED(CONFIG_DEVFREQ_GOV_QCOM_GPUBW_MON)
++#if IS_ENABLED(CONFIG_DEVFREQ_GOV_QCOM_GPUBW_MON) || \
++	IS_ENABLED(CONFIG_QCOM_KGSL_SKIP_MSM_GOVERNORS)
+ static inline int devfreq_gpubw_init(void)
+ {
+ 	return 0;
+diff --git a/msm_adreno_devfreq.h b/msm_adreno_devfreq.h
+index 4288db4c..c268bca3 100644
+--- a/msm_adreno_devfreq.h
++++ b/msm_adreno_devfreq.h
+@@ -79,7 +79,14 @@ typedef void(*getbw_func)(unsigned long *, unsigned long *, void *);
+ int devfreq_vbif_update_bw(void);
+ void devfreq_vbif_register_callback(getbw_func func, void *data);
+ 
++#if IS_ENABLED(CONFIG_QCOM_KGSL_SKIP_MSM_GOVERNORS)
++static inline int msm_adreno_tz_reinit(struct devfreq *devfreq)
++{
++	return 0;
++}
++#else
+ int msm_adreno_tz_reinit(struct devfreq *devfreq);
++#endif
+ 
+ #if defined(CONFIG_QTEE_SHM_BRIDGE)
+ #include <linux/qtee_shmbridge.h>
+-- 
+2.43.0
+
