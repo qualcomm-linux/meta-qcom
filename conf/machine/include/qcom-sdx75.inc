@@ -1,6 +1,9 @@
 SOC_FAMILY = "sdx75"
 require conf/machine/include/qcom-common.inc
 
+# SDX75 has no PCIe controller
+MACHINE_FEATURES:remove = "pci"
+
 PREFERRED_PROVIDER_virtual/kernel ?= "linux-qcom-next"
 
 DEFAULTTUNE = "cortexa55"

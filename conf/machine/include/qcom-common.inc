@@ -5,7 +5,7 @@ require conf/machine/include/qcom-common-binary.inc
 require conf/machine/include/qcom-u-boot-common.inc
 
 # Set a default set of MACHINE_FEATURES, indivudual MACHINEs can append it
-MACHINE_FEATURES = "alsa bluetooth usbgadget usbhost wifi"
+MACHINE_FEATURES = "alsa bluetooth pci usbgadget usbhost wifi"
 
 XSERVER_OPENGL ?= " \
     xf86-video-modesetting \
