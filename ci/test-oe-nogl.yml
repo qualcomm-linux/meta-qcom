@@ -11,4 +11,4 @@ repos:
 
 local_conf_header:
   nogl: |
-    DISTRO_FEATURES:remove = "opengl"
+    DISTRO_FEATURES:remove = "opengl wayland"
