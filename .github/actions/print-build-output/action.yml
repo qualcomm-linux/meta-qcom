@@ -10,13 +10,23 @@ inputs:
 runs:
   using: "composite"
   steps:
+    # actions/download-artifact requests every matching artifact at once,
+    # which trips the GitHub API secondary rate limit with one build URL
+    # artifact per compile job; gh downloads them one at a time.
     - name: 'Download build URLs'
-      uses: actions/download-artifact@v7
-      with:
-        github-token: ${{ inputs.github-token }}
-        pattern: ${{ inputs.pattern }}
-        path: urlfiles
-        merge-multiple: true
+      shell: bash
+      env:
+        GH_TOKEN: ${{ inputs.github-token }}
+        INPUTS_PATTERN: ${{ inputs.pattern }}
+      run: |
+        if ! out=$(gh run download "${GITHUB_RUN_ID}" --repo "${GITHUB_REPOSITORY}" \
+            --pattern "${INPUTS_PATTERN}" --dir urlfiles 2>&1); then
+          echo "${out}"
+          case "${out}" in
+            *"no valid artifacts found"*|*"no artifact matches"*) ;;
+            *) exit 1 ;;
+          esac
+        fi
 
     - name: Detect whether any artifacts were downloaded
       id: has_artifacts
@@ -43,7 +53,8 @@ runs:
                 oslist.add(o)
                 machinelist.add(m)
                 url = ""
-                with open(f"./urlfiles/{fname}", "r") as urlfile:
+                # gh stores each artifact in a directory of the same name
+                with open(f"./urlfiles/{fname}/{fname}", "r") as urlfile:
                     url = urlfile.read()
                 if not o in ftable:
                     ftable.update({o:{m: url}})
