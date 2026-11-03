@@ -13,14 +13,6 @@ UKI_FILENAME = "${EFI_LINUX_IMG}"
 UKI_CMDLINE = "root=${QCOM_BOOTIMG_ROOTFS} rw rootwait console=${KERNEL_CONSOLE}"
 UKI_CMDLINE += "${@d.getVar('KERNEL_CMDLINE_EXTRA') or ''}"
 
-# Remove 'upstream' dtb, rely on EFI provided one
-KERNEL_DEVICETREE = ""
-KERNEL_DEVICETREE:glymur-crd = "${QCOM_DTB_DEFAULT}.dtb"
-KERNEL_DEVICETREE:iq-9075-evk-open-fw = "lemans-evk-el2.dtb"
-KERNEL_DEVICETREE:kaanapali-mtp = "${QCOM_DTB_DEFAULT}.dtb"
-KERNEL_DEVICETREE:rb3gen2-core-kit-open-fw = "qcs6490-rb3gen2-el2.dtb"
-KERNEL_DEVICETREE:sm8750-mtp = "${QCOM_DTB_DEFAULT}.dtb"
-
 setup_efi_folder() {
     # Move EFI content from packages expecting /boot to be the ESP location
     if [ -d ${IMAGE_ROOTFS}/boot/EFI ]; then
