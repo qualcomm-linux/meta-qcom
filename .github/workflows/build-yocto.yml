@@ -45,8 +45,9 @@ jobs:
           docker create --name kas ${KAS_CONTAINER_IMAGE}
           docker cp kas:/usr/local/bin/kas-container $KAS_CONTAINER
           LATEST=$(git ls-remote --tags --refs --sort="v:refname" https://github.com/siemens/kas | tail -n1 | sed 's/.*\///')
-          if ! grep -q "KAS_CONTAINER_SCRIPT_VERSION=\"${LATEST}\"" $KAS_CONTAINER ; then
-            echo "Version "${LATEST}" of kas is available, please update "KAS_CONTAINER_IMAGE: $KAS_CONTAINER_IMAGE""
+          CURRENT=$(${KAS_CONTAINER} --version | cut -d' ' -f 2)
+          if [[ "${CURRENT}" != "${LATEST}" ]]; then
+            echo "Version "${LATEST}" of kas is available and we are at "${CURRENT}", please update "KAS_CONTAINER_IMAGE: $KAS_CONTAINER_IMAGE""
           fi
 
       - name: Run kas lock
