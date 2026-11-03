@@ -14,12 +14,13 @@ SRC_URI = "\
     file://0001-inc-add-SPDX-License-Identifier-to-uthash.h.patch \
 "
 
-inherit autotools systemd ptest pkgconfig useradd
+inherit autotools systemd ptest pkgconfig useradd hexagon-dsp
 
 EXTRA_OECONF += "\
     --with-systemdsystemunitdir=${systemd_system_unitdir} \
     --with-udevrulesdir=${nonarch_base_libdir}/udev/rules.d \
     --with-sysusersdir=${nonarch_libdir}/sysusers.d \
+    --with-config-base-dir=${HEXAGON_DSP_DIR} \
 "
 
 SYSTEMD_SERVICE:${PN} = " \
@@ -33,7 +34,7 @@ SYSTEMD_SERVICE:${PN} = " \
 "
 
 do_install:append() {
-    install -d ${D}${datadir}/qcom/
+    install -d ${D}${HEXAGON_DSP_DIR}
 }
 
 FILES:${PN} += " \
@@ -43,7 +44,7 @@ FILES:${PN} += " \
     ${libdir}/libadsprpc.so \
     ${libdir}/libcdsprpc.so \
     ${libdir}/libsdsprpc.so \
-    ${datadir}/qcom/ \
+    ${HEXAGON_DSP_DIR} \
     ${nonarch_base_libdir}/udev/rules.d/60-fastrpc.rules \
     ${nonarch_libdir}/sysusers.d/fastrpc.conf \
 "
