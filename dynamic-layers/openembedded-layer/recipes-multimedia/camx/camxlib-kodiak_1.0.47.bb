@@ -51,8 +51,9 @@ do_install:append() {
         rm -f ${D}${libdir}/camx/kodiak/camera/components/libbanding_correction*
     fi
 
-    # Remove OpenGL/EGL-dependent libraries when opengl is not enabled.
-    if ${@bb.utils.contains('DISTRO_FEATURES', 'opengl', 'false', 'true', d)}; then
+    # Remove the libraries that need both OpenGL/EGL and OpenCL when either
+    # opengl or opencl is not enabled.
+    if ${@bb.utils.contains('DISTRO_FEATURES', 'opengl opencl', 'false', 'true', d)}; then
         rm -f ${D}${libdir}/camx/kodiak/camera/components/libiwarp*
     fi
 
