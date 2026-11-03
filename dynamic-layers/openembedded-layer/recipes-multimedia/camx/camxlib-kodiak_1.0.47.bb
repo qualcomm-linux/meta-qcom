@@ -59,7 +59,8 @@ do_install:append() {
     # copy Deep Learning based binary
     cp -r ${S}/usr/share/camx ${D}${datadir}
     # copy skel file
-    cp -r ${S}/usr/share/qcom ${D}${datadir}
+    install -d ${D}${HEXAGON_DSP_DIR}
+    cp -r ${S}/usr/share/qcom/. ${D}${HEXAGON_DSP_DIR}/
 
     # Install bin files only if /usr/bin exists in ${S}
     if [ -d "${S}${libexecdir}" ]; then
@@ -130,7 +131,7 @@ FILES:chicdk-kodiak = "\
     "
 FILES:${PN}-skel = "\
     ${datadir}/camx \
-    ${datadir}/qcom \
+    ${HEXAGON_DSP_DIR} \
     "
 FILES:${PN} = "\
     ${libdir}/libcamx_metadata_kodiak*${SOLIBS} \
