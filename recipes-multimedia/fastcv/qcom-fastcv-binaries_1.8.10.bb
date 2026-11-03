@@ -25,15 +25,15 @@ do_install() {
     install -d ${D}${libdir}/pkgconfig
     install -d ${D}${datadir}/doc/${PN}
     install -d ${D}${includedir}/fastcv
-    install -d ${D}${datadir}/qcom/glymur/Qualcomm/Glymur-CRD/dsp/cdsp
-    install -d ${D}${datadir}/qcom/kaanapali/Qualcomm/Kaanapali-MTP/dsp/cdsp
-    install -d ${D}${datadir}/qcom/qcm6490/Thundercomm/RB3gen2/dsp/cdsp
-    install -d ${D}${datadir}/qcom/qcs615/Qualcomm/QCS615-RIDE/dsp/cdsp
-    install -d ${D}${datadir}/qcom/qcs8300/Qualcomm/QCS8300-RIDE/dsp/cdsp
-    install -d ${D}${datadir}/qcom/sa8775p/Qualcomm/SA8775P-RIDE/dsp/cdsp
-    install -d ${D}${datadir}/qcom/shikra/Qualcomm/Shikra-CQS-EVK/dsp/cdsp
-    install -d ${D}${datadir}/qcom/sm8750/Qualcomm/SM8750-MTP/dsp/cdsp
-    install -d ${D}${datadir}/qcom/x1e80100/Qualcomm/Hamoa-IoT-EVK/dsp/cdsp
+    install -d ${D}${HEXAGON_DSP_DIR}/glymur/Qualcomm/Glymur-CRD/dsp/cdsp
+    install -d ${D}${HEXAGON_DSP_DIR}/kaanapali/Qualcomm/Kaanapali-MTP/dsp/cdsp
+    install -d ${D}${HEXAGON_DSP_DIR}/qcm6490/Thundercomm/RB3gen2/dsp/cdsp
+    install -d ${D}${HEXAGON_DSP_DIR}/qcs615/Qualcomm/QCS615-RIDE/dsp/cdsp
+    install -d ${D}${HEXAGON_DSP_DIR}/qcs8300/Qualcomm/QCS8300-RIDE/dsp/cdsp
+    install -d ${D}${HEXAGON_DSP_DIR}/sa8775p/Qualcomm/SA8775P-RIDE/dsp/cdsp
+    install -d ${D}${HEXAGON_DSP_DIR}/shikra/Qualcomm/Shikra-CQS-EVK/dsp/cdsp
+    install -d ${D}${HEXAGON_DSP_DIR}/sm8750/Qualcomm/SM8750-MTP/dsp/cdsp
+    install -d ${D}${HEXAGON_DSP_DIR}/x1e80100/Qualcomm/Hamoa-IoT-EVK/dsp/cdsp
 
     install -m 0755 ${S}/usr/lib/libfastcvopt.so.1.8.0 ${D}${libdir}
     install -m 0755 ${S}/usr/lib/libfastcvdsp_stub.so.1.8.0 ${D}${libdir}
@@ -48,15 +48,15 @@ do_install() {
     install -m 0644 ${S}/usr/include/fastcv/fastcv.h ${D}${includedir}/fastcv/
     install -m 0644 ${S}/usr/include/fastcv/fastcvExt.h ${D}${includedir}/fastcv/
 
-    install -m 0644 ${S}/usr/share/dsp/cdsp/cv/v65/TALOS_MOOREA/*.so ${D}${datadir}/qcom/qcs615/Qualcomm/QCS615-RIDE/dsp/cdsp
-    install -m 0644 ${S}/usr/share/dsp/cdsp/cv/v66/SHIKRA/*.so ${D}${datadir}/qcom/shikra/Qualcomm/Shikra-CQS-EVK/dsp/cdsp
-    install -m 0644 ${S}/usr/share/dsp/cdsp/cv/v68/KODIAK/*.so ${D}${datadir}/qcom/qcm6490/Thundercomm/RB3gen2/dsp/cdsp
-    install -m 0644 ${S}/usr/share/dsp/cdsp/cv/v73/HAMOA/*.so ${D}${datadir}/qcom/x1e80100/Qualcomm/Hamoa-IoT-EVK/dsp/cdsp
-    install -m 0644 ${S}/usr/share/dsp/cdsp/cv/v73/LEMANS/*.so ${D}${datadir}/qcom/sa8775p/Qualcomm/SA8775P-RIDE/dsp/cdsp
-    install -m 0644 ${S}/usr/share/dsp/cdsp/cv/v75/MONACO/*.so ${D}${datadir}/qcom/qcs8300/Qualcomm/QCS8300-RIDE/dsp/cdsp
-    install -m 0644 ${S}/usr/share/dsp/cdsp/cv/v79/PAKALA/*.so ${D}${datadir}/qcom/sm8750/Qualcomm/SM8750-MTP/dsp/cdsp
-    install -m 0644 ${S}/usr/share/dsp/cdsp/cv/v81/KAANAPALI/*.so ${D}${datadir}/qcom/kaanapali/Qualcomm/Kaanapali-MTP/dsp/cdsp
-    install -m 0644 ${S}/usr/share/dsp/cdsp/cv/v81/GLYMUR/*.so ${D}${datadir}/qcom/glymur/Qualcomm/Glymur-CRD/dsp/cdsp
+    install -m 0644 ${S}/usr/share/dsp/cdsp/cv/v65/TALOS_MOOREA/*.so ${D}${HEXAGON_DSP_DIR}/qcs615/Qualcomm/QCS615-RIDE/dsp/cdsp
+    install -m 0644 ${S}/usr/share/dsp/cdsp/cv/v66/SHIKRA/*.so ${D}${HEXAGON_DSP_DIR}/shikra/Qualcomm/Shikra-CQS-EVK/dsp/cdsp
+    install -m 0644 ${S}/usr/share/dsp/cdsp/cv/v68/KODIAK/*.so ${D}${HEXAGON_DSP_DIR}/qcm6490/Thundercomm/RB3gen2/dsp/cdsp
+    install -m 0644 ${S}/usr/share/dsp/cdsp/cv/v73/HAMOA/*.so ${D}${HEXAGON_DSP_DIR}/x1e80100/Qualcomm/Hamoa-IoT-EVK/dsp/cdsp
+    install -m 0644 ${S}/usr/share/dsp/cdsp/cv/v73/LEMANS/*.so ${D}${HEXAGON_DSP_DIR}/sa8775p/Qualcomm/SA8775P-RIDE/dsp/cdsp
+    install -m 0644 ${S}/usr/share/dsp/cdsp/cv/v75/MONACO/*.so ${D}${HEXAGON_DSP_DIR}/qcs8300/Qualcomm/QCS8300-RIDE/dsp/cdsp
+    install -m 0644 ${S}/usr/share/dsp/cdsp/cv/v79/PAKALA/*.so ${D}${HEXAGON_DSP_DIR}/sm8750/Qualcomm/SM8750-MTP/dsp/cdsp
+    install -m 0644 ${S}/usr/share/dsp/cdsp/cv/v81/KAANAPALI/*.so ${D}${HEXAGON_DSP_DIR}/kaanapali/Qualcomm/Kaanapali-MTP/dsp/cdsp
+    install -m 0644 ${S}/usr/share/dsp/cdsp/cv/v81/GLYMUR/*.so ${D}${HEXAGON_DSP_DIR}/glymur/Qualcomm/Glymur-CRD/dsp/cdsp
 
     install -m 0755 ${S}/usr/bin/fastcv_simple_test64 ${D}${bindir}
 }
@@ -103,12 +103,12 @@ INSANE_SKIP:${PN}-thundercomm-rb3gen2-dsp = "arch libdir"
 
 ALLOW_EMPTY:${PN}-purwa-iot-evk-dsp = "1"
 
-FILES:${PN}-glymur-crd-dsp += "${datadir}/qcom/glymur/Qualcomm/Glymur-CRD/dsp/cdsp"
-FILES:${PN}-hamoa-iot-evk-dsp += "${datadir}/qcom/x1e80100/Qualcomm/Hamoa-IoT-EVK/dsp/cdsp"
-FILES:${PN}-kaanapali-mtp-dsp += "${datadir}/qcom/kaanapali/Qualcomm/Kaanapali-MTP/dsp/cdsp"
-FILES:${PN}-qcs615-ride-dsp += "${datadir}/qcom/qcs615/Qualcomm/QCS615-RIDE/dsp"
-FILES:${PN}-qcs8300-ride-dsp += "${datadir}/qcom/qcs8300/Qualcomm/QCS8300-RIDE/dsp"
-FILES:${PN}-sa8775p-ride-dsp += "${datadir}/qcom/sa8775p/Qualcomm/SA8775P-RIDE/dsp"
-FILES:${PN}-shikra-evk-dsp += "${datadir}/qcom/shikra/Qualcomm/Shikra-CQS-EVK/dsp/cdsp"
-FILES:${PN}-sm8750-mtp-dsp += "${datadir}/qcom/sm8750/Qualcomm/SM8750-MTP/dsp/cdsp"
-FILES:${PN}-thundercomm-rb3gen2-dsp += "${datadir}/qcom/qcm6490/Thundercomm/RB3gen2/dsp"
+FILES:${PN}-glymur-crd-dsp += "${HEXAGON_DSP_DIR}/glymur/Qualcomm/Glymur-CRD/dsp/cdsp"
+FILES:${PN}-hamoa-iot-evk-dsp += "${HEXAGON_DSP_DIR}/x1e80100/Qualcomm/Hamoa-IoT-EVK/dsp/cdsp"
+FILES:${PN}-kaanapali-mtp-dsp += "${HEXAGON_DSP_DIR}/kaanapali/Qualcomm/Kaanapali-MTP/dsp/cdsp"
+FILES:${PN}-qcs615-ride-dsp += "${HEXAGON_DSP_DIR}/qcs615/Qualcomm/QCS615-RIDE/dsp"
+FILES:${PN}-qcs8300-ride-dsp += "${HEXAGON_DSP_DIR}/qcs8300/Qualcomm/QCS8300-RIDE/dsp"
+FILES:${PN}-sa8775p-ride-dsp += "${HEXAGON_DSP_DIR}/sa8775p/Qualcomm/SA8775P-RIDE/dsp"
+FILES:${PN}-shikra-evk-dsp += "${HEXAGON_DSP_DIR}/shikra/Qualcomm/Shikra-CQS-EVK/dsp/cdsp"
+FILES:${PN}-sm8750-mtp-dsp += "${HEXAGON_DSP_DIR}/sm8750/Qualcomm/SM8750-MTP/dsp/cdsp"
+FILES:${PN}-thundercomm-rb3gen2-dsp += "${HEXAGON_DSP_DIR}/qcm6490/Thundercomm/RB3gen2/dsp"
