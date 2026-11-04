@@ -1,4 +1,4 @@
-#!/bin/sh -e
+#!/bin/bash -e
 # Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
 # SPDX-License-Identifier: MIT
 #
@@ -61,7 +61,7 @@ echo "Test modules to run: $TEST_CASES"
 # Create a temporary build directory (same pattern as yocto-check-layer.sh)
 BUILDDIR="$(mktemp -p "$WORK_DIR" -d -t build-oe-selftest-XXXX)"
 cd "$WORK_DIR/oe-core"
-. ./oe-init-build-env "$BUILDDIR"
+source ./oe-init-build-env "$BUILDDIR"
 
 # Add the lts-linux-firmware-mixin layer
 bitbake-layers add-layer "$WORK_DIR/meta-lts-mixins"
