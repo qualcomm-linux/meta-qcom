@@ -1,0 +1,224 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Ricardo Salveti <ricardo.salveti@oss.qualcomm.com>
+Date: Tue, 3 Nov 2026 21:51:08 +0000
+Subject: [PATCH 1/2] arm/optee: update to 4.11.0
+
+Update the recipes and the git recipes to 4.11.0.  Since corstone1000
+is still using 4.10.0, move that to meta-arm-bsp.
+
+Highlights:
+- optee-os: mbedTLS 3.6.6, RISC-V FP context switching and device tree
+  based boot, RPMB on UFS and optional RPMB-backed TA version
+  databases, new NVIDIA Tegra, Renesas R-Car Gen5, Raspberry Pi 4,
+  i.MX952 and Qualcomm platforms, SM2 ciphertext now C1 || C3 || C2 by
+  default, and hardening across ldelf, SPMC, secure storage and key
+  import.
+- optee-client: new libasteec (Application Secrets) library, HKDF
+  support and serialization fixes in libckteec.
+- optee-test: new regression tests (PBKDF2, ECDH with invalid points,
+  discarded AE output, nil UUID TA, RISC-V FP) and SM2 test vector
+  selection matching optee-os.
+- optee-examples: file input and key/IV options for the aes and sha
+  examples, and an HMAC fix.
+
+Upstream-Status: Submitted [https://patchwork.yoctoproject.org/project/arm/patch/20261104003624.3008551-2-ricardo.salveti@oss.qualcomm.com/]
+
+Signed-off-by: Ricardo Salveti <ricardo.salveti@oss.qualcomm.com>
+---
+ .../optee/optee-client_4.10.0.bb              |  0
+ .../optee/optee-examples_4.10.0.bb            |  0
+ .../optee/optee-os-tadevkit_4.10.0.bb         |  0
+ .../recipes-security/optee/optee-os_4.10.0.bb |  0
+ .../optee/optee-test_4.10.0.bb                |  0
+ .../optee/optee-client_4.11.0.bb              |  4 +++
+ .../optee/optee-client_git.bb                 |  4 +--
+ .../optee/optee-examples_4.11.0.bb            |  4 +++
+ .../optee/optee-examples_git.bb               |  4 +--
+ .../optee/optee-os-tadevkit_4.11.0.bb         | 30 +++++++++++++++++++
+ .../recipes-security/optee/optee-os_4.11.0.bb |  6 ++++
+ .../recipes-security/optee/optee-os_git.bb    |  4 +--
+ .../optee/optee-test_4.11.0.bb                | 17 +++++++++++
+ .../recipes-security/optee/optee-test_git.bb  |  4 +--
+ 14 files changed, 69 insertions(+), 8 deletions(-)
+ rename {meta-arm => meta-arm-bsp}/recipes-security/optee/optee-client_4.10.0.bb (100%)
+ rename {meta-arm => meta-arm-bsp}/recipes-security/optee/optee-examples_4.10.0.bb (100%)
+ rename {meta-arm => meta-arm-bsp}/recipes-security/optee/optee-os-tadevkit_4.10.0.bb (100%)
+ rename {meta-arm => meta-arm-bsp}/recipes-security/optee/optee-os_4.10.0.bb (100%)
+ rename {meta-arm => meta-arm-bsp}/recipes-security/optee/optee-test_4.10.0.bb (100%)
+ create mode 100644 meta-arm/recipes-security/optee/optee-client_4.11.0.bb
+ create mode 100644 meta-arm/recipes-security/optee/optee-examples_4.11.0.bb
+ create mode 100644 meta-arm/recipes-security/optee/optee-os-tadevkit_4.11.0.bb
+ create mode 100644 meta-arm/recipes-security/optee/optee-os_4.11.0.bb
+ create mode 100644 meta-arm/recipes-security/optee/optee-test_4.11.0.bb
+
+diff --git a/meta-arm/recipes-security/optee/optee-client_4.10.0.bb b/meta-arm-bsp/recipes-security/optee/optee-client_4.10.0.bb
+similarity index 100%
+rename from meta-arm/recipes-security/optee/optee-client_4.10.0.bb
+rename to meta-arm-bsp/recipes-security/optee/optee-client_4.10.0.bb
+diff --git a/meta-arm/recipes-security/optee/optee-examples_4.10.0.bb b/meta-arm-bsp/recipes-security/optee/optee-examples_4.10.0.bb
+similarity index 100%
+rename from meta-arm/recipes-security/optee/optee-examples_4.10.0.bb
+rename to meta-arm-bsp/recipes-security/optee/optee-examples_4.10.0.bb
+diff --git a/meta-arm/recipes-security/optee/optee-os-tadevkit_4.10.0.bb b/meta-arm-bsp/recipes-security/optee/optee-os-tadevkit_4.10.0.bb
+similarity index 100%
+rename from meta-arm/recipes-security/optee/optee-os-tadevkit_4.10.0.bb
+rename to meta-arm-bsp/recipes-security/optee/optee-os-tadevkit_4.10.0.bb
+diff --git a/meta-arm/recipes-security/optee/optee-os_4.10.0.bb b/meta-arm-bsp/recipes-security/optee/optee-os_4.10.0.bb
+similarity index 100%
+rename from meta-arm/recipes-security/optee/optee-os_4.10.0.bb
+rename to meta-arm-bsp/recipes-security/optee/optee-os_4.10.0.bb
+diff --git a/meta-arm/recipes-security/optee/optee-test_4.10.0.bb b/meta-arm-bsp/recipes-security/optee/optee-test_4.10.0.bb
+similarity index 100%
+rename from meta-arm/recipes-security/optee/optee-test_4.10.0.bb
+rename to meta-arm-bsp/recipes-security/optee/optee-test_4.10.0.bb
+diff --git a/meta-arm/recipes-security/optee/optee-client_4.11.0.bb b/meta-arm/recipes-security/optee/optee-client_4.11.0.bb
+new file mode 100644
+index 00000000..026ac6bc
+--- /dev/null
++++ b/meta-arm/recipes-security/optee/optee-client_4.11.0.bb
+@@ -0,0 +1,4 @@
++require recipes-security/optee/optee-client.inc
++
++# v4.11.0
++SRCREV = "da81fb7b30781029bc9d4acfddc7c60b08deb1f3"
+diff --git a/meta-arm/recipes-security/optee/optee-client_git.bb b/meta-arm/recipes-security/optee/optee-client_git.bb
+index 884f3b59..a76dcffa 100644
+--- a/meta-arm/recipes-security/optee/optee-client_git.bb
++++ b/meta-arm/recipes-security/optee/optee-client_git.bb
+@@ -1,7 +1,7 @@
+ require recipes-security/optee/optee-client.inc
+ 
+-# v4.10.0
+-SRCREV = "9f5e90918093c1d1cd264d8149081b64ab7ba672"
++# v4.11.0
++SRCREV = "da81fb7b30781029bc9d4acfddc7c60b08deb1f3"
+ PV .= "+git"
+ UPSTREAM_CHECK_COMMITS = "1"
+ 
+diff --git a/meta-arm/recipes-security/optee/optee-examples_4.11.0.bb b/meta-arm/recipes-security/optee/optee-examples_4.11.0.bb
+new file mode 100644
+index 00000000..96b1425f
+--- /dev/null
++++ b/meta-arm/recipes-security/optee/optee-examples_4.11.0.bb
+@@ -0,0 +1,4 @@
++require recipes-security/optee/optee-examples.inc
++
++# v4.11.0
++SRCREV = "71e8f3f320eef46a9369700bf30b91d67427d535"
+diff --git a/meta-arm/recipes-security/optee/optee-examples_git.bb b/meta-arm/recipes-security/optee/optee-examples_git.bb
+index d8d6d043..99ea004f 100644
+--- a/meta-arm/recipes-security/optee/optee-examples_git.bb
++++ b/meta-arm/recipes-security/optee/optee-examples_git.bb
+@@ -1,7 +1,7 @@
+ require recipes-security/optee/optee-examples.inc
+ 
+-# v4.10.0
+-SRCREV = "934c7edb74a26e90f68024cf441073528444177f"
++# v4.11.0
++SRCREV = "71e8f3f320eef46a9369700bf30b91d67427d535"
+ PV .= "+git"
+ UPSTREAM_CHECK_COMMITS = "1"
+ 
+diff --git a/meta-arm/recipes-security/optee/optee-os-tadevkit_4.11.0.bb b/meta-arm/recipes-security/optee/optee-os-tadevkit_4.11.0.bb
+new file mode 100644
+index 00000000..cca9f62a
+--- /dev/null
++++ b/meta-arm/recipes-security/optee/optee-os-tadevkit_4.11.0.bb
+@@ -0,0 +1,30 @@
++require recipes-security/optee/optee-os_${PV}.bb
++
++SUMMARY = "OP-TEE Trusted OS TA devkit"
++DESCRIPTION = "OP-TEE TA devkit for build TAs"
++HOMEPAGE = "https://www.op-tee.org/"
++
++DEPENDS += "python3-pycryptodome-native"
++DEPENDS:append:toolchain-clang = " lld-native"
++
++do_install() {
++    #install TA devkit
++    install -d ${D}${includedir}/optee/export-user_ta/
++    for f in ${B}/export-ta_${OPTEE_ARCH}/* ; do
++        cp -aR $f ${D}${includedir}/optee/export-user_ta/
++    done
++}
++
++do_deploy() {
++	echo "Do not inherit do_deploy from optee-os."
++}
++
++FILES:${PN} = "${includedir}/optee/"
++
++# Build paths are currently embedded
++INSANE_SKIP:${PN}-dev += "buildpaths"
++
++# Include extra headers needed by SPMC tests to TA DEVKIT.
++# Supported after op-tee v3.20
++EXTRA_OEMAKE:append = "${@bb.utils.contains('MACHINE_FEATURES', 'optee-spmc-test', \
++                                        ' CFG_SPMC_TESTS=y', '' , d)}"
+diff --git a/meta-arm/recipes-security/optee/optee-os_4.11.0.bb b/meta-arm/recipes-security/optee/optee-os_4.11.0.bb
+new file mode 100644
+index 00000000..8c1526ec
+--- /dev/null
++++ b/meta-arm/recipes-security/optee/optee-os_4.11.0.bb
+@@ -0,0 +1,6 @@
++require recipes-security/optee/optee-os.inc
++
++DEPENDS += "dtc-native"
++
++# v4.11.0
++SRCREV = "f54190f22611dd5ad5d22546fd4209aa100f56bd"
+diff --git a/meta-arm/recipes-security/optee/optee-os_git.bb b/meta-arm/recipes-security/optee/optee-os_git.bb
+index f2ae0d46..27080b3c 100644
+--- a/meta-arm/recipes-security/optee/optee-os_git.bb
++++ b/meta-arm/recipes-security/optee/optee-os_git.bb
+@@ -2,8 +2,8 @@ require recipes-security/optee/optee-os.inc
+ 
+ DEPENDS += "dtc-native"
+ 
+-# v4.10.0
+-SRCREV = "753afbbee1682f5d16fd30e87b31058a4fd4f4b8"
++# v4.11.0
++SRCREV = "f54190f22611dd5ad5d22546fd4209aa100f56bd"
+ PV .= "+git"
+ UPSTREAM_CHECK_COMMITS = "1"
+ 
+diff --git a/meta-arm/recipes-security/optee/optee-test_4.11.0.bb b/meta-arm/recipes-security/optee/optee-test_4.11.0.bb
+new file mode 100644
+index 00000000..b06be1c6
+--- /dev/null
++++ b/meta-arm/recipes-security/optee/optee-test_4.11.0.bb
+@@ -0,0 +1,17 @@
++require recipes-security/optee/optee-test.inc
++
++# v4.11.0
++SRCREV = "179740b43809069ee567d58ebd8e0f85ef8168e2"
++
++LIC_FILES_CHKSUM = "file://LICENSE.md;md5=a8fa504109e4cd7ea575bc49ea4be560 \
++                    file://LICENSE-BSD;md5=dca16d6efa93b55d0fd662ae5cd6feeb \
++                    file://LICENSE-GPL;md5=10e86b5d2a6cb0e2b9dcfdd26a9ac58d \
++                   "
++
++# Include ffa_spmc test group if the SPMC test is enabled.
++# Supported after op-tee v3.20
++EXTRA_OEMAKE:append = "${@bb.utils.contains('MACHINE_FEATURES', 'optee-spmc-test', \
++                                        ' CFG_SPMC_TESTS=y CFG_SECURE_PARTITION=y', '' , d)}"
++
++RDEPENDS:${PN} += "${@bb.utils.contains('MACHINE_FEATURES', 'optee-spmc-test', \
++                                              ' arm-ffa-user', '' , d)}"
+diff --git a/meta-arm/recipes-security/optee/optee-test_git.bb b/meta-arm/recipes-security/optee/optee-test_git.bb
+index a06c76c1..a560122a 100644
+--- a/meta-arm/recipes-security/optee/optee-test_git.bb
++++ b/meta-arm/recipes-security/optee/optee-test_git.bb
+@@ -1,7 +1,7 @@
+ require recipes-security/optee/optee-test.inc
+ 
+-# v4.10.0
+-SRCREV = "88c93e87a5c172363ee986ded036a25cafcc9d2c"
++# v4.11.0
++SRCREV = "179740b43809069ee567d58ebd8e0f85ef8168e2"
+ PV .= "+git"
+ UPSTREAM_CHECK_COMMITS = "1"
+ 
+-- 
+2.43.0
+

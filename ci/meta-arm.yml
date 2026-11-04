@@ -5,6 +5,13 @@ repos:
   meta-arm:
     url: https://git.yoctoproject.org/meta-arm
     branch: master
+    patches:
+      optee-4.11.0:
+        repo: meta-qcom
+        path: patches/meta-arm/0001-arm-optee-update-to-4.11.0.patch
+      optee-ftpm-4.11.0:
+        repo: meta-qcom
+        path: patches/meta-arm/0002-arm-optee-ftpm-update-to-4.11.0.patch
     layers:
       meta-arm:
       meta-arm-toolchain:

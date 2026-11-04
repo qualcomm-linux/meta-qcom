@@ -1,0 +1,39 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Ricardo Salveti <ricardo.salveti@oss.qualcomm.com>
+Date: Tue, 3 Nov 2026 21:51:08 +0000
+Subject: [PATCH 2/2] arm/optee-ftpm: update to 4.11.0
+
+Highlights:
+- Keep the fTPM TA working when RPMB is unavailable.
+- Fix an overflow when converting TA time to milliseconds.
+- Build with strict-aliasing optimizations disabled.
+
+Upstream-Status: Submitted [https://patchwork.yoctoproject.org/project/arm/patch/20261104003624.3008551-3-ricardo.salveti@oss.qualcomm.com/]
+
+Signed-off-by: Ricardo Salveti <ricardo.salveti@oss.qualcomm.com>
+---
+ .../optee-ftpm/{optee-ftpm_4.10.0.bb => optee-ftpm_4.11.0.bb} | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+ rename meta-arm/recipes-security/optee-ftpm/{optee-ftpm_4.10.0.bb => optee-ftpm_4.11.0.bb} (97%)
+
+diff --git a/meta-arm/recipes-security/optee-ftpm/optee-ftpm_4.10.0.bb b/meta-arm/recipes-security/optee-ftpm/optee-ftpm_4.11.0.bb
+similarity index 97%
+rename from meta-arm/recipes-security/optee-ftpm/optee-ftpm_4.10.0.bb
+rename to meta-arm/recipes-security/optee-ftpm/optee-ftpm_4.11.0.bb
+index 9a58f7bc..49cbe658 100644
+--- a/meta-arm/recipes-security/optee-ftpm/optee-ftpm_4.10.0.bb
++++ b/meta-arm/recipes-security/optee-ftpm/optee-ftpm_4.11.0.bb
+@@ -33,8 +33,8 @@ SRC_URI = "\
+ # As per optee-ftpm TA documentation, we have to use this SHA of MS TPM reference
+ SRCREV_ms-tpm   ?= "98b60a44aba79b15fcce1c0d1e46cf5918400f6a"
+ 
+-# v4.10.0
+-SRCREV_optee-ta ?= "a09269b15de635e1816fe832e26adfbfb44c5455"
++# v4.11.0
++SRCREV_optee-ta ?= "f09f4cdad21028289d4e8fc573893b75f7228dc7"
+ 
+ SRCREV_FORMAT    = "ms-tpm_optee-ta"
+ 
+-- 
+2.43.0
+
