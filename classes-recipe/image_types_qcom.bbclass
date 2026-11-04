@@ -30,6 +30,18 @@ QCOM_PARTITION_FILES_SUBDIR_SPINOR ??= ""
 
 QCOM_PARTITION_CONF ?= "qcom-partition-conf"
 
+# Programmer the bundle is flashed with.
+QCOM_FLASH_PROGRAMMER ?= "prog_firehose_ddr.elf"
+
+# Boards that run this image, each flashed from variants/<name>, with these
+# options as varflags named after the board:
+#   QCOM_FLASH_VARIANT_CDT[<name>]         CDT, named like QCOM_CDT_FILE
+#   QCOM_FLASH_VARIANT_PROGRAMMER[<name>]  defaults to QCOM_FLASH_PROGRAMMER
+# The bundle root flashes QCOM_FLASH_VARIANT_DEFAULT, the first board unless
+# set, and takes QCOM_CDT_FILE and its programmer from it.
+QCOM_FLASH_VARIANTS ??= ""
+QCOM_FLASH_VARIANT_DEFAULT ??= ""
+
 IMAGE_QCOMFLASH_FS_TYPE ??= "ext4"
 
 QCOMFLASH_DIR = "${IMGDEPLOYDIR}/${IMAGE_NAME}.qcomflash"
@@ -234,6 +246,87 @@ create_qcomflash_pkg() {
         install -m 0644 "${DEPLOY_DIR_IMAGE}/${QCOM_CAPSULE_FIRMWARE}.cap" .
     fi
 
+    create_qcomflash_variants
+}
+
+# Check QCOM_FLASH_VARIANTS and resolve it into QCOM_FLASH_VARIANT_LIST, a
+# "<name>:<cdt>:<programmer>" entry per variant, so that the varflags are
+# part of the task signature. QCOM_FLASH_ROOT_PROGRAMMER is the programmer
+# of the bundle root.
+python () {
+    import re
+
+    d.setVar('QCOM_FLASH_VARIANT_LIST', '')
+    d.setVar('QCOM_FLASH_ROOT_PROGRAMMER', d.getVar('QCOM_FLASH_PROGRAMMER'))
+    variants = (d.getVar('QCOM_FLASH_VARIANTS') or '').split()
+    if not variants:
+        return
+
+    def check_name(value, what):
+        if value in ('.', '..') or not re.fullmatch(r'[A-Za-z0-9._-]+', value):
+            bb.fatal("qcomflash: %s '%s' must be a file name of [A-Za-z0-9._-]" % (what, value))
+
+    cdts = {}
+    programmers = {}
+    entries = []
+    for name in variants:
+        check_name(name, 'variant name')
+        if name in cdts:
+            bb.fatal("qcomflash: variant %s is listed more than once in QCOM_FLASH_VARIANTS" % name)
+        cdt = d.getVarFlag('QCOM_FLASH_VARIANT_CDT', name)
+        if not cdt:
+            bb.fatal("qcomflash: variant %s has no QCOM_FLASH_VARIANT_CDT[%s]" % (name, name))
+        check_name(cdt, 'CDT of variant %s' % name)
+        programmer = d.getVarFlag('QCOM_FLASH_VARIANT_PROGRAMMER', name) or \
+            d.getVar('QCOM_FLASH_PROGRAMMER')
+        check_name(programmer, 'programmer of variant %s' % name)
+        cdts[name] = cdt
+        programmers[name] = programmer
+        entries.append('%s:%s:%s' % (name, cdt, programmer))
+    d.setVar('QCOM_FLASH_VARIANT_LIST', ' '.join(entries))
+
+    default = d.getVar('QCOM_FLASH_VARIANT_DEFAULT') or variants[0]
+    if default not in cdts:
+        bb.fatal("qcomflash: QCOM_FLASH_VARIANT_DEFAULT %s is not in QCOM_FLASH_VARIANTS" % default)
+    d.setVar('QCOM_FLASH_ROOT_PROGRAMMER', programmers[default])
+    cdt_file = d.getVar('QCOM_CDT_FILE')
+    if not cdt_file:
+        d.setVar('QCOM_CDT_FILE', cdts[default])
+    elif cdt_file != cdts[default]:
+        bb.fatal("qcomflash: QCOM_CDT_FILE %s is not the CDT of the default variant %s; "
+                 "set QCOM_FLASH_VARIANT_DEFAULT, add the board to QCOM_FLASH_VARIANTS "
+                 "or clear QCOM_FLASH_VARIANTS" % (cdt_file, default))
+}
+
+# Write variants/<name> for each variant: a copy of its programmer and XMLs
+# with ../../ paths (links break on Windows) and the variant's CDT.
+create_qcomflash_variants() {
+    for variant in ${QCOM_FLASH_VARIANT_LIST}; do
+        name="${variant%%:*}"
+        programmer="${variant##*:}"
+        cdt="${variant#*:}"
+        cdt="${cdt%:*}"
+        if [ ! -f "$cdt.bin" ]; then
+            bbfatal "qcomflash: CDT $cdt.bin for variant $name not found in the bundle"
+        fi
+        if [ ! -f "$programmer" ]; then
+            bbfatal "qcomflash: programmer $programmer for variant $name not found in the bundle"
+        fi
+
+        vdir="variants/$name"
+        install -d "$vdir"
+        install -m 0644 "$programmer" "$vdir"
+        for xml in rawprogram[0-9].xml patch*.xml; do
+            [ -f "$xml" ] || continue
+            sed -e 's|filename="\([^"][^"]*\)"|filename="../../\1"|g' \
+                -e 's|filename="\.\./\.\./DISK"|filename="DISK"|g' \
+                -e "s|filename=\"\.\./\.\./cdt\.bin\"|filename=\"../../$cdt.bin\"|g" \
+                "$xml" > "$vdir/$xml"
+        done
+        if ! grep -qF "filename=\"../../$cdt.bin\"" "$vdir"/rawprogram[0-9].xml 2>/dev/null; then
+            bbfatal "qcomflash: no rawprogram XML programs cdt.bin, cannot create variant $name"
+        fi
+    done
 }
 
 create_qcomflash_tarball() {
