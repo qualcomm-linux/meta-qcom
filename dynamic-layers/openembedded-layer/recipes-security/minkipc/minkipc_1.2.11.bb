@@ -25,7 +25,7 @@ LIC_FILES_CHKSUM = "file://LICENSE.txt;md5=2b1366ebba1ebd9ae25ad19626bbca93 \
                     file://optee-client/optee_client/LICENSE;md5=69663ab153298557a59c67a60a743e5b \
                     file://optee-test/optee_test/LICENSE.md;md5=daa2bcccc666345ab8940aab1315a4fa"
 
-SRCREV_minkipc = "d60a85d90776ecb3badeff2598974e46212d231b"
+SRCREV_minkipc = "5e3c6951d13162a262ea65ea8e8351228f092b58"
 SRCREV_opteec = "acb0885c117e73cb6c5c9b1dd9054cb3f93507ee"
 SRCREV_opteet = "1c3d6be5eaa6174e3dbabf60928d15628e39b994"
 
