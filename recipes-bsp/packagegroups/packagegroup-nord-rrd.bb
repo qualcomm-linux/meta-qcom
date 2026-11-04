@@ -2,6 +2,8 @@ SUMMARY = "Packages for the IQ10 RRD platform"
 
 inherit packagegroup
 
+COMPATIBLE_MACHINE = "(qcom)"
+
 PACKAGES = " \
     ${PN}-firmware \
     ${PN}-hexagon-dsp-binaries \
