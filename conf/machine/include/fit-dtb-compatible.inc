@@ -66,6 +66,9 @@ FIT_DTB_COMPATIBLE[qcom_qcs8300-adp] = "qcs8300-ride"
 FIT_DTB_COMPATIBLE[qcom_shikracqm-itp] = "shikra-cqm-evk shikra-cqm-evk-imx577-camera"
 FIT_DTB_COMPATIBLE[qcom_shikracqs-itp] = "shikra-cqs-evk shikra-cqm-evk-imx577-camera"
 FIT_DTB_COMPATIBLE[qcom_shikraiqs-itp] = "shikra-iqs-evk shikra-iqs-evk-imx577-camera"
+FIT_DTB_COMPATIBLE[qcom_shikracqm-itp-el2kvm] = "shikra-cqm-evk shikra-cqm-evk-imx577-camera shikra-el2"
+FIT_DTB_COMPATIBLE[qcom_shikracqs-itp-el2kvm] = "shikra-cqs-evk shikra-cqm-evk-imx577-camera shikra-el2"
+FIT_DTB_COMPATIBLE[qcom_shikraiqs-itp-el2kvm] = "shikra-iqs-evk shikra-iqs-evk-imx577-camera shikra-el2"
 
 # ---------- talos ----------
 FIT_DTB_COMPATIBLE[qcom_qcs615-adp] = "qcs615-ride"
