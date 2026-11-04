@@ -69,3 +69,27 @@ Make sure that ModemManager is not running, disable it if necessary.
    HELLO version: 0x2 compatible: 0x1 max_len: 1024 mode: 0
    READ64 image: 13 offset: 0x0 length: 0x40
    ```
+
+## Board variants
+
+Some machines build one image for several boards that differ only in their
+CDT, such as the RB3 Gen 2 core, vision and industrial kits. Each board listed
+in `QCOM_FLASH_VARIANTS` gets a `variants/<board>` directory, and the bundle
+root flashes the default board, the first one unless
+`QCOM_FLASH_VARIANT_DEFAULT` says otherwise. The programmer and rawprogram/patch
+XMLs of a board's directory flash the images from the bundle root together
+with that board's CDT, so run the usual command from there. The programmer is
+`prog_firehose_ddr.elf` unless the board sets another one:
+
+```bash
+cd core-image-base-rb3gen2-core-kit.rootfs.qcomflash/variants/vision-kit
+qdl --debug prog_firehose_ddr.elf rawprogram*.xml patch*.xml
+```
+
+On builds with VIP enabled, each variant directory also has its own signed
+digest table in `vip-tables`. The table covers the file paths qdl sends, so
+run qdl from the variant directory with the XMLs named as shown:
+
+```bash
+qdl --vip-table-path=vip-tables prog_firehose_ddr.elf rawprogram*.xml patch*.xml
+```
