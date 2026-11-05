@@ -346,6 +346,7 @@ jobs:
           - iq-x7181-evk
           - kaanapali-mtp
           - mahua-crd
+          - maili-mtp
           - nord-rrd
           - qcm6490-idp
           - qcom-armv8a
@@ -412,6 +413,12 @@ jobs:
             kernel:
                 type: 6.18
           - machine: mahua-crd
+            kernel:
+                type: rt-6.18-distro-kvm
+          - machine: maili-mtp
+            kernel:
+                type: 6.18
+          - machine: maili-mtp
             kernel:
                 type: rt-6.18-distro-kvm
           - machine: nord-rrd
