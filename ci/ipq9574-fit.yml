@@ -1,0 +1,26 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/siemens/kas/master/kas/schema-kas.json
+#
+# KAS fragment for a raw kernel + DTB FIT/ITB on IPQ9574 RDP433.
+
+header:
+  version: 14
+
+local_conf_header:
+  ipq9574_fit: |
+    # Use the FIT flow instead of Qualcomm's Android boot image class.
+    KERNEL_CLASSES:remove = "linux-qcom-bootimg"
+    KERNEL_CLASSES += "kernel-fit-extra-artifacts"
+
+    FIT_CONF_PREFIX = ""
+    FIT_CONF_MAPPINGS = "dtb-conf:ipq9574-rdp433.dtb:rdp433"
+    FIT_CONF_DEFAULT_DTB = "rdp433"
+
+    UBOOT_LOADADDRESS = "0x40000000"
+    UBOOT_ENTRYPOINT = "0x40000000"
+
+    INITRAMFS_IMAGE:ipq9574-rdp433 = ""
+    INITRAMFS_IMAGE_BUNDLE = "0"
+
+    # Compress the FIT kernel payload using LZMA
+    FIT_KERNEL_COMP_ALG = "lzma"
+    FIT_KERNEL_COMP_ALG_EXTENSION = ".lzma"
