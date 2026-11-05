@@ -15,3 +15,6 @@ MACHINE_ESSENTIAL_EXTRA_RRECOMMENDS += " \
 MACHINE_EXTRA_RRECOMMENDS += " \
     packagegroup-qcom-boot-additional \
 "
+
+# the KVM variant must land on the uefi_dtbs partition when kvm is enabled.
+QCOM_UEFI_DTB = "${@bb.utils.contains('MACHINE_FEATURES', 'kvm', 'uefi_dtbs_kvm.elf', 'uefi_dtbs.elf', d)}"
