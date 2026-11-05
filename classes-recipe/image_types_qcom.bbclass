@@ -145,6 +145,11 @@ create_qcomflash_pkg() {
             install -m 0644 "${DEPLOY_DIR_IMAGE}/${QCOM_BOOT_FILES_SUBDIR}/${QCOM_XBL_CONFIG}" xbl_config.elf
         fi
 
+        # uefi_dtbs
+        if [ -f "${DEPLOY_DIR_IMAGE}/${QCOM_BOOT_FILES_SUBDIR}/${QCOM_UEFI_DTB}" ]; then
+            install -m 0644 "${DEPLOY_DIR_IMAGE}/${QCOM_BOOT_FILES_SUBDIR}/${QCOM_UEFI_DTB}" uefi_dtbs.elf
+        fi
+
         # bootloader selection
         bootloader_bin="${DEPLOY_DIR_IMAGE}/${QCOM_BOOT_FILES_SUBDIR}/uefi.elf"
         bootloader_provider='${PREFERRED_PROVIDER_virtual/bootloader}'
