@@ -6,9 +6,9 @@ LIC_FILES_CHKSUM = "file://LICENSE.txt;md5=2998c54c288b081076c9af987bdf4838"
 
 DEPENDS += "dtc-native"
 
-SRC_URI = "git://github.com/qualcomm-linux/qcom-dtb-metadata.git;branch=main;protocol=https;tag=v${PV}"
+SRC_URI = "git://github.com/qualcomm-linux/qcom-dtb-metadata.git;branch=main;protocol=https"
 
-SRCREV = "c2c5fdab4419a6717d2e40bbab228cb9ff8a1620"
+SRCREV = "63b8901482fce543e90ae35589e7c5d03acfd5e8"
 
 INHIBIT_DEFAULT_DEPS = "1"
 
