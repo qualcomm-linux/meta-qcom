@@ -15,9 +15,6 @@ repos:
   oe-core:
     url: https://github.com/openembedded/openembedded-core
     patches:
-      fix-igt-pause:
-        repo: meta-qcom
-        path: patches/oe-core/0001-igt-gpu-tools-fix-build-on-non-x86-platforms.patch
       001-shikra-wlanmdsp-fix:
         repo: meta-qcom
         path: patches/oe-core/0002-linux-firmware-backport-ath10k-shikra-wlanmdsp-fix.patch
