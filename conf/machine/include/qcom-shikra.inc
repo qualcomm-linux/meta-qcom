@@ -135,3 +135,6 @@ ${QCOM_UBOOT_SPL_FIT_CONF_SIGN}\
 
 # Name the post-ddr configuration after its description, like pre-ddr.
 UBOOT_FIT_CONF_NAME ?= "post-ddr"
+
+# The Shikra SPL loads OP-TEE as a firmware image.
+UBOOT_FIT_TEE_TYPE ?= "firmware"
