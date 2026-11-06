@@ -21,6 +21,9 @@ repos:
       002-nord-gpu-firmware:
         repo: meta-qcom
         path: patches/oe-core/0003-linux-firmware-backport-qcom-nord-gpu-firmware.patch
+      003-nord-hpass-firmware:
+        repo: meta-qcom
+        path: patches/oe-core/0004-linux-firmware-backport-qcom-nord-hpass-firmware.patch
     layers:
       meta:
 
