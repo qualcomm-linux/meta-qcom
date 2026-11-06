@@ -37,6 +37,8 @@ FIT_DTB_COMPATIBLE[qcom_purwa-evk-camx-el2kvm-staging] = "purwa-iot-evk purwa-ev
 
 FIT_DTB_COMPATIBLE[qcom_qcs9075-iot] = \
     "lemans-evk lemans-evk-camera-csi1-imx577 lemans-el2 lemans-evk-sd-card"
+FIT_DTB_COMPATIBLE[qcom_qcs9075-iot-el2gh] = \
+    "lemans-evk lemans-evk-camera-csi1-imx577 lemans-evk-sd-card"
 FIT_DTB_COMPATIBLE[qcom_qcs9075-iot-staging] = \
     "lemans-evk lemans-evk-camera-csi1-imx577 lemans-staging lemans-el2 lemans-evk-sd-card"
 FIT_DTB_COMPATIBLE[qcom_qcs9075-iot-el2gh-staging] = \
@@ -66,6 +68,7 @@ FIT_DTB_COMPATIBLE[qcom_qcs9075-iot-subtype1-staging-emmc] = \
 FIT_DTB_COMPATIBLE[qcom_qcs9075-iot-subtype1-el2gh-staging-emmc] = \
     "lemans-evk lemans-evk-ifp-mezzanine lemans-staging lemans-evk-staging lemans-evk-emmc"
 
+FIT_DTB_COMPATIBLE[qcom_qcs9100-qam-el2gh] = "qcs9100-ride"
 FIT_DTB_COMPATIBLE[qcom_qcs9100-qam-el2gh-staging] = \
     "qcs9100-ride lemans-staging"
 FIT_DTB_COMPATIBLE[qcom_qcs9100-qam-staging] = \
@@ -74,6 +77,7 @@ FIT_DTB_COMPATIBLE[qcom_qcs9100-qam-camx] = \
     "qcs9100-ride sa8775p-ride-camx"
 FIT_DTB_COMPATIBLE[qcom_qcs9100-qam-camx-staging] = \
     "qcs9100-ride sa8775p-ride-camx lemans-staging"
+FIT_DTB_COMPATIBLE[qcom_qcs9100-qam-r2.0-el2gh] = "qcs9100-ride-r3"
 FIT_DTB_COMPATIBLE[qcom_qcs9100-qam-r2.0-el2gh-staging] = \
     "qcs9100-ride-r3 lemans-staging"
 FIT_DTB_COMPATIBLE[qcom_qcs9100-qam-r2.0-staging] = \
@@ -93,6 +97,10 @@ FIT_DTB_COMPATIBLE[qcom_qcs8275-iot] = \
     "monaco-evk monaco-evk-camera-imx577 monaco-el2 monaco-evk-sd-card"
 FIT_DTB_COMPATIBLE[qcom_qcs8275-iot-emmc] = \
     "monaco-evk monaco-evk-camera-imx577 monaco-el2 monaco-evk-emmc"
+FIT_DTB_COMPATIBLE[qcom_qcs8275-iot-el2gh] = \
+    "monaco-evk monaco-evk-camera-imx577 monaco-evk-sd-card"
+FIT_DTB_COMPATIBLE[qcom_qcs8275-iot-el2gh-emmc] = \
+    "monaco-evk monaco-evk-camera-imx577 monaco-evk-emmc"
 FIT_DTB_COMPATIBLE[qcom_qcs8275-iot-staging] = \
     "monaco-evk monaco-evk-camera-imx577 monaco-staging monaco-el2 monaco-evk-sd-card"
 FIT_DTB_COMPATIBLE[qcom_qcs8275-iot-staging-emmc] = \
@@ -126,6 +134,7 @@ FIT_DTB_COMPATIBLE[qcom_qcs8275-iot-subtype3-staging] = \
 FIT_DTB_COMPATIBLE[qcom_qcs8275-iot-subtype3-staging-emmc] = \
     "monaco-evk monaco-evk-ifp-mezzanine monaco-staging monaco-evk-staging monaco-evk-emmc"
 
+FIT_DTB_COMPATIBLE[qcom_qcs8300-adp-el2gh] = "qcs8300-ride"
 FIT_DTB_COMPATIBLE[qcom_qcs8300-adp-el2gh-staging] = "qcs8300-ride monaco-staging"
 FIT_DTB_COMPATIBLE[qcom_qcs8300-adp-staging] = \
     "qcs8300-ride monaco-el2 monaco-staging"
@@ -138,23 +147,28 @@ FIT_DTB_COMPATIBLE[qcom_qcs8300-adp-camx-staging] = \
     "qcs8300-ride qcs8300-ride-camx monaco-el2 monaco-camx-el2 monaco-staging"
 
 # ---------- talos ----------
+FIT_DTB_COMPATIBLE[qcom_qcs615-adp-el2gh] = "qcs615-ride"
 FIT_DTB_COMPATIBLE[qcom_qcs615-adp-el2gh-staging] = \
     "qcs615-ride talos-staging"
 FIT_DTB_COMPATIBLE[qcom_qcs615-adp-staging] = \
     "qcs615-ride talos-el2 talos-staging"
+FIT_DTB_COMPATIBLE[qcom_qcs615-iot-el2gh] = \
+    "talos-evk talos-evk-camera-imx577"
 FIT_DTB_COMPATIBLE[qcom_qcs615-iot-el2gh-staging] = \
     "talos-evk talos-evk-camera-imx577 talos-staging"
 FIT_DTB_COMPATIBLE[qcom_qcs615-iot-staging] = \
     "talos-evk talos-evk-camera-imx577 talos-el2 talos-staging talos-evk-staging"
 FIT_DTB_COMPATIBLE[qcom_qcs615-iot-el2gh-camx] = "talos-evk talos-evk-camx"
 FIT_DTB_COMPATIBLE[qcom_qcs615-iot-camx-staging] = \
-    "talos-evk talos-evk-camx talos-staging"
+    "talos-evk talos-evk-camx talos-el2 talos-staging"
 FIT_DTB_COMPATIBLE[qcom_qcs615-iot-camx] = \
     "talos-evk talos-evk-camx talos-el2"
 FIT_DTB_COMPATIBLE[qcom_qcs615-iot-el2gh-camx-staging] = \
-    "talos-evk talos-evk-camx talos-el2 talos-staging"
+    "talos-evk talos-evk-camx talos-staging"
 # Compatible string "qcom,talos-evk-lvds-auo,g133han01-staging" encodes as
 # "qcom_talos-evk-lvds-auo_g133han01-staging" (both commas become underscores).
+FIT_DTB_COMPATIBLE[qcom_talos-evk-lvds-auo_g133han01-el2gh] = \
+    "talos-evk talos-evk-lvds-auo_g133han01"
 FIT_DTB_COMPATIBLE[qcom_talos-evk-lvds-auo_g133han01-el2gh-staging] = \
     "talos-evk talos-evk-lvds-auo_g133han01 talos-staging"
 FIT_DTB_COMPATIBLE[qcom_talos-evk-lvds-auo_g133han01-staging] = \
