@@ -4,6 +4,7 @@ SRC_URI:append:qcom = " \
     file://0001-freedreno-Add-chip-id-support-for-A830v1.patch \
     file://0001-freedreno-Add-chip-support-for-a722.patch \
     file://0001-freedreno-Enable-A753-and-A735.patch \
+    file://0001-freedreno-Take-only-in-fence-as-a-hint-for-explicit-.patch \
 "
 
 # Enable freedreno driver
