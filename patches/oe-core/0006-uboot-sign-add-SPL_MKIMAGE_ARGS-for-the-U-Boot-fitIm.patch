@@ -1,0 +1,60 @@
+From 4c1e9613413e939c5b6d41cc164d8627ac6a59e4 Mon Sep 17 00:00:00 2001
+From: Viswanath Kraleti <viswanath.kraleti@oss.qualcomm.com>
+Date: Fri, 6 Nov 2026 20:19:55 +0530
+Subject: [OE-core][PATCH 2/4] uboot-sign: add SPL_MKIMAGE_ARGS for the U-Boot
+ fitImage
+
+There is no way to pass options such as -E, which places the image
+data after the FIT structure, to the mkimage call creating the U-Boot
+fitImage. Such an option also has to be repeated when signing, since
+mkimage -F moves external data back into the FIT unless -E is given
+again.
+
+Add SPL_MKIMAGE_ARGS and pass it to the mkimage calls that create and
+sign the U-Boot fitImage.
+
+Signed-off-by: Viswanath Kraleti <viswanath.kraleti@oss.qualcomm.com>
+Upstream-Status: Submitted [https://lore.kernel.org/openembedded-core/20261106144957.3818987-3-viswanath.kraleti@oss.qualcomm.com/]
+---
+ meta/classes-recipe/uboot-sign.bbclass | 7 +++++++
+ 1 file changed, 7 insertions(+)
+
+diff --git a/meta/classes-recipe/uboot-sign.bbclass b/meta/classes-recipe/uboot-sign.bbclass
+index 82ecba108b..368888707d 100644
+--- a/meta/classes-recipe/uboot-sign.bbclass
++++ b/meta/classes-recipe/uboot-sign.bbclass
+@@ -72,6 +72,10 @@ SPL_NODTB_SYMLINK ?= "u-boot-spl-nodtb-${MACHINE}.bin"
+ # padding it adds behind BSS for SPLs built without SPL_SEPARATE_BSS.
+ SPL_WITH_DTB_BINARY ?= ""
+ 
++# Arguments passed to mkimage both when creating and when signing the
++# U-Boot fitImage, e.g. "-E" to place the image data after the FIT structure
++SPL_MKIMAGE_ARGS ?= ""
++
+ # U-Boot fitImage description
+ UBOOT_FIT_DESC ?= "U-Boot fitImage for ${DISTRO_NAME}/${PV}/${MACHINE}"
+ 
+@@ -563,6 +567,7 @@ EOF
+ 	#
+ 	${UBOOT_MKIMAGE} \
+ 		${@'-D "${SPL_MKIMAGE_DTCOPTS}"' if len('${SPL_MKIMAGE_DTCOPTS}') else ''} \
++		${SPL_MKIMAGE_ARGS} \
+ 		-f ${UBOOT_ITS} \
+ 		${UBOOT_FITIMAGE_BINARY}
+ 
+@@ -591,6 +596,7 @@ EOF
+ 			cp ${SPL_DIR}/${SPL_DTB_BINARY} ${SPL_DIR}/${SPL_DTB_SIGNED}
+ 			${UBOOT_MKIMAGE_SIGN} \
+ 				${@'-D "${SPL_MKIMAGE_DTCOPTS}"' if len('${SPL_MKIMAGE_DTCOPTS}') else ''} \
++				${SPL_MKIMAGE_ARGS} \
+ 				-F -k "${SPL_SIGN_KEYDIR}" \
+ 				-K "${SPL_DIR}/${SPL_DTB_SIGNED}" \
+ 				-r ${UBOOT_FITIMAGE_BINARY} \
+@@ -604,6 +610,7 @@ EOF
+ 			# Sign the U-boot FIT image
+ 			${UBOOT_MKIMAGE_SIGN} \
+ 				${@'-D "${SPL_MKIMAGE_DTCOPTS}"' if len('${SPL_MKIMAGE_DTCOPTS}') else ''} \
++				${SPL_MKIMAGE_ARGS} \
+ 				-F -k "${SPL_SIGN_KEYDIR}" \
+ 				-r ${UBOOT_FITIMAGE_BINARY} \
+ 				${SPL_MKIMAGE_SIGN_ARGS}

@@ -12,6 +12,9 @@ QCOM_CAPSULE_FIRMWARE ?= "${PREFERRED_PROVIDER_virtual/qcom-capsule-firmware}"
 
 QCOM_UBOOT_SPL_FIT ?= "0"
 QCOM_UBOOT_SPL_IMAGE ?= "u-boot-spl-${UBOOT_CONFIG_DEFAULT}.mbn"
+# Name the SPL is flashed under: tz.mbn where XBL loads it in place of TZ,
+# xbl.elf where it replaces XBL as the first stage.
+QCOM_UBOOT_SPL_FLASH_IMAGE ?= "tz.mbn"
 QCOM_UBOOT_FIT_IMAGE ?= "u-boot-fitImage"
 
 QCOM_TFA_FIP_FLASH ?= "0"
@@ -161,7 +164,7 @@ create_qcomflash_pkg() {
                     if [ "${QCOM_UBOOT_SPL_FIT}" = "1" ]; then
                         bootloader_bin="${DEPLOY_DIR_IMAGE}/${QCOM_UBOOT_FIT_IMAGE}"
                         if [ -f "${DEPLOY_DIR_IMAGE}/${QCOM_UBOOT_SPL_IMAGE}" ]; then
-                            install -m 0644 "${DEPLOY_DIR_IMAGE}/${QCOM_UBOOT_SPL_IMAGE}" tz.mbn
+                            install -m 0644 "${DEPLOY_DIR_IMAGE}/${QCOM_UBOOT_SPL_IMAGE}" ${QCOM_UBOOT_SPL_FLASH_IMAGE}
                         fi
                     else
                         bootloader_bin="${DEPLOY_DIR_IMAGE}/u-boot-${UBOOT_CONFIG_DEFAULT}.mbn"

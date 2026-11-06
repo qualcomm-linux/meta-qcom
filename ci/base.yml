@@ -24,6 +24,18 @@ repos:
       003-nord-hpass-firmware:
         repo: meta-qcom
         path: patches/oe-core/0004-linux-firmware-backport-qcom-nord-hpass-firmware.patch
+      004-uboot-sign-tee-type:
+        repo: meta-qcom
+        path: patches/oe-core/0005-uboot-sign-make-the-type-of-the-tee-image-node-confi.patch
+      005-uboot-sign-spl-mkimage-args:
+        repo: meta-qcom
+        path: patches/oe-core/0006-uboot-sign-add-SPL_MKIMAGE_ARGS-for-the-U-Boot-fitIm.patch
+      006-uboot-sign-fdt-optional:
+        repo: meta-qcom
+        path: patches/oe-core/0007-uboot-sign-make-the-separate-fdt-image-optional.patch
+      007-uboot-sign-user-configurations:
+        repo: meta-qcom
+        path: patches/oe-core/0008-uboot-sign-add-UBOOT_FIT_USER_CONFIGURATIONS.patch
     layers:
       meta:
 
