@@ -6,6 +6,9 @@ SRC_TAG = "tag=qcom-next-4.11-20261026"
 SRC_URI = "git://github.com/qualcomm-linux/optee_os.git;protocol=https;name=optee;nobranch=1;${SRC_TAG}"
 SRCREV_optee = "bd57d28b5ac226fe108ef96730b650b8a08bcff4"
 
+# Enable PKCS#11 TA as part of the OP-TEE build
+EXTRA_OEMAKE:append = " CFG_PKCS11_TA=y"
+
 # Copy of do_deploy from meta-arm until we get it fixed to support configurable deploy dir
 OPTEE_DEPLOY ?= "optee"
 do_deploy() {
