@@ -128,3 +128,17 @@ $(cat fit-elf/rpm.dtsi)\n\
 "
 
 UBOOT_FIT_CONF_USER_LOADABLES ?= ", $(cat fit-elf/rpm.loadables)"
+
+# The SPL picks the configuration by description, "pre-ddr" ahead of DDR
+# init and "post-ddr" (UBOOT_FIT_CONF_DESC) after it.
+UBOOT_FIT_USER_CONFIGURATIONS ?= "\
+        pre-ddr {\n\
+            description = \"pre-ddr\";\n\
+            loadables = \"pmic_cocos\", \"pmic_wailua\", \"dcb_lp4\", \"dcb_lp5\", \"ecc\",\n\
+                        $(cat fit-elf/shrm.loadables), $(cat fit-elf/qclib.loadables);\n\
+${QCOM_UBOOT_SPL_FIT_CONF_SIGN}\
+        };\n\
+"
+
+# Name the post-ddr configuration after its description, like pre-ddr.
+UBOOT_FIT_CONF_NAME ?= "post-ddr"
