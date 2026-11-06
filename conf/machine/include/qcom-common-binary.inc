@@ -1,6 +1,6 @@
 # This file specifies the necessary versions for the binary recipes.
 
-VERSION_abseil-cpp ?= "20260107.1"
+VERSION_abseil-cpp ?= ""
 PREFERRED_VERSION_abseil-cpp = "${VERSION_abseil-cpp}"
 PREFERRED_VERSION_abseil-cpp-native = "${VERSION_abseil-cpp}"
 PREFERRED_VERSION_nativesdk-abseil-cpp = "${VERSION_abseil-cpp}"
