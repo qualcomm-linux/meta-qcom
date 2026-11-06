@@ -18,16 +18,18 @@
 require conf/machine/include/fit-dtb-compatible.inc
 
 # ---------- hamoa  ----------
-FIT_DTB_COMPATIBLE[qcom_hamoa-evk-camx] = "hamoa-iot-evk hamoa-evk-camx"
-FIT_DTB_COMPATIBLE[qcom_hamoa-evk-camx-staging] = "hamoa-iot-evk hamoa-evk-camx hamoa-staging"
-FIT_DTB_COMPATIBLE[qcom_hamoa-evk-camx-el2kvm] = "hamoa-iot-evk hamoa-evk-camx x1-el2 hamoa-camx-el2"
+FIT_DTB_COMPATIBLE[qcom_hamoa-evk-camx] = "hamoa-iot-evk hamoa-evk-camx x1-el2 hamoa-camx-el2"
+FIT_DTB_COMPATIBLE[qcom_hamoa-evk-camx-el2gh] = "hamoa-iot-evk hamoa-evk-camx"
+FIT_DTB_COMPATIBLE[qcom_hamoa-evk-camx-staging] = "hamoa-iot-evk hamoa-evk-camx hamoa-staging x1-el2 hamoa-camx-el2"
+FIT_DTB_COMPATIBLE[qcom_hamoa-evk-camx-el2gh-staging] = "hamoa-iot-evk hamoa-evk-camx hamoa-staging"
 
 # ---------- purwa -----------
-FIT_DTB_COMPATIBLE[qcom_purwa-evk-staging] = "purwa-iot-evk purwa-staging"
-FIT_DTB_COMPATIBLE[qcom_purwa-evk-camx] = "purwa-iot-evk purwa-evk-camx"
-FIT_DTB_COMPATIBLE[qcom_purwa-evk-camx-staging] = "purwa-iot-evk purwa-evk-camx purwa-staging"
-FIT_DTB_COMPATIBLE[qcom_purwa-evk-camx-el2kvm] = "purwa-iot-evk purwa-evk-camx x1-el2 purwa-camx-el2"
-FIT_DTB_COMPATIBLE[qcom_purwa-evk-camx-el2kvm-staging] = "purwa-iot-evk purwa-evk-camx x1-el2 purwa-camx-el2 purwa-staging"
+FIT_DTB_COMPATIBLE[qcom_purwa-evk-staging] = "purwa-iot-evk x1-el2 purwa-staging"
+FIT_DTB_COMPATIBLE[qcom_purwa-evk-el2gh-staging] = "purwa-iot-evk purwa-staging"
+FIT_DTB_COMPATIBLE[qcom_purwa-evk-camx] = "purwa-iot-evk purwa-evk-camx x1-el2 purwa-camx-el2"
+FIT_DTB_COMPATIBLE[qcom_purwa-evk-camx-el2gh] = "purwa-iot-evk purwa-evk-camx"
+FIT_DTB_COMPATIBLE[qcom_purwa-evk-camx-staging] = "purwa-iot-evk purwa-evk-camx x1-el2 purwa-camx-el2 purwa-staging"
+FIT_DTB_COMPATIBLE[qcom_purwa-evk-camx-el2gh-staging] = "purwa-iot-evk purwa-evk-camx purwa-staging"
 
 # ---------- lemans ----------
 
