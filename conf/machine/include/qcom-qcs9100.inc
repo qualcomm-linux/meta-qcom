@@ -14,6 +14,7 @@ MACHINE_ESSENTIAL_EXTRA_RRECOMMENDS += " \
 
 MACHINE_EXTRA_RRECOMMENDS += " \
     packagegroup-qcom-boot-additional \
+    ${@bb.utils.contains('BBFILE_COLLECTIONS', 'openembedded-layer', 'qcom-rtss-can', '', d)} \
 "
 
 # Memory layout needed by the SPL FIT boot flow.
