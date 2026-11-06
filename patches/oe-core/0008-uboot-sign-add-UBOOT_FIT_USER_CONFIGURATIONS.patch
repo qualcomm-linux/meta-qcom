@@ -1,0 +1,65 @@
+From 5249c467bdf0d341daa7f7cbf745c18d9540182a Mon Sep 17 00:00:00 2001
+From: Viswanath Kraleti <viswanath.kraleti@oss.qualcomm.com>
+Date: Fri, 6 Nov 2026 20:19:57 +0530
+Subject: [OE-core][PATCH 4/4] uboot-sign: add UBOOT_FIT_USER_CONFIGURATIONS
+
+UBOOT_FIT_USER_SETTINGS lets a user add image nodes to the U-Boot FIT,
+but the configurations node only ever holds the class's "conf". An SPL
+that selects a configuration by name, such as one loading firmware
+ahead of DDR init from a "pre-ddr" configuration, has no way to get it
+into the FIT.
+
+Add UBOOT_FIT_USER_CONFIGURATIONS, written after "conf" the same way
+UBOOT_FIT_USER_SETTINGS is written after the image nodes, and
+UBOOT_FIT_CONF_NAME to give "conf" a name matching the others.
+
+Assisted-by: Claude Code:claude-opus-5-5
+Signed-off-by: Viswanath Kraleti <viswanath.kraleti@oss.qualcomm.com>
+Upstream-Status: Submitted [https://lore.kernel.org/openembedded-core/20261106144957.3818987-5-viswanath.kraleti@oss.qualcomm.com/]
+---
+ meta/classes-recipe/uboot-sign.bbclass | 18 ++++++++++++++++--
+ 1 file changed, 16 insertions(+), 2 deletions(-)
+
+diff --git a/meta/classes-recipe/uboot-sign.bbclass b/meta/classes-recipe/uboot-sign.bbclass
+index 4a7872074a..e711a36c38 100644
+--- a/meta/classes-recipe/uboot-sign.bbclass
++++ b/meta/classes-recipe/uboot-sign.bbclass
+@@ -123,6 +123,13 @@ UBOOT_FIT_TEE_TYPE ?= "tee"
+ # User specific settings
+ UBOOT_FIT_USER_SETTINGS ?= ""
+ 
++# User specific configuration nodes, added next to the class one, e.g.
++# for an SPL that picks a configuration other than the default one
++UBOOT_FIT_USER_CONFIGURATIONS ?= ""
++
++# U-Boot fitImage configuration node name, also the default configuration
++UBOOT_FIT_CONF_NAME ?= "conf"
++
+ # U-Boot fitImage configuration description
+ UBOOT_FIT_CONF_DESC ?= "Boot with signed U-Boot FIT"
+ 
+@@ -553,8 +560,8 @@ EOF
+     };
+ 
+     configurations {
+-        default = "conf";
+-        conf {
++        default = "${UBOOT_FIT_CONF_NAME}";
++        ${UBOOT_FIT_CONF_NAME} {
+             description = "${UBOOT_FIT_CONF_DESC}";
+             ${conf_firmware}
+             loadables = ${conf_loadables};
+@@ -573,6 +580,13 @@ EOF
+ 
+ 	cat << EOF >> ${UBOOT_ITS}
+         };
++EOF
++
++	if [ -n "${UBOOT_FIT_USER_CONFIGURATIONS}" ] ; then
++		printf "%b" "${UBOOT_FIT_USER_CONFIGURATIONS}" >> ${UBOOT_ITS}
++	fi
++
++	cat << EOF >> ${UBOOT_ITS}
+     };
+ };
+ EOF
