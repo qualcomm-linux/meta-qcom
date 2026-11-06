@@ -1,0 +1,29 @@
+From cd7d191d36796190c9bc8c1033aac73cbcd2d104 Mon Sep 17 00:00:00 2001
+From: Lakshman Chandu Kondreddy <lkondred@qti.qualcomm.com>
+Date: Tue, 27 Oct 2026 08:14:28 +0530
+Subject: [PATCH 1/3] freedreno: Add chip-id support for Adreno X2-85 (second
+ chip-id)
+
+Add second chip-id 0xffff44060030 for Adreno (TM) X2-85.
+
+Upstream-Status: Backport [https://gitlab.freedesktop.org/mesa/mesa/-/commit/d09fa965f9055efea5f0d3c162a76e567329c485]
+Signed-off-by: Lakshman Chandu Kondreddy <lkondred@qti.qualcomm.com>
+---
+ src/freedreno/common/freedreno_devices.py | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/src/freedreno/common/freedreno_devices.py b/src/freedreno/common/freedreno_devices.py
+index 47791d645d4..9376a9e89e7 100644
+--- a/src/freedreno/common/freedreno_devices.py
++++ b/src/freedreno/common/freedreno_devices.py
+@@ -1445,6 +1445,7 @@ add_gpus([
+ 
+ add_gpus([
+         GPUId(chip_id=0xffff44070031, name="Adreno (TM) X2-85"),
++        GPUId(chip_id=0xffff44060030, name="Adreno (TM) X2-85"),
+     ], A6xxGPUInfo(
+         CHIP.A8XX,
+         [a7xx_base, a7xx_gen3, a8xx_base, a8xx_gen2],
+-- 
+2.34.1
+
