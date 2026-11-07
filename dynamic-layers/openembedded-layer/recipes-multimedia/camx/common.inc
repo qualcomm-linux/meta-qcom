@@ -16,7 +16,7 @@ LICENSE = "LICENSE.qcom-2"
 LIC_FILES_CHKSUM = "file://usr/share/doc/${BPN}/LICENSE.QCOM-2.txt;md5=165287851294f2fb8ac8cbc5e24b02b0 \
                     file://usr/share/doc/${BPN}/NOTICE;md5=198d001f49d9a313355d5219f669a76c"
 
-PBT_BRANCH = "master"
+PBT_BRANCH = "wrynose"
 SRC_URI = " \
     https://qartifactory-edge.qualcomm.com/artifactory/qsc_releases/software/chip/component/camx.qclinux.0.0/${PBT_BUILD_DATE}/prebuilt_yocto_${PBT_BRANCH}/${BPN}_${PV}_armv8-2a.tar.gz;name=camxlib \
     https://qartifactory-edge.qualcomm.com/artifactory/qsc_releases/software/chip/component/camx.qclinux.0.0/${PBT_BUILD_DATE}/prebuilt_yocto_${PBT_BRANCH}/camx-${PLATFORM}_${PV}_armv8-2a.tar.gz;name=camx \
@@ -59,6 +59,9 @@ do_install:append() {
 
     # Remove legacy libcamera* libs from the staged image
     rm -f ${D}${libdir}/libcamera*
+
+    # Remove unused CamX test utility static library from the staged image
+    rm -f ${D}${libdir}/libcamxtestcommonutils.a
 
     # Base docs
     install -m 0644 ${S}/usr/share/doc/${BPN}/NOTICE \
