@@ -11,11 +11,13 @@
 #   3. it is signed as image id VIP with the OEM keys.
 # Runs as a do_image_qcomflash postfunc ahead of the tarball;
 # image_types_qcom.bbclass inherits this class when QCOMFLASH_VIP is "1".
+# Each variants/<name> directory gets a table of its own, as the digests
+# cover the CDT and the file paths qdl sends from that directory.
 
 inherit qcom-sign-common
 
 QCOM_VIP_QDL      ?= "${STAGING_BINDIR_NATIVE}/qdl"
-QCOM_VIP_FIREHOSE ?= "prog_firehose_ddr.elf"
+QCOM_VIP_FIREHOSE ?= "${QCOM_FLASH_PROGRAMMER}"
 
 # MBN header version used to wrap the digest table.
 QCOM_VIP_MBN_VERSION ?= "6"
@@ -34,18 +36,27 @@ create_qcomflash_vip_table[dirs] = "${QCOMFLASH_DIR}"
 create_qcomflash_vip_table() {
     qcom_firmware_sign_check_prereqs
 
-    if [ ! -f "${QCOM_VIP_FIREHOSE}" ]; then
-        bbfatal "qcomflash-vip: firehose programmer ${QCOM_VIP_FIREHOSE} not found in ${QCOMFLASH_DIR}"
+    qcomflash_vip_sign_dir "${QCOMFLASH_DIR}" "${QCOM_VIP_FIREHOSE}"
+    for variant in ${QCOM_FLASH_VARIANT_LIST}; do
+        qcomflash_vip_sign_dir "${QCOMFLASH_DIR}/variants/${variant%%:*}" "${variant##*:}"
+    done
+}
+
+# Create and sign the table for the flashing files in directory $1, running
+# qdl from it with programmer $2, the command used to flash from there.
+qcomflash_vip_sign_dir() {
+    if [ ! -f "$1/$2" ]; then
+        bbfatal "qcomflash-vip: firehose programmer $2 not found in $1"
     fi
 
-    vipdir="${QCOMFLASH_DIR}/${QCOMFLASH_VIP_SUBDIR}"
+    vipdir="$1/${QCOMFLASH_VIP_SUBDIR}"
     install -d "${vipdir}"
 
-    if ! "${QCOM_VIP_QDL}" --allow-fusing --dry-run \
+    if ! (cd "$1" && "${QCOM_VIP_QDL}" --allow-fusing --dry-run \
             --create-digests="${vipdir}" \
-            "${QCOM_VIP_FIREHOSE}" \
-            rawprogram*.xml patch*.xml; then
-        bbfatal "qcomflash-vip: qdl digest generation failed"
+            "$2" \
+            rawprogram*.xml patch*.xml); then
+        bbfatal "qcomflash-vip: qdl digest generation failed in $1"
     fi
 
     if [ ! -f "${vipdir}/DigestsToSign.bin" ]; then
