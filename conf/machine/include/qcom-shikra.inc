@@ -44,6 +44,13 @@ QCOM_UBOOT_SPL_FIT_EXTRA_LOADABLES ?= "\
     firmware-qcom-boot-shikra:rpm.mbn \
 "
 
+# Each DCB has to end where the next blob is loaded, but the shipped files
+# carry extra bytes of zero padding past that.
+QCOM_UBOOT_SPL_FIT_LOADABLE_MAX_SIZES ?= "\
+    900B_7_0100_1_dcb.bin:${@'%#x' % (int(d.getVar('UBOOT_FIT_DCB_LP5_LOADADDRESS'), 16) - int(d.getVar('UBOOT_FIT_DCB_LP4_LOADADDRESS'), 16))} \
+    900B_7_0100_0_dcb.bin:${@'%#x' % (int(d.getVar('UBOOT_FIT_ECC_LOADADDRESS'), 16) - int(d.getVar('UBOOT_FIT_DCB_LP5_LOADADDRESS'), 16))} \
+"
+
 # SHRM, QcLib and RPM are split per ELF segment, so their load and entry
 # addresses come from the ELF program headers.
 QCOM_UBOOT_SPL_FIT_ELFS ?= "\

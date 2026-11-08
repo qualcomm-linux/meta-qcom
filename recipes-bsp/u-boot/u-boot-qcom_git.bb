@@ -9,6 +9,11 @@ QCOM_UBOOT_SPL_FIT_TEE ?= ""
 QCOM_UBOOT_SPL_FIT_XBL_SEC ?= ""
 QCOM_UBOOT_SPL_FIT_EXTRA_LOADABLES ?= ""
 
+# "filename:size" entries for extra loadables that must fit the slot the SPL
+# reserves for them. A larger file is trimmed back to the slot size when the
+# excess bytes are only zero padding, and fails the build otherwise.
+QCOM_UBOOT_SPL_FIT_LOADABLE_MAX_SIZES ?= ""
+
 # The SPL cannot load an ELF whole, so each staged loadable listed here as
 # "name:image:entry_rule:arch[:os]" is split into one image node per PT_LOAD
 # segment, with the entry set on the first (first_only), first and last
@@ -106,6 +111,17 @@ uboot_compile_config:append() {
         for fit_extra_loadable in ${QCOM_UBOOT_SPL_FIT_EXTRA_LOADABLES}; do
             fit_extra_loadable_file="${fit_extra_loadable#*:}"
             install -m 0644 ${DEPLOY_DIR_IMAGE}/${QCOM_BOOT_FILES_SUBDIR}/${fit_extra_loadable_file} ${B}/${builddir}/${fit_extra_loadable_file}
+        done
+        for fit_loadable_max_size in ${QCOM_UBOOT_SPL_FIT_LOADABLE_MAX_SIZES}; do
+            fit_loadable_file=${B}/${builddir}/${fit_loadable_max_size%%:*}
+            max_size=$(printf "%d" ${fit_loadable_max_size#*:})
+            size=$(stat -c %s ${fit_loadable_file})
+            [ ${size} -gt ${max_size} ] || continue
+            if [ $(tail -c $(expr ${size} - ${max_size}) ${fit_loadable_file} | tr -d '\000' | wc -c) -ne 0 ]; then
+                bbfatal "${fit_loadable_file} is ${size} bytes, larger than its ${max_size} byte slot"
+            fi
+            bbwarn "Trimming zero padding from ${fit_loadable_file} (${size} bytes) to its ${max_size} byte slot"
+            truncate -s ${max_size} ${fit_loadable_file}
         done
 
         rm -rf ${B}/${builddir}/fit-elf
