@@ -1,13 +1,13 @@
 PLATFORM = "hamoa"
-PBT_BUILD_DATE = "261026"
+PBT_BUILD_DATE = "261104"
 
 require common.inc
 
-SRC_URI[camxlib.sha256sum] = "69cc0eb533e0c496b354a9ca5569cf9645fa72d914145af2a1b08e6aaa48592f"
-SRC_URI[camx.sha256sum] = "3d52d35a389c3bde2b5303da646e0df9af9dab8252ad40bf46bababa814e43dd"
-SRC_URI[chicdk.sha256sum] = "9517bd512242d731fc1a79b1be047658edb31cc6c653c72386732923447e8dd1"
-SRC_URI[camxcommon.sha256sum] = "689f8103629afc8b16259216d5d069e21d5b4f995fa1773e3a316484cbd39323"
-SRC_URI[camxtest.sha256sum] = "8c274e1d9f6f6db58a1cdc7bddfc6c886f6ae4d5cc61c91af1fa9710b4992c8e"
+SRC_URI[camxlib.sha256sum] = "c5e2d0298562ebf55b1654aed31f595a1d3c2b2d60af768c02a8c3f1755cce93"
+SRC_URI[camx.sha256sum] = "fe18196202b6f0ffeed4843cc6abcc842afc5ee405beb594948c7e30ea8ce497"
+SRC_URI[chicdk.sha256sum] = "8f37effb25425495aabf671367aefc440a6ee7af2b4d86f5d1ee565348a41a80"
+SRC_URI[camxcommon.sha256sum] = "6697bbb4692c3290b6cabda1442d1917319b70448da406cac02250b59c9c1f65"
+SRC_URI[camxtest.sha256sum] = "bc13ee5daa994d54509fe05d759c08c955fb1e7103240fd1ccb6780bf4ea858f"
 
 DEPENDS += "opencv userspace-resource-manager"
 
