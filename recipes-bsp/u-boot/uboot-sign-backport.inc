@@ -6,6 +6,7 @@
 #   uboot-sign: list the TEE loadable behind U-Boot
 #   uboot-sign: keep the SPL BSS padding when reassembling the SPL binary
 #   uboot-sign: add the option to sign SPL FIT configurations
+#   uboot-sign: enable signing SPL FIT configuration
 #
 # The functions below are copies of the oe-core ones carrying those changes.
 
@@ -13,13 +14,13 @@ UBOOT_FIT_CONF_DESC ?= "Boot with signed U-Boot FIT"
 
 # Sign the FIT configuration in the SPL signing flow. Configuration
 # signatures bind the selected images and boot metadata together.
-SPL_SIGN_CONF ?= "0"
+SPL_SIGN_CONF ?= "1"
 
 # Legacy compatibility knob for per-image signatures in the SPL FIT path.
 # Individual image signatures do not protect the configuration metadata
 # which selects and parameterizes the boot images.
 # INSECURE, use at your own risk
-SPL_SIGN_INDIVIDUAL ?= "1"
+SPL_SIGN_INDIVIDUAL ?= "0"
 
 SPL_WITH_DTB_BINARY ?= "u-boot-spl-dtb.bin"
 
