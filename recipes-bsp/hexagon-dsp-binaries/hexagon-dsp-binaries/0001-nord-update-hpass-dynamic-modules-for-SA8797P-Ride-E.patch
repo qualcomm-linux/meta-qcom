@@ -1,0 +1,55 @@
+From e337cf48f164d3fa6f7e4b4d3304b36d64fcdac8 Mon Sep 17 00:00:00 2001
+From: Venkata Kota <venkata.kota@oss.qualcomm.com>
+Date: Tue, 3 Nov 2026 23:37:38 +0530
+Subject: [PATCH] nord: update hpass dynamic modules for SA8797P-Ride-Embedded
+ platform
+
+Update HPASS dynamic modules for SA8797P-Ride-Embedded platform.
+Fixes below were updated.
+-- Moved to the mainline HPASS Version
+-- Propagate driver start failure to the framework
+-- Nord: VoNR not entering island beacuse of power mode
+-- Enable LF variant on mainline
+-- MISRA violations on Audio
+
+Only the WHENCE and config.txt changes are kept, rebased onto the
+20261019 release (the upstream commit sits on top of the config.txt
+Machine:/Reuse: rework). The 00032-NORD-1 binaries are fetched from the
+upstream commit as a separate source by the recipe.
+
+Signed-off-by: Venkata Kota <venkata.kota@oss.qualcomm.com>
+Upstream-Status: Backport [https://github.com/linux-msm/dsp-binaries/commit/29ba5422bfd4ee595360738f8f62c3394ad1c146]
+---
+ WHENCE     | 2 ++
+ config.txt | 4 ++--
+ 2 files changed, 4 insertions(+), 2 deletions(-)
+
+diff --git a/WHENCE b/WHENCE
+index 24bee7c..6fdb6d6 100644
+--- a/WHENCE
++++ b/WHENCE
+@@ -65,7 +65,9 @@ Status: Redistributable
+ 
+ --------------------------------------------------------------------------
+ Dir: nord/Qualcomm/SA8797P-Ride-Embedded/adsp-HPASS.AT.1.0.1-00003-NORD-6
++Dir: nord/Qualcomm/SA8797P-Ride-Embedded/adsp-HPASS.AT.1.0.1-00032-NORD-1
+ Dir: nord/Qualcomm/SA8797P-Ride-Embedded/adsp1-HPASS.AT.1.0.1-00003-NORD-6
++Dir: nord/Qualcomm/SA8797P-Ride-Embedded/adsp1-HPASS.AT.1.0.1-00032-NORD-1
+ Dir: nord/Qualcomm/SA8797P-Ride-Embedded/cdsp-NSP.AT.1.0-00579-NORD-1
+ Device: Qualcomm Technologies, Inc. SA8797P Ride Embedded
+ Licence: LICENSE.qcom-2
+diff --git a/config.txt b/config.txt
+index c643f61..dfc8aff 100644
+--- a/config.txt
++++ b/config.txt
+@@ -38,8 +38,8 @@ Install: maili/Qualcomm/Maili-MTP	adsp	LPAIDSP.HT.1.6-00701.4-HAWI-3
+ Link: hawi/Qualcomm/Hawi-MTP/dsp/cdsp	maili/Qualcomm/Maili-MTP/dsp/cdsp
+ 
+ # SA8797P Ride Embedded
+-Install: nord/Qualcomm/SA8797P-Ride-Embedded	adsp	adsp-HPASS.AT.1.0.1-00003-NORD-6
+-Install: nord/Qualcomm/SA8797P-Ride-Embedded	adsp1	adsp1-HPASS.AT.1.0.1-00003-NORD-6
++Install: nord/Qualcomm/SA8797P-Ride-Embedded	adsp	adsp-HPASS.AT.1.0.1-00032-NORD-1
++Install: nord/Qualcomm/SA8797P-Ride-Embedded	adsp1	adsp1-HPASS.AT.1.0.1-00032-NORD-1
+ Install: nord/Qualcomm/SA8797P-Ride-Embedded	cdsp	cdsp-NSP.AT.1.0-00579-NORD-1
+ 
+ # Arduino Imola
