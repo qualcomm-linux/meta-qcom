@@ -7,16 +7,15 @@ def qcom_kernel_localversion(d):
     import re
     import oe.patch
     try:
-        fetcher = bb.fetch.Fetch(d.getVar('SRC_URI').split(), d)
+        revs = bb.fetch.get_hashvalue(d).split()
     except bb.fetch.BBFetchException as e:
         bb.warn('Cannot resolve the kernel source revision: %s' % e)
         return ''
-    scms = [ud for ud in fetcher.ud.values() if ud.method.supports_srcrev()]
     # The task signature code expands this with an empty SRC_URI
     # (BB_HASH_CODEPARSER_VALS), which has nothing to resolve
-    if not scms:
+    if not revs:
         return ''
-    rev = (scms[0].revision or '').lower()
+    rev = revs[0].lower()
     if not re.fullmatch('[0-9a-f]{12,}', rev):
         bb.warn('Kernel source revision "%s" is not a commit id' % rev)
         return ''
