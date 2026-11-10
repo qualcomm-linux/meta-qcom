@@ -54,6 +54,12 @@ QCOM_VFAT_SECTOR_SIZE ??= "4096"
 # Default dtb image for the boot firmware (fit-based)
 QCOM_DTB_DEFAULT ??= "multi-dtb"
 
+# Devicetree embedded in the UKI; empty means dtb.bin supplies it instead.
+# Boards override QCOM_UKI_DEVICETREE in their own machine configuration.
+QCOM_UKI_DEVICETREE ??= ""
+
+UKI_DEVICETREE ?= "${QCOM_UKI_DEVICETREE}"
+
 # Default serial console for QCOM devices
 SERIAL_CONSOLES ?= "115200;ttyMSM0"
 
