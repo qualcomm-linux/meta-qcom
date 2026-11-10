@@ -14,6 +14,8 @@ LINUX_VERSION ?= "7.3"
 
 PV = "${LINUX_VERSION}+git"
 
+FILESEXTRAPATHS:prepend := "${THISDIR}/linux-qcom-next:"
+
 KERNEL_PAHOLE ?= '${@bb.utils.contains("BBFILE_COLLECTIONS", "openembedded-layer", "1", "0", d)}'
 do_configure[depends] += '${@oe.utils.vartrue("KERNEL_PAHOLE", "pahole-native:do_populate_sysroot", "", d)}'
 EXTRA_OEMAKE += '${@oe.utils.vartrue("KERNEL_PAHOLE", "", "PAHOLE=false", d)}'
