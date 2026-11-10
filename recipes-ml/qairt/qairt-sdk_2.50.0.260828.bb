@@ -59,13 +59,13 @@ COMPATIBLE_MACHINE:aarch64 = "(.*)"
 do_install() {
     install -d ${D}${includedir}
     install -d ${D}${libdir}
-    install -d ${D}${datadir}/qcom/qcs615/Qualcomm/QCS615-RIDE/dsp/cdsp
-    install -d ${D}${datadir}/qcom/qcm6490/Thundercomm/RB3gen2/dsp/cdsp
-    install -d ${D}${datadir}/qcom/sa8775p/Qualcomm/SA8775P-RIDE/dsp/cdsp
-    install -d ${D}${datadir}/qcom/sa8775p/Qualcomm/SA8775P-RIDE/dsp/cdsp1
-    install -d ${D}${datadir}/qcom/qcs8300/Qualcomm/QCS8300-RIDE/dsp/cdsp
-    install -d ${D}${datadir}/qcom/x1e80100/Qualcomm/Hamoa-IoT-EVK/dsp/cdsp
-    install -d ${D}${datadir}/qcom/shikra/Qualcomm/Shikra-CQS-EVK/dsp/cdsp
+    install -d ${D}${HEXAGON_DSP_DIR}/qcs615/Qualcomm/QCS615-RIDE/dsp/cdsp
+    install -d ${D}${HEXAGON_DSP_DIR}/qcm6490/Thundercomm/RB3gen2/dsp/cdsp
+    install -d ${D}${HEXAGON_DSP_DIR}/sa8775p/Qualcomm/SA8775P-RIDE/dsp/cdsp
+    install -d ${D}${HEXAGON_DSP_DIR}/sa8775p/Qualcomm/SA8775P-RIDE/dsp/cdsp1
+    install -d ${D}${HEXAGON_DSP_DIR}/qcs8300/Qualcomm/QCS8300-RIDE/dsp/cdsp
+    install -d ${D}${HEXAGON_DSP_DIR}/x1e80100/Qualcomm/Hamoa-IoT-EVK/dsp/cdsp
+    install -d ${D}${HEXAGON_DSP_DIR}/shikra/Qualcomm/Shikra-CQS-EVK/dsp/cdsp
     install -d ${D}${bindir}
 
     cp -r ${S}/include/* ${D}${includedir}
@@ -74,27 +74,27 @@ do_install() {
     # These installation paths for the Hexagon libraries were decided based on
     # the recommendations from FastRPC team and taking FastCV as a reference.
     # They may change later, so keep the PACKAGES entries generic.
-    cp -r ${S}/lib/hexagon-v66/unsigned/* ${D}${datadir}/qcom/qcs615/Qualcomm/QCS615-RIDE/dsp/cdsp
-    cp -r ${S}/lib/hexagon-v68/unsigned/* ${D}${datadir}/qcom/qcm6490/Thundercomm/RB3gen2/dsp/cdsp
-    cp -r ${S}/lib/hexagon-v73/unsigned/* ${D}${datadir}/qcom/sa8775p/Qualcomm/SA8775P-RIDE/dsp/cdsp
-    cp -r ${S}/lib/hexagon-v75/unsigned/* ${D}${datadir}/qcom/qcs8300/Qualcomm/QCS8300-RIDE/dsp/cdsp
+    cp -r ${S}/lib/hexagon-v66/unsigned/* ${D}${HEXAGON_DSP_DIR}/qcs615/Qualcomm/QCS615-RIDE/dsp/cdsp
+    cp -r ${S}/lib/hexagon-v68/unsigned/* ${D}${HEXAGON_DSP_DIR}/qcm6490/Thundercomm/RB3gen2/dsp/cdsp
+    cp -r ${S}/lib/hexagon-v73/unsigned/* ${D}${HEXAGON_DSP_DIR}/sa8775p/Qualcomm/SA8775P-RIDE/dsp/cdsp
+    cp -r ${S}/lib/hexagon-v75/unsigned/* ${D}${HEXAGON_DSP_DIR}/qcs8300/Qualcomm/QCS8300-RIDE/dsp/cdsp
 
     # Shikra CQS-EVK uses the same v66 binaries as QCS615-RIDE.
-    for lib in ${D}${datadir}/qcom/qcs615/Qualcomm/QCS615-RIDE/dsp/cdsp/*; do \
-        ln -s ${datadir}/qcom/qcs615/Qualcomm/QCS615-RIDE/dsp/cdsp/$(basename $lib) \
-        ${D}${datadir}/qcom/shikra/Qualcomm/Shikra-CQS-EVK/dsp/cdsp/$(basename $lib); \
+    for lib in ${D}${HEXAGON_DSP_DIR}/qcs615/Qualcomm/QCS615-RIDE/dsp/cdsp/*; do \
+        ln -s ${HEXAGON_DSP_DIR}/qcs615/Qualcomm/QCS615-RIDE/dsp/cdsp/$(basename $lib) \
+        ${D}${HEXAGON_DSP_DIR}/shikra/Qualcomm/Shikra-CQS-EVK/dsp/cdsp/$(basename $lib); \
     done
 
     # Hamoa IoT EVK uses the same v73 binaries as SA8775P-RIDE.
-    for lib in ${D}${datadir}/qcom/sa8775p/Qualcomm/SA8775P-RIDE/dsp/cdsp/*; do \
-        ln -s ${datadir}/qcom/sa8775p/Qualcomm/SA8775P-RIDE/dsp/cdsp/$(basename $lib) \
-        ${D}${datadir}/qcom/x1e80100/Qualcomm/Hamoa-IoT-EVK/dsp/cdsp/$(basename $lib); \
+    for lib in ${D}${HEXAGON_DSP_DIR}/sa8775p/Qualcomm/SA8775P-RIDE/dsp/cdsp/*; do \
+        ln -s ${HEXAGON_DSP_DIR}/sa8775p/Qualcomm/SA8775P-RIDE/dsp/cdsp/$(basename $lib) \
+        ${D}${HEXAGON_DSP_DIR}/x1e80100/Qualcomm/Hamoa-IoT-EVK/dsp/cdsp/$(basename $lib); \
     done
 
     # SA8775P-RIDE cdsp1 is an alias for cdsp used by some FastRPC clients.
-    for lib in ${D}${datadir}/qcom/sa8775p/Qualcomm/SA8775P-RIDE/dsp/cdsp/*; do \
+    for lib in ${D}${HEXAGON_DSP_DIR}/sa8775p/Qualcomm/SA8775P-RIDE/dsp/cdsp/*; do \
         ln -s ../cdsp/$(basename $lib) \
-        ${D}${datadir}/qcom/sa8775p/Qualcomm/SA8775P-RIDE/dsp/cdsp1/$(basename $lib); \
+        ${D}${HEXAGON_DSP_DIR}/sa8775p/Qualcomm/SA8775P-RIDE/dsp/cdsp1/$(basename $lib); \
     done
 
     cp -r ${S}/bin/${PLATFORM_DIR}/* ${D}${bindir}
@@ -135,13 +135,13 @@ PACKAGES += "\
     ${PN}-hexagon-v75 \
 "
 
-FILES:${PN}-hexagon-v66 += "${datadir}/qcom/qcs615/Qualcomm/QCS615-RIDE/dsp/cdsp"
-FILES:${PN}-hexagon-v66 += "${datadir}/qcom/shikra/Qualcomm/Shikra-CQS-EVK/dsp/cdsp"
-FILES:${PN}-hexagon-v68 += "${datadir}/qcom/qcm6490/Thundercomm/RB3gen2/dsp/cdsp"
-FILES:${PN}-hexagon-v73 += "${datadir}/qcom/sa8775p/Qualcomm/SA8775P-RIDE/dsp/cdsp"
-FILES:${PN}-hexagon-v73 += "${datadir}/qcom/sa8775p/Qualcomm/SA8775P-RIDE/dsp/cdsp1"
-FILES:${PN}-hexagon-v73 += "${datadir}/qcom/x1e80100/Qualcomm/Hamoa-IoT-EVK/dsp/cdsp"
-FILES:${PN}-hexagon-v75 += "${datadir}/qcom/qcs8300/Qualcomm/QCS8300-RIDE/dsp/cdsp"
+FILES:${PN}-hexagon-v66 += "${HEXAGON_DSP_DIR}/qcs615/Qualcomm/QCS615-RIDE/dsp/cdsp"
+FILES:${PN}-hexagon-v66 += "${HEXAGON_DSP_DIR}/shikra/Qualcomm/Shikra-CQS-EVK/dsp/cdsp"
+FILES:${PN}-hexagon-v68 += "${HEXAGON_DSP_DIR}/qcm6490/Thundercomm/RB3gen2/dsp/cdsp"
+FILES:${PN}-hexagon-v73 += "${HEXAGON_DSP_DIR}/sa8775p/Qualcomm/SA8775P-RIDE/dsp/cdsp"
+FILES:${PN}-hexagon-v73 += "${HEXAGON_DSP_DIR}/sa8775p/Qualcomm/SA8775P-RIDE/dsp/cdsp1"
+FILES:${PN}-hexagon-v73 += "${HEXAGON_DSP_DIR}/x1e80100/Qualcomm/Hamoa-IoT-EVK/dsp/cdsp"
+FILES:${PN}-hexagon-v75 += "${HEXAGON_DSP_DIR}/qcs8300/Qualcomm/QCS8300-RIDE/dsp/cdsp"
 
 RDEPENDS:${PN} += "fastrpc"
 RRECOMMENDS:${PN} += "${PN}-hexagon-v66 ${PN}-hexagon-v68 ${PN}-hexagon-v73 ${PN}-hexagon-v75"
