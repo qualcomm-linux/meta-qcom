@@ -6,7 +6,7 @@ on:
       profile:
         required: false
         type: string
-        default: "full" # values: pr | full | weekly
+        default: "full" # values: pr | full | extended
       skip_if_github_cached:
         required: false
         type: boolean
@@ -51,7 +51,7 @@ jobs:
 
       - name: Run kas lock
         run: |
-          ${KAS_CONTAINER} lock ci/base.yml:ci/qcom-distro.yml:ci/meta-arm.yml
+          ${KAS_CONTAINER} lock ci/base.yml:ci/qcom-distro.yml:ci/meta-arm.yml:ci/meta-yocto.yml
 
       - name: Upload kas
         uses: actions/upload-artifact@v6
@@ -166,6 +166,64 @@ jobs:
         id: compile_env
         run: |
           echo "CACHE_DIR=${{env.CACHE_DIR}}" >> $GITHUB_OUTPUT
+
+  testimage-build:
+    needs: [kas-setup, github-cache-check, compile-env]
+    if: |
+      github.repository_owner == 'qualcomm-linux' &&
+      (inputs.skip_if_github_cached != true || needs.github-cache-check.outputs.cache_hit != 'true')
+    permissions:
+      contents: read
+      packages: read
+      actions: read
+    strategy:
+      fail-fast: false
+      matrix:
+        machine:
+          - genericarm64-testimage-noauto
+        distro:
+          - name: nodistro
+            yamlfile: ""
+    uses: $/.github/workflows/compile.yml
+    with:
+      run_on: arm64
+      name: ${{ matrix.machine }}/${{ matrix.distro.name }}
+      world: false
+      machine: ${{matrix.machine}}
+      distro_yaml: ${{matrix.distro.yamlfile}}
+      distro_name: ${{matrix.distro.name}}
+      kernel_yaml: ''
+      kernel_dirname: ''
+      cache_dir: ${{ needs.compile-env.outputs.CACHE_DIR }}
+
+  testimage:
+    needs: [testimage-build, github-cache-check, compile-env]
+    if: |
+      github.repository_owner == 'qualcomm-linux' &&
+      (inputs.skip_if_github_cached != true || needs.github-cache-check.outputs.cache_hit != 'true')
+    permissions:
+      contents: read
+      packages: read
+      actions: read
+    strategy:
+      fail-fast: false
+      matrix:
+        machine:
+          - genericarm64-testimage
+        distro:
+          - name: nodistro
+            yamlfile: ""
+    uses: $/.github/workflows/compile.yml
+    with:
+      run_on: arm64-metal
+      name: ${{ matrix.machine }}/${{ matrix.distro.name }}
+      world: false
+      machine: ${{matrix.machine}}
+      distro_yaml: ${{matrix.distro.yamlfile}}
+      distro_name: ${{matrix.distro.name}}
+      kernel_yaml: ''
+      kernel_dirname: ''
+      cache_dir: ${{ needs.compile-env.outputs.CACHE_DIR }}
 
   # Builds the common core (native tools, toolchain, generic world) once,
   # so the compile_stage2 seeds reuse it instead of each building it.
@@ -288,6 +346,7 @@ jobs:
           - iq-x7181-evk
           - kaanapali-mtp
           - mahua-crd
+          - nord-rrd
           - qcm6490-idp
           - qcom-armv8a
           - qcs615-ride
@@ -306,7 +365,7 @@ jobs:
             yamlfile: ':ci/qcom-distro-catchall.yml'
           - name: debug
             yamlfile: ':ci/qcom-distro-catchall.yml:ci/debug.yml:ci/nospdx.yml'
-            profile: weekly
+            profile: extended
           - name: performance
             yamlfile: ':ci/qcom-distro-catchall.yml:ci/performance.yml:ci/nospdx.yml'
             profile: full
@@ -317,27 +376,27 @@ jobs:
           - type: 6.18
             dirname: "_linux-qcom-6.18"
             yamlfile: ":ci/linux-qcom-6.18.yml"
-          - type: rt-6.18-distro-kvm
-            dirname: "_linux-qcom-rt-6.18_qcom-distro-kvm"
-            yamlfile: ":ci/linux-qcom-rt-6.18.yml:ci/qcom-distro-kvm.yml"
+          - type: rt-6.18
+            dirname: "_linux-qcom-rt-6.18"
+            yamlfile: ":ci/linux-qcom-rt-6.18.yml:ci/kvm.yml"
         exclude:
           # 6.18 RT selects qcom-distro by default, remove others
           - distro:
                 name: nodistro
             kernel:
-                type: rt-6.18-distro-kvm
+                type: rt-6.18
           - distro:
                 name: qcom-distro-catchall
             kernel:
-                type: rt-6.18-distro-kvm
+                type: rt-6.18
           - distro:
                 name: debug
             kernel:
-                type: rt-6.18-distro-kvm
+                type: rt-6.18
           - distro:
                 name: performance
             kernel:
-                type: rt-6.18-distro-kvm
+                type: rt-6.18
           # Exclude jobs from compile_stage2
           - machine: glymur-crd
             distro:
@@ -354,7 +413,13 @@ jobs:
                 type: 6.18
           - machine: mahua-crd
             kernel:
-                type: rt-6.18-distro-kvm
+                type: rt-6.18
+          - machine: nord-rrd
+            kernel:
+                type: 6.18
+          - machine: nord-rrd
+            kernel:
+                type: rt-6.18
           - machine: qcom-armv8a
             distro:
                 name: nodistro
@@ -405,6 +470,42 @@ jobs:
             distro:
                 name: qcom-distro-dpdk
                 yamlfile: ':ci/qcom-distro.yml:ci/dpdk.yml'
+            kernel:
+                type: default
+                dirname: ""
+                yamlfile: ""
+          - machine: iq-615-evk
+            distro:
+                name: qcom-distro-gunyah
+                yamlfile: ':ci/qcom-distro.yml:ci/gunyah.yml'
+                profile: extended
+            kernel:
+                type: default
+                dirname: ""
+                yamlfile: ""
+          - machine: iq-8275-evk
+            distro:
+                name: qcom-distro-gunyah
+                yamlfile: ':ci/qcom-distro.yml:ci/gunyah.yml'
+                profile: extended
+            kernel:
+                type: default
+                dirname: ""
+                yamlfile: ""
+          - machine: iq-9075-evk
+            distro:
+                name: qcom-distro-gunyah
+                yamlfile: ':ci/qcom-distro.yml:ci/gunyah.yml'
+                profile: extended
+            kernel:
+                type: default
+                dirname: ""
+                yamlfile: ""
+          - machine: rb3gen2-core-kit
+            distro:
+                name: qcom-distro-gunyah
+                yamlfile: ':ci/qcom-distro.yml:ci/gunyah.yml'
+                profile: extended
             kernel:
                 type: default
                 dirname: ""
@@ -483,16 +584,16 @@ jobs:
                 yamlfile: ""
           - machine: iq-9075-evk-open-fw
             distro:
-                name: qcom-distro-kvm
-                yamlfile: ':ci/qcom-distro-kvm.yml'
+                name: qcom-distro
+                yamlfile: ':ci/qcom-distro.yml'
             kernel:
                 type: default
                 dirname: ""
                 yamlfile: ""
           - machine: iq-9075-evk-open-fw-spl
             distro:
-                name: qcom-distro-kvm
-                yamlfile: ':ci/qcom-distro-kvm.yml'
+                name: qcom-distro
+                yamlfile: ':ci/qcom-distro.yml'
             kernel:
                 type: kernel-fit
                 dirname: "_kernel-fit"
@@ -541,11 +642,11 @@ jobs:
     with:
       name: ${{ matrix.machine }}/${{ matrix.distro.name }}${{ matrix.kernel.dirname }}
       # Which profiles build this entry. Entries without distro.profile are
-      # built by every profile; an entry marked with distro.profile is built by
-      # that profile and by the wider ones above it, ordered pr < full (push
-      # and nightly) < weekly. Add "profile: weekly" to the distro entry of a
-      # target that is too expensive to build every night.
-      enabled: ${{ (matrix.distro.profile || 'any') == 'any' || (matrix.distro.profile == 'full' && inputs.profile != 'pr') || (matrix.distro.profile == 'weekly' && inputs.profile == 'weekly') }}
+      # built by every profile; an entry marked with distro.profile is built
+      # by that profile and by the wider ones above it, ordered pr < full
+      # (push and nightly) < extended. Add "profile: extended" to the distro
+      # entry of a target that is too expensive to build every night.
+      enabled: ${{ (matrix.distro.profile || 'any') == 'any' || (matrix.distro.profile == 'full' && inputs.profile != 'pr') || (matrix.distro.profile == 'extended' && inputs.profile == 'extended') }}
       # One world build per machine and distro family is enough for compile
       # coverage: nodistro (including the nogl variant) covers the plain OE
       # configuration and qcom-distro-catchall enables a superset of the
@@ -563,7 +664,7 @@ jobs:
       profile: ${{ inputs.profile }}
 
   publish_summary:
-    needs: [github-cache-check, compile_stage3, compile_sdk]
+    needs: [github-cache-check, compile_stage3, compile_sdk, testimage]
     if: |
       always() && github.repository_owner == 'qualcomm-linux' &&
       (inputs.skip_if_github_cached != true || needs.github-cache-check.outputs.cache_hit != 'true')
@@ -579,7 +680,7 @@ jobs:
           pattern: build-url*
 
   github-cache-save:
-    needs: [github-cache-check, compile_stage3, compile_sdk]
+    needs: [github-cache-check, compile_stage3, compile_sdk, testimage]
     if: |
       github.repository_owner == 'qualcomm-linux' &&
       inputs.skip_if_github_cached == true &&
@@ -598,7 +699,7 @@ jobs:
 
   build_successful:
     if: github.repository_owner == 'qualcomm-linux'
-    needs: [compile_stage3, compile_sdk]
+    needs: [compile_stage3, compile_sdk, testimage]
     runs-on: ubuntu-latest
     steps:
       - name: Build completed successfully

@@ -39,7 +39,7 @@ LOCAL_GETTY ?= " \
 local_autologin () {
     sed -i -e 's/^\(ExecStart *=.*getty \)/\1--autologin root /' ${LOCAL_GETTY}
 }
-ROOTFS_POSTPROCESS_COMMAND += "${@oe.utils.conditional('VIRTUAL-RUNTIME_init_manager', 'systemd', 'local_autologin;', '', d)}"
+ROOTFS_POSTPROCESS_COMMAND += "${@oe.utils.conditional('VIRTUAL-RUNTIME_init_manager', 'systemd', 'local_autologin', '', d)}"
 
 # We'd like to include extra packages provided by layers which we do not depend
 # on. This can be handled by .bbappends, but then image recipes including this

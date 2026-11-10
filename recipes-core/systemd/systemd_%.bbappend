@@ -6,7 +6,7 @@ SRC_URI:append:qcom = " \
 
 # Create a group dmaheap and add this group to /dev/dma_heap/system through
 # dma-heap rules.
-GROUPADD_PARAM:udev:append:qcom = "; -r dmaheap"
+GROUPADD_PARAM:udev:append:qcom = " -r dmaheap;"
 
 do_install:append:qcom() {
     install -d ${D}${nonarch_libdir}/udev/rules.d

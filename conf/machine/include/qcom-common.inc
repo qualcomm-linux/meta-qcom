@@ -5,7 +5,10 @@ require conf/machine/include/qcom-common-binary.inc
 require conf/machine/include/qcom-u-boot-common.inc
 
 # Set a default set of MACHINE_FEATURES, indivudual MACHINEs can append it
-MACHINE_FEATURES = "alsa bluetooth usbgadget usbhost wifi"
+MACHINE_FEATURES = "alsa bluetooth pci usbgadget usbhost wifi"
+
+QCOM_UEFI_BOOT ??= "${@bb.utils.contains('TUNE_FEATURES', 'aarch64', '1', '0', d)}"
+MACHINE_FEATURES += "${@'efi vfat' if bb.utils.to_boolean(d.getVar('QCOM_UEFI_BOOT')) else ''}"
 
 XSERVER_OPENGL ?= " \
     xf86-video-modesetting \
@@ -51,6 +54,12 @@ QCOM_VFAT_SECTOR_SIZE ??= "4096"
 
 # Default dtb image for the boot firmware (fit-based)
 QCOM_DTB_DEFAULT ??= "multi-dtb"
+
+# Devicetree embedded in the UKI; empty means dtb.bin supplies it instead.
+# Boards override QCOM_UKI_DEVICETREE in their own machine configuration.
+QCOM_UKI_DEVICETREE ??= ""
+
+UKI_DEVICETREE ?= "${QCOM_UKI_DEVICETREE}"
 
 # Default serial console for QCOM devices
 SERIAL_CONSOLES ?= "115200;ttyMSM0"

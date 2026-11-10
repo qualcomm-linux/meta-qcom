@@ -15,21 +15,15 @@ repos:
   oe-core:
     url: https://github.com/openembedded/openembedded-core
     patches:
-      fix-igt-pause:
+      001-shikra-wlanmdsp-fix:
         repo: meta-qcom
-        path: patches/oe-core/0001-igt-gpu-tools-fix-build-on-non-x86-platforms.patch
-      uboot-sign-spl-bss-padding:
+        path: patches/oe-core/0002-linux-firmware-backport-ath10k-shikra-wlanmdsp-fix.patch
+      002-nord-gpu-firmware:
         repo: meta-qcom
-        path: patches/oe-core/0003-uboot-sign-keep-the-SPL-BSS-padding-when-reassembling.patch
-      002-shikra-wifi-pkg:
+        path: patches/oe-core/0003-linux-firmware-backport-qcom-nord-gpu-firmware.patch
+      003-nord-hpass-firmware:
         repo: meta-qcom
-        path: patches/oe-core/0002-linux-firmware-package-qcom-shikra-wifi-firmware.patch
-      003-shikra-wlan-fw-link:
-        repo: meta-qcom
-        path: patches/oe-core/0003-linux-firmware-backport-patch-to-symlink-shikra-wifi.patch
-      004-revert-qcs615-adsp:
-        repo: meta-qcom
-        path: patches/oe-core/0004-linux-firmware-revert-qcs615-ADSP-firmware-to-fix-au.patch
+        path: patches/oe-core/0004-linux-firmware-backport-qcom-nord-hpass-firmware.patch
     layers:
       meta:
 

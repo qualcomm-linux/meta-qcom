@@ -15,6 +15,8 @@ import re
 import shutil
 import logging
 
+import bb.providers
+
 from oeqa.selftest.case import OESelftestTestCase
 from oeqa.utils.commands import runCmd, bitbake, get_bb_vars
 
@@ -1038,11 +1040,15 @@ class QcomFitImageMatrixTests(OESelftestTestCase):
             f'MACHINE = "{machine}"',
             f'PREFERRED_PROVIDER_virtual/kernel = "{provider}"',
         ])
-        bb_vars = get_bb_vars(
-            ["KERNEL_DEVICETREE", "LINUX_QCOM_KERNEL_DEVICETREE"],
-            "virtual/kernel",
-            postconfig=postconfig,
-        )
+        try:
+            bb_vars = get_bb_vars(
+                ["KERNEL_DEVICETREE", "LINUX_QCOM_KERNEL_DEVICETREE"],
+                "virtual/kernel",
+                postconfig=postconfig,
+            )
+        except bb.providers.NoProvider as exc:
+            # Callers skip a machine/provider pair on AssertionError
+            raise AssertionError(str(exc)) from exc
         dt_files = self._dt_files(bb_vars.get("KERNEL_DEVICETREE"))
         extra_files = self._dt_files(bb_vars.get("LINUX_QCOM_KERNEL_DEVICETREE"))
         return {

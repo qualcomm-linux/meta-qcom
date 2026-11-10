@@ -1,0 +1,35 @@
+From 1f9c4d529f4cfb332f5abfabbd0918f5d5f6cb4e Mon Sep 17 00:00:00 2001
+From: Sahitya Kandru <kandru@qti.qualcomm.com>
+Date: Tue, 3 Nov 2026 17:04:17 +0530
+Subject: [PATCH] freedreno : Take only in fence as a hint for explicit sync
+
+Waiting on an in-fence is a hint that the app is using explicit sync,so
+we can skip implicit sync.  Requesting an out-fence may not: Eg.
+compositors request one for every repaint, while still relying on implicit
+sync.
+
+Upstream-Status: Backport [https://gitlab.freedesktop.org/mesa/mesa/-/commit/1f9c4d529f4cfb332f5abfabbd0918f5d5f6cb4e]
+
+Signed-off-by: Sahitya Kandru <kandru@qti.qualcomm.com>
+Part-of: <https://gitlab.freedesktop.org/mesa/mesa/-/merge_requests/45882>
+---
+ src/freedreno/drm/freedreno_ringbuffer_sp.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/src/freedreno/drm/freedreno_ringbuffer_sp.c b/src/freedreno/drm/freedreno_ringbuffer_sp.c
+index 7f50fccba80..f18294c5e6d 100644
+--- a/src/freedreno/drm/freedreno_ringbuffer_sp.c
++++ b/src/freedreno/drm/freedreno_ringbuffer_sp.c
+@@ -360,7 +360,8 @@ fd_submit_sp_flush(struct fd_submit *submit, int in_fence_fd, bool use_fence_fd)
+ 
+    bool has_shared = fd_submit_sp_flush_prep(submit, in_fence_fd, out_fence);
+ 
+-   if (((in_fence_fd != -1) || out_fence->use_fence_fd) && !dev->disable_explicit_sync_heuristic)
++   /* Having an in fence means it is explicit sync*/
++   if ((in_fence_fd != -1) && !dev->disable_explicit_sync_heuristic)
+       pipe->no_implicit_sync = true;
+ 
+    /* The rule about skipping submit merging with shared buffers is only
+-- 
+2.43.0
+

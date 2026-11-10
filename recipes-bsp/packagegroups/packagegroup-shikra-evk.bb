@@ -2,8 +2,6 @@ SUMMARY = "Packages for the Shikra-EVK platform"
 
 inherit packagegroup
 
-COMPATIBLE_MACHINE = "(qcom)"
-
 PACKAGES = " \
     ${PN}-firmware \
     ${PN}-hexagon-dsp-binaries \

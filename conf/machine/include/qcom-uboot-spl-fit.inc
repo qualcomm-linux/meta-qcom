@@ -30,3 +30,8 @@ QCOM_XBL_CONFIG = "xbl_config_spl.elf"
 
 # Wrapped into an ELF and signed as the tz.mbn boot image by the recipe.
 SPL_BINARY = "spl/u-boot-spl.bin"
+
+# The SPL is loaded as one contiguous image and its BSS is not separate, so
+# uboot-sign has to append the signed DTB behind the BSS padding, as U-Boot
+# does when assembling this image.
+SPL_WITH_DTB_BINARY = "u-boot-spl-dtb.bin"

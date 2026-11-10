@@ -4,6 +4,7 @@ inherit packagegroup
 
 PACKAGES = " \
     ${PN}-firmware \
+    ${PN}-hexagon-dsp-binaries \
 "
 
 RRECOMMENDS:${PN}-firmware = " \
@@ -13,4 +14,9 @@ RRECOMMENDS:${PN}-firmware = " \
     linux-firmware-qcom-glymur-audio \
     linux-firmware-qcom-glymur-compute \
     linux-firmware-qcom-vpu \
+"
+
+RDEPENDS:${PN}-hexagon-dsp-binaries = " \
+    hexagon-dsp-binaries-qcom-mahua-crd-adsp \
+    hexagon-dsp-binaries-qcom-mahua-crd-cdsp \
 "

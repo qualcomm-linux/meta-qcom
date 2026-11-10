@@ -1,0 +1,128 @@
+SUMMARY = "Qualcomm Adreno Graphics User Mode libraries"
+
+DESCRIPTION = "Collection of prebuilt User Mode libraries to support OpenGL ES, Vulkan, and OpenCL APIs for Qualcomm Adreno GPUs.\
+               For Qualcomm-specific OpenCL extensions declared in cl_ext_qcom.h, documentation is available in the Adreno OpenCL SDK: \
+               https://softwarecenter.qualcomm.com/catalog/item/Adreno_OpenCL_SDK"
+
+LICENSE = "LicenseRef-LICENSE.qcom-2"
+LIC_FILES_CHKSUM = "file://NO.LOGIN.BINARY.LICENSE.QTI.pdf;md5=4ceffe94cb40cdce6d2f4fb93cc063d1 \
+                    file://NOTICE;md5=356106e5f0928f95d25f52304574ba35 "
+
+# no top-level dir in the archive, unpack to subdir to prevent UNPACKDIR pollution
+SRC_URI = "https://qartifactory-edge.qualcomm.com/artifactory/qsc_releases/software/chip/component/gfx-adreno.le.0.0/${PBT_BUILD_DATE}/prebuilt_yocto/${BPN}_${PV}_armv8a.tar.gz;subdir=${BP}"
+PBT_BUILD_DATE = "261105"
+SRC_URI[sha256sum] = "380988d9ab7bc74b79f037a584447a709972303d196b3fc3ed19ab7beecd5ae3"
+
+# These are listed here in order to identify RDEPENDS
+DEPENDS += " glib-2.0 libdrm \
+             ${@bb.utils.contains('DISTRO_FEATURES', 'opengl', 'virtual/libgbm msm-gbm-backend', '', d)} \
+             ${@bb.utils.contains('DISTRO_FEATURES', 'glvnd', 'libglvnd', '', d)} \
+             ${@bb.utils.contains('DISTRO_FEATURES', 'wayland', 'wayland', '', d)} \
+             ${@bb.utils.contains('DISTRO_FEATURES', 'x11', 'libxcb libx11 xcb-util-image', '', d)}"
+
+inherit features_check
+
+ANY_OF_DISTRO_FEATURES = "glvnd vulkan opencl"
+
+COMPATIBLE_MACHINE = "^$"
+# It should be armv8-2a, but then it wouldn't be possible to use it for
+# qcom-armv8a machine.
+COMPATIBLE_MACHINE:aarch64 = "(qcom)"
+
+PACKAGE_BEFORE_PN += " \
+    ${PN}-common \
+    ${@bb.utils.contains('DISTRO_FEATURES', 'glvnd', '${PN}-gles1 ${PN}-gles2 ${PN}-egl', '', d)} \
+    ${@bb.utils.contains('DISTRO_FEATURES', 'opengl vulkan', '${PN}-vulkan', '', d)} \
+    ${@bb.utils.contains('DISTRO_FEATURES', 'opencl', '${PN}-cl', '', d)} \
+"
+
+RPROVIDES:${PN}-egl += "virtual-egl-icd"
+RPROVIDES:${PN}-cl += "virtual-opencl-icd"
+RPROVIDES:${PN}-vulkan += "virtual-vulkan-icd"
+
+RDEPENDS:${PN}-egl += " kgsl-dlkm ${PN}-common ${PN}-gles1 ${PN}-gles2 msm-gbm-backend"
+RDEPENDS:${PN}-vulkan += " kgsl-dlkm ${PN}-common msm-gbm-backend"
+RDEPENDS:${PN}-cl += " ${PN}-common"
+RDEPENDS:${PN}-dev += "${@bb.utils.contains('DISTRO_FEATURES', 'opencl', 'opencl-headers-dev', '', d)}"
+
+RDEPENDS:${PN} = " \
+    ${@bb.utils.contains('DISTRO_FEATURES', 'glvnd', 'qcom-adreno-egl', '', d)} \
+    ${@bb.utils.contains('DISTRO_FEATURES', 'opengl vulkan', 'qcom-adreno-vulkan', '', d)} \
+    ${@bb.utils.contains('DISTRO_FEATURES', 'opencl', 'qcom-adreno-cl', '', d)} \
+"
+
+ALLOW_EMPTY:${PN} = "1"
+
+do_install () {
+    install -d ${D}/${libdir}
+    cp -r ${S}/usr/lib/* ${D}/${libdir}/
+
+    if ${@bb.utils.contains('DISTRO_FEATURES', 'glvnd', 'true', 'false', d)}; then
+        install -d ${D}${datadir}/glvnd/egl_vendor.d
+        cp ${S}/usr/share/glvnd/egl_vendor.d/10_adreno.json ${D}${datadir}/glvnd/egl_vendor.d/
+
+        if ! ${@bb.utils.contains('DISTRO_FEATURES', 'x11', 'true', 'false', d)}; then
+            rm ${D}${libdir}/libeglSubDriverX11.so*
+        fi
+
+        if ! ${@bb.utils.contains('DISTRO_FEATURES', 'wayland', 'true', 'false', d)}; then
+            rm ${D}${libdir}/libeglSubDriverWayland.so*
+        fi
+    else
+        rm  ${D}${libdir}/libeglSubDriver*.so* \
+            ${D}${libdir}/libGLES*.so* \
+            ${D}${libdir}/libEGL_*.so*
+    fi
+
+    if ${@bb.utils.contains('DISTRO_FEATURES', 'opengl vulkan', 'true', 'false', d)}; then
+        install -d ${D}${datadir}/vulkan/icd.d
+        cp ${S}/usr/share/vulkan/icd.d/adrenovk.json ${D}${datadir}/vulkan/icd.d/
+    else
+        rm ${D}${libdir}/libvulkan_*.so*
+    fi
+
+    if ${@bb.utils.contains('DISTRO_FEATURES', 'opencl', 'true', 'false', d)}; then
+        install -d ${D}${includedir}/CL
+        cp ${S}/usr/include/CL/cl_ext_qcom.h ${D}${includedir}/CL/
+
+        install -d ${D}${sysconfdir}/OpenCL/vendors
+        cp ${S}/etc/OpenCL/vendors/adrenocl.icd ${D}${sysconfdir}/OpenCL/vendors/
+    else
+        rm  ${D}${libdir}/libOpenCL_*.so* \
+            ${D}${libdir}/libCB*.so* \
+            ${D}${libdir}/libkcl*.so* \
+            ${D}${libdir}/libkernelmanager*.so*
+    fi
+
+    install -d ${D}${sysconfdir}/modprobe.d
+    cp ${S}/etc/modprobe.d/qcom-adreno.conf ${D}/${sysconfdir}/modprobe.d/qcom-adreno.conf
+}
+
+FILES:${PN}-common = "${libdir}/libQCGPUCompiler.so.* \
+                      ${libdir}/libQCGPUCompilerCore.so.* \
+                      ${libdir}/libqclccompiler.so.* \
+                      ${libdir}/libqgpucompiler-lgc.so.* \
+                      ${libdir}/libqgpucompilercore-lgc.so.* \
+                      ${libdir}/libqclccompiler-lgc.so.* \
+                      ${libdir}/libgsl.so.1 \
+                      ${libdir}/libadreno_utils.so.1 \
+                      ${libdir}/libq3dtools_*.so.* \
+                      ${sysconfdir}/modprobe.d/qcom-adreno.conf \
+                      ${sysconfdir}/profile.d/qcom-adreno_env.sh"
+FILES:${PN}-egl = "${libdir}/libEGL_adreno.so.1 \
+                   ${@bb.utils.contains('DISTRO_FEATURES', 'wayland', '${libdir}/libeglSubDriverWayland.so.*', '', d)} \
+                   ${@bb.utils.contains('DISTRO_FEATURES', 'x11', '${libdir}/libeglSubDriverX11.so.*', '', d)} \
+                   ${datadir}/glvnd/egl_vendor.d/10_adreno.json"
+FILES:${PN}-gles2 = "${libdir}/libGLESv2*.so.*"
+FILES:${PN}-gles1 = "${libdir}/libGLESv1*.so.*"
+FILES:${PN}-vulkan = "${libdir}/libvulkan_*.so.* \
+                      ${datadir}/vulkan/icd.d/adrenovk.json"
+FILES:${PN}-cl = "${libdir}/libOpenCL_*.so.* \
+                  ${libdir}/libCB.so.1 \
+                  ${libdir}/libkcl.so.1 \
+                  ${libdir}/libkernelmanager.so.1 \
+                  ${sysconfdir}/OpenCL/vendors/adrenocl.icd"
+FILES:${PN} = ""
+
+# Prebuilt libraries are already stripped
+INSANE_SKIP:${PN} = "already-stripped"
