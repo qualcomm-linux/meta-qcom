@@ -4,10 +4,10 @@ on:
   schedule:
   # NOTE - changes to the cron spec should be pushed by https://github.com/quic-yocto-ci
   # so that build notification emails will be sent out properly.
-  # At 2:22 UTC on Wednesday and Saturday - the slots the nightly dispatcher
+  # At 2:22 UTC on Sunday and Wednesday - the slots the nightly dispatcher
   # gives up, so that the extended build takes over the nightly run on
   # wrynose those two days just like the extended build does on this branch.
-  - cron: "22 2 * * 3,6"
+  - cron: "22 2 * * 0,3"
 
 permissions:
   contents: read
