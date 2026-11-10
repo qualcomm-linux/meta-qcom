@@ -45,6 +45,10 @@ repos:
       .:
       meta-tpm:
 
+  meta-lts-mixins-connectivity:
+    url: https://github.com/qualcomm-linux/meta-lts-mixins
+    branch: wrynose/connectivity
+
 local_conf_header:
   virtualization:
     SKIP_META_VIRT_SANITY_CHECK = "1"
