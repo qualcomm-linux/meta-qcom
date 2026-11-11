@@ -23,10 +23,10 @@ Upstream-Status: Inappropriate [Qualcomm specific change]
 Signed-off-by: Rohit Biradar <rohibira@qti.qualcomm.com>
 ---
  policy/modules.conf                 |  6 ++
- policy/modules/services/qcom_nhx.fc | 10 ++++
+ policy/modules/services/qcom_nhx.fc | 13 +++++
  policy/modules/services/qcom_nhx.if | 89 ++++++++++++++++++++++++++++
- policy/modules/services/qcom_nhx.te | 91 +++++++++++++++++++++++++++++
- 4 files changed, 196 insertions(+)
+ policy/modules/services/qcom_nhx.te | 103 +++++++++++++++++++++++++++++++++
+ 4 files changed, 211 insertions(+)
  create mode 100644 policy/modules.conf
  create mode 100644 policy/modules/services/qcom_nhx.fc
  create mode 100644 policy/modules/services/qcom_nhx.if
@@ -49,7 +49,7 @@ new file mode 100644
 index 0000000..73c0a5a
 --- /dev/null
 +++ b/policy/modules/services/qcom_nhx.fc
-@@ -0,0 +1,10 @@
+@@ -0,0 +1,13 @@
 +# File contexts for Qualcomm NHX camera test launcher
 +
 +# Label the camera-nhx launcher script
@@ -60,6 +60,9 @@ index 0000000..73c0a5a
 +
 +# Label camera cache files
 +/var/cache/camera(/.*)?    gen_context(system_u:object_r:qcom_camera_cache_t,s0)
++
++# Label the Adreno GPU/KGSL device node (character device)
++/dev/kgsl-3d0    -c    gen_context(system_u:object_r:qcom_gpu_device_t,s0)
 diff --git a/policy/modules/services/qcom_nhx.if b/policy/modules/services/qcom_nhx.if
 new file mode 100644
 index 0000000..0e491a0
@@ -160,7 +163,7 @@ new file mode 100644
 index 0000000..2815ce2
 --- /dev/null
 +++ b/policy/modules/services/qcom_nhx.te
-@@ -0,0 +1,91 @@
+@@ -0,0 +1,103 @@
 +policy_module(qcom_nhx, 1.0)
 +
 +########################################
@@ -178,6 +181,10 @@ index 0000000..2815ce2
 +
 +type qcom_camera_cache_t;
 +files_type(qcom_camera_cache_t)
++
++# Adreno GPU/KGSL device node (/dev/kgsl-3d0)
++type qcom_gpu_device_t;
++dev_node(qcom_gpu_device_t)
 +
 +########################################
 +#
@@ -211,6 +218,7 @@ index 0000000..2815ce2
 +	type var_t, debugfs_t, fs_t, default_t;
 +	type etc_runtime_t, usr_t, node_t, unreserved_port_t, tracefs_t;
 +	type sysctl_vm_overcommit_t, sysctl_vm_t;
++	type proc_t, init_t, initrc_runtime_t;
 +')
 +
 +dev_read_sysfs(qcom_nhx_t)
@@ -220,7 +228,7 @@ index 0000000..2815ce2
 +corecmd_exec_bin(qcom_nhx_t)
 +libs_use_ld_so(qcom_nhx_t)
 +libs_use_shared_libs(qcom_nhx_t)
-+allow qcom_nhx_t qcom_nhx_t:fifo_file { read write getattr };
++allow qcom_nhx_t qcom_nhx_t:fifo_file { read write getattr ioctl };
 +allow qcom_nhx_t qcom_camera_cache_t:file { read write open getattr create append };
 +allow qcom_nhx_t qcom_camera_cache_t:dir { search read write add_name open getattr create };
 +filetrans_pattern(qcom_nhx_t, var_t, qcom_camera_cache_t, dir, "camera")
@@ -232,9 +240,10 @@ index 0000000..2815ce2
 +allow qcom_nhx_t fastrpc_device_t:chr_file { read write open ioctl getattr };
 +allow qcom_nhx_t fastrpc_secure_device_t:chr_file { read write open ioctl getattr };
 +allow qcom_nhx_t v4l_device_t:chr_file { read write open ioctl getattr };
-+allow qcom_nhx_t qcom_nhx_t:capability sys_nice;
++allow qcom_nhx_t qcom_gpu_device_t:chr_file { read write open ioctl getattr map };
++allow qcom_nhx_t qcom_nhx_t:capability { sys_nice net_admin };
 +allow qcom_nhx_t qcom_nhx_t:process signal;
-+allow qcom_nhx_t initrc_t:unix_stream_socket { read write ioctl getattr };
++allow qcom_nhx_t initrc_t:unix_stream_socket { read write ioctl getattr connectto };
 +allow qcom_nhx_t fs_t:filesystem getattr;
 +allow qcom_nhx_t default_t:dir { search read open };
 +allow qcom_nhx_t debugfs_t:dir search;
@@ -246,6 +255,12 @@ index 0000000..2815ce2
 +allow qcom_nhx_t self:tcp_socket { bind create listen };
 +allow qcom_nhx_t sysctl_vm_overcommit_t:file { open read };
 +allow qcom_nhx_t sysctl_vm_t:dir search;
++allow qcom_nhx_t sysctl_vm_t:file { read open getattr };
++allow qcom_nhx_t proc_t:file { read open getattr };
++allow qcom_nhx_t proc_t:filesystem getattr;
++allow qcom_nhx_t initrc_runtime_t:sock_file write;
++allow qcom_nhx_t init_t:dir search;
++allow qcom_nhx_t init_t:unix_stream_socket connectto;
 +allow qcom_nhx_t tracefs_t:dir search;
 +allow qcom_nhx_t tracefs_t:file { open write };
 +allow qcom_nhx_t unreserved_port_t:tcp_socket name_bind;
