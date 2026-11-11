@@ -1,28 +1,5 @@
 # Known failures for qcom-distro, see README.md for the format.
 
-lemans-evk:
-  # no ALSA capture device is registered
-  - test: AudioRecord_Config01
-    comment: https://github.com/qualcomm-linux/meta-qcom/issues/1531
-    kernels:
-      - linux-qcom-next
-  - test: AudioRecord_Config03
-    comment: https://github.com/qualcomm-linux/meta-qcom/issues/1531
-    kernels:
-      - linux-qcom-next
-  - test: AudioRecord_Config05
-    comment: https://github.com/qualcomm-linux/meta-qcom/issues/1531
-    kernels:
-      - linux-qcom-next
-  - test: AudioRecord_Config07
-    comment: https://github.com/qualcomm-linux/meta-qcom/issues/1531
-    kernels:
-      - linux-qcom-next
-  - test: AudioRecord_Config09
-    comment: https://github.com/qualcomm-linux/meta-qcom/issues/1531
-    kernels:
-      - linux-qcom-next
-
 qcs6490-rb3gen2:
   # a new FastRPC session on the CDSP unsigned PD fails with 0x80000600
   # after a few runs, while fastrpc logs remote heap unmap errors
