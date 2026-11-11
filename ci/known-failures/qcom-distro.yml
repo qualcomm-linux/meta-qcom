@@ -26,6 +26,22 @@ lemans-evk:
   - test: AudioRecord_Config10
     comment: https://github.com/qualcomm-linux/meta-qcom/issues/3547
 
+monaco-evk:
+  # the UFS link fails to recover on runtime resume and the rootfs turns
+  # read-only, so the remaining capture tests cannot write their results
+  - test: AudioRecord_Config08
+    comment: UFS link recovery fails during the audio tests
+    kernels:
+      - linux-qcom-next
+  - test: AudioRecord_Config09
+    comment: UFS link recovery fails during the audio tests
+    kernels:
+      - linux-qcom-next
+  - test: AudioRecord_Config10
+    comment: UFS link recovery fails during the audio tests
+    kernels:
+      - linux-qcom-next
+
 shikra-iqs-evk:
   # CPU hotplug fails with the legacy (QTEE) boot flow once KVM is the
   # default hypervisor. QTEE is not PoR for Shikra; OPTEE is, and the fix
