@@ -11,14 +11,13 @@ LICENSE = "BSD-3-Clause-Clear"
 LIC_FILES_CHKSUM = "file://LICENSE.txt;md5=2998c54c288b081076c9af987bdf4838"
 
 SRC_URI = "git://github.com/qualcomm-linux/location-hal-qcom.git;protocol=https;branch=location.lnx.0.0;tag=v${PV}"
-SRCREV  = "96b21c90da387747155debb9f482fa11eed9bf74"
+SRCREV  = "cecac263bde2574fa5376782d2d7e056fea8cf42"
 
 inherit autotools pkgconfig useradd
 
 DEPENDS = "glib-2.0 sqlite3 libxml2"
 
-EXTRA_OECONF = " --with-glib"
-CPPFLAGS:append = " -DLOC_QCLINUX_TARGET "
+EXTRA_OECONF = "--with-glib"
 
 GROUPADD_PACKAGES = "${PN}"
 # locclient group gates access to the location HAL daemon's IPC socket;
