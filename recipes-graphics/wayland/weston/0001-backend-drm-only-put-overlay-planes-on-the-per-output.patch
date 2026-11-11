@@ -1,4 +1,4 @@
-From 0c9a1b5bea190ac00a59ae73aaa294abba9754df Mon Sep 17 00:00:00 2001
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: Ricardo Salveti <ricardo.salveti@oss.qualcomm.com>
 Date: Fri, 21 Aug 2026 20:46:15 +0000
 Subject: [PATCH] backend-drm: only put overlay planes on the per-output plane
@@ -36,10 +36,10 @@ Upstream-Status: Pending
  1 file changed, 8 insertions(+)
 
 diff --git a/libweston/backend-drm/drm.c b/libweston/backend-drm/drm.c
-index c01cf387..d05db66a 100644
+index 2a6a457..3532ea4 100644
 --- a/libweston/backend-drm/drm.c
 +++ b/libweston/backend-drm/drm.c
-@@ -2666,6 +2666,14 @@ drm_output_init_planes(struct drm_output *output)
+@@ -2680,6 +2680,14 @@ drm_output_init_planes(struct drm_output *output)
  			output->cursor_handle = handle;
  			continue;
  		}
@@ -51,6 +51,9 @@ index c01cf387..d05db66a 100644
 +			continue;
 +		}
 +
- 		wl_list_insert(&output->plane_handle_list, &handle->link);
+ 		wl_list_insert(output->plane_handle_list.prev, &handle->link);
  	}
  
+-- 
+2.43.0
+
