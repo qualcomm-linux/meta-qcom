@@ -8,8 +8,13 @@ QCOM_UBOOT_SPL_FIT_ATF ?= ""
 QCOM_UBOOT_SPL_FIT_TEE ?= ""
 QCOM_UBOOT_SPL_FIT_FIRMWARE ?= ""
 
+# "1": rebuild spl/u-boot-spl.elf after uboot-sign, add the SWIV segment and sign it with qtestsign.
+# "0": use spl/u-boot-spl.mbn from U-Boot, for defconfigs that set CONFIG_QCOM_GENERATE_MBN=y.
+QCOM_UBOOT_SPL_MBN_SIGN ?= "1"
+
 # BL31 and OP-TEE go into the FIT, swiv annotates the SPL before signing.
-DEPENDS += "${@bb.utils.contains('QCOM_UBOOT_SPL_FIT', '1', '${QCOM_UBOOT_SPL_FIT_ATF} ${QCOM_UBOOT_SPL_FIT_TEE} swiv-build-utility-native', '', d)}"
+DEPENDS += "${@bb.utils.contains('QCOM_UBOOT_SPL_FIT', '1', '${QCOM_UBOOT_SPL_FIT_ATF} ${QCOM_UBOOT_SPL_FIT_TEE}', '', d)}"
+DEPENDS += "${@'swiv-build-utility-native' if d.getVar('QCOM_UBOOT_SPL_FIT') == '1' and d.getVar('QCOM_UBOOT_SPL_MBN_SIGN') == '1' else ''}"
 
 # Blobs packed into the FIT besides BL31, OP-TEE and U-Boot proper (PMIC/DCB
 # configs, SHRM, QcLib, ...) come from the boot firmware recipe named in
@@ -64,19 +69,27 @@ uboot_compile_config:append() {
     fi
 }
 
-# Rebuild the SPL ELF after uboot-sign, add the SWIV segment and sign it as TZ.
+# Produce u-boot-spl.mbn, after uboot-sign has assembled the FIT.
 uboot_assemble_fitimage_helper:append() {
     if [ "${QCOM_UBOOT_SPL_FIT}" = "1" ]; then
-        mbn_header=$(uboot_config_get_indexed_value "${BOARD_MBN_HEADER}" $i)
-        [ -n "${mbn_header}" ] || mbn_header="v6"
+        rm -f u-boot-spl.mbn
 
-        rm -f spl/u-boot-spl.elf
-        (unset LDFLAGS CFLAGS; oe_runmake -C ${S} O=${B}/${builddir} ${UBOOT_MAKE_OPTS} spl/u-boot-spl.elf)
+        if [ "${QCOM_UBOOT_SPL_MBN_SIGN}" = "1" ]; then
+            # Rebuild the SPL ELF, add the SWIV segment and sign it as TZ.
+            mbn_header=$(uboot_config_get_indexed_value "${BOARD_MBN_HEADER}" $i)
+            [ -n "${mbn_header}" ] || mbn_header="v6"
 
-        export CRYPTOGRAPHY_OPENSSL_NO_LEGACY=1
-        swiv_build_utility u-boot-spl-swiv.elf spl/u-boot-spl.elf ${QCOM_FW_SWIV_PLATFORM}
-        qtestsign -${mbn_header} tz -o u-boot-spl.mbn u-boot-spl-swiv.elf
-        rm -f u-boot-spl-swiv.elf
+            rm -f spl/u-boot-spl.elf
+            (unset LDFLAGS CFLAGS; oe_runmake -C ${S} O=${B}/${builddir} ${UBOOT_MAKE_OPTS} spl/u-boot-spl.elf)
+
+            export CRYPTOGRAPHY_OPENSSL_NO_LEGACY=1
+            swiv_build_utility u-boot-spl-swiv.elf spl/u-boot-spl.elf ${QCOM_FW_SWIV_PLATFORM}
+            qtestsign -${mbn_header} tz -o u-boot-spl.mbn u-boot-spl-swiv.elf
+            rm -f u-boot-spl-swiv.elf
+        else
+            [ -f spl/u-boot-spl.mbn ] || bbfatal "U-Boot did not build spl/u-boot-spl.mbn in ${B}/${builddir}"
+            install -m 0644 spl/u-boot-spl.mbn u-boot-spl.mbn
+        fi
     fi
 }
 
