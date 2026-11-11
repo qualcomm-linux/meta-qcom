@@ -18,11 +18,11 @@ LIC_FILES_CHKSUM = "file://usr/share/doc/${BPN}/LICENSE.QCOM-2.txt;md5=165287851
 
 PBT_BRANCH = "wrynose"
 SRC_URI = " \
-    https://qartifactory-edge.qualcomm.com/artifactory/qsc_releases/software/chip/component/camx.qclinux.0.0/${PBT_BUILD_DATE}/prebuilt_yocto_${PBT_BRANCH}/${BPN}_${PV}_armv8-2a.tar.gz;name=camxlib \
-    https://qartifactory-edge.qualcomm.com/artifactory/qsc_releases/software/chip/component/camx.qclinux.0.0/${PBT_BUILD_DATE}/prebuilt_yocto_${PBT_BRANCH}/camx-${PLATFORM}_${PV}_armv8-2a.tar.gz;name=camx \
-    https://qartifactory-edge.qualcomm.com/artifactory/qsc_releases/software/chip/component/camx.qclinux.0.0/${PBT_BUILD_DATE}/prebuilt_yocto_${PBT_BRANCH}/chicdk-${PLATFORM}_${PV}_armv8-2a.tar.gz;name=chicdk \
-    https://qartifactory-edge.qualcomm.com/artifactory/qsc_releases/software/chip/component/camx.qclinux.0.0/${PBT_BUILD_DATE}/prebuilt_yocto_${PBT_BRANCH}/camxcommon-${PLATFORM}_${PV}_armv8-2a.tar.gz;name=camxcommon \
-    https://qartifactory-edge.qualcomm.com/artifactory/qsc_releases/software/chip/component/camx.qclinux.0.0/${PBT_BUILD_DATE}/prebuilt_yocto_${PBT_BRANCH}/camxtest-${PLATFORM}_${PV}_armv8-2a.tar.gz;name=camxtest \
+    https://qartifactory-edge.qualcomm.com/artifactory/qsc_releases/software/chip/component/camx.qclinux.0.0/${PBT_BUILD_DATE}/prebuilt_yocto_${PBT_BRANCH}/${BPN}_${PV}_armv8-2a.tar.gz;downloadfilename=${PBT_BRANCH}-${BPN}_${PV}_armv8-2a.tar.gz;name=camxlib \
+    https://qartifactory-edge.qualcomm.com/artifactory/qsc_releases/software/chip/component/camx.qclinux.0.0/${PBT_BUILD_DATE}/prebuilt_yocto_${PBT_BRANCH}/camx-${PLATFORM}_${PV}_armv8-2a.tar.gz;downloadfilename=${PBT_BRANCH}-camx-${PLATFORM}_${PV}_armv8-2a.tar.gz;name=camx \
+    https://qartifactory-edge.qualcomm.com/artifactory/qsc_releases/software/chip/component/camx.qclinux.0.0/${PBT_BUILD_DATE}/prebuilt_yocto_${PBT_BRANCH}/chicdk-${PLATFORM}_${PV}_armv8-2a.tar.gz;downloadfilename=${PBT_BRANCH}-chicdk-${PLATFORM}_${PV}_armv8-2a.tar.gz;name=chicdk \
+    https://qartifactory-edge.qualcomm.com/artifactory/qsc_releases/software/chip/component/camx.qclinux.0.0/${PBT_BUILD_DATE}/prebuilt_yocto_${PBT_BRANCH}/camxcommon-${PLATFORM}_${PV}_armv8-2a.tar.gz;downloadfilename=${PBT_BRANCH}-camxcommon-${PLATFORM}_${PV}_armv8-2a.tar.gz;name=camxcommon \
+    https://qartifactory-edge.qualcomm.com/artifactory/qsc_releases/software/chip/component/camx.qclinux.0.0/${PBT_BUILD_DATE}/prebuilt_yocto_${PBT_BRANCH}/camxtest-${PLATFORM}_${PV}_armv8-2a.tar.gz;downloadfilename=${PBT_BRANCH}-camxtest-${PLATFORM}_${PV}_armv8-2a.tar.gz;name=camxtest \
 "
 
 S = "${UNPACKDIR}"
