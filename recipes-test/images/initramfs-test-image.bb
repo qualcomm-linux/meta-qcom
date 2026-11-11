@@ -42,7 +42,7 @@ PACKAGE_INSTALL += " \
 # on. This can be handled by .bbappends, but then image recipes including this
 # one would not get all these tools. So simulate dynamic bbappend here.
 PACKAGE_INSTALL_openembedded-layer += " \
-    cpufrequtils \
+    cpupower \
     cryptsetup \
     devmem2 \
     lmsensors-config-libsensors \
