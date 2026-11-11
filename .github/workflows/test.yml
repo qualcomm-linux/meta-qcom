@@ -28,7 +28,7 @@ on:
         description: "Token used to submit jobs to the LAVA lab"
 env:
   # git sha, tag or branch in lava-test-plans repository
-  LAVA_TEST_PLANS_REF: "1824cd6c1f2ff9d52fd665d25bfb18a9ca697fc5"
+  LAVA_TEST_PLANS_REF: "188770122773733a46370b71dab12b5a1023c630"
   # CalVer tag in qcom-linux-testkit repository (format: testkit-YYYY.MM.DD)
   TESTKIT_REF: "testkit-2026.11.01"
 
@@ -78,7 +78,7 @@ jobs:
       LAVATOKEN: ${{ secrets.LAVATOKEN }}
     with:
       build_id: "${{ inputs.build_id }}"
-      devices: "glymur-crd,iq-8275-evk,iq-9075-evk,iq-x7181-evk,kaanapali-mtp,mahua-crd,qcm6490-idp,qcs615-ride,rb3gen2-core-kit,qcs8300-ride-sx,qcs9100-ride-sx,rb1-core-kit,shikra-evk,sm8750-mtp"
+      devices: "glymur-crd,iq-8275-evk,iq-9075-evk,iq-9075-evk-open-fw,iq-x7181-evk,kaanapali-mtp,mahua-crd,qcm6490-idp,qcs615-ride,rb3gen2-core-kit,rb3gen2-core-kit-open-fw,qcs8300-ride-sx,qcs9100-ride-sx,rb1-core-kit,shikra-evk,sm8750-mtp"
       devices_premerge: "glymur-crd,iq-8275-evk,iq-9075-evk,iq-x7181-evk,kaanapali-mtp,qcm6490-idp,qcs615-ride,rb3gen2-core-kit,qcs8300-ride-sx,qcs9100-ride-sx,rb1-core-kit,shikra-evk,sm8750-mtp"
       project_name: "meta-qcom"
       distro_name: "qcom-distro"
@@ -114,10 +114,34 @@ jobs:
       testkit_ref: "${{ needs.prepare-env.outputs.testkit-ref }}"
       pr_number: "${{ inputs.pr_number }}"
       pr_url: "${{ inputs.pr_url }}"
+  test-qcom-distro_kernel-fit:
+    needs: [prepare-env]
+    name: "Test qcom-distro_kernel-fit"
+    permissions:
+      contents: read
+      actions: read
+      checks: write
+      pull-requests: write
+    uses: $/.github/workflows/test-distro.yml
+    secrets:
+      LAVATOKEN: ${{ secrets.LAVATOKEN }}
+    with:
+      build_id: "${{ inputs.build_id }}"
+      devices: "iq-9075-evk-open-fw-spl"
+      project_name: "meta-qcom"
+      distro_name: "qcom-distro"
+      distro_suffix: "_kernel-fit"
+      kernel: "linux-qcom-next"
+      known_failures_file: "ci/known-failures/qcom-distro.yml"
+      known_failures_ref: "${{ inputs.pr_head_sha }}"
+      lava_test_plans_ref: "${{ needs.prepare-env.outputs.lava-test-plans-ref }}"
+      testkit_ref: "${{ needs.prepare-env.outputs.testkit-ref }}"
+      pr_number: "${{ inputs.pr_number }}"
+      pr_url: "${{ inputs.pr_url }}"
 
   collect-ids:
     name: "Collect Summary artifact IDs"
-    needs: [test-nodistro, test-qcom-distro, test-qcom-distro_linux-qcom-6-18]
+    needs: [test-nodistro, test-qcom-distro, test-qcom-distro_linux-qcom-6-18, test-qcom-distro_kernel-fit]
     if: |
       always()
       && contains(needs.*.result, 'success')
@@ -135,5 +159,6 @@ jobs:
           NODISTRO_SUMMARY_ID: ${{ needs.test-nodistro.outputs.summary_id }}
           QCOM_DISTRO_SUMMARY_ID: ${{ needs.test-qcom-distro.outputs.summary_id }}
           QCOM_DISTRO_6_18_SUMMARY_ID: ${{ needs.test-qcom-distro_linux-qcom-6-18.outputs.summary_id }}
+          QCOM_DISTRO_KERNEL_FIT_SUMMARY_ID: ${{ needs.test-qcom-distro_kernel-fit.outputs.summary_id }}
         run: |
-          echo "artifact_ids=${NODISTRO_SUMMARY_ID},${QCOM_DISTRO_SUMMARY_ID},${QCOM_DISTRO_6_18_SUMMARY_ID}" >> $GITHUB_OUTPUT
+          echo "artifact_ids=${NODISTRO_SUMMARY_ID},${QCOM_DISTRO_SUMMARY_ID},${QCOM_DISTRO_6_18_SUMMARY_ID},${QCOM_DISTRO_KERNEL_FIT_SUMMARY_ID}" >> $GITHUB_OUTPUT

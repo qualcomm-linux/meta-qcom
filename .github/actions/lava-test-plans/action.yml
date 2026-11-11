@@ -65,6 +65,8 @@ runs:
           github-token: ${{ inputs.gh_token }}
           run-id: ${{ inputs.build_id }}
           pattern: build-url_*_${{ inputs.distro_name }}
+          path: build-urls
+          merge-multiple: true
 
       - name: Run lava-test-plans
         id: lava-test-plans
@@ -136,13 +138,12 @@ runs:
             echo "IMAGE_FILE_NAME=${IMAGE_TYPE}-${machine}.rootfs.qcomflash.tar.gz" >> "${VARS_OUT_PATH}/${machine}.ini"
             echo "DEVICE_TYPE=${machine}" >> "${VARS_OUT_PATH}/${machine}.ini"
             export BUILD_URL=""
-            # dir name and file name are the same as we're downloading multiple files
-            export BUILD_URL_FILE="$GITHUB_WORKSPACE/build-url_${machine}_${INPUTS_DISTRO_NAME}/build-url_${machine}_${INPUTS_DISTRO_NAME}"
+            export BUILD_URL_FILE="$GITHUB_WORKSPACE/build-urls/build-url_${machine}_${INPUTS_DISTRO_NAME}"
             if [ "${machine}" = "dragonboard-410c" ]; then
-              export BUILD_URL_FILE="$GITHUB_WORKSPACE/build-url_qcom-armv8a_${INPUTS_DISTRO_NAME}/build-url_qcom-armv8a_${INPUTS_DISTRO_NAME}"
+              export BUILD_URL_FILE="$GITHUB_WORKSPACE/build-urls/build-url_qcom-armv8a_${INPUTS_DISTRO_NAME}"
             fi
             if [ "${machine}" = "dragonboard-820c" ]; then
-              export BUILD_URL_FILE="$GITHUB_WORKSPACE/build-url_qcom-armv8a_${INPUTS_DISTRO_NAME}/build-url_qcom-armv8a_${INPUTS_DISTRO_NAME}"
+              export BUILD_URL_FILE="$GITHUB_WORKSPACE/build-urls/build-url_qcom-armv8a_${INPUTS_DISTRO_NAME}"
             fi
             echo "${BUILD_URL_FILE}"
             if [ -f "$BUILD_URL_FILE" ]; then
