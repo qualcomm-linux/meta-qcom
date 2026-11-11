@@ -32,6 +32,7 @@ KERNEL_LOCALVERSION ?= "${@qcom_kernel_localversion(d)}"
 SRC_URI = " \
     git://github.com/qualcomm-linux/kernel.git;${SRCBRANCH};protocol=https \
     file://0001-tools-use-basename-to-identify-file-in-gen-mach-type.patch \
+    file://0001-iommu-arm-smmu-Work-around-Qualcomm-SMMU-500-TLBIVAL.patch \
 "
 
 # Additional kernel configs.
