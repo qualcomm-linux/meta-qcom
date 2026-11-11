@@ -1,16 +1,5 @@
 # Known failures for qcom-distro, see README.md for the format.
 
-hamoa-iot-evk:
-  # the v4l2 encoder times out, so the decode tests have no stream to play
-  - test: GStreamer_Video_Encode_h264_480p
-    comment: https://github.com/qualcomm-linux/meta-qcom/issues/3347
-  - test: GStreamer_Video_Encode_h265_480p
-    comment: https://github.com/qualcomm-linux/meta-qcom/issues/3347
-  - test: GStreamer_Video_Decode_h264_480p
-    comment: https://github.com/qualcomm-linux/meta-qcom/issues/3347
-  - test: GStreamer_Video_Decode_h265_480p
-    comment: https://github.com/qualcomm-linux/meta-qcom/issues/3347
-
 lemans-evk:
   # no ALSA capture device is registered
   - test: AudioRecord_Config01
