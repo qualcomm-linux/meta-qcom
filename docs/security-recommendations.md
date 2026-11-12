@@ -72,7 +72,7 @@ Example implementation:
 
    do_install:append() {
       install -d ${D}${sysconfdir}/sysctl.d
-      install -m 0644 ${WORKDIR}/99-security-hardening.conf \
+      install -m 0644 ${UNPACKDIR}/99-security-hardening.conf \
          ${D}${sysconfdir}/sysctl.d/
    }
    ```
