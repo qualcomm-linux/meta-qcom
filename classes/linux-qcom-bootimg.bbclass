@@ -168,7 +168,7 @@ python do_qcom_img_deploy() {
 }
 
 do_qcom_img_deploy[depends] += "skales-native:do_populate_sysroot"
-do_qcom_img_deploy[vardeps] = "QCOM_BOOTIMG_PAGE_SIZE QCOM_BOOTIMG_KERNEL_BASE KERNEL_CMDLINE_EXTRA QCOM_BOOTIMG_ROOTFS"
+do_qcom_img_deploy[vardeps] = "QCOM_BOOTIMG_PAGE_SIZE QCOM_BOOTIMG_KERNEL_BASE KERNEL_CMDLINE_EXTRA QCOM_BOOTIMG_ROOTFS SD_QCOM_BOOTIMG_ROOTFS SERIAL_CONSOLES"
 
 addtask qcom_img_deploy after do_deploy before do_build
 
