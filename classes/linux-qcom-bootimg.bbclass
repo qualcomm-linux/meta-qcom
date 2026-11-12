@@ -150,7 +150,7 @@ python do_qcom_img_deploy() {
 
             if initrd:
                 template = "boot-sd-%s-%s-%s-ext-dtb.img" if external else "boot-sd-%s-%s-%s.img"
-                make_initramfs_image(template, rootfs, initrd, d.getVar("INITRAMFS_IMAGE"))
+                make_initramfs_image(template, sd_rootfs, initrd, d.getVar("INITRAMFS_IMAGE"))
 
     if not d.getVar("QCOM_BOOTIMG_DEVICETREE") and not d.getVar("KERNEL_DEVICETREE"):
         bb.fatal("Either QCOM_BOOTIMG_DEVICETREE or KERNEL_DEVICETREE needed for linux-qcom-bootimg.bbclass")
