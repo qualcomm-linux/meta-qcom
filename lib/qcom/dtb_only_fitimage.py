@@ -14,7 +14,6 @@ import os
 import shlex
 import subprocess
 import bb
-from typing import Tuple, List, Dict
 from oe.fitimage import ItsNodeRootKernel, ItsNodeConfiguration
 
 # Custom extension of ItsNodeRootKernel to inject compatible strings
@@ -37,15 +36,10 @@ class QcomItsNodeRoot(ItsNodeRootKernel):
     def fitimage_emit_section_dtb(self, dtb_id, dtb_path,
                                   compatible_str=None,
                                   dtb_type=None):
-        load = None
-        dtb_ext = os.path.splitext(dtb_path)[1]
-
         opt_props = {
             "data": '/incbin/("' + dtb_path + '")',
             "arch": self._arch
         }
-        if load:
-            opt_props["load"] = f"<{load}>"
 
         dtb_node = self.its_add_node_dtb(
             "fdt-" + dtb_id,
@@ -60,10 +54,8 @@ class QcomItsNodeRoot(ItsNodeRootKernel):
     def _fitimage_emit_one_section_config(self, conf_node_name, dtb=None):
         """Emit the fitImage ITS configuration section"""
         opt_props = {}
-        conf_desc = []
 
         if dtb:
-            conf_desc.append("FDT blob")
             opt_props["fdt"] = dtb.name
             if dtb.compatible:
                 opt_props["compatible"] = dtb.compatible
@@ -74,19 +66,6 @@ class QcomItsNodeRoot(ItsNodeRootKernel):
             description="FDT Blob",
             opt_props=opt_props
         )
-
-    def fitimage_emit_section_config(self):
-        counter = 0
-        for dtb_node, compatible_str in self._dtbs:
-            # qcom-metadata don't need any config entry
-            if dtb_node.properties.get("type") == "qcom_metadata":
-                continue
-            # add one config for each compatible string of DTB
-            for compatible in compatible_str.split():
-                counter += 1
-                conf_name = f"{self._conf_prefix}{counter}"
-                dtb_node.compatible = compatible
-                self._fitimage_emit_one_section_config(conf_name, dtb_node)
 
     def fitimage_emit_section_qcomconfig(self, overlay_groups, overlay_compats):
         counter = 1
@@ -113,7 +92,6 @@ class QcomItsNodeRoot(ItsNodeRootKernel):
 
                 fdtentries = [f"fdt-{dt}" for dt in dt_list]
                 lookup_key = " ".join([os.path.splitext(dt)[0].replace(',', '_') for dt in dt_list])
-                bb.note(lookup_key)
 
                 ovl_compats = str(((overlay_compats or {}).get(lookup_key, "")) or "").split()
                 for compat in ovl_compats:
