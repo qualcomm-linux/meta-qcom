@@ -4,7 +4,7 @@
 # These keys are for CI/development use only and must NOT be used in
 # production images.
 #
-# Usage: kas build ci/base.yml:ci/<machine>.yml:ci/capsule-test-keys.yml
+# Usage: kas build ci/base.yml:ci/<machine>.yml:ci/meta-arm.yml:ci/capsule.yml:ci/capsule-test-keys.yml
 
 header:
   version: 14
