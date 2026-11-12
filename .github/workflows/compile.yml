@@ -77,10 +77,6 @@ jobs:
           echo "SSTATE_DIR=${INPUTS_CACHE_DIR}/sstate-cache" >> $GITHUB_ENV
           echo "KAS_WORK_DIR=${PWD}/../kas" >> $GITHUB_ENV
           echo "KAS_YAMLS=ci/ci.yml:ci/${INPUTS_MACHINE}.yml${INPUTS_DISTRO_YAML}${INPUTS_KERNEL_YAML}:ci/build-id.yml" >> $GITHUB_ENV
-          echo "INPUTS_CACHE_DIR=${INPUTS_CACHE_DIR}" >> $GITHUB_ENV
-          echo "INPUTS_MACHINE=${INPUTS_MACHINE}" >> $GITHUB_ENV
-          echo "INPUTS_DISTRO_YAML=${INPUTS_DISTRO_YAML}" >> $GITHUB_ENV
-          echo "INPUTS_KERNEL_YAML=${INPUTS_KERNEL_YAML}" >> $GITHUB_ENV
           # kas-container does not forward arbitrary env vars into the
           # container, so bake the CI run id into a kas fragment inside the
           # mounted checkout. This overrides the local default set in
