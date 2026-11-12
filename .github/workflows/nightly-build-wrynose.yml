@@ -13,18 +13,17 @@ on:
   - cron: "22 2 * * 1,2,4,5,6"
 
 permissions:
-  checks: write
-  pull-requests: write
   contents: read
-  packages: read
-  actions: write
 
 jobs:
   trigger-build:
     runs-on: ubuntu-latest
+    permissions:
+      actions: write
     steps:
       - name: Trigger Nightly Build
         env:
           GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
         run: |
-          gh workflow run --repo ${{ github.repository }} --ref wrynose nightly-build.yml
+          gh workflow run --repo "${GH_REPO}" --ref wrynose nightly-build.yml
