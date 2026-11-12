@@ -40,6 +40,17 @@ jobs:
         with:
           persist-credentials: false
 
+      # TEMPORARY: drop the camx downloads and sstate objects that master and
+      # wrynose overwrote in each other's place before #3572. Revert once run.
+      - name: Remove the camx prebuilts from the shared caches
+        run: |
+          find "${CACHE_DIR}/downloads" -maxdepth 1 -type f \
+            \( -name 'camxlib-*_armv8-2a.tar.gz*' -o -name 'camx-*_armv8-2a.tar.gz*' \
+               -o -name 'chicdk-*_armv8-2a.tar.gz*' -o -name 'camxcommon-*_armv8-2a.tar.gz*' \
+               -o -name 'camxtest-*_armv8-2a.tar.gz*' \) -print -delete
+          find "${CACHE_DIR}/sstate-cache" -mindepth 3 -maxdepth 3 -type f \
+            \( -name 'sstate:camxlib-*' -o -name 'sstate:camxcommon-headers:*' \) -print -delete
+
       - name: Check kas-container version
         run: |
           LATEST=$(git ls-remote --tags --refs --sort="v:refname" https://github.com/siemens/kas | tail -n1 | sed 's/.*\///')
