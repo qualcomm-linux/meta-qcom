@@ -7,8 +7,7 @@ header:
   - ci/meta-yocto.yml
 
 local_conf_header:
-  # disable cmdline and qcomflash from ci/base.yml
+  # disable cmdline from ci/base.yml
   cmdline: |
-  qcomflash: |
 
 machine: genericarm64
