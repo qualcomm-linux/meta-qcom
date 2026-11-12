@@ -16,6 +16,7 @@ MACHINE_EXTRA_RRECOMMENDS += " \
     packagegroup-qcom-boot-additional \
     qcom-rtss-mailbox-dlkm \
     qcom-rtss-mailbox-umd-bin \
+    ${@bb.utils.contains('BBFILE_COLLECTIONS', 'openembedded-layer', 'qcom-rtss-can', '', d)} \
 "
 
 # Memory layout needed by the SPL FIT boot flow.

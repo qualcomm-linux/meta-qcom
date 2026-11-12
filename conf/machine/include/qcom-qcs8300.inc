@@ -20,6 +20,7 @@ MACHINE_EXTRA_RRECOMMENDS += " \
     packagegroup-qcom-boot-additional \
     qcom-rtss-mailbox-dlkm \
     qcom-rtss-mailbox-umd-bin \
+    ${@bb.utils.contains('BBFILE_COLLECTIONS', 'openembedded-layer', 'qcom-rtss-can', '', d)} \
 "
 
 QCOM_FIRMWARE_SIGN_SECPROFILE ?= "monaco_security_profile.xml"
