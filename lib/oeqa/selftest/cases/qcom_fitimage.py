@@ -858,7 +858,6 @@ class QcomFitImageMatrixTests(OESelftestTestCase):
     _provider_outputs_cache = {}
     _provider_machine_cache = {}
     _available_providers_cache = None
-    _matrix_cache = None
     _layer_dir_cache = None
 
     @classmethod
@@ -1071,25 +1070,6 @@ class QcomFitImageMatrixTests(OESelftestTestCase):
                 last_error = exc
         raise AssertionError(
             f"Could not resolve qcom kernel provider for {machine}: {last_error}")
-
-    def _matrix(self):
-        if self.__class__._matrix_cache is not None:
-            return self.__class__._matrix_cache
-
-        matrix = []
-        for machine in self._machine_list():
-            try:
-                yocto = self._resolve_machine_provider(
-                    machine, self.KERNEL_PROVIDER_YOCTO)
-                matrix.append(yocto)
-            except AssertionError:
-                # Some machines are intentionally not compatible with
-                # linux-yocto; validate them through qcom kernels only.
-                pass
-            qcom = self._resolve_qcom_provider(machine)
-            matrix.append(qcom)
-        self.__class__._matrix_cache = matrix
-        return matrix
 
     def test_machine_dtb_entries_exist_for_kernel_providers(self):
         """Validate machine DTB metadata against linux-yocto and qcom kernels."""
