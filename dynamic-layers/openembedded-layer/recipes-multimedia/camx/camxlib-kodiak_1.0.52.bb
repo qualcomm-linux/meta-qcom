@@ -11,10 +11,10 @@ LIC_FILES_CHKSUM = "file://usr/share/doc/${BPN}/LICENSE.QCOM-2.txt;md5=165287851
 PBT_BUILD_DATE = "261026"
 PBT_BRANCH = "wrynose"
 SRC_URI = " \
-   https://qartifactory-edge.qualcomm.com/artifactory/qsc_releases/software/chip/component/camx.qclinux.0.0/${PBT_BUILD_DATE}/prebuilt_yocto_${PBT_BRANCH}/${BPN}_${PV}_armv8-2a.tar.gz;name=camxlib \
-   https://qartifactory-edge.qualcomm.com/artifactory/qsc_releases/software/chip/component/camx.qclinux.0.0/${PBT_BUILD_DATE}/prebuilt_yocto_${PBT_BRANCH}/camx-kodiak_${PV}_armv8-2a.tar.gz;name=camx \
-   https://qartifactory-edge.qualcomm.com/artifactory/qsc_releases/software/chip/component/camx.qclinux.0.0/${PBT_BUILD_DATE}/prebuilt_yocto_${PBT_BRANCH}/chicdk-kodiak_${PV}_armv8-2a.tar.gz;name=chicdk \
-   https://qartifactory-edge.qualcomm.com/artifactory/qsc_releases/software/chip/component/camx.qclinux.0.0/${PBT_BUILD_DATE}/prebuilt_yocto_${PBT_BRANCH}/camxtest-kodiak_${PV}_armv8-2a.tar.gz;name=camxtest \
+   https://qartifactory-edge.qualcomm.com/artifactory/qsc_releases/software/chip/component/camx.qclinux.0.0/${PBT_BUILD_DATE}/prebuilt_yocto_${PBT_BRANCH}/${BPN}_${PV}_armv8-2a.tar.gz;downloadfilename=${PBT_BRANCH}-${BPN}_${PV}_armv8-2a.tar.gz;name=camxlib \
+   https://qartifactory-edge.qualcomm.com/artifactory/qsc_releases/software/chip/component/camx.qclinux.0.0/${PBT_BUILD_DATE}/prebuilt_yocto_${PBT_BRANCH}/camx-kodiak_${PV}_armv8-2a.tar.gz;downloadfilename=${PBT_BRANCH}-camx-kodiak_${PV}_armv8-2a.tar.gz;name=camx \
+   https://qartifactory-edge.qualcomm.com/artifactory/qsc_releases/software/chip/component/camx.qclinux.0.0/${PBT_BUILD_DATE}/prebuilt_yocto_${PBT_BRANCH}/chicdk-kodiak_${PV}_armv8-2a.tar.gz;downloadfilename=${PBT_BRANCH}-chicdk-kodiak_${PV}_armv8-2a.tar.gz;name=chicdk \
+   https://qartifactory-edge.qualcomm.com/artifactory/qsc_releases/software/chip/component/camx.qclinux.0.0/${PBT_BUILD_DATE}/prebuilt_yocto_${PBT_BRANCH}/camxtest-kodiak_${PV}_armv8-2a.tar.gz;downloadfilename=${PBT_BRANCH}-camxtest-kodiak_${PV}_armv8-2a.tar.gz;name=camxtest \
    "
 SRC_URI[camxlib.sha256sum] = "d5641f0d490e986302a0613dcae3eb1d916de38231d5b22d6521139f95f9647b"
 SRC_URI[camx.sha256sum] = "cbccf6483cbac093ac899fac782a03316a453ebf9adba84ec1815dbbdd0d5a56"
