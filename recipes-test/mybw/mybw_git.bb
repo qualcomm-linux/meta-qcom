@@ -1,7 +1,7 @@
 SUMMARY = "Quick hack to measure memory read performance."
 HOMEPAGE = "https://github.com/andersson/mybw"
 LICENSE = "BSD-3-Clause"
-LIC_FILES_CHKSUM = "file://${COMMON_LICENSE_DIR}/BSD-3-Clause-Clear;md5=7a434440b651f4a472ca93716d01033a"
+LIC_FILES_CHKSUM = "file://mybw.c;beginline=2;endline=29;md5=3489beaa3d1785b9e0ffe48b6a2eb19c"
 
 SRCREV = "f4bdeee1266c273e308d0651522bb59afb5b8211"
 SRC_URI = "git://github.com/andersson/mybw;protocol=https;branch=main \
