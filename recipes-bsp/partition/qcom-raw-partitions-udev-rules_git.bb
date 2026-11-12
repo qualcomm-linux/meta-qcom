@@ -3,8 +3,6 @@ DESCRIPTION = "udev rules that skip filesystem probing for known Qualcomm raw GP
 
 require qcom-ptool.inc
 
-FILESEXTRAPATHS:prepend := "${THISDIR}/${PN}:"
-
 DEPENDS = "qcom-ptool-native python3-pyyaml-native python3-jsonschema-native"
 
 inherit allarch
