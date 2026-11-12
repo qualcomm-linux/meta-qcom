@@ -134,7 +134,7 @@ RRECOMMENDS:${PN}-qcom-hamoa-soc += " \
     kernel-module-snd-soc-wcd938x \
     kernel-module-snd-soc-wsa884x \
     kernel-module-snd-soc-x1e80100 \
-    kernel-module-tscrcc-x1e80100 \
+    kernel-module-tcsrcc-x1e80100 \
     kernel-module-videocc-sm8550 \
 "
 
@@ -166,7 +166,7 @@ RRECOMMENDS:${PN}-qcom-purwa-soc += " \
     kernel-module-snd-soc-wcd938x \
     kernel-module-snd-soc-wsa884x \
     kernel-module-snd-soc-x1e80100 \
-    kernel-module-tscrcc-x1e80100 \
+    kernel-module-tcsrcc-x1e80100 \
     kernel-module-videocc-x1p42100 \
 "
 
