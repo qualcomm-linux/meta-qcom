@@ -39,5 +39,8 @@ CMD="$CMD --dependency $WORK_DIR/oe-core/meta"
 CMD="$CMD --no-auto-dependency"
 # Set machines to all machines defined in this BSP layer
 CMD="$CMD --machines $(echo $(find meta-qcom/conf/machine/ -maxdepth 1 -name '*.conf' -exec basename {} .conf \; ))"
+# Run tests module
+CMD="$CMD $TESTS_MODULE"
 
+echo $CMD
 exec $CMD
