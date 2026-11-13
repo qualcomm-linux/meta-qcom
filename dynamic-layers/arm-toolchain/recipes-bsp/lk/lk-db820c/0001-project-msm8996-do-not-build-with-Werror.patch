@@ -1,0 +1,28 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Ricardo Salveti <ricardo.salveti@oss.qualcomm.com>
+Date: Thu, 12 Nov 2026 23:04:33 +0000
+Subject: [PATCH] project/msm8996: do not build with -Werror
+
+Newer GCC releases add warnings that this tree was never written
+against, so -Werror makes the build fail with any toolchain other than
+the original arm-eabi-4.8.
+
+Upstream-Status: Inappropriate [OE-specific: the release branch only targets the arm-eabi-4.8 toolchain]
+Signed-off-by: Ricardo Salveti <ricardo.salveti@oss.qualcomm.com>
+---
+ project/msm8996.mk | 2 --
+ 1 file changed, 2 deletions(-)
+
+diff --git a/project/msm8996.mk b/project/msm8996.mk
+index 0cacee68..4fb06121 100644
+--- a/project/msm8996.mk
++++ b/project/msm8996.mk
+@@ -97,8 +97,6 @@ ifeq ($(ENABLE_LPAE_SUPPORT),1)
+ DEFINES += LPAE=1
+ endif
+ 
+-CFLAGS += -Werror
+-
+ #enable user force reset feature
+ DEFINES += USER_FORCE_RESET_SUPPORT=1
+ 
