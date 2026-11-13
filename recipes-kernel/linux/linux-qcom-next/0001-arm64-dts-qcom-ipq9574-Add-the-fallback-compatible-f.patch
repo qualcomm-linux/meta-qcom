@@ -1,0 +1,31 @@
+From 8979fc017ef5d862cddb687d61a6cc5f8a4d5176 Mon Sep 17 00:00:00 2001
+From: Kathiravan Thirumoorthy <kathiravan.thirumoorthy@oss.qualcomm.com>
+Date: Fri, 13 Nov 2026 10:26:14 +0530
+Subject: [PATCH] arm64: dts: qcom: ipq9574: Add the fallback compatible for
+ the SNAND
+
+Stock U-Boot relies on the compatible "qcom,ipq9574-nand" to fixup the
+partitions found in the NAND part.
+
+Signed-off-by: Kathiravan Thirumoorthy <kathiravan.thirumoorthy@oss.qualcomm.com>
+Upstream-Status: Pending [Downstream U-Boot Specific]
+---
+ arch/arm64/boot/dts/qcom/ipq9574.dtsi | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/arch/arm64/boot/dts/qcom/ipq9574.dtsi b/arch/arm64/boot/dts/qcom/ipq9574.dtsi
+index abb7a8391b46..e27dd4ca88db 100644
+--- a/arch/arm64/boot/dts/qcom/ipq9574.dtsi
++++ b/arch/arm64/boot/dts/qcom/ipq9574.dtsi
+@@ -703,7 +703,7 @@ qpic_bam: dma-controller@7984000 {
+ 		};
+ 
+ 		qpic_nand: spi@79b0000 {
+-			compatible = "qcom,ipq9574-snand";
++			compatible = "qcom,ipq9574-snand", "qcom,ipq9574-nand";
+ 			reg = <0x079b0000 0x10000>;
+ 			#address-cells = <1>;
+ 			#size-cells = <0>;
+-- 
+2.34.1
+
