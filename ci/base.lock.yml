@@ -3,9 +3,9 @@ header:
 overrides:
     repos:
         oe-core:
-            commit: c2ea9568b768de7c479aba22f15520793a7dace4
+            commit: 34991d0ce3cc5f38dd29e824af7579512d2b917e
         bitbake:
-            commit: 89802bd702d80d6116c47bf44ec876568f71e8dd
+            commit: f22df7e0e00be1f3c406138b8b7269d47ea491fe
         meta-arm:
             commit: 854b732c4a09a7c004a962ebb94da520a510e8b9
         meta-openembedded:
