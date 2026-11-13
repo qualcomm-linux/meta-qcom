@@ -129,7 +129,7 @@ jobs:
         # Set timeout to 2h. The timeout starts when the job is submitted
         # It may spend some time in LAVA queue as there is a limited number
         # of devices
-        timeout-minutes: 120
+        timeout-minutes: ${{ inputs.distro_name == 'nodistro' && matrix.target.name == 'qcs615-ride' && 2 || 120 }}
         id: submit
         uses: foundriesio/lava-action@2392ee48130c6d99c97bb91cddb46d1fcde43f3e # v14
         with:
@@ -295,7 +295,7 @@ jobs:
         # Set timeout to 2h. The timeout starts when the job is submitted
         # It may spend some time in LAVA queue as there is a limited number
         # of devices
-        timeout-minutes: 120
+        timeout-minutes: ${{ matrix.target.name == 'kaanapali-mtp' && 2 || 120 }}
         uses: foundriesio/lava-action@2392ee48130c6d99c97bb91cddb46d1fcde43f3e # v14
         with:
           lava_token: ${{ secrets.LAVATOKEN }}
