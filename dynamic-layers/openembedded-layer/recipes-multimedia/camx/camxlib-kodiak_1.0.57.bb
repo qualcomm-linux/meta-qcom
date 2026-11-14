@@ -8,7 +8,7 @@ LICENSE = "LicenseRef-LICENSE.qcom-2"
 LIC_FILES_CHKSUM = "file://usr/share/doc/${BPN}/LICENSE.QCOM-2.txt;md5=165287851294f2fb8ac8cbc5e24b02b0 \
                     file://usr/share/doc/${BPN}/NOTICE;md5=04facc2e07e3d41171a931477be0c690"
 
-PBT_BUILD_DATE = "261104"
+PBT_BUILD_DATE = "261113"
 PBT_BRANCH = "master"
 SRC_URI = " \
    https://qartifactory-edge.qualcomm.com/artifactory/qsc_releases/software/chip/component/camx.qclinux.0.0/${PBT_BUILD_DATE}/prebuilt_yocto_${PBT_BRANCH}/${BPN}_${PV}_armv8-2a.tar.gz;name=camxlib \
@@ -16,10 +16,10 @@ SRC_URI = " \
    https://qartifactory-edge.qualcomm.com/artifactory/qsc_releases/software/chip/component/camx.qclinux.0.0/${PBT_BUILD_DATE}/prebuilt_yocto_${PBT_BRANCH}/chicdk-kodiak_${PV}_armv8-2a.tar.gz;name=chicdk \
    https://qartifactory-edge.qualcomm.com/artifactory/qsc_releases/software/chip/component/camx.qclinux.0.0/${PBT_BUILD_DATE}/prebuilt_yocto_${PBT_BRANCH}/camxtest-kodiak_${PV}_armv8-2a.tar.gz;name=camxtest \
    "
-SRC_URI[camxlib.sha256sum] = "4b9e82c55510c9ca1ffbb6a1c19d52b0a9bc000fd8cc933ffbdaa44bd17c9005"
-SRC_URI[camx.sha256sum] = "93864dc0bdd5f09589fb335a5fd543378999e15155a52d59b103eb813293426e"
-SRC_URI[chicdk.sha256sum] = "21e8fabf6cbbf4b79e684879dae83fd88fc25bd8b87b2abbe72891787f17dfd6"
-SRC_URI[camxtest.sha256sum] = "522235b946b9b6425f983d98e82fa3a4651ad1e998ece805cc93f4eff2a323bb"
+SRC_URI[camxlib.sha256sum] = "b68a9d471d4c142fb7a5c8b5643a03161be86652690cf6281aa20f764f4ae87d"
+SRC_URI[camx.sha256sum] = "56d680ebd896f455f6caa1228407d001ef2a58a753b2650bee5838b231714a51"
+SRC_URI[chicdk.sha256sum] = "03a6d54fc9b5fbcb4bd1204924fa8c5253027bdab3758e5806debfb6f1474c4a"
+SRC_URI[camxtest.sha256sum] = "e95f486b68c4313b374aff87ae7468305ca96c4857338733b0b8a1351d517b32"
 
 S = "${UNPACKDIR}"
 
@@ -97,7 +97,7 @@ do_install:append() {
 PACKAGE_BEFORE_PN += "camx-kodiak chicdk-kodiak ${PN}-skel"
 RDEPENDS:${PN} += "chicdk-kodiak ${PN}-skel"
 RDEPENDS:${PN}-dev += "camxcommon-headers-dev"
-RRECOMMENDS:${PN} += "sensinghub"
+RRECOMMENDS:${PN} += "sensinghub qcom-fastcv-binaries"
 
 FILES:camx-kodiak = "\
     ${libdir}/libcamx_hardware_kodiak*${SOLIBS} \
