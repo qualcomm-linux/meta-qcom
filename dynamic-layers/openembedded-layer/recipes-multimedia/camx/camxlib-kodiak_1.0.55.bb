@@ -11,10 +11,10 @@ LIC_FILES_CHKSUM = "file://usr/share/doc/${BPN}/LICENSE.QCOM-2.txt;md5=165287851
 PBT_BUILD_DATE = "261104"
 PBT_BRANCH = "master"
 SRC_URI = " \
-   https://qartifactory-edge.qualcomm.com/artifactory/qsc_releases/software/chip/component/camx.qclinux.0.0/${PBT_BUILD_DATE}/prebuilt_yocto_${PBT_BRANCH}/${BPN}_${PV}_armv8-2a.tar.gz;name=camxlib \
-   https://qartifactory-edge.qualcomm.com/artifactory/qsc_releases/software/chip/component/camx.qclinux.0.0/${PBT_BUILD_DATE}/prebuilt_yocto_${PBT_BRANCH}/camx-kodiak_${PV}_armv8-2a.tar.gz;name=camx \
-   https://qartifactory-edge.qualcomm.com/artifactory/qsc_releases/software/chip/component/camx.qclinux.0.0/${PBT_BUILD_DATE}/prebuilt_yocto_${PBT_BRANCH}/chicdk-kodiak_${PV}_armv8-2a.tar.gz;name=chicdk \
-   https://qartifactory-edge.qualcomm.com/artifactory/qsc_releases/software/chip/component/camx.qclinux.0.0/${PBT_BUILD_DATE}/prebuilt_yocto_${PBT_BRANCH}/camxtest-kodiak_${PV}_armv8-2a.tar.gz;name=camxtest \
+   https://softwarecenter.qualcomm.com/nexus/generic/software/chip/component/camx.qclinux.0.0/${PBT_BUILD_DATE}/prebuilt_yocto_${PBT_BRANCH}/${BPN}_${PV}_armv8-2a.tar.gz;name=camxlib \
+   https://softwarecenter.qualcomm.com/nexus/generic/software/chip/component/camx.qclinux.0.0/${PBT_BUILD_DATE}/prebuilt_yocto_${PBT_BRANCH}/camx-kodiak_${PV}_armv8-2a.tar.gz;name=camx \
+   https://softwarecenter.qualcomm.com/nexus/generic/software/chip/component/camx.qclinux.0.0/${PBT_BUILD_DATE}/prebuilt_yocto_${PBT_BRANCH}/chicdk-kodiak_${PV}_armv8-2a.tar.gz;name=chicdk \
+   https://softwarecenter.qualcomm.com/nexus/generic/software/chip/component/camx.qclinux.0.0/${PBT_BUILD_DATE}/prebuilt_yocto_${PBT_BRANCH}/camxtest-kodiak_${PV}_armv8-2a.tar.gz;name=camxtest \
    "
 SRC_URI[camxlib.sha256sum] = "4b9e82c55510c9ca1ffbb6a1c19d52b0a9bc000fd8cc933ffbdaa44bd17c9005"
 SRC_URI[camx.sha256sum] = "93864dc0bdd5f09589fb335a5fd543378999e15155a52d59b103eb813293426e"

@@ -6,7 +6,7 @@ LIC_FILES_CHKSUM = "file://${UNPACKDIR}/usr/share/doc/${PN}/NOLOGINBINARYLICENSE
 
 PBT_BUILD_DATE = "261023"
 BRANCH = "wrynose"
-ARTIFACTORY_URL = "https://qartifactory-edge.qualcomm.com/artifactory/qsc_releases/software/chip/component/computervision-fastcv.qclinux.0.1/${PBT_BUILD_DATE}/prebuilt_yocto_${BRANCH}"
+ARTIFACTORY_URL = "https://softwarecenter.qualcomm.com/nexus/generic/software/chip/component/computervision-fastcv.qclinux.0.1/${PBT_BUILD_DATE}/prebuilt_yocto_${BRANCH}"
 PBT_ARCH = "armv8a"
 
 SRC_URI = "${ARTIFACTORY_URL}/${BPN}_${PV}_${BRANCH}_${PBT_ARCH}.tar.gz"

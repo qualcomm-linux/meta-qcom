@@ -6,7 +6,7 @@ LICENSE = "LicenseRef-LICENSE.qcom-2"
 LIC_FILES_CHKSUM = "file://LICENSE.qcom-2;md5=f33ba334514c4dfabc6ab7377babb377"
 
 PBT_BUILD_DATE = "260514.1"
-SRC_URI = "https://qartifactory-edge.qualcomm.com/artifactory/qsc_releases/software/chip/component/sensors.lnx.0.0/${PBT_BUILD_DATE}/prebuilt_yocto/qcom-sensors-prebuilts_${PV}_armv8a.tar.gz"
+SRC_URI = "https://softwarecenter.qualcomm.com/nexus/generic/software/chip/component/sensors.lnx.0.0/${PBT_BUILD_DATE}/prebuilt_yocto/qcom-sensors-prebuilts_${PV}_armv8a.tar.gz"
 SRC_URI[sha256sum] = "507652592b326bfeb1b31c4c37f61a5173439bd3dffa7ded72b675f834ea11bb"
 
 S = "${UNPACKDIR}"

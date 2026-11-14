@@ -1,0 +1,22 @@
+name: Check download URLs
+
+on:
+  pull_request:
+    branches:
+      - master
+      - wrynose
+
+permissions:
+  contents: read
+
+jobs:
+  check-download-urls:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - name: Reject qartifactory URLs
+        run: ci/check-download-urls.sh
