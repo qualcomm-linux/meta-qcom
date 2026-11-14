@@ -1,0 +1,76 @@
+From 37ff2f9ab6ae6e62ac12e3ecc5ce0110d6a2763e Mon Sep 17 00:00:00 2001
+From: Viswanath Kraleti <viswanath.kraleti@oss.qualcomm.com>
+Date: Fri, 6 Nov 2026 20:19:54 +0530
+Subject: [OE-core][PATCH 1/4] uboot-sign: make the type of the tee image node
+ configurable
+
+The tee image node is always typed "tee", but some SPLs, such as the
+Qualcomm one, expect OP-TEE in a "firmware" typed node.
+
+Add UBOOT_FIT_TEE_TYPE, defaulting to "tee", to set the node type.
+
+Signed-off-by: Viswanath Kraleti <viswanath.kraleti@oss.qualcomm.com>
+Upstream-Status: Submitted [https://lore.kernel.org/openembedded-core/20261106144957.3818987-2-viswanath.kraleti@oss.qualcomm.com/]
+---
+ meta/classes-recipe/uboot-sign.bbclass   | 5 ++++-
+ meta/lib/oeqa/selftest/cases/fitimage.py | 9 +++++++--
+ 2 files changed, 11 insertions(+), 3 deletions(-)
+
+diff --git a/meta/classes-recipe/uboot-sign.bbclass b/meta/classes-recipe/uboot-sign.bbclass
+index 409f6376b1..82ecba108b 100644
+--- a/meta/classes-recipe/uboot-sign.bbclass
++++ b/meta/classes-recipe/uboot-sign.bbclass
+@@ -112,6 +112,9 @@ UBOOT_FIT_ARM_TRUSTED_FIRMWARE_IMAGE ?= "bl31.bin"
+ # management of that surrounding environment.
+ UBOOT_FIT_TEE ?= "0"
+ UBOOT_FIT_TEE_IMAGE ?= "tee-raw.bin"
++# FIT image type of the tee node, e.g. "firmware" for an SPL that loads
++# OP-TEE as a plain firmware image
++UBOOT_FIT_TEE_TYPE ?= "tee"
+ 
+ # User specific settings
+ UBOOT_FIT_USER_SETTINGS ?= ""
+@@ -388,7 +391,7 @@ uboot_fitimage_tee() {
+         tee {
+             description = "Trusted Execution Environment";
+             data = /incbin/("${UBOOT_FIT_TEE_IMAGE}");
+-            type = "tee";
++            type = "${UBOOT_FIT_TEE_TYPE}";
+             arch = "${UBOOT_ARCH}";
+             os = "tee";
+             load = <${UBOOT_FIT_TEE_LOADADDRESS}>;
+diff --git a/meta/lib/oeqa/selftest/cases/fitimage.py b/meta/lib/oeqa/selftest/cases/fitimage.py
+index 1fad53b16c..15b3de04d8 100644
+--- a/meta/lib/oeqa/selftest/cases/fitimage.py
++++ b/meta/lib/oeqa/selftest/cases/fitimage.py
+@@ -1713,6 +1713,7 @@ class UBootFitImageTests(FitImageTestCase):
+             'UBOOT_FIT_TEE_ENTRYPOINT',
+             'UBOOT_FIT_TEE_IMAGE',
+             'UBOOT_FIT_TEE_LOADADDRESS',
++            'UBOOT_FIT_TEE_TYPE',
+             'UBOOT_FIT_TEE',
+             'UBOOT_FIT_UBOOT_ENTRYPOINT',
+             'UBOOT_FIT_UBOOT_LOADADDRESS',
+@@ -1815,7 +1816,7 @@ class UBootFitImageTests(FitImageTestCase):
+             its_field_check += [
+                 'description = "Trusted Execution Environment";',
+                 'data = /incbin/("%s");' % bb_vars['UBOOT_FIT_TEE_IMAGE'],
+-                'type = "tee";',
++                'type = "%s";' % bb_vars['UBOOT_FIT_TEE_TYPE'],
+                 'arch = "%s";' % bb_vars['UBOOT_ARCH'],
+                 'os = "tee";',
+                 'load = <%s>;' % bb_vars['UBOOT_FIT_TEE_LOADADDRESS'],
+@@ -1882,8 +1883,12 @@ class UBootFitImageTests(FitImageTestCase):
+         }
+         if bb_vars['UBOOT_FIT_TEE'] == "1":
+             loadables.append("tee")
++            tee_types = {
++                "tee": "Trusted Execution Environment Image",
++                "firmware": "Firmware",
++            }
+             req_sections['tee'] = {
+-                "Type": "Trusted Execution Environment Image",
++                "Type": tee_types[bb_vars['UBOOT_FIT_TEE_TYPE']],
+                 # "Load Address": bb_vars['UBOOT_FIT_TEE_LOADADDRESS'], not printed by mkimage?
+                 # "Entry Point": bb_vars['UBOOT_FIT_TEE_ENTRYPOINT'], not printed by mkimage?
+             }

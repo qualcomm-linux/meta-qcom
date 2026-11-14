@@ -1,0 +1,238 @@
+From 12e4ef511fcb51c5fa3a57c248149662c1103869 Mon Sep 17 00:00:00 2001
+From: Viswanath Kraleti <viswanath.kraleti@oss.qualcomm.com>
+Date: Fri, 6 Nov 2026 20:19:56 +0530
+Subject: [OE-core][PATCH 3/4] uboot-sign: make the separate fdt image optional
+
+The U-Boot FIT always carries the U-Boot device tree as an "fdt" image
+next to u-boot-nodtb.bin, and its configuration points at it. An SPL
+that loads U-Boot with the device tree already appended, as the
+Qualcomm one does, has no use for the extra image.
+
+Add UBOOT_FIT_FDT, defaulting to "1". With "0" the fdt image, the
+configuration's fdt property and its entry in sign-images are left
+out, and the uboot image defaults to ${UBOOT_BINARY}. The new
+UBOOT_FIT_UBOOT_IMAGE sets the uboot image data explicitly.
+
+Assisted-by: Claude Code:claude-opus-5-5
+Signed-off-by: Viswanath Kraleti <viswanath.kraleti@oss.qualcomm.com>
+Upstream-Status: Submitted [https://lore.kernel.org/openembedded-core/20261106144957.3818987-4-viswanath.kraleti@oss.qualcomm.com/]
+---
+ meta/classes-recipe/uboot-sign.bbclass   | 35 +++++++++++++++-------
+ meta/lib/oeqa/selftest/cases/fitimage.py | 38 ++++++++++++++++--------
+ 2 files changed, 51 insertions(+), 22 deletions(-)
+
+diff --git a/meta/classes-recipe/uboot-sign.bbclass b/meta/classes-recipe/uboot-sign.bbclass
+index 368888707d..4a7872074a 100644
+--- a/meta/classes-recipe/uboot-sign.bbclass
++++ b/meta/classes-recipe/uboot-sign.bbclass
+@@ -137,6 +137,11 @@ UBOOT_FIT_CONF_USER_LOADABLES ?= ''
+ UBOOT_FIT_UBOOT_LOADADDRESS ?= "${UBOOT_LOADADDRESS}"
+ UBOOT_FIT_UBOOT_ENTRYPOINT ?= "${UBOOT_ENTRYPOINT}"
+ 
++# Add the U-Boot device tree as a separate "fdt" image and point the
++# configuration at it. Set to "0" for an SPL that expects U-Boot with its
++# device tree appended in the uboot image.
++UBOOT_FIT_FDT ?= "1"
++UBOOT_FIT_UBOOT_IMAGE ?= "${@'${UBOOT_NODTB_BINARY}' if d.getVar('UBOOT_FIT_FDT') == '1' else '${UBOOT_BINARY}'}"
+ 
+ DEPENDS:append = " ${@'kernel-signing-keys-native' if d.getVar('FIT_GENERATE_KEYS') == '1' else ''}"
+ 
+@@ -429,6 +434,7 @@ EOF
+ uboot_fitimage_assemble() {
+ 	conf_loadables="\"uboot\""
+ 	conf_firmware=""
++	conf_fdt=""
+ 	rm -f ${UBOOT_ITS} ${UBOOT_FITIMAGE_BINARY}
+ 
+ 	# First we create the ITS script
+@@ -442,7 +448,7 @@ uboot_fitimage_assemble() {
+     images {
+         uboot {
+             description = "U-Boot image";
+-            data = /incbin/("${UBOOT_NODTB_BINARY}");
++            data = /incbin/("${UBOOT_FIT_UBOOT_IMAGE}");
+             type = "standalone";
+             os = "u-boot";
+             arch = "${UBOOT_ARCH}";
+@@ -470,6 +476,11 @@ EOF
+ 
+ 	cat << EOF >> ${UBOOT_ITS}
+         };
++EOF
++
++	if [ "${UBOOT_FIT_FDT}" = "1" ] ; then
++		conf_fdt="fdt = \"fdt\";"
++		cat << EOF >> ${UBOOT_ITS}
+         fdt {
+             description = "U-Boot FDT";
+             data = /incbin/("${UBOOT_DTB_BINARY}");
+@@ -478,26 +489,28 @@ EOF
+             compression = "none";
+ EOF
+ 
+-	if [ "${SPL_SIGN_ENABLE}" = "1" ] && [ "${SPL_SIGN_CONF}" = "1" ] ; then
+-		cat << EOF >> ${UBOOT_ITS}
++		if [ "${SPL_SIGN_ENABLE}" = "1" ] && [ "${SPL_SIGN_CONF}" = "1" ] ; then
++			cat << EOF >> ${UBOOT_ITS}
+             hash-1 {
+                 algo = "${UBOOT_FIT_HASH_ALG}";
+             };
+ EOF
+-	fi
++		fi
+ 
+-	if [ "${SPL_SIGN_ENABLE}" = "1" ] && [ "${SPL_SIGN_INDIVIDUAL}" = "1" ] ; then
+-		cat << EOF >> ${UBOOT_ITS}
++		if [ "${SPL_SIGN_ENABLE}" = "1" ] && [ "${SPL_SIGN_INDIVIDUAL}" = "1" ] ; then
++			cat << EOF >> ${UBOOT_ITS}
+             signature {
+                 algo = "${UBOOT_FIT_HASH_ALG},${UBOOT_FIT_SIGN_ALG}";
+                 key-name-hint = "${SPL_SIGN_KEYNAME}";
+             };
+ EOF
+-	fi
++		fi
+ 
+-	cat << EOF >> ${UBOOT_ITS}
++		cat << EOF >> ${UBOOT_ITS}
+         };
+ EOF
++	fi
++
+ 	if [ "${UBOOT_FIT_TEE}" = "1" ] ; then
+ 		# Listed behind U-Boot: an SPL handing off to the ARM Trusted
+ 		# Firmware only describes the images it loaded to the next stage
+@@ -532,7 +545,9 @@ EOF
+ 		conf_sign_images="${conf_sign_images}${conf_sign_images_sep}\"loadables\""
+ 		conf_sign_images_sep=", "
+ 	fi
+-	conf_sign_images="${conf_sign_images}${conf_sign_images_sep}\"fdt\""
++	if [ -n "${conf_fdt}" ] ; then
++		conf_sign_images="${conf_sign_images}${conf_sign_images_sep}\"fdt\""
++	fi
+ 
+ 	cat << EOF >> ${UBOOT_ITS}
+     };
+@@ -543,7 +558,7 @@ EOF
+             description = "${UBOOT_FIT_CONF_DESC}";
+             ${conf_firmware}
+             loadables = ${conf_loadables};
+-            fdt = "fdt";
++            ${conf_fdt}
+ EOF
+ 
+ 	if [ "${SPL_SIGN_ENABLE}" = "1" ] && [ "${SPL_SIGN_CONF}" = "1" ] ; then
+diff --git a/meta/lib/oeqa/selftest/cases/fitimage.py b/meta/lib/oeqa/selftest/cases/fitimage.py
+index 15b3de04d8..b17e84f765 100644
+--- a/meta/lib/oeqa/selftest/cases/fitimage.py
++++ b/meta/lib/oeqa/selftest/cases/fitimage.py
+@@ -1708,6 +1708,7 @@ class UBootFitImageTests(FitImageTestCase):
+             'UBOOT_FIT_CONF_FIRMWARE',
+             'UBOOT_FIT_CONF_USER_LOADABLES',
+             'UBOOT_FIT_DESC',
++            'UBOOT_FIT_FDT',
+             'UBOOT_FIT_HASH_ALG',
+             'UBOOT_FIT_SIGN_ALG',
+             'UBOOT_FIT_TEE_ENTRYPOINT',
+@@ -1716,6 +1717,7 @@ class UBootFitImageTests(FitImageTestCase):
+             'UBOOT_FIT_TEE_TYPE',
+             'UBOOT_FIT_TEE',
+             'UBOOT_FIT_UBOOT_ENTRYPOINT',
++            'UBOOT_FIT_UBOOT_IMAGE',
+             'UBOOT_FIT_UBOOT_LOADADDRESS',
+             'UBOOT_FIT_USER_SETTINGS',
+             'UBOOT_FITIMAGE_ENABLE',
+@@ -1759,7 +1761,9 @@ class UBootFitImageTests(FitImageTestCase):
+ 
+     def _get_req_its_paths(self, bb_vars):
+         # image nodes
+-        images = [ 'uboot', 'fdt',  ]
++        images = [ 'uboot' ]
++        if bb_vars['UBOOT_FIT_FDT'] == "1":
++            images.append('fdt')
+         if bb_vars['UBOOT_FIT_TEE'] == "1":
+             images.append('tee')
+         if bb_vars['UBOOT_FIT_ARM_TRUSTED_FIRMWARE'] == "1":
+@@ -1776,6 +1780,8 @@ class UBootFitImageTests(FitImageTestCase):
+         # Create a list of paths for all image and configuration nodes
+         req_its_paths = []
+         not_req_its_paths = []
++        if bb_vars['UBOOT_FIT_FDT'] != "1":
++            not_req_its_paths.append(['/', 'images', 'fdt'])
+         for image in images:
+             req_its_paths.append(['/', 'images', image])
+             if spl_sign_individual:
+@@ -1799,19 +1805,22 @@ class UBootFitImageTests(FitImageTestCase):
+         its_field_check = [
+             'description = "%s";' % bb_vars['UBOOT_FIT_DESC'],
+             'description = "U-Boot image";',
+-            'data = /incbin/("%s");' % bb_vars['UBOOT_NODTB_BINARY'],
++            'data = /incbin/("%s");' % bb_vars['UBOOT_FIT_UBOOT_IMAGE'],
+             'type = "standalone";',
+             'os = "u-boot";',
+             'arch = "%s";' % bb_vars['UBOOT_ARCH'],
+             'compression = "none";',
+             'load = <%s>;' % bb_vars['UBOOT_FIT_UBOOT_LOADADDRESS'],
+             'entry = <%s>;' % bb_vars['UBOOT_FIT_UBOOT_ENTRYPOINT'],
+-            'description = "U-Boot FDT";',
+-            'data = /incbin/("%s");' % bb_vars['UBOOT_DTB_BINARY'],
+-            'type = "flat_dt";',
+-            'arch = "%s";' % bb_vars['UBOOT_ARCH'],
+-            'compression = "none";',
+         ]
++        if bb_vars['UBOOT_FIT_FDT'] == "1":
++            its_field_check += [
++                'description = "U-Boot FDT";',
++                'data = /incbin/("%s");' % bb_vars['UBOOT_DTB_BINARY'],
++                'type = "flat_dt";',
++                'arch = "%s";' % bb_vars['UBOOT_ARCH'],
++                'compression = "none";',
++            ]
+         if bb_vars['UBOOT_FIT_TEE'] == "1":
+             its_field_check += [
+                 'description = "Trusted Execution Environment";',
+@@ -1840,13 +1849,16 @@ class UBootFitImageTests(FitImageTestCase):
+             'default = "conf";',
+             'description = "%s";' % bb_vars['UBOOT_FIT_CONF_DESC'],
+             'loadables = "%s";' % '", "'.join(loadables),
+-            'fdt = "fdt";',
+         ]
++        if bb_vars['UBOOT_FIT_FDT'] == "1":
++            its_field_check.append('fdt = "fdt";')
+         if bb_vars['SPL_SIGN_ENABLE'] == "1" and bb_vars['SPL_SIGN_CONF'] == "1":
+             sign_images = []
+             if bb_vars.get('UBOOT_FIT_CONF_FIRMWARE'):
+                 sign_images.append("firmware")
+-            sign_images += ["loadables", "fdt"]
++            sign_images.append("loadables")
++            if bb_vars['UBOOT_FIT_FDT'] == "1":
++                sign_images.append("fdt")
+             its_field_check.append('sign-images = "%s";' % '", "'.join(sign_images))
+         return its_field_check
+ 
+@@ -1877,10 +1889,11 @@ class UBootFitImageTests(FitImageTestCase):
+                 "Load Address": bb_vars['UBOOT_FIT_UBOOT_LOADADDRESS'],
+                 "Entry Point": bb_vars['UBOOT_FIT_UBOOT_ENTRYPOINT'],
+             },
+-            "fdt": {
++        }
++        if bb_vars['UBOOT_FIT_FDT'] == "1":
++            req_sections['fdt'] = {
+                 "Type": "Flat Device Tree",
+             }
+-        }
+         if bb_vars['UBOOT_FIT_TEE'] == "1":
+             loadables.append("tee")
+             tee_types = {
+@@ -1901,9 +1914,10 @@ class UBootFitImageTests(FitImageTestCase):
+             }
+         req_sections["conf"] = {
+             "Kernel": "unavailable",
+-            "FDT": "fdt",
+             "Loadables": ','.join(loadables),
+         }
++        if bb_vars['UBOOT_FIT_FDT'] == "1":
++            req_sections["conf"]["FDT"] = "fdt"
+ 
+         # Add signing related properties if needed
+         uboot_fit_hash_alg = bb_vars['UBOOT_FIT_HASH_ALG']
