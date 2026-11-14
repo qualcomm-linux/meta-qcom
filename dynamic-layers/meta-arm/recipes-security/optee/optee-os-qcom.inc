@@ -1,10 +1,10 @@
 require recipes-security/optee/optee-os.inc
 
-PV = "4.11.0-qcom-20261026+git"
+PV = "4.11.0-qcom-20261106+git"
 
-SRC_TAG = "tag=qcom-next-4.11-20261026"
+SRC_TAG = "tag=qcom-next-4.11-20261106"
 SRC_URI = "git://github.com/qualcomm-linux/optee_os.git;protocol=https;name=optee;nobranch=1;${SRC_TAG}"
-SRCREV_optee = "bd57d28b5ac226fe108ef96730b650b8a08bcff4"
+SRCREV_optee = "91784800638ecf20cd6de79eb5374756321ea488"
 
 # Enable PKCS#11 TA as part of the OP-TEE build
 EXTRA_OEMAKE:append = " CFG_PKCS11_TA=y"

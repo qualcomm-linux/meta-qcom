@@ -9,11 +9,11 @@ DEPENDS += "${@bb.utils.contains('QCOM_UBOOT_SPL_FIT', '1', '', 'u-boot-qcom', d
 
 DEPENDS += "${@'swiv-build-utility-native' if d.getVar('QCOM_FW_SWIV_PLATFORM') else ''}"
 
-PV = "2.15.0-qcom-20261026+git"
+PV = "2.15.0-qcom-20261111+git"
 
-SRC_TAG = "tag=qcom-next-2.15-20261026"
+SRC_TAG = "tag=qcom-next-2.15-20261111"
 SRC_URI = "git://github.com/qualcomm-linux/trusted-firmware-a.git;protocol=https;name=tfa;nobranch=1;${SRC_TAG}"
-SRCREV_tfa = "f7787c3627e200933f02b93b1c25b8eb5bcf797d"
+SRCREV_tfa = "0759b7f9b0914e26823aca2bc1115f2c65afa58c"
 
 LIC_FILES_CHKSUM += "file://docs/license.rst;md5=6ed7bace7b0bc63021c6eba7b524039e"
 
