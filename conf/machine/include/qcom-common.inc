@@ -5,7 +5,10 @@ require conf/machine/include/qcom-common-binary.inc
 require conf/machine/include/qcom-u-boot-common.inc
 
 # Set a default set of MACHINE_FEATURES, indivudual MACHINEs can append it
-MACHINE_FEATURES = "alsa bluetooth usbgadget usbhost wifi"
+MACHINE_FEATURES = "alsa bluetooth pci usbgadget usbhost wifi"
+
+QCOM_UEFI_BOOT ??= "${@bb.utils.contains('TUNE_FEATURES', 'aarch64', '1', '0', d)}"
+MACHINE_FEATURES += "${@'efi vfat' if bb.utils.to_boolean(d.getVar('QCOM_UEFI_BOOT')) else ''}"
 
 XSERVER_OPENGL ?= " \
     xf86-video-modesetting \
