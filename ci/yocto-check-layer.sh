@@ -24,6 +24,9 @@ _is_dir "$WORK_DIR"
 # Creates a temporary build directory to run the yocto-check-layer
 # script to avoid a contaminated environment.
 BUILDDIR="$(mktemp -p $WORK_DIR -d -t build-yocto-check-layer-XXXX)"
+# The check runs no tasks, but every bitbake -S call still looks up and
+# touches each sstate object it finds, so keep it off the shared cache.
+export SSTATE_DIR="$BUILDDIR/sstate-cache"
 source $WORK_DIR/oe-core/oe-init-build-env $BUILDDIR
 git -c advice.detachedHead=false -c init.defaultBranch=master clone --quiet --shared $REPO_DIR meta-qcom
 
