@@ -8,6 +8,8 @@ inherit image uki uki-esp-image features_check
 
 require esp-qcom-common.inc
 
+SYSTEMD_BOOT_TIMEOUT ?= ""
+
 UKI_FILENAME = "${EFI_LINUX_IMG}"
 
 UKI_CMDLINE = "root=${QCOM_BOOTIMG_ROOTFS} rw rootwait console=${KERNEL_CONSOLE}"
@@ -19,6 +21,11 @@ setup_efi_folder() {
         mv ${IMAGE_ROOTFS}/boot/EFI/* ${IMAGE_ROOTFS}/EFI
     fi
     find ${IMAGE_ROOTFS} -mindepth 1 ! -path "${IMAGE_ROOTFS}/EFI*" -exec rm -rf {} +
+
+    if [ -n "${SYSTEMD_BOOT_TIMEOUT}" ]; then
+        install -d ${IMAGE_ROOTFS}/loader
+        printf 'timeout %s\n' "${SYSTEMD_BOOT_TIMEOUT}" > ${IMAGE_ROOTFS}/loader/loader.conf
+    fi
 }
 IMAGE_PREPROCESS_COMMAND:append = " setup_efi_folder"
 
