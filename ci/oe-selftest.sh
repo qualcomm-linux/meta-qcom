@@ -90,4 +90,5 @@ if [ -n "$GIT_CLONEDIR_JOB_LOCAL" ]; then
     done
 fi
 
-oe-selftest --run-tests "$TEST_CASES"
+# Unquoted, as oe-selftest takes each test module as its own argument
+oe-selftest --run-tests $TEST_CASES
