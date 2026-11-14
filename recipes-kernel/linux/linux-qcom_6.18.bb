@@ -10,7 +10,7 @@ COMPATIBLE_MACHINE = "(qcom)"
 
 LINUX_QCOM_FIT_DTB_COMPATIBLE = "conf/machine/include/fit-dtb-compatible-linux-qcom.inc"
 
-LINUX_VERSION ?= "6.18.52"
+LINUX_VERSION ?= "6.18.56"
 
 PV = "${LINUX_VERSION}"
 
@@ -20,8 +20,8 @@ KERNEL_PAHOLE ?= '${@bb.utils.contains("BBFILE_COLLECTIONS", "openembedded-layer
 do_configure[depends] += '${@oe.utils.vartrue("KERNEL_PAHOLE", "pahole-native:do_populate_sysroot", "", d)}'
 EXTRA_OEMAKE += '${@oe.utils.vartrue("KERNEL_PAHOLE", "", "PAHOLE=false", d)}'
 
-# tag:qcom-6.18.y-20261106
-SRCREV ?= "e5518b697e8803737b52bc9eed9c14ebf9a5c570"
+# tag:qcom-6.18.y-20261111
+SRCREV ?= "9bdb1505d1f89a6f5d4e443d9c6b89aee16d28ff"
 
 SRCBRANCH ?= "nobranch=1"
 SRCBRANCH:class-devupstream ?= "branch=qcom-6.18.y"
