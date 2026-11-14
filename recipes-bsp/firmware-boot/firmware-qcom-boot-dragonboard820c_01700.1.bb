@@ -11,6 +11,7 @@ BOOTBINARIES = "linux-board-support-package-r${PV}"
 QCOM_BOOT_IMG_SUBDIR = "dragonboard-820c"
 
 include firmware-qcom-boot-common.inc
+require recipes-bsp/lk/lk-toolchain.inc
 
 DEPENDS = "lk-db820c"
 

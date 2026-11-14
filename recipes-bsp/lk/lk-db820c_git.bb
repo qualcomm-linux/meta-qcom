@@ -1,5 +1,7 @@
 require lk.inc
 
+SRC_URI += "file://0001-project-msm8996-do-not-build-with-Werror.patch"
+
 EXTRA_OEMAKE += "VERIFIED_BOOT=1"
 
 LK_BRANCH = "release/LA.HB.1.3.2-19600-8x96.0"
