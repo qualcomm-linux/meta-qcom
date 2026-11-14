@@ -1,4 +1,3 @@
-FILESEXTRAPATHS:prepend := "${THISDIR}/${PN}:"
 # To make the layer pass yocto-check-layer only inherit update-alternatives when building for qualcomm
 ALTERNATIVES_CLASS = ""
 ALTERNATIVES_CLASS:qcom = "update-alternatives"
