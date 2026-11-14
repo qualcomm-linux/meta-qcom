@@ -72,7 +72,7 @@ Example implementation:
 
    do_install:append() {
       install -d ${D}${sysconfdir}/sysctl.d
-      install -m 0644 ${WORKDIR}/99-security-hardening.conf \
+      install -m 0644 ${UNPACKDIR}/99-security-hardening.conf \
          ${D}${sysconfdir}/sysctl.d/
    }
    ```
@@ -101,7 +101,7 @@ Example implementation:
    sysctl kernel.dmesg_restrict   
    ```
 
-## 5. Userspace hardening
+## 4. Userspace hardening
 
 OpenEmbedded provides a standard set of userspace security hardening compiler and linker flags via **security\_flags.inc**
 (<https://git.openembedded.org/openembedded-core/tree/meta/conf/distro/include/security_flags.inc>).
@@ -109,7 +109,7 @@ OpenEmbedded provides a standard set of userspace security hardening compiler an
 These flags are already part of the build and must remain enabled for production images to ensure adequate userspace exploit mitigations.
 Any deviation from these defaults should be avoided or explicitly justified.
 
-## 6. ADB security recommendations for production
+## 5. ADB security recommendations for production
 
 ### ADB / adbd restrictions
 

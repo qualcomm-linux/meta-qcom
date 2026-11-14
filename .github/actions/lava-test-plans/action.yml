@@ -75,7 +75,6 @@ runs:
           INPUTS_PROJECT: ${{ inputs.project }}
           INPUTS_DISTRO_NAME: ${{ inputs.distro_name }}
           INPUTS_MACHINES: ${{ inputs.machines }}
-          INPUTS_KERNEL: ${{ inputs.kernel }}
           INPUTS_TESTPLAN: ${{ inputs.testplan }}
           INPUTS_PREFIX: ${{ inputs.prefix }}
           INPUTS_TESTKIT_REF: ${{ inputs.testkit_ref }}
@@ -90,7 +89,6 @@ runs:
           JOBS_OUT_PATH="${OUT_PATH}/jobs"
           PROJECT="${GITHUB_REPOSITORY#*/}"
           if [ -n "${INPUTS_PROJECT}" ]; then
-            echo "jobmatrix=''" >> $GITHUB_OUTPUT
             PROJECT="${INPUTS_PROJECT}"
           fi
           echo "jobs_out_path=${JOBS_OUT_PATH}" >> $GITHUB_OUTPUT
@@ -151,7 +149,7 @@ runs:
             fi
             if [ -z "${BUILD_URL}" ]; then
                echo "BUILD_URL missing"
-               # fail action if BUILD_URL is empty. At this point the variable should be filled in
+               # no build was published for this machine, skip it
                continue
             fi
             echo "BUILD_DOWNLOAD_URL=${BUILD_URL}/" >> "${VARS_OUT_PATH}/${machine}.ini"
@@ -162,12 +160,12 @@ runs:
             if [ "${machine}" = "dragonboard-410c" ]; then
                 echo "ROOTFS_IMG_FILE=${IMAGE_TYPE}-qcom-armv8a.rootfs.ext4" >> "${VARS_OUT_PATH}/${machine}.ini"
                 echo "BOOT_IMG_FILE=boot-apq8016-sbc-qcom-armv8a.img" >> "${VARS_OUT_PATH}/${machine}.ini"
-                echo "BUILD_OS=${INPUTS_DISTRO_NAME}${INPUTS_KERNEL}/" >> "${VARS_OUT_PATH}/${machine}.ini"
+                echo "BUILD_OS=${INPUTS_DISTRO_NAME}/" >> "${VARS_OUT_PATH}/${machine}.ini"
             fi
             if [ "${machine}" = "dragonboard-820c" ]; then
                 echo "ROOTFS_IMG_FILE=${IMAGE_TYPE}-qcom-armv8a.rootfs.ext4" >> "${VARS_OUT_PATH}/${machine}.ini"
                 echo "BOOT_IMG_FILE=boot-apq8096-db820c-qcom-armv8a.img" >> "${VARS_OUT_PATH}/${machine}.ini"
-                echo "BUILD_OS=${INPUTS_DISTRO_NAME}${INPUTS_KERNEL}/" >> "${VARS_OUT_PATH}/${machine}.ini"
+                echo "BUILD_OS=${INPUTS_DISTRO_NAME}/" >> "${VARS_OUT_PATH}/${machine}.ini"
             fi
 
             cat "${VARS_OUT_PATH}/${machine}.ini"
