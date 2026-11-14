@@ -44,8 +44,6 @@ python __anonymous() {
 }
 
 uboot_compile_config:append() {
-    config_mbn_header=$(uboot_config_get_indexed_value "${BOARD_MBN_HEADER}" $i)
-
     if [ "${QCOM_UBOOT_SPL_FIT}" = "1" ]; then
         # Where uboot-sign's /incbin/ defaults expect them.
         install -m 0644 ${RECIPE_SYSROOT}/firmware/${QCOM_UBOOT_SPL_FIT_ATF}/bl31.bin ${B}/${builddir}/bl31.bin
