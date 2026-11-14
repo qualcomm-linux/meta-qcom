@@ -1,0 +1,11 @@
+# SPDX-License-Identifier: MIT
+
+[Unit]
+Description=Qualcomm diagnostic router
+
+[Service]
+ExecStart=@bindir@/diag-router
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target
