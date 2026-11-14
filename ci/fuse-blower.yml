@@ -1,0 +1,47 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/siemens/kas/master/kas/schema-kas.json
+#
+# Include this kas file, on top of the secure-boot overlays, to build the
+# Fuse Blower images that provision the fuses matching the signed images,
+# and to add them to the qcomflash bundle under fuse/ (README.flash.txt in
+# the bundle has the qdl steps):
+#
+#   kas build ci/<machine>.yml:ci/secure-boot.yml:ci/ecdsa-secure-boot-test-keys.yml:ci/fuse-blower.yml
+#
+# Fusing is irreversible: a device fused with the test keys only boots
+# images signed with them.
+
+header:
+  version: 14
+
+local_conf_header:
+  fuse-blower: |
+    QCOM_FUSE_BLOWER_ENABLE = "1"
+
+    # Stages to build; the recipe defines "basic" (secure boot on) and
+    # "closing" (debug off, fuse regions locked), and builds only what is
+    # named here.
+    QCOM_FUSE_BLOWER_STAGES = "basic"
+    #QCOM_FUSE_BLOWER_STAGES = "basic closing"
+
+    # Chip serials the images are valid for; without it any device with
+    # the same OEM ID and product ID accepts them.
+    #QCOM_FUSE_BLOWER_SERIALS = "0x0AA94EFD"
+
+    # A stage blows QCOM_FUSE_BLOWER_FUSES, the root certificate hash and
+    # its own QCOM_FUSE_BLOWER_STAGE_FUSES[<stage>]; the defaults are in
+    # the firmware-qcom-fuse-blower recipe.  Varflags take = and +=, not
+    # :append or :remove, so trimming a default set means restating it.
+    #
+    # Replace the closing set, or add a fuse the machine's profile has:
+    #QCOM_FUSE_BLOWER_STAGE_FUSES[closing] = "--fuse-shared-misc-debug-disable --fuse-oem-configuration-write-disable"
+    #QCOM_FUSE_BLOWER_STAGE_FUSES[closing] += "--fuse-oem-spare-reg27"
+    #
+    # Blow a fuse in "basic" only, by moving it out of the shared set:
+    #QCOM_FUSE_BLOWER_FUSES = "--fuse-oem-hw-id=${QCOM_FUSE_OEM_HW_ID} --fuse-oem-product-id=${QCOM_FUSE_OEM_PRODUCT_ID}"
+    #QCOM_FUSE_BLOWER_STAGE_FUSES[basic] = "--fuse-oem-secure-boot1-pk-hash-in-fuse --fuse-oem-secure-boot1-auth-en"
+    #
+    # Add a stage of your own; its signature is valid for the OEM ID the
+    # devices report when it is applied:
+    #QCOM_FUSE_BLOWER_STAGES = "basic debug-off closing"
+    #QCOM_FUSE_BLOWER_STAGE_FUSES[debug-off] = "--fuse-apps-dbgen-disable --fuse-apps-niden-disable"
+    #QCOM_FUSE_BLOWER_STAGE_OEM_ID[debug-off] = "${QCOM_FUSE_OEM_HW_ID}"
