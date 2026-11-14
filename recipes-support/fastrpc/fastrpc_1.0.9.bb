@@ -2,14 +2,16 @@ HOMEPAGE = "https://github.com/qualcomm/fastrpc"
 SUMMARY = "Qualcomm FastRPC applications and library"
 SECTION = "devel"
 
-LICENSE = "BSD-3-Clause"
-LIC_FILES_CHKSUM = "file://LICENSE.txt;md5=b67986b6880754696d418dbaa2cf51d1"
+LICENSE = "BSD-3-Clause AND BSD-1-Clause"
+LIC_FILES_CHKSUM = "file://LICENSE.txt;md5=b67986b6880754696d418dbaa2cf51d1 \
+                    file://inc/uthash.h;beginline=1;endline=23;md5=631f7c791a1dd4295cc46ca38c9c0540"
 DEPENDS = "libbsd libyaml"
 
-SRCREV = "d247519650fe5cb16de6c78edaa95bcc4be25073"
+SRCREV = "89508eaeed55833bcb381fafa91e2224201f4ad7"
 SRC_URI = "\
     git://github.com/qualcomm/fastrpc.git;branch=main;protocol=https;tag=v${PV} \
     file://run-ptest \
+    file://0001-inc-add-SPDX-License-Identifier-to-uthash.h.patch \
 "
 
 inherit autotools systemd ptest pkgconfig useradd
