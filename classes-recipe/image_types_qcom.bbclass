@@ -121,7 +121,7 @@ create_qcomflash_pkg() {
 
         # boot firmware
         for bfw in `find ${DEPLOY_DIR_IMAGE}/${QCOM_BOOT_FILES_SUBDIR} -maxdepth 1 -type f \
-                \( -name '*.elf' ! -name 'abl2esp*.elf' ! -name 'xbl_config*.elf' ! -name 'uefi.elf' \) -o \
+                \( -name '*.elf' ! -name 'abl2esp*.elf' ! -name 'xbl_config*.elf' ! -name 'uefi_dtbs_*.elf' ! -name 'uefi.elf' \) -o \
                 -name '*.mbn*' -o \
                 -name '*.melf*' -o \
                 -name '*.fv' -o \
@@ -144,6 +144,15 @@ create_qcomflash_pkg() {
         elif [ -f "${DEPLOY_DIR_IMAGE}/${QCOM_BOOT_FILES_SUBDIR}/${QCOM_XBL_CONFIG}" ]; then
             install -m 0644 "${DEPLOY_DIR_IMAGE}/${QCOM_BOOT_FILES_SUBDIR}/${QCOM_XBL_CONFIG}" xbl_config.elf
         fi
+
+        # uefi_dtbs
+        case "${QCOM_UEFI_DTB}" in
+        *.elf)
+            if [ -f "${DEPLOY_DIR_IMAGE}/${QCOM_BOOT_FILES_SUBDIR}/${QCOM_UEFI_DTB}" ]; then
+                install -m 0644 "${DEPLOY_DIR_IMAGE}/${QCOM_BOOT_FILES_SUBDIR}/${QCOM_UEFI_DTB}" uefi_dtbs.elf
+            fi
+            ;;
+        esac
 
         # bootloader selection
         bootloader_bin="${DEPLOY_DIR_IMAGE}/${QCOM_BOOT_FILES_SUBDIR}/uefi.elf"
