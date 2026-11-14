@@ -11,7 +11,7 @@ REQUIRED_DISTRO_FEATURES = "opengl"
 
 SRC_URI = "git://github.com/qualcomm/qimsdk;protocol=https;nobranch=1;tag=${PV}"
 
-SRCREV = "cd6d5951a910c7c2530ef736fe889478932e954a"
+SRCREV = "fd39157d7819fcc45997e49315dcc8c49d148f9f"
 
 DEPENDS += "\
     gstreamer1.0 \
@@ -29,19 +29,19 @@ PACKAGECONFIG[camera]       = "-DENABLE_GST_PLUGIN_CAMERA_BASE=ON -DENABLE_GST_P
                                -DENABLE_GST_PLUGIN_CAMERA_BASE=OFF -DENABLE_GST_PLUGIN_QMMFSRC=0 -DENABLE_GST_PLUGIN_JPEGENC=0, camera-service"
 PACKAGECONFIG[camera-apps]  = "-DENABLE_GST_SAMPLE_APPS_CAMERA=1, -DENABLE_GST_SAMPLE_APPS_CAMERA=0, camera-service qcom-fastcv-binaries"
 PACKAGECONFIG[messaging]    = "-DENABLE_GST_MESSAGING_PLUGINS=1, -DENABLE_GST_MESSAGING_PLUGINS=0, librdkafka mosquitto"
-PACKAGECONFIG[ml]           = "-DENABLE_GST_ML_PLUGINS=1, -DENABLE_GST_ML_PLUGINS=0, cairo json-glib libeigen opencv"
+PACKAGECONFIG[ml]           = "-DENABLE_GST_ML_PLUGINS=1, -DENABLE_GST_ML_PLUGINS=0, cairo fontconfig json-glib libeigen opencv"
 PACKAGECONFIG[onnx]         = "-DENABLE_GST_PLUGIN_MLONNX=1, -DENABLE_GST_PLUGIN_MLONNX=0, onnx onnxruntime"
 PACKAGECONFIG[python]       = "-DENABLE_GST_PYTHON=ON -DENABLE_APP_BUILDER_PYTHON=1 -DPYTHON_SITEPACKAGES_DIR=${PYTHON_SITEPACKAGES_DIR}, \
                                -DENABLE_GST_PYTHON=OFF -DENABLE_APP_BUILDER_PYTHON=0, , gstreamer1.0-python python3-pyyaml gst-plugins-imsdk-base"
 PACKAGECONFIG[python-apps]  = "-DENABLE_GST_PYTHON_EXAMPLES=1, -DENABLE_GST_PYTHON_EXAMPLES=0"
 PACKAGECONFIG[qairt]        = "-DENABLE_GST_QAIRT_PLUGINS=1 -DENABLE_GST_PLUGIN_MLTOOLS=1, -DENABLE_GST_QAIRT_PLUGINS=0 -DENABLE_GST_PLUGIN_MLTOOLS=0, qairt-sdk, qairt-sdk"
 PACKAGECONFIG[redissink]    = "-DENABLE_GST_PLUGIN_REDISSINK=1, -DENABLE_GST_PLUGIN_REDISSINK=0, hiredis"
-PACKAGECONFIG[sample-apps]  = "-DENABLE_GST_SAMPLE_APPS=1, -DENABLE_GST_SAMPLE_APPS=0, opencv cairo json-glib libsoup gstreamer1.0-plugins-bad"
+PACKAGECONFIG[sample-apps]  = "-DENABLE_GST_SAMPLE_APPS=1, -DENABLE_GST_SAMPLE_APPS=0, opencv cairo json-glib libsoup gstreamer1.0-plugins-bad pipewire"
 PACKAGECONFIG[smartvencbin] = "-DENABLE_GST_PLUGIN_SMARTVENCBIN=1, -DENABLE_GST_PLUGIN_SMARTVENCBIN=0, smart-venc-ctrl-algo"
 PACKAGECONFIG[sw]           = "-DENABLE_GST_SOFTWARE_PLUGINS=1, -DENABLE_GST_SOFTWARE_PLUGINS=0, gstreamer1.0-rtsp-server"
 PACKAGECONFIG[tflite]       = "-DENABLE_GST_PLUGIN_MLTFLITE=1, -DENABLE_GST_PLUGIN_MLTFLITE=0, tensorflow-lite"
 PACKAGECONFIG[tools]        = "-DENABLE_GST_PLUGIN_TOOLS=1, -DENABLE_GST_PLUGIN_TOOLS=0, gstreamer1.0-rtsp-server"
-PACKAGECONFIG[videoproc]    = "-DENABLE_GST_VIDEOPROC_PLUGINS=1, -DENABLE_GST_VIDEOPROC_PLUGINS=0, cairo"
+PACKAGECONFIG[videoproc]    = "-DENABLE_GST_VIDEOPROC_PLUGINS=1, -DENABLE_GST_VIDEOPROC_PLUGINS=0, cairo fontconfig"
 
 # The TFLite plugin loads the TensorFlow Lite library at runtime using dlopen(). To ensure runtime availability, added runtime dependency on 'tensorflow-lite'.
 RDEPENDS:${PN}-qtimltflite += "tensorflow-lite"
@@ -52,6 +52,11 @@ RDEPENDS:${PN}-qtismartvencbin += "smart-venc-ctrl-algo"
 # The MQTT adaptor loads the mosquitto library at runtime using dlopen(). MQTT server also needed to exercise the use-case.
 # To ensure runtime availability, added runtime dependency on 'mosquitto'.
 RDEPENDS:libgstqtimqttadaptor += "mosquitto"
+
+# qtivoverlay and qtimlpostprocess render text using a fontconfig-resolved font.
+# RRECOMMENDS is used instead of RDEPENDS to avoid a build-time error.
+RRECOMMENDS:${PN}-qtivoverlay += "liberation-fonts"
+RRECOMMENDS:${PN}-qtimlpostprocess += "liberation-fonts"
 
 RDEPENDS:${PN}-apps += "${@bb.utils.contains('PACKAGECONFIG', 'python', 'python3-opencv python3-pycairo', '', d)} \
                         ${@bb.utils.contains('PACKAGECONFIG', 'python-apps', 'python3-core gstreamer1.0-python python3-pygobject gtk+3 python3-opencv', '', d)} \
