@@ -1,13 +1,13 @@
 PLATFORM = "shikra"
-PBT_BUILD_DATE = "261104"
+PBT_BUILD_DATE = "261113"
 
 require common.inc
 
-SRC_URI[camxlib.sha256sum] = "7ad5498c802d13d2720c412302f2212a6652a1d31d697d52a1da12651dd8a174"
-SRC_URI[camx.sha256sum] = "6c9bd69140feaac0bbe53c9286ad92672aa184771ab17a76cd0a569a8e634e74"
-SRC_URI[chicdk.sha256sum] = "34f3b70961a3283d245b5e5a757e1183b066ec16aa9f9444326eb7759fa20e00"
-SRC_URI[camxcommon.sha256sum] = "fe681e0025aa454f3413b2fd90d2d87d5d95e7d3ceb0e9d17db9a387f5435f42"
-SRC_URI[camxtest.sha256sum] = "5c73163a99c4d7a519fed65b80976628477914c763b09224bfac9a359e45afa7"
+SRC_URI[camxlib.sha256sum] = "8c3510b9748b3faa1978f0a4c9f932d5ce045999cf4cb79848ee0a77a7dc1f31"
+SRC_URI[camx.sha256sum] = "c9d16ee40339457af53dbe399189d56c731fa9eb3d3e3e74a9ef1f270a07dd17"
+SRC_URI[chicdk.sha256sum] = "db6fc2610d8f550ede4a6795038e48b353a6ee0294c76c28f2c4181ce63a62f4"
+SRC_URI[camxcommon.sha256sum] = "94977bd1ea98e0b66ae45395ade8220896f1ee8e1cd0907eb5b98ed6f826a6a8"
+SRC_URI[camxtest.sha256sum] = "42c27ed929bbb81c4eb5087f864217a78ffee3c9ff4fe3cd2847a9a3c07ebb15"
 
 DEPENDS += " \
     opencv \
