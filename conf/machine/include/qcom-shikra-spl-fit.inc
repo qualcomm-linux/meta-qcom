@@ -69,3 +69,12 @@ UBOOT_FIT_LOADABLE_DESCRIPTION[rpm_1] ?= "RPM segment 1"
 UBOOT_FIT_LOADABLE_DESCRIPTION[rpm_2] ?= "RPM segment 2"
 
 UBOOT_FIT_CONF_LOADABLES ?= "rpm_1 rpm_2"
+
+# The SPL picks the configuration by description, "pre-ddr" ahead of DDR
+# init and "post-ddr" (set in qcom-uboot-spl-fit.inc) after it.
+UBOOT_FIT_CONFIGURATIONS ?= "pre-ddr"
+UBOOT_FIT_CONFIGURATION_DESCRIPTION[pre-ddr] ?= "pre-ddr"
+UBOOT_FIT_CONFIGURATION_LOADABLES[pre-ddr] ?= "\
+    pmic_cocos pmic_wailua dcb_lp4 dcb_lp5 ecc \
+    shrm_1 shrm_2 qclib_1 qclib_2 \
+"
