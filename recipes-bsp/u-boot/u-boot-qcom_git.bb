@@ -12,6 +12,11 @@ QCOM_UBOOT_SPL_FIT_TEE ?= ""
 QCOM_UBOOT_SPL_FIT_FIRMWARE ?= ""
 QCOM_SPL_FW_TYPE ?= "tz"
 
+# Boot firmware directory of ELFs split per PT_LOAD segment, with a
+# manifest.json that fills in the UBOOT_FIT_LOADABLE_* varflags of each segment
+# the machine hasn't set.
+QCOM_UBOOT_SPL_FIT_SEGMENTS ?= ""
+
 # The machines using the SPL FIT name the recipes providing the FIT images.
 # The names stay empty for every other machine, so they add nothing there.
 DEPENDS += "${QCOM_UBOOT_SPL_FIT_ATF} ${QCOM_UBOOT_SPL_FIT_TEE} ${QCOM_UBOOT_SPL_FIT_FIRMWARE}"
@@ -64,8 +69,48 @@ uboot_compile_config:append() {
                 install -D -m 0644 ${DEPLOY_DIR_IMAGE}/${QCOM_BOOT_FILES_SUBDIR}/${fit_file} ${B}/${builddir}/${fit_file}
             done
         fi
+
+        if [ -n "${QCOM_UBOOT_SPL_FIT_SEGMENTS}" ]; then
+            rm -rf ${B}/${builddir}/${QCOM_UBOOT_SPL_FIT_SEGMENTS}
+            cp -r ${DEPLOY_DIR_IMAGE}/${QCOM_BOOT_FILES_SUBDIR}/${QCOM_UBOOT_SPL_FIT_SEGMENTS} ${B}/${builddir}/${QCOM_UBOOT_SPL_FIT_SEGMENTS}
+        fi
     fi
 }
+
+# The manifest is deployed by the boot firmware recipe, so read it at task time.
+python qcom_spl_fit_segments() {
+    import json
+
+    segments = d.getVar('QCOM_UBOOT_SPL_FIT_SEGMENTS')
+    if d.getVar('QCOM_UBOOT_SPL_FIT') != '1' or not segments:
+        return
+
+    manifest = os.path.join(d.getVar('DEPLOY_DIR_IMAGE'), d.getVar('QCOM_BOOT_FILES_SUBDIR'),
+                            segments, 'manifest.json')
+    try:
+        with open(manifest) as f:
+            data = json.load(f)
+    except (OSError, ValueError) as e:
+        bb.fatal('%s: %s' % (manifest, e))
+    if data.get('version') != 1:
+        bb.fatal('%s: unsupported manifest version %s' % (manifest, data.get('version')))
+
+    def set_flag(var, name, value):
+        if value is not None and not d.getVarFlag(var, name):
+            d.setVarFlag(var, name, value)
+
+    for image in data['images']:
+        for segment in image['segments']:
+            name = segment['name']
+            set_flag('UBOOT_FIT_LOADABLE_FILENAME', name, os.path.join(segments, segment['file']))
+            set_flag('UBOOT_FIT_LOADABLE_LOADADDRESS', name, segment['load'])
+            set_flag('UBOOT_FIT_LOADABLE_ENTRYPOINT', name, segment['entry'])
+            set_flag('UBOOT_FIT_LOADABLE_ARCH', name, image['arch'])
+            # Only the segments the SPL jumps to carry an os.
+            if segment['entry'] is not None:
+                set_flag('UBOOT_FIT_LOADABLE_OS', name, image['os'])
+}
+do_uboot_assemble_fitimage[prefuncs] += "qcom_spl_fit_segments"
 
 # Rebuild the SPL ELF after uboot-sign and sign it as QCOM_SPL_FW_TYPE, adding
 # the SWIV segment first on the platforms that set QCOM_FW_SWIV_PLATFORM.
