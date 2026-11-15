@@ -8,6 +8,17 @@ QCOM_UBOOT_SPL_FIT_ATF ?= ""
 QCOM_UBOOT_SPL_FIT_TEE ?= ""
 QCOM_UBOOT_SPL_FIT_FIRMWARE ?= ""
 
+# The SPL cannot load an ELF whole, so boot firmware releases ship SHRM, QcLib,
+# RPM and the like split per PT_LOAD segment, with a manifest.json giving each
+# segment's file, load address, entry and architecture.
+# QCOM_UBOOT_SPL_FIT_SEGMENTS names that directory within the
+# QCOM_UBOOT_SPL_FIT_FIRMWARE deployment. It is copied into the build
+# directory, and the manifest fills in the UBOOT_FIT_LOADABLE_FILENAME,
+# _LOADADDRESS, _ENTRYPOINT, _ARCH and _OS varflags of every segment, e.g.
+# UBOOT_FIT_LOADABLE_LOADADDRESS[qclib_1], that the machine has not set
+# itself. The machine lists the segments it loads in UBOOT_FIT_LOADABLES.
+QCOM_UBOOT_SPL_FIT_SEGMENTS ?= ""
+
 # BL31 and OP-TEE go into the FIT, swiv annotates the SPL before signing.
 DEPENDS += "${@bb.utils.contains('QCOM_UBOOT_SPL_FIT', '1', '${QCOM_UBOOT_SPL_FIT_ATF} ${QCOM_UBOOT_SPL_FIT_TEE} ${QCOM_UBOOT_SPL_FIT_FIRMWARE} swiv-build-utility-native', '', d)}"
 
@@ -60,8 +71,50 @@ uboot_compile_config:append() {
                 install -D -m 0644 ${DEPLOY_DIR_IMAGE}/${QCOM_BOOT_FILES_SUBDIR}/${fit_file} ${B}/${builddir}/${fit_file}
             done
         fi
+
+        if [ -n "${QCOM_UBOOT_SPL_FIT_SEGMENTS}" ]; then
+            rm -rf ${B}/${builddir}/${QCOM_UBOOT_SPL_FIT_SEGMENTS}
+            cp -r ${DEPLOY_DIR_IMAGE}/${QCOM_BOOT_FILES_SUBDIR}/${QCOM_UBOOT_SPL_FIT_SEGMENTS} ${B}/${builddir}/${QCOM_UBOOT_SPL_FIT_SEGMENTS}
+        fi
     fi
 }
+
+# The manifest is only there once the boot firmware recipe has deployed, so
+# it is read as the ITS is written rather than at parse time.
+python qcom_spl_fit_segments() {
+    import json
+
+    segments = d.getVar('QCOM_UBOOT_SPL_FIT_SEGMENTS')
+    if d.getVar('QCOM_UBOOT_SPL_FIT') != '1' or not segments:
+        return
+
+    manifest = os.path.join(d.getVar('DEPLOY_DIR_IMAGE'), d.getVar('QCOM_BOOT_FILES_SUBDIR'),
+                            segments, 'manifest.json')
+    try:
+        with open(manifest) as f:
+            data = json.load(f)
+    except (OSError, ValueError) as e:
+        bb.fatal('%s: %s' % (manifest, e))
+    if data.get('version') != 1:
+        bb.fatal('%s: unsupported manifest version %s' % (manifest, data.get('version')))
+
+    def set_flag(var, name, value):
+        if value is not None and not d.getVarFlag(var, name):
+            d.setVarFlag(var, name, value)
+
+    for image in data['images']:
+        for segment in image['segments']:
+            name = segment['name']
+            set_flag('UBOOT_FIT_LOADABLE_FILENAME', name, os.path.join(segments, segment['file']))
+            set_flag('UBOOT_FIT_LOADABLE_LOADADDRESS', name, segment['load'])
+            set_flag('UBOOT_FIT_LOADABLE_ENTRYPOINT', name, segment['entry'])
+            set_flag('UBOOT_FIT_LOADABLE_ARCH', name, image['arch'])
+            # os describes the image the SPL jumps to, so only the segments
+            # with an entry carry it.
+            if segment['entry'] is not None:
+                set_flag('UBOOT_FIT_LOADABLE_OS', name, image['os'])
+}
+do_uboot_assemble_fitimage[prefuncs] += "qcom_spl_fit_segments"
 
 # Rebuild the SPL ELF after uboot-sign, add the SWIV segment and sign it as TZ.
 uboot_assemble_fitimage_helper:append() {
