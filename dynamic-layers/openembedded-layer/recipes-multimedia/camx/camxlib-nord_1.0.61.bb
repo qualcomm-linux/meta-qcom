@@ -10,3 +10,22 @@ SRC_URI[camxcommon.sha256sum] = "d8837b8edc415d06b50bf6340a2ab5699a6ef0c57a42b05
 SRC_URI[camxtest.sha256sum] = "3a423f068c790bd20628e8b2dc55514ec441f549cdc926f323d813cb8860d4ac"
 
 DEPENDS += "opencv userspace-resource-manager"
+
+do_install:append() {
+    # copy skel file
+    install -d ${D}${datadir}/qcom
+    cp -r ${S}/usr/share/qcom/nord ${D}${datadir}/qcom/
+}
+PACKAGE_BEFORE_PN += "${PN}-skel"
+RDEPENDS:${PN} += "${PN}-skel"
+FILES:${PN}-skel = "${datadir}/qcom"
+# - skel binaries/library are not AArch64 (arch mismatch)      (arch)
+# - Files are installed under /usr/share (non-libdir path) (libdir)
+# Skipping QA checks:'ldflags' because:
+# - Libraries are prebuilt dsp binary 
+INSANE_SKIP:${PN}-skel += " arch libdir ldflags"
+
+# Preserve ${PN}-skel naming to avoid ambiguity in package identification.
+DEBIAN_NOAUTONAME:${PN}-skel = "1"
+# skel is dsp binary not AArch64, so skip file dependency scanning
+SKIP_FILEDEPS:${PN}-skel = "1"
