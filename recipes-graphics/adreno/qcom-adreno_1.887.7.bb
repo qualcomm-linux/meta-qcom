@@ -36,7 +36,7 @@ PACKAGE_BEFORE_PN += " \
     ${@bb.utils.contains('DISTRO_FEATURES', 'opencl', '${PN}-cl', '', d)} \
 "
 
-RPROVIDES:${PN}-egl += "virtual-egl-icd"
+RPROVIDES:${PN}-egl += "virtual-libegl-icd"
 RPROVIDES:${PN}-cl += "virtual-opencl-icd"
 RPROVIDES:${PN}-vulkan += "virtual-vulkan-icd"
 
