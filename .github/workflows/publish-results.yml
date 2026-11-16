@@ -42,12 +42,15 @@ jobs:
 
       # The results are the only artifacts named after a LAVA job definition
       # file (RESULT_NAME in .github/actions/lava-test-plans/action.yml).
+      # actions/download-artifact requests every matching artifact at once,
+      # which trips the GitHub API secondary rate limit; gh downloads them
+      # one at a time.
       - name: Download result files
-        uses: actions/download-artifact@v7
-        with:
-            pattern: "*.yaml"
-            path: artifacts
-            github-token: ${{ github.token }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh run download "${GITHUB_RUN_ID}" --repo "${GITHUB_REPOSITORY}" \
+            --pattern '*.yaml' --dir artifacts
 
       - name: "List files"
         id: listfiles
