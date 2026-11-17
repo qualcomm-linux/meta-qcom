@@ -99,6 +99,9 @@ runs:
           echo "PROJECT_NAME=${PROJECT}" >> "${VARS_OUT_PATH}/gh-variables.ini"
           echo "PROJECT=projects/${PROJECT}/" >> "${VARS_OUT_PATH}/gh-variables.ini"
           echo "LAVA_JOB_PRIORITY=50" >> "${VARS_OUT_PATH}/gh-variables.ini"
+          # Cancel jobs still queued after 1h, leaving them the rest of the
+          # 2h submit timeout in test-distro.yml to run
+          echo "LAVA_QUEUE_TIMEOUT=1" >> "${VARS_OUT_PATH}/gh-variables.ini"
           # OS_INFO can be omited
           echo "OS_INFO=qcom-distro" >> "${VARS_OUT_PATH}/gh-variables.ini"
           echo "AUDIO_CLIPS_BASE_DIR=/home/AudioClips/" >> "${VARS_OUT_PATH}/gh-variables.ini"
