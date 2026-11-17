@@ -17,8 +17,8 @@ if [ "$(blkid -o value -s TYPE "$DEV" 2>/dev/null)" != "ext4" ]; then
 fi
 
 # Run a read-only fsck check to detect corruptions
-e2fsck -n "$DEV" >/dev/null 2>&1
-err=$?
+err=0
+e2fsck -n "$DEV" >/dev/null 2>&1 || err=$?
 if [ "$err" -gt 4 ]; then
     echo "$DEV: filesystem corrupted (e2fsck error=$err), recreating"
     mkfs.ext4 -F "$DEV"
