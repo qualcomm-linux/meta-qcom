@@ -18,12 +18,11 @@ DEPENDS = " \
 SRC_URI = "git://github.com/onnxruntime/onnxruntime-qnn.git;protocol=https;nobranch=1;tag=v${PV};name=ort-qnn \
     git://github.com/dcleblanc/SafeInt.git;protocol=https;nobranch=1;name=safeint;tag=3.0.28;destsuffix=safeint \
     git://github.com/microsoft/GSL.git;protocol=https;nobranch=1;name=gsl;tag=v4.0.0;destsuffix=gsl \
-    file://0001-cmake-Rename-pkg-config-output-to-libonnxruntime_pr.patch \
-    file://0002-QNN-EP-Fix-ORT-header-include-path-and-multiarch-li.patch \
+    file://0001-cmake-skip-ort_core-patch-step-when-using-prebuilt-O.patch \
 "
 
 SRCREV_FORMAT = "ort-qnn_safeint_gsl"
-SRCREV_ort-qnn = "215ea95bd6df9ab24ba48193a6554dce8490337d"
+SRCREV_ort-qnn = "6c9a5e22a795d1576e056a73751a0f2f39d06894"
 SRCREV_safeint = "4cafc9196c4da9c817992b20f5253ef967685bf8"
 SRCREV_gsl = "1fcf53a2f64c72c76f5d84adb50d41e6c4467d23"
 
