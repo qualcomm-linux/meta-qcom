@@ -11,6 +11,13 @@ QCOM_BOOT_BINARY_DIRS ?= "${S} ${UNPACKDIR}/${BOOTBINARIES_IMMUTABLE}"
 
 QCOM_BOOT_IMG_SUBDIR ?= ""
 QCOM_BOOT_SAIL_SUBDIR ?= ""
+QCOM_BOOT_SAIL_FILES ?= " \
+    gpt_backup0.bin gpt_main0.bin prog_firehose_ddr.elf patch0.xml rawprogram0.xml sailhyp.elf \
+    sailsw1.elf rtsshyp.elf rtssjtagprogrammer.elf rtsssw1.elf rtsssw2.elf rtsssw3.elf rtsssw4.elf \
+    rtsssw5.elf rtsssw6.elf sail_nor_dlp.bin qsahara_device_programmer.xml tme_config.elf xbl_sc.elf \
+    signed_firmware_soc_view.elf sequencer_ram.elf oem_misc.mbn qti_misc.mbn device_programmer_ddr.elf \
+    xbl_config_devprg.elf \
+    "
 
 INHIBIT_DEFAULT_DEPS = "1"
 
@@ -38,15 +45,8 @@ do_deploy() {
         # Some firmware releases ship a separate SAIL image, used to flash external NOR flash, in
         # its own subdirectory. When present Deploy it under a matching subdirectory of DEPLOYDIR.
         if [ -n "${QCOM_BOOT_SAIL_SUBDIR}" ] && [ -d "${bootdir}/${QCOM_BOOT_SAIL_SUBDIR}" ]; then
-            SAIL_FILES="gpt_backup0.bin gpt_main0.bin prog_firehose_ddr.elf patch0.xml rawprogram0.xml sailhyp.elf \
-                        sailsw1.elf rtsshyp.elf rtssjtagprogrammer.elf rtsssw1.elf rtsssw2.elf rtsssw3.elf rtsssw4.elf \
-                        rtsssw5.elf rtsssw6.elf sail_nor_dlp.bin qsahara_device_programmer.xml tme_config.elf xbl_sc.elf \
-                        signed_firmware_soc_view.elf sequencer_ram.elf oem_misc.mbn qti_misc.mbn device_programmer_ddr.elf \
-                        xbl_config_devprg.elf \
-            "
-
             install -d ${DEPLOYDIR}/${QCOM_BOOT_IMG_SUBDIR}/${QCOM_BOOT_SAIL_SUBDIR}
-            for sail_file in ${SAIL_FILES}; do
+            for sail_file in ${QCOM_BOOT_SAIL_FILES}; do
                 [ -f "${bootdir}/${QCOM_BOOT_SAIL_SUBDIR}/${sail_file}" ] || continue
                 install -m 0644 ${bootdir}/${QCOM_BOOT_SAIL_SUBDIR}/${sail_file} ${DEPLOYDIR}/${QCOM_BOOT_IMG_SUBDIR}/${QCOM_BOOT_SAIL_SUBDIR}
             done
