@@ -1,13 +1,13 @@
 PLATFORM = "lemans"
-PBT_BUILD_DATE = "261104"
+PBT_BUILD_DATE = "261113"
 
 require common.inc
 
-SRC_URI[camxlib.sha256sum] = "4295615208fa8f7d2f155c938d8bc87fe58551813d009fd6c9abd4293c7a4015"
-SRC_URI[camx.sha256sum] = "66e3c39087cf879698578ac8b8a879e3636219ed2d467fe59ad14f14acc3a3b7"
-SRC_URI[chicdk.sha256sum] = "4683478e8fcec589fa718d9b685a5d47b7a1e44026d6ecbb1beac97325bca11a"
-SRC_URI[camxcommon.sha256sum] = "725a955e88e2dd90002819f982d6d1a9fa76266b4eb180b932b50a4ec1d35493"
-SRC_URI[camxtest.sha256sum] = "0b75bd23e981da16a5442e24e7e7acf7a82f147a4e0cb9d578a935ce32b75fcc"
+SRC_URI[camxlib.sha256sum] = "27c4ce06bb937fe5c9dfdcb98c33a2161af7f5083605e8de003a3b028242dd32"
+SRC_URI[camx.sha256sum] = "f519b0a80bdaab8e40b42c3f3f4dfa4b1a63978de21c8c89ff98a6ccc27e6b95"
+SRC_URI[chicdk.sha256sum] = "84f00b92eead9a3694a2481a52e4bee0c4dadb04dd8d627645ce263a46cb734c"
+SRC_URI[camxcommon.sha256sum] = "b406afdd09cb8a1d89e42d20cb4982ca0e29c4d2f7d327e4f15e4dedd4d5ad0f"
+SRC_URI[camxtest.sha256sum] = "deca35bb1f29e077de24c4f15d1053e0fbc9200873597ba6d773efd60c34ff1d"
 
 DEPENDS += " \
     opencv \
