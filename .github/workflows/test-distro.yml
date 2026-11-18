@@ -143,6 +143,49 @@ jobs:
           save_job_details: true
           result_file_name: "${{ matrix.target.result_file }}"
           test_job_file_name_prefix: "${{ inputs.distro_name }}${{ inputs.distro_suffix }}-"
+
+      # A job that did not run to the end, usually because it waited in the
+      # LAVA queue past the timeout above or was canceled there, leaves no
+      # results or an empty result file, and neither can fail the Test
+      # Results check. Report it as a failed LAVA job, in the format of the
+      # real results.
+      - name: Report missing results as a failure
+        id: missing
+        if: ${{ !cancelled() }}
+        env:
+          RESULT_FILE: "${{ matrix.target.result_file }}.xml"
+          JOB_DETAILS_PREFIX: "${{ inputs.distro_name }}${{ inputs.distro_suffix }}-test-job-"
+        run: |
+          if grep -q '<testcase' "${RESULT_FILE}" 2>/dev/null; then
+              exit 0
+          fi
+          MESSAGE="No test results, no LAVA job was recorded"
+          JOB_URL=$(jq -r '.url // empty' "${JOB_DETAILS_PREFIX}"*.json 2>/dev/null || true)
+          if [ -n "${JOB_URL}" ]; then
+              MESSAGE="No test results from ${JOB_URL}"
+          fi
+          echo "${MESSAGE}"
+          cat > "${RESULT_FILE}" <<EOF
+          <?xml version="1.0" encoding="utf-8"?>
+          <testsuites>
+            <testsuite name="lava" tests="1" failures="1">
+              <testcase name="job" classname="lava">
+                <failure message="${MESSAGE}"/>
+              </testcase>
+            </testsuite>
+          </testsuites>
+          EOF
+          echo "missing=true" >> "$GITHUB_OUTPUT"
+
+      - name: Upload missing results report
+        if: ${{ !cancelled() && steps.missing.outputs.missing == 'true' }}
+        uses: actions/upload-artifact@v6
+        with:
+          name: ${{ matrix.target.result_file }}
+          path: ${{ matrix.target.result_file }}.xml
+          # replace an empty result, or the result of a previous attempt
+          overwrite: true
+
       - uses: qualcomm-linux/github-action-matrix-outputs-write@v3
         if: always()
         id: out
@@ -265,6 +308,48 @@ jobs:
           save_job_details: true
           result_file_name: "${{ matrix.target.result_file }}"
           test_job_file_name_prefix: "${{ inputs.distro_name }}${{ inputs.distro_suffix }}-"
+
+      # A job that did not run to the end, usually because it waited in the
+      # LAVA queue past the timeout above or was canceled there, leaves no
+      # results or an empty result file, and neither can fail the Test
+      # Results check. Report it as a failed LAVA job, in the format of the
+      # real results.
+      - name: Report missing results as a failure
+        id: missing
+        if: ${{ !cancelled() }}
+        env:
+          RESULT_FILE: "${{ matrix.target.result_file }}.xml"
+          JOB_DETAILS_PREFIX: "${{ inputs.distro_name }}${{ inputs.distro_suffix }}-test-job-"
+        run: |
+          if grep -q '<testcase' "${RESULT_FILE}" 2>/dev/null; then
+              exit 0
+          fi
+          MESSAGE="No test results, no LAVA job was recorded"
+          JOB_URL=$(jq -r '.url // empty' "${JOB_DETAILS_PREFIX}"*.json 2>/dev/null || true)
+          if [ -n "${JOB_URL}" ]; then
+              MESSAGE="No test results from ${JOB_URL}"
+          fi
+          echo "${MESSAGE}"
+          cat > "${RESULT_FILE}" <<EOF
+          <?xml version="1.0" encoding="utf-8"?>
+          <testsuites>
+            <testsuite name="lava" tests="1" failures="1">
+              <testcase name="job" classname="lava">
+                <failure message="${MESSAGE}"/>
+              </testcase>
+            </testsuite>
+          </testsuites>
+          EOF
+          echo "missing=true" >> "$GITHUB_OUTPUT"
+
+      - name: Upload missing results report
+        if: ${{ !cancelled() && steps.missing.outputs.missing == 'true' }}
+        uses: actions/upload-artifact@v6
+        with:
+          name: ${{ matrix.target.result_file }}
+          path: ${{ matrix.target.result_file }}.xml
+          # replace an empty result, or the result of a previous attempt
+          overwrite: true
 
   publish-test-summary:
     name: "Publish Summary ${{ inputs.distro_name }}${{ inputs.distro_suffix }}"
