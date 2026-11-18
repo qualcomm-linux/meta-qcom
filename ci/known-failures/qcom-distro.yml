@@ -32,8 +32,3 @@ shikra-iqs-evk:
   # comes with a new QTEE boot-critical binary.
   - test: hotplug
     comment: https://github.com/qualcomm-linux/meta-qcom/issues/3643
-
-sm8750-mtp:
-  # average FPS stays around 81 on a 120 Hz display, below the 102 threshold
-  - test: weston-simple-egl
-    comment: average FPS below the refresh rate threshold
