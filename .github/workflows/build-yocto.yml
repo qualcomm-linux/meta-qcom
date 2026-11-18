@@ -351,7 +351,6 @@ jobs:
           - rb1-core-kit
           - rb3gen2-core-kit
           - shikra-evk
-          - sm8750-mtp
         distro:
           - name: nodistro
             yamlfile: ""
