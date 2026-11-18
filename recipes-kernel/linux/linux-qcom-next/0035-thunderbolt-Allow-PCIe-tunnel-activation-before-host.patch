@@ -1,0 +1,76 @@
+From 2ca7401e702453de7981c07222d8870673cc5b77 Mon Sep 17 00:00:00 2001
+From: Konrad Dybcio <konrad.dybcio@oss.qualcomm.com>
+Date: Tue, 29 Sep 2026 14:23:47 +0200
+Subject: [PATCH 35/85] thunderbolt: Allow PCIe tunnel activation before host
+ Detect
+
+PCIe tunnel activation normally waits for both PCIe adapters to reach
+Detect before enabling the tunnel.
+
+Some host adapters cannot reach Detect while their native PCIe controller
+is powered down. Allow an NHI to skip the pre-enable Detect check for the
+root host adapter so that enabling the tunnel lets the controller resume
+and start link training. The remote-adapter Detect check remains required.
+
+Assisted-by: LLM
+Signed-off-by: Konrad Dybcio <konrad.dybcio@oss.qualcomm.com>
+Upstream-Status: Pending
+---
+ drivers/thunderbolt/tunnel.c | 17 +++++++++++++----
+ include/linux/thunderbolt.h  |  3 +++
+ 2 files changed, 16 insertions(+), 4 deletions(-)
+
+diff --git a/drivers/thunderbolt/tunnel.c b/drivers/thunderbolt/tunnel.c
+index fdaff55baead..8b2953fe97ee 100644
+--- a/drivers/thunderbolt/tunnel.c
++++ b/drivers/thunderbolt/tunnel.c
+@@ -317,12 +317,21 @@ static int tb_pci_pre_activate(struct tb_tunnel *tunnel)
+ {
+ 	struct tb_port *down = tunnel->src_port;
+ 	struct tb_port *up = tunnel->dst_port;
++	bool skip_host_pcie_detect;
+ 	int ret;
+ 
+-	ret = tb_switch_is_usb4(down->sw) ?
+-		tb_pci_port_ltssm_state_detect(down) : 0;
+-	if (ret)
+-		return ret;
++	/*
++	 * Some host adapters cannot reach Detect while their native PCIe
++	 * controller is powered down. Skip this pre-enable check so that
++	 * enabling the tunnel lets the controller resume and start link training.
++	 */
++	skip_host_pcie_detect = tunnel->tb->nhi->skip_host_pcie_detect;
++	if (!skip_host_pcie_detect || down->sw != tunnel->tb->root_switch) {
++		ret = tb_switch_is_usb4(down->sw) ?
++			tb_pci_port_ltssm_state_detect(down) : 0;
++		if (ret)
++			return ret;
++	}
+ 
+ 	return tb_switch_is_usb4(up->sw) ?
+ 		tb_pci_port_ltssm_state_detect(up) : 0;
+diff --git a/include/linux/thunderbolt.h b/include/linux/thunderbolt.h
+index a927463cc36f..8b5749d8bfcd 100644
+--- a/include/linux/thunderbolt.h
++++ b/include/linux/thunderbolt.h
+@@ -514,6 +514,8 @@ void tb_service_properties_changed(struct tb_service *svc);
+  *		    MSI-X is used.
+  * @hop_count: Number of rings (end point hops) supported by NHI.
+  * @quirks: NHI specific quirks if any
++ * @skip_host_pcie_detect: Skip the pre-enable Detect check for the host PCIe
++ *	adapter. The native PCIe controller starts link training later.
+  * @domain_released: Completed when domain has been fully released
+  * @host_reset: Host router was reset on driver load, or forced on system
+  *		shutdown/reboot. When set, tb_stop() asserts DPR on connected
+@@ -533,6 +535,7 @@ struct tb_nhi {
+ 	struct work_struct interrupt_work;
+ 	u32 hop_count;
+ 	unsigned long quirks;
++	bool skip_host_pcie_detect;
+ 	struct completion domain_released;
+ 	bool host_reset;
+ };
+-- 
+2.34.1
+

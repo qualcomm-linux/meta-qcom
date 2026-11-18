@@ -1,0 +1,173 @@
+From a277b38c9d889e9c799b40cf117bb0dd76531302 Mon Sep 17 00:00:00 2001
+From: Konrad Dybcio <konrad.dybcio@oss.qualcomm.com>
+Date: Wed, 22 Apr 2026 16:49:54 +0200
+Subject: [PATCH 51/85] usb: dwc3: Notify XHCI core of tunneled status
+
+The Thunderbolt framework relies on the USB core to create device links
+for tunneled ports, so that the USB3 controller is only kept
+runtime-resumed for the duration of the tunneling. This depends on
+first knowing whether a connection is tunneled or native.
+
+Add the logic to handle that for DWC3 controllers.
+
+Acked-by: Thinh Nguyen <Thinh.Nguyen@synopsys.com>
+Signed-off-by: Konrad Dybcio <konrad.dybcio@oss.qualcomm.com>
+Upstream-Status: Pending
+---
+ drivers/usb/dwc3/core.c      | 18 ++++++++++++++++++
+ drivers/usb/dwc3/core.h      | 18 ++++++++++++++++++
+ drivers/usb/dwc3/host.c      | 14 ++++++++++++++
+ drivers/usb/host/xhci-plat.c |  9 +++++----
+ drivers/usb/host/xhci-plat.h |  3 ++-
+ 5 files changed, 57 insertions(+), 5 deletions(-)
+
+diff --git a/drivers/usb/dwc3/core.c b/drivers/usb/dwc3/core.c
+index efc172cf5e9e..2157ad8f8dd7 100644
+--- a/drivers/usb/dwc3/core.c
++++ b/drivers/usb/dwc3/core.c
+@@ -162,6 +162,24 @@ void dwc3_set_prtcap(struct dwc3 *dwc, u32 mode, bool ignore_susphy)
+ }
+ EXPORT_SYMBOL_GPL(dwc3_set_prtcap);
+ 
++#if IS_ENABLED(CONFIG_USB_DWC3_HOST) || IS_ENABLED(CONFIG_USB_DWC3_DUAL_ROLE)
++enum usb_link_tunnel_mode dwc3_link_tunnel_mode(struct dwc3 *dwc, u8 port)
++{
++	/* Prior versions had no CIO support */
++	if (!DWC3_VER_IS_WITHIN(DWC31, 191A, ANY))
++		return USB_LINK_UNKNOWN;
++
++	/* Not all DWC3 instances have CIO HW, trust the platform firmware */
++	if (!device_property_present(dwc->dev, "usb4-host-interface"))
++		return USB_LINK_UNKNOWN;
++
++	if (dwc3_readl(dwc, DWC3_CIOCTRL(port)) & DWC3_CIOCTRL_CIO_EN)
++		return USB_LINK_TUNNELED;
++
++	return USB_LINK_NATIVE;
++}
++#endif
++
+ static void __dwc3_set_mode(struct work_struct *work)
+ {
+ 	struct dwc3 *dwc = work_to_dwc(work);
+diff --git a/drivers/usb/dwc3/core.h b/drivers/usb/dwc3/core.h
+index c2f4c5354824..4bbccd5f38e8 100644
+--- a/drivers/usb/dwc3/core.h
++++ b/drivers/usb/dwc3/core.h
+@@ -180,6 +180,11 @@
+ #define DWC3_OEVTEN		0xcc0C
+ #define DWC3_OSTS		0xcc10
+ 
++/* CIO regs */
++#define DWC3_CIO_BASE(n)	(0xcd20 + ((n) * 0x30))
++#define DWC3_CIOCTRL(n)		(DWC3_CIO_BASE(n) + 0x00)
++#define DWC3_CIOCTRL_CIO_EN	BIT(0)
++
+ #define DWC3_LLUCTL(n)		(0xd024 + ((n) * 0x80))
+ #define DWC3_LLINKDBGCTRL(n)	(0xd058 + ((n) * 0x80))
+ #define DWC3_LLINKDBGCTRL_RETRY_DP	BIT(31)
+@@ -1332,6 +1337,7 @@ struct dwc3 {
+ #define DWC31_REVISION_170A	0x3137302a
+ #define DWC31_REVISION_180A	0x3138302a
+ #define DWC31_REVISION_190A	0x3139302a
++#define DWC31_REVISION_191A	0x3139312a
+ #define DWC31_REVISION_200A	0x3230302a
+ 
+ #define DWC32_REVISION_ANY	0x0
+@@ -1680,11 +1686,23 @@ static inline void dwc3_pre_run_stop(struct dwc3 *dwc, bool is_on)
+ #if IS_ENABLED(CONFIG_USB_DWC3_HOST) || IS_ENABLED(CONFIG_USB_DWC3_DUAL_ROLE)
+ int dwc3_host_init(struct dwc3 *dwc);
+ void dwc3_host_exit(struct dwc3 *dwc);
++
++/**
++ * dwc3_link_tunnel_mode - Check whether the link is tunneled over TBT/USB4
++ * @dwc: Pointer to DWC3 controller context
++ * @port: 0-based port index
++ *
++ * Returns: USB_LINK_TUNNELED if tunneled, USB_LINK_NATIVE if not, or
++ *          when the controller does not have USB4 capabilities.
++ */
++enum usb_link_tunnel_mode dwc3_link_tunnel_mode(struct dwc3 *dwc, u8 port);
+ #else
+ static inline int dwc3_host_init(struct dwc3 *dwc)
+ { return 0; }
+ static inline void dwc3_host_exit(struct dwc3 *dwc)
+ { }
++static inline enum usb_link_tunnel_mode dwc3_link_tunnel_mode(struct dwc3 *dwc, u8 port)
++{ return USB_LINK_UNKNOWN; }
+ #endif
+ 
+ #if IS_ENABLED(CONFIG_USB_DWC3_GADGET) || IS_ENABLED(CONFIG_USB_DWC3_DUAL_ROLE)
+diff --git a/drivers/usb/dwc3/host.c b/drivers/usb/dwc3/host.c
+index 3fb8be8be590..7b858965717b 100644
+--- a/drivers/usb/dwc3/host.c
++++ b/drivers/usb/dwc3/host.c
+@@ -78,8 +78,22 @@ static void dwc3_xhci_plat_start(struct usb_hcd *hcd)
+ 	dwc3_enable_susphy(dwc, true);
+ }
+ 
++static int dwc3_xhci_update_device(struct usb_hcd *hcd, struct usb_device *udev)
++{
++	struct platform_device *pdev;
++	struct dwc3 *dwc;
++
++	pdev = to_platform_device(hcd->self.controller);
++	dwc = dev_get_drvdata(pdev->dev.parent);
++
++	udev->tunnel_mode = dwc3_link_tunnel_mode(dwc, udev->portnum - 1);
++
++	return 0;
++}
++
+ static const struct xhci_plat_priv dwc3_xhci_plat_quirk = {
+ 	.plat_start = dwc3_xhci_plat_start,
++	.update_device = dwc3_xhci_update_device,
+ };
+ 
+ static void dwc3_host_fill_xhci_irq_res(struct dwc3 *dwc,
+diff --git a/drivers/usb/host/xhci-plat.c b/drivers/usb/host/xhci-plat.c
+index a7990d3ca378..641e31976240 100644
+--- a/drivers/usb/host/xhci-plat.c
++++ b/drivers/usb/host/xhci-plat.c
+@@ -43,12 +43,13 @@ static int xhci_plat_update_device(struct usb_hcd *hcd, struct usb_device *udev)
+ {
+ 	struct xhci_hcd *xhci = hcd_to_xhci(hcd);
+ 	struct xhci_plat_priv *priv = hcd_to_xhci_priv(hcd);
++	int ret;
+ 
+-	if (!xhci->portsc_tunnel_reporting && priv->tunnel_mode &&
++	if (!xhci->portsc_tunnel_reporting && priv->update_device &&
+ 	    hcd->speed >= HCD_USB3 && !udev->parent->parent) {
+-		struct xhci_port *port = xhci->usb3_rhub.ports[udev->portnum - 1];
+-
+-		udev->tunnel_mode = priv->tunnel_mode(hcd, port->hcd_portnum);
++		ret = priv->update_device(hcd, udev);
++		if (ret)
++			return ret;
+ 	}
+ 
+ 	return xhci_update_device(hcd, udev);
+diff --git a/drivers/usb/host/xhci-plat.h b/drivers/usb/host/xhci-plat.h
+index c5042766a486..91333605c46b 100644
+--- a/drivers/usb/host/xhci-plat.h
++++ b/drivers/usb/host/xhci-plat.h
+@@ -10,6 +10,7 @@
+ 
+ struct device;
+ struct platform_device;
++struct usb_device;
+ struct usb_hcd;
+ 
+ struct xhci_plat_priv {
+@@ -22,7 +23,7 @@ struct xhci_plat_priv {
+ 	int (*suspend_quirk)(struct usb_hcd *);
+ 	int (*resume_quirk)(struct usb_hcd *);
+ 	int (*post_resume_quirk)(struct usb_hcd *);
+-	enum usb_link_tunnel_mode (*tunnel_mode)(struct usb_hcd *hcd, int portnum);
++	int (*update_device)(struct usb_hcd *hcd, struct usb_device *udev);
+ };
+ 
+ #define hcd_to_xhci_priv(h) ((struct xhci_plat_priv *)hcd_to_xhci(h)->priv)
+-- 
+2.34.1
+

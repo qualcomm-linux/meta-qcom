@@ -1,0 +1,49 @@
+From 18221f893fcd941b65cd5476ab60cdc6fbbd5603 Mon Sep 17 00:00:00 2001
+From: Konrad Dybcio <konrad.dybcio@oss.qualcomm.com>
+Date: Wed, 13 May 2026 19:08:34 +0200
+Subject: [PATCH 45/85] SMB2360 repeater discoveries
+
+Upstream-Status: Pending
+---
+ .../phy/qualcomm/phy-qcom-eusb2-repeater.c    | 25 ++++++++++++++++---
+ 1 file changed, 22 insertions(+), 3 deletions(-)
+
+diff --git a/drivers/phy/qualcomm/phy-qcom-eusb2-repeater.c b/drivers/phy/qualcomm/phy-qcom-eusb2-repeater.c
+index 7db2fbff6163..93192ac0dd4c 100644
+--- a/drivers/phy/qualcomm/phy-qcom-eusb2-repeater.c
++++ b/drivers/phy/qualcomm/phy-qcom-eusb2-repeater.c
+@@ -81,9 +81,28 @@ static const struct eusb2_repeater_init_tbl_reg pm8550b_init_tbl[] = {
+ };
+ 
+ static const struct eusb2_repeater_init_tbl_reg smb2360_init_tbl[] = {
+-	{ EUSB2_TUNE_IUSB2, 0x5 },
+-	{ EUSB2_TUNE_SQUELCH_U, 0x3 },
+-	{ EUSB2_TUNE_USB2_PREEM, 0x2 },
++// upstream as-is
++	// { EUSB2_TUNE_IUSB2, 0x5 },
++	// { EUSB2_TUNE_SQUELCH_U, 0x3 },
++	// { EUSB2_TUNE_USB2_PREEM, 0x2 },
++
++// crd port01:
++	// { EUSB2_TUNE_IUSB2, 0x06 },
++	// { EUSB2_TUNE_USB2_SLEW, 0x02 },
++	// { EUSB2_TUNE_USB2_PREEM, 0x02 },
++
++// crd port2:
++	{ EUSB2_TUNE_IUSB2, 0x0c },
++	{ EUSB2_TUNE_HSDISC, 0x04 },
++	{ EUSB2_TUNE_USB2_SLEW, 0x02 },
++	{ EUSB2_TUNE_USB2_PREEM, 0x07 },
++
++// only for usb012
++	{ EUSB2_TUNE_SQUELCH_U, 0x06 },
++
++// eUSB2 host mode
++	{ EUSB2_FORCE_EN_5, F_CLK_19P2M_EN},
++	{ EUSB2_FORCE_VAL_5, V_CLK_19P2M_EN},
+ };
+ 
+ static const struct eusb2_repeater_init_tbl_reg smb2370_init_tbl[] = {
+-- 
+2.34.1
+

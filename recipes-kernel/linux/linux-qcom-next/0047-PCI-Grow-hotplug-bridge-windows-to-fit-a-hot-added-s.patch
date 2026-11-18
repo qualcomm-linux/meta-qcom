@@ -1,0 +1,94 @@
+From 779f60f5d4a96e4558f6aea11d759d4b1279ab6d Mon Sep 17 00:00:00 2001
+From: Konrad Dybcio <konrad.dybcio@oss.qualcomm.com>
+Date: Wed, 1 Jul 2026 18:33:10 +0200
+Subject: [PATCH 47/85] PCI: Grow hotplug bridge windows to fit a hot-added
+ switch subtree
+
+When a hotplug bridge is populated, pci_assign_unassigned_bridge_resources()
+sizes, distributes and assigns the resources of the hierarchy that appeared
+behind it.  The sizing pass __pci_bus_size_bridges(parent) also covers the
+hotplug bridge's own windows, because @parent is the bridge's secondary bus
+whose ->self is the bridge itself.
+
+However, pbus_size_mem() and pbus_size_io() return early for windows that
+are already assigned (resource_assigned()).  The hotplug bridge's windows
+were assigned at boot and sized to a single hotplug reservation
+(pci_hotplug_mmio_size, default 2 MB).  They therefore stay frozen at that
+boot-time size and are never re-placed into the parent aperture, even when
+much more space is free there.
+
+This breaks Thunderbolt/USB4 docks that contain a PCIe switch fanning out
+to several downstream hotplug ports.  Each downstream port wants its own
+hotplug reservation, so the demand is N * pci_hotplug_mmio_size, but the
+upstream root port forwards only the one reservation-worth of space it was
+frozen at.  The distributor can only subdivide that fixed window, so only
+one downstream port gets a usable window and the rest fail with
+"can't assign; no space" - while the host bridge aperture still has plenty
+of room.  Example: a root port with a 2 MB window in front of a switch
+with three active downstream ports (3 * 2 MB demand), backed by a host
+bridge with 13 MB of MMIO and 64 GB of prefetchable space free.
+
+Release the hotplug bridge's own windows before the sizing loop when they
+hold no assigned resources.  Once unassigned, __pci_bus_size_bridges()
+re-sizes them to cover the whole subtree and __pci_bridge_assign_resources()
+re-places them into the larger available parent aperture, after which the
+downstream ports are distributed within the grown window.
+
+Only windows without assigned children are released, so an already
+populated hierarchy (rescan, or a partially used bridge) is left
+untouched; pci_bridge_release_resources() additionally guards on
+resource_assigned().
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Upstream-Status: Pending
+---
+ drivers/pci/setup-bus.c | 33 +++++++++++++++++++++++++++++++++
+ 1 file changed, 33 insertions(+)
+
+diff --git a/drivers/pci/setup-bus.c b/drivers/pci/setup-bus.c
+index ed16ef7c26fa..594d70a5aa6c 100644
+--- a/drivers/pci/setup-bus.c
++++ b/drivers/pci/setup-bus.c
+@@ -2267,6 +2267,39 @@ void pci_assign_unassigned_bridge_resources(struct pci_dev *bridge)
+ 	LIST_HEAD(fail_head);
+ 	int ret;
+ 
++	/*
++	 * If this is a hotplug bridge, release its own bridge windows before
++	 * sizing the hierarchy that has just appeared behind it.
++	 *
++	 * The sizing pass below (__pci_bus_size_bridges(parent)) also covers
++	 * this bridge's own windows, since @parent is the secondary bus whose
++	 * ->self is @bridge.  However, pbus_size_mem()/pbus_size_io() bail out
++	 * on windows that are already assigned, so a window keeps whatever size
++	 * it was given at boot - a single hotplug reservation
++	 * (pci_hotplug_mmio_size).  That is not enough when the hot-added
++	 * device is a switch fanning out to several downstream hotplug ports:
++	 * each port wants its own reservation, the sum exceeds the frozen
++	 * window, and only one port ends up with a usable window while free
++	 * parent aperture sits unused.
++	 *
++	 * Releasing the windows lets them be re-sized to fit the whole subtree
++	 * and re-placed into the larger available parent aperture.  Only
++	 * windows that hold no assigned resources are released, so an already
++	 * populated hierarchy (e.g. a rescan) is left undisturbed;
++	 * pci_bridge_release_resources() enforces that via resource_assigned().
++	 */
++	if (bridge->is_hotplug_bridge) {
++		int i;
++
++		for (i = 0; i < PCI_P2P_BRIDGE_RESOURCE_NUM; i++) {
++			struct resource *win =
++				pci_resource_n(bridge, PCI_BRIDGE_RESOURCES + i);
++
++			if (win->flags && !win->child)
++				pci_bridge_release_resources(parent, win);
++		}
++	}
++
+ 	while (1) {
+ 		__pci_bus_size_bridges(parent, &add_list);
+ 
+-- 
+2.34.1
+

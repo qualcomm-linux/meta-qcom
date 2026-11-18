@@ -1,0 +1,89 @@
+From 834389b100c90d99848cbf773781d25f38b8c46f Mon Sep 17 00:00:00 2001
+From: Konrad Dybcio <konrad.dybcio@oss.qualcomm.com>
+Date: Wed, 16 Sep 2026 13:16:21 +0200
+Subject: [PATCH 63/85] usb: hub: link USB4 before tunneled device enumeration
+
+Create the tunneled USB3 device link before usb_new_device() and remove
+it on enumeration failure, keeping the USB4 host interface active
+throughout registration.
+
+Assisted-by: LLM
+Signed-off-by: Konrad Dybcio <konrad.dybcio@oss.qualcomm.com>
+Upstream-Status: Pending
+---
+ drivers/usb/core/hub.c | 29 ++++++++++++++++++++++-------
+ 1 file changed, 22 insertions(+), 7 deletions(-)
+
+diff --git a/drivers/usb/core/hub.c b/drivers/usb/core/hub.c
+index 7ce357c5a688..6d8963b19c76 100644
+--- a/drivers/usb/core/hub.c
++++ b/drivers/usb/core/hub.c
+@@ -2305,6 +2305,15 @@ static void hub_disconnect_children(struct usb_device *udev)
+ 	}
+ }
+ 
++static void hub_remove_usb4_devlink(struct usb_device *udev)
++{
++	if (!udev->usb4_link)
++		return;
++
++	device_link_del(udev->usb4_link);
++	udev->usb4_link = NULL;
++}
++
+ /**
+  * usb_disconnect - disconnect a device (usbcore-internal)
+  * @pdev: pointer to device being disconnected
+@@ -2376,8 +2385,7 @@ void usb_disconnect(struct usb_device **pdev)
+ 	usb_remove_ep_devs(&udev->ep0);
+ 	usb_unlock_device(udev);
+ 
+-	if (udev->usb4_link)
+-		device_link_del(udev->usb4_link);
++	hub_remove_usb4_devlink(udev);
+ 
+ 	/* Unregister the device.  The device driver is responsible
+ 	 * for de-configuring the device and invoking the remove-device
+@@ -2746,8 +2754,10 @@ int usb_new_device(struct usb_device *udev)
+ 	return err;
+ 
+ out_del_dev:
++	hub_remove_usb4_devlink(udev);
+ 	device_del(&udev->dev);
+ fail:
++	hub_remove_usb4_devlink(udev);
+ 	usb_set_device_state(udev, USB_STATE_NOTATTACHED);
+ 	pm_runtime_disable(&udev->dev);
+ 	pm_runtime_set_suspended(&udev->dev);
+@@ -5633,6 +5643,16 @@ static void hub_port_connect(struct usb_hub *hub, int port1, u16 portstatus,
+ 		spin_unlock_irq(&device_state_lock);
+ 		mutex_unlock(&usb_port_peer_mutex);
+ 
++		/*
++		 * Establish the USB4 dependency before usb_new_device() starts
++		 * probing the device. In particular, hub descriptor reads must
++		 * keep the USB4 host interface runtime-resumed.
++		 */
++		if (!status && udev->speed >= USB_SPEED_SUPER &&
++		    udev->tunnel_mode != USB_LINK_NATIVE) {
++			hub_add_usb4_devlink(udev);
++		}
++
+ 		/* Run it through the hoops (find a driver, etc) */
+ 		if (!status) {
+ 			status = usb_new_device(udev);
+@@ -5656,11 +5676,6 @@ static void hub_port_connect(struct usb_hub *hub, int port1, u16 portstatus,
+ 		if (status)
+ 			dev_dbg(hub->intfdev, "%dmA power budget left\n", status);
+ 
+-		/* Tunneled USB3 devices depend on USB4 Host Interface, set device link to it */
+-		if (udev->speed >= USB_SPEED_SUPER &&
+-		    udev->tunnel_mode != USB_LINK_NATIVE)
+-			hub_add_usb4_devlink(udev);
+-
+ 		return;
+ 
+ loop_disable:
+-- 
+2.34.1
+

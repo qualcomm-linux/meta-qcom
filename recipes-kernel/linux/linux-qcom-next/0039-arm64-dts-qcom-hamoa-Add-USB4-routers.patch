@@ -1,0 +1,910 @@
+From 6b6d45eaa32092af68c14229416b3662d0a342de Mon Sep 17 00:00:00 2001
+From: Konrad Dybcio <konrad.dybcio@oss.qualcomm.com>
+Date: Thu, 27 Mar 2025 16:32:17 +0100
+Subject: [PATCH 39/85] arm64: dts: qcom: hamoa: Add USB4 routers
+
+The Hamoa platform features 3 custom USB4v1 (40 Gbps via a Gen3x2 link)
+Host Routers. Each one of them is connected to a USB3.1 Gen2 controller
+and a Gen1x16 PCIe RC.
+
+Additionally, they are all connected to a DP crossbar, letting any of
+the three USB4-capable (sans DP3) DPTX controllers be runtime muxed to
+any of the two DPIN ports of either of the three USB4 host routers.
+
+The host routers are also compatible with Thunderbolt 3 and newer.
+
+Most designs pair the router with an on-board Parade PS8830 or PS8833
+retimer to ensure signal integrity.
+
+Describe them and connect the relevant protocol controllers.
+
+Signed-off-by: Konrad Dybcio <konrad.dybcio@oss.qualcomm.com>
+Upstream-Status: Pending
+---
+ arch/arm64/boot/dts/qcom/hamoa.dtsi  | 698 +++++++++++++++++++++++++++
+ arch/arm64/boot/dts/qcom/x1-crd.dtsi |  51 +-
+ 2 files changed, 719 insertions(+), 30 deletions(-)
+
+diff --git a/arch/arm64/boot/dts/qcom/hamoa.dtsi b/arch/arm64/boot/dts/qcom/hamoa.dtsi
+index 787085ea1869..2961635ea96c 100644
+--- a/arch/arm64/boot/dts/qcom/hamoa.dtsi
++++ b/arch/arm64/boot/dts/qcom/hamoa.dtsi
+@@ -4208,6 +4208,8 @@ pcie2_port0: pcie@0,0 {
+ 				reg = <0x0 0x0 0x0 0x0 0x0>;
+ 				bus-range = <0x01 0xff>;
+ 
++				usb4-host-interface = <&usb4_router2>;
++
+ 				#address-cells = <3>;
+ 				#size-cells = <2>;
+ 				ranges;
+@@ -4321,6 +4323,8 @@ pcie1_port0: pcie@0,0 {
+ 				reg = <0x0 0x0 0x0 0x0 0x0>;
+ 				bus-range = <0x01 0xff>;
+ 
++				usb4-host-interface = <&usb4_router1>;
++
+ 				#address-cells = <3>;
+ 				#size-cells = <2>;
+ 				ranges;
+@@ -4429,6 +4433,8 @@ pcie0_port0: pcie@0,0 {
+ 				reg = <0x0 0x0 0x0 0x0 0x0>;
+ 				bus-range = <0x01 0xff>;
+ 
++				usb4-host-interface = <&usb4_router0>;
++
+ 				#address-cells = <3>;
+ 				#size-cells = <2>;
+ 				ranges;
+@@ -5668,6 +5674,8 @@ &mc_virt SLAVE_EBI1 QCOM_ICC_TAG_ALWAYS>,
+ 			phy-names = "usb2-phy",
+ 				    "usb3-phy";
+ 
++			usb4-host-interface = <&usb4_router2>;
++
+ 			snps,dis_u2_susphy_quirk;
+ 			snps,dis_enblslpm_quirk;
+ 			snps,usb3_lpm_capable;
+@@ -5906,6 +5914,8 @@ &mc_virt SLAVE_EBI1 QCOM_ICC_TAG_ALWAYS>,
+ 			phy-names = "usb2-phy",
+ 				    "usb3-phy";
+ 
++			usb4-host-interface = <&usb4_router0>;
++
+ 			snps,dis_u2_susphy_quirk;
+ 			snps,dis_enblslpm_quirk;
+ 			snps,usb3_lpm_capable;
+@@ -5997,6 +6007,8 @@ &mc_virt SLAVE_EBI1 QCOM_ICC_TAG_ALWAYS>,
+ 			phy-names = "usb2-phy",
+ 				    "usb3-phy";
+ 
++			usb4-host-interface = <&usb4_router1>;
++
+ 			snps,dis_u2_susphy_quirk;
+ 			snps,dis_enblslpm_quirk;
+ 			snps,usb3_lpm_capable;
+@@ -7844,6 +7856,102 @@ rx-pins {
+ 				};
+ 			};
+ 
++			usb4_0_sbrx_active: usb4-0-sbrx-active-state {
++				pins = "gpio163";
++				function = "usb0_sbrx";
++				drive-strength = <10>;
++				bias-disable;
++				output-disable;
++			};
++
++			usb4_0_sbrx_reset: usb4-0-sbrx-reset-state {
++				pins = "gpio163";
++				function = "gpio";
++				drive-strength = <10>;
++				bias-pull-down;
++				output-disable;
++			};
++
++			usb4_0_sbtx_active: usb4-0-sbtx-active-state {
++				pins = "gpio164";
++				function = "usb0_sbtx";
++				drive-strength = <10>;
++				bias-pull-up;
++				output-disable;
++			};
++
++			usb4_0_sbtx_reset: usb4-0-sbtx-reset-state {
++				pins = "gpio164";
++				function = "gpio";
++				drive-strength = <10>;
++				bias-pull-down;
++				output-low;
++			};
++
++			usb4_1_sbrx_active: usb4-1-sbrx-active-state {
++				pins = "gpio172";
++				function = "usb1_sbrx";
++				drive-strength = <10>;
++				bias-disable;
++				output-disable;
++			};
++
++			usb4_1_sbrx_reset: usb4-1-sbrx-reset-state {
++				pins = "gpio172";
++				function = "gpio";
++				drive-strength = <10>;
++				bias-pull-down;
++				output-disable;
++			};
++
++			usb4_1_sbtx_active: usb4-1-sbtx-active-state {
++				pins = "gpio173";
++				function = "usb1_sbtx";
++				drive-strength = <10>;
++				bias-pull-up;
++				output-disable;
++			};
++
++			usb4_1_sbtx_reset: usb4-1-sbtx-reset-state {
++				pins = "gpio173";
++				function = "gpio";
++				drive-strength = <10>;
++				bias-pull-down;
++				output-low;
++			};
++
++			usb4_2_sbrx_active: usb4-2-sbrx-active-state {
++				pins = "gpio181";
++				function = "usb2_sbrx";
++				drive-strength = <10>;
++				bias-disable;
++				output-disable;
++			};
++
++			usb4_2_sbrx_reset: usb4-2-sbrx-reset-state {
++				pins = "gpio181";
++				function = "gpio";
++				drive-strength = <10>;
++				bias-pull-down;
++				output-disable;
++			};
++
++			usb4_2_sbtx_active: usb4-2-sbtx-active-state {
++				pins = "gpio182";
++				function = "usb2_sbtx";
++				drive-strength = <10>;
++				bias-pull-up;
++				output-disable;
++			};
++
++			usb4_2_sbtx_reset: usb4-2-sbtx-reset-state {
++				pins = "gpio182";
++				function = "gpio";
++				drive-strength = <10>;
++				bias-pull-down;
++				output-low;
++			};
++
+ 			sdc2_default: sdc2-default-state {
+ 				clk-pins {
+ 					pins = "sdc2_clk";
+@@ -10316,6 +10424,596 @@ pcie_smmu: iommu@15400000 {
+ 			status = "reserved"; /* Controlled by Gunyah. */
+ 		};
+ 
++		usb4_router2: usb4-router@15500000 {
++			compatible = "qcom,x1e80100-usb4-hr";
++			reg = <0x0 0x15500000 0x0 0x70>,
++			      <0x0 0x15500070 0x0 0x500>,
++			      <0x0 0x15501000 0x0 0x1000>,
++			      <0x0 0x15502000 0x0 0x1000>,
++			      <0x0 0x15503000 0x0 0x1000>,
++			      <0x0 0x15504000 0x0 0x1000>,
++			      <0x0 0x15505000 0x0 0x1000>,
++			      <0x0 0x15506000 0x0 0x400>,
++			      <0x0 0x15506400 0x0 0xc00>,
++			      <0x0 0x15507000 0x0 0x400>,
++			      <0x0 0x15507400 0x0 0xc00>,
++			      <0x0 0x15508000 0x0 0x70>,
++			      <0x0 0x15508070 0x0 0x500>,
++			      <0x0 0x15509000 0x0 0x4000>,
++			      <0x0 0x1550d000 0x0 0x1000>,
++			      <0x0 0x1550e000 0x0 0x1000>,
++			      <0x0 0x1550f000 0x0 0x1000>,
++			      <0x0 0x15510000 0x0 0x800>,
++			      <0x0 0x15510800 0x0 0x800>,
++			      <0x0 0x15511000 0x0 0x1000>,
++			      <0x0 0x15512000 0x0 0x1000>,
++			      <0x0 0x15513000 0x0 0xe000>,
++			      <0x0 0x15521000 0x0 0x2000>,
++			      <0x0 0x15523000 0x0 0x2000>,
++			      <0x0 0x1553f000 0x0 0x40000>,
++			      <0x0 0x1557f000 0x0 0x1000>,
++			      <0x0 0x15580000 0x0 0x1000>,
++			      <0x0 0x15581000 0x0 0x1000>,
++			      <0x0 0x15582000 0x0 0x1000>,
++			      <0x0 0x15583000 0x0 0x1000>,
++			      <0x0 0x15584000 0x0 0x1000>,
++			      <0x0 0x15585000 0x0 0x1000>,
++			      <0x0 0x15586000 0x0 0x1000>,
++			      <0x0 0x15587000 0x0 0x1000>,
++			      <0x0 0x15588000 0x0 0x1000>;
++			reg-names = "router_cs",
++				    "tmu_cs",
++				    "hia_cs",
++				    "lane0_cs",
++				    "lane1_cs",
++				    "pcie_cs",
++				    "usb_cs",
++				    "dpin0_cs",
++				    "dpin0_path_cs",
++				    "dpin1_cs",
++				    "dpin1_path_cs",
++				    "router_cfg",
++				    "tmu_cfg",
++				    "hia",
++				    "port_group",
++				    "pcie",
++				    "usb",
++				    "cp",
++				    "cp_ram",
++				    "msgbus",
++				    "sideband",
++				    "uc_ram",
++				    "uc_per",
++				    "uc_mbox",
++				    "nhi",
++				    "cfg",
++				    "debug",
++				    "usb_cfg",
++				    "pcie_cfg",
++				    "dpin0_aux",
++				    "dpin0",
++				    "dpin0_cfg",
++				    "dpin1_aux",
++				    "dpin1",
++				    "dpin1_cfg";
++
++			interrupts-extended = <&intc GIC_SPI 429 IRQ_TYPE_LEVEL_HIGH>,
++					      <&intc GIC_SPI 428 IRQ_TYPE_LEVEL_HIGH>,
++					      <&intc GIC_SPI 438 IRQ_TYPE_LEVEL_HIGH>,
++					      <&intc GIC_SPI 427 IRQ_TYPE_LEVEL_HIGH>,
++					      <&intc GIC_SPI 426 IRQ_TYPE_LEVEL_HIGH>,
++					      <&intc GIC_SPI 432 IRQ_TYPE_LEVEL_HIGH>,
++					      <&intc GIC_SPI 377 IRQ_TYPE_LEVEL_HIGH>,
++					      <&pdc 33 IRQ_TYPE_EDGE_RISING>;
++			interrupt-names = "ring_data",
++					  "ring_ctrl",
++					  "fw",
++					  "dpap0",
++					  "dpap1",
++					  "pcieap",
++					  "clx_exit",
++					  "wake";
++
++			clocks = <&gcc GCC_USB4_2_MASTER_CLK>,
++				 <&gcc GCC_USB4_2_TMU_CLK>,
++				 <&gcc GCC_USB4_2_CFG_AHB_CLK>,
++				 <&gcc GCC_AGGRE_USB4_2_AXI_CLK>,
++				 <&gcc GCC_USB4_2_SB_IF_CLK>,
++				 <&gcc GCC_USB4_2_SYS_CLK>,
++				 <&gcc GCC_USB4_2_PHY_RX0_CLK>,
++				 <&gcc GCC_USB4_2_PHY_RX1_CLK>,
++				 <&gcc GCC_USB4_2_DP0_CLK>,
++				 <&gcc GCC_USB4_2_DP1_CLK>,
++				 <&gcc GCC_USB4_2_PHY_PCIE_PIPE_CLK>,
++				 <&gcc GCC_USB4_2_PHY_USB_PIPE_CLK>,
++				 <&gcc GCC_AGGRE_NOC_USB_SOUTH_AXI_CLK>,
++				 <&gcc GCC_SYS_NOC_USB_AXI_CLK>;
++			clock-names = "master",
++				      "tmu",
++				      "ahb",
++				      "axi",
++				      "sb",
++				      "sys",
++				      "phy_rx0",
++				      "phy_rx1",
++				      "dp0",
++				      "dp1",
++				      "pcie_pipe",
++				      "usb_pipe",
++				      "noc_aggr_south",
++				      "noc_sys";
++
++			assigned-clocks = <&gcc GCC_USB4_2_TMU_CLK>;
++			assigned-clock-rates = <250000000>;
++
++			resets = <&gcc GCC_USB4_2_BCR>,
++				 <&gcc GCC_USB4_2_MISC_USB4_SYS_BCR>,
++				 <&gcc GCC_USB4_2_MISC_RX_CLK_0_BCR>,
++				 <&gcc GCC_USB4_2_MISC_RX_CLK_1_BCR>,
++				 <&gcc GCC_USB4_2_MISC_USB_PIPE_BCR>,
++				 <&gcc GCC_USB4_2_MISC_PCIE_PIPE_BCR>,
++				 <&gcc GCC_USB4_2_MISC_TMU_BCR>,
++				 <&gcc GCC_USB4_2_MISC_SB_IF_BCR>,
++				 <&gcc GCC_USB4_2_MISC_HIA_MSTR_BCR>,
++				 <&gcc GCC_USB4_2_MISC_AHB_BCR>,
++				 <&gcc GCC_USB4_2_MISC_DP0_MAX_PCLK_BCR>,
++				 <&gcc GCC_USB4_2_MISC_DP1_MAX_PCLK_BCR>;
++			reset-names = "core",
++				      "sys",
++				      "rx0",
++				      "rx1",
++				      "usb_pipe",
++				      "pcie_pipe",
++				      "tmu",
++				      "sideband_iface",
++				      "hia_master",
++				      "ahb",
++				      "dp0",
++				      "dp1";
++
++			power-domains = <&gcc GCC_USB4_2_GDSC>,
++					<&gcc GCC_PCIE_2_TUNNEL_GDSC>;
++			power-domain-names = "usb4", "pcie";
++
++			phys = <&usb_1_ss2_qmpphy QMP_USB43DP_USB4_PHY>;
++			phy-names = "usb4";
++
++			iommus = <&apps_smmu 0x14c0 0x0>;
++
++			interconnects = <&usb_south_anoc MASTER_USB4_2 QCOM_ICC_TAG_ALWAYS
++					 &mc_virt SLAVE_EBI1 QCOM_ICC_TAG_ALWAYS>,
++					<&gem_noc MASTER_APPSS_PROC QCOM_ICC_TAG_ACTIVE_ONLY
++					 &config_noc SLAVE_USB4_2 QCOM_ICC_TAG_ACTIVE_ONLY>;
++			interconnect-names = "usb4-ddr",
++					     "apps-usb4";
++
++			operating-points-v2 = <&usb4_opp_table>;
++
++			pinctrl-0 = <&usb4_2_sbrx_active>, <&usb4_2_sbtx_active>;
++			pinctrl-1 = <&usb4_2_sbrx_reset>, <&usb4_2_sbtx_reset>;
++			pinctrl-names = "default",
++					"reset";
++
++			#mbox-cells = <2>;
++			#reset-cells = <1>;
++
++			firmware-name = "qcom/x1e80100/usb4.elf";
++
++			tx-equalization-presets = /bits/ 64 <0xd6f>;
++
++			qcom,usb4-mode-sel = <&tcsr 0x1b000 2>;
++
++			orientation-switch;
++			mode-switch;
++
++			wakeup-source;
++
++			port {
++				usb4_2_mode_in: endpoint {
++				};
++			};
++		};
++
++		usb4_router0: usb4-router@15600000 {
++			compatible = "qcom,x1e80100-usb4-hr";
++			reg = <0x0 0x15600000 0x0 0x70>,
++			      <0x0 0x15600070 0x0 0x500>,
++			      <0x0 0x15601000 0x0 0x1000>,
++			      <0x0 0x15602000 0x0 0x1000>,
++			      <0x0 0x15603000 0x0 0x1000>,
++			      <0x0 0x15604000 0x0 0x1000>,
++			      <0x0 0x15605000 0x0 0x1000>,
++			      <0x0 0x15606000 0x0 0x400>,
++			      <0x0 0x15606400 0x0 0xc00>,
++			      <0x0 0x15607000 0x0 0x400>,
++			      <0x0 0x15607400 0x0 0xc00>,
++			      <0x0 0x15608000 0x0 0x70>,
++			      <0x0 0x15608070 0x0 0x500>,
++			      <0x0 0x15609000 0x0 0x4000>,
++			      <0x0 0x1560d000 0x0 0x1000>,
++			      <0x0 0x1560e000 0x0 0x1000>,
++			      <0x0 0x1560f000 0x0 0x1000>,
++			      <0x0 0x15610000 0x0 0x800>,
++			      <0x0 0x15610800 0x0 0x800>,
++			      <0x0 0x15611000 0x0 0x1000>,
++			      <0x0 0x15612000 0x0 0x1000>,
++			      <0x0 0x15613000 0x0 0xe000>,
++			      <0x0 0x15621000 0x0 0x2000>,
++			      <0x0 0x15623000 0x0 0x2000>,
++			      <0x0 0x1563f000 0x0 0x40000>,
++			      <0x0 0x1567f000 0x0 0x1000>,
++			      <0x0 0x15680000 0x0 0x1000>,
++			      <0x0 0x15681000 0x0 0x1000>,
++			      <0x0 0x15682000 0x0 0x1000>,
++			      <0x0 0x15683000 0x0 0x1000>,
++			      <0x0 0x15684000 0x0 0x1000>,
++			      <0x0 0x15685000 0x0 0x1000>,
++			      <0x0 0x15686000 0x0 0x1000>,
++			      <0x0 0x15687000 0x0 0x1000>,
++			      <0x0 0x15688000 0x0 0x1000>;
++			reg-names = "router_cs",
++				    "tmu_cs",
++				    "hia_cs",
++				    "lane0_cs",
++				    "lane1_cs",
++				    "pcie_cs",
++				    "usb_cs",
++				    "dpin0_cs",
++				    "dpin0_path_cs",
++				    "dpin1_cs",
++				    "dpin1_path_cs",
++				    "router_cfg",
++				    "tmu_cfg",
++				    "hia",
++				    "port_group",
++				    "pcie",
++				    "usb",
++				    "cp",
++				    "cp_ram",
++				    "msgbus",
++				    "sideband",
++				    "uc_ram",
++				    "uc_per",
++				    "uc_mbox",
++				    "nhi",
++				    "cfg",
++				    "debug",
++				    "usb_cfg",
++				    "pcie_cfg",
++				    "dpin0_aux",
++				    "dpin0",
++				    "dpin0_cfg",
++				    "dpin1_aux",
++				    "dpin1",
++				    "dpin1_cfg";
++
++			interrupts-extended = <&intc GIC_SPI 472 IRQ_TYPE_LEVEL_HIGH>,
++					      <&intc GIC_SPI 450 IRQ_TYPE_LEVEL_HIGH>,
++					      <&intc GIC_SPI 579 IRQ_TYPE_LEVEL_HIGH>,
++					      <&intc GIC_SPI 449 IRQ_TYPE_LEVEL_HIGH>,
++					      <&intc GIC_SPI 448 IRQ_TYPE_LEVEL_HIGH>,
++					      <&intc GIC_SPI 473 IRQ_TYPE_LEVEL_HIGH>,
++					      <&intc GIC_SPI 440 IRQ_TYPE_LEVEL_HIGH>,
++					      <&pdc 20 IRQ_TYPE_EDGE_RISING>;
++			interrupt-names = "ring_data",
++					  "ring_ctrl",
++					  "fw",
++					  "dpap0",
++					  "dpap1",
++					  "pcieap",
++					  "clx_exit",
++					  "wake";
++
++			clocks = <&gcc GCC_USB4_0_MASTER_CLK>,
++				 <&gcc GCC_USB4_0_TMU_CLK>,
++				 <&gcc GCC_USB4_0_CFG_AHB_CLK>,
++				 <&gcc GCC_AGGRE_USB4_0_AXI_CLK>,
++				 <&gcc GCC_USB4_0_SB_IF_CLK>,
++				 <&gcc GCC_USB4_0_SYS_CLK>,
++				 <&gcc GCC_USB4_0_PHY_RX0_CLK>,
++				 <&gcc GCC_USB4_0_PHY_RX1_CLK>,
++				 <&gcc GCC_USB4_0_DP0_CLK>,
++				 <&gcc GCC_USB4_0_DP1_CLK>,
++				 <&gcc GCC_USB4_0_PHY_PCIE_PIPE_CLK>,
++				 <&gcc GCC_USB4_0_PHY_USB_PIPE_CLK>,
++				 <&gcc GCC_AGGRE_NOC_USB_SOUTH_AXI_CLK>,
++				 <&gcc GCC_SYS_NOC_USB_AXI_CLK>;
++			clock-names = "master",
++				      "tmu",
++				      "ahb",
++				      "axi",
++				      "sb",
++				      "sys",
++				      "phy_rx0",
++				      "phy_rx1",
++				      "dp0",
++				      "dp1",
++				      "pcie_pipe",
++				      "usb_pipe",
++				      "noc_aggr_south",
++				      "noc_sys";
++
++			assigned-clocks = <&gcc GCC_USB4_0_TMU_CLK>;
++			assigned-clock-rates = <250000000>;
++
++			resets = <&gcc GCC_USB4_0_BCR>,
++				 <&gcc GCC_USB4_0_MISC_USB4_SYS_BCR>,
++				 <&gcc GCC_USB4_0_MISC_RX_CLK_0_BCR>,
++				 <&gcc GCC_USB4_0_MISC_RX_CLK_1_BCR>,
++				 <&gcc GCC_USB4_0_MISC_USB_PIPE_BCR>,
++				 <&gcc GCC_USB4_0_MISC_PCIE_PIPE_BCR>,
++				 <&gcc GCC_USB4_0_MISC_TMU_BCR>,
++				 <&gcc GCC_USB4_0_MISC_SB_IF_BCR>,
++				 <&gcc GCC_USB4_0_MISC_HIA_MSTR_BCR>,
++				 <&gcc GCC_USB4_0_MISC_AHB_BCR>,
++				 <&gcc GCC_USB4_0_MISC_DP0_MAX_PCLK_BCR>,
++				 <&gcc GCC_USB4_0_MISC_DP1_MAX_PCLK_BCR>;
++			reset-names = "core",
++				      "sys",
++				      "rx0",
++				      "rx1",
++				      "usb_pipe",
++				      "pcie_pipe",
++				      "tmu",
++				      "sideband_iface",
++				      "hia_master",
++				      "ahb",
++				      "dp0",
++				      "dp1";
++
++			power-domains = <&gcc GCC_USB4_0_GDSC>,
++					<&gcc GCC_PCIE_0_TUNNEL_GDSC>;
++			power-domain-names = "usb4", "pcie";
++
++			phys = <&usb_1_ss0_qmpphy QMP_USB43DP_USB4_PHY>;
++			phy-names = "usb4";
++
++			iommus = <&apps_smmu 0x1440 0x0>;
++
++			interconnects = <&usb_south_anoc MASTER_USB4_0 QCOM_ICC_TAG_ALWAYS
++					 &mc_virt SLAVE_EBI1 QCOM_ICC_TAG_ALWAYS>,
++					<&gem_noc MASTER_APPSS_PROC QCOM_ICC_TAG_ACTIVE_ONLY
++					 &config_noc SLAVE_USB4_0 QCOM_ICC_TAG_ACTIVE_ONLY>;
++			interconnect-names = "usb4-ddr",
++					     "apps-usb4";
++
++			operating-points-v2 = <&usb4_opp_table>;
++
++			pinctrl-0 = <&usb4_0_sbrx_active>, <&usb4_0_sbtx_active>;
++			pinctrl-1 = <&usb4_0_sbrx_reset>, <&usb4_0_sbtx_reset>;
++			pinctrl-names = "default",
++					"reset";
++
++			#mbox-cells = <2>;
++			#reset-cells = <1>;
++
++			firmware-name = "qcom/x1e80100/usb4.elf";
++
++			qcom,usb4-mode-sel = <&tcsr 0x1b000 0>;
++
++			orientation-switch;
++			mode-switch;
++
++			wakeup-source;
++
++			port {
++				usb4_0_mode_in: endpoint {
++				};
++			};
++
++			usb4_opp_table: opp-table {
++				compatible = "operating-points-v2";
++
++				/* Gen3 */
++				opp-350000000 {
++					opp-hz = /bits/ 64 <350000000>;
++					required-opps = <&rpmhpd_opp_nom>;
++					opp-peak-kBps = <5000000 1>;
++					opp-level = <3>;
++				};
++
++				/* Gen2 */
++				opp-175000000 {
++					opp-hz = /bits/ 64 <175000000>;
++					required-opps = <&rpmhpd_opp_svs>;
++					opp-peak-kBps = <2500000 1>;
++					opp-level = <2>;
++				};
++			};
++		};
++
++		usb4_router1: usb4-router@15700000 {
++			compatible = "qcom,x1e80100-usb4-hr";
++			reg = <0x0 0x15700000 0x0 0x70>,
++			      <0x0 0x15700070 0x0 0x500>,
++			      <0x0 0x15701000 0x0 0x1000>,
++			      <0x0 0x15702000 0x0 0x1000>,
++			      <0x0 0x15703000 0x0 0x1000>,
++			      <0x0 0x15704000 0x0 0x1000>,
++			      <0x0 0x15705000 0x0 0x1000>,
++			      <0x0 0x15706000 0x0 0x400>,
++			      <0x0 0x15706400 0x0 0xc00>,
++			      <0x0 0x15707000 0x0 0x400>,
++			      <0x0 0x15707400 0x0 0xc00>,
++			      <0x0 0x15708000 0x0 0x70>,
++			      <0x0 0x15708070 0x0 0x500>,
++			      <0x0 0x15709000 0x0 0x4000>,
++			      <0x0 0x1570d000 0x0 0x1000>,
++			      <0x0 0x1570e000 0x0 0x1000>,
++			      <0x0 0x1570f000 0x0 0x1000>,
++			      <0x0 0x15710000 0x0 0x800>,
++			      <0x0 0x15710800 0x0 0x800>,
++			      <0x0 0x15711000 0x0 0x1000>,
++			      <0x0 0x15712000 0x0 0x1000>,
++			      <0x0 0x15713000 0x0 0xe000>,
++			      <0x0 0x15721000 0x0 0x2000>,
++			      <0x0 0x15723000 0x0 0x2000>,
++			      <0x0 0x1573f000 0x0 0x40000>,
++			      <0x0 0x1577f000 0x0 0x1000>,
++			      <0x0 0x15780000 0x0 0x1000>,
++			      <0x0 0x15781000 0x0 0x1000>,
++			      <0x0 0x15782000 0x0 0x1000>,
++			      <0x0 0x15783000 0x0 0x1000>,
++			      <0x0 0x15784000 0x0 0x1000>,
++			      <0x0 0x15785000 0x0 0x1000>,
++			      <0x0 0x15786000 0x0 0x1000>,
++			      <0x0 0x15787000 0x0 0x1000>,
++			      <0x0 0x15788000 0x0 0x1000>;
++			reg-names = "router_cs",
++				    "tmu_cs",
++				    "hia_cs",
++				    "lane0_cs",
++				    "lane1_cs",
++				    "pcie_cs",
++				    "usb_cs",
++				    "dpin0_cs",
++				    "dpin0_path_cs",
++				    "dpin1_cs",
++				    "dpin1_path_cs",
++				    "router_cfg",
++				    "tmu_cfg",
++				    "hia",
++				    "port_group",
++				    "pcie",
++				    "usb",
++				    "cp",
++				    "cp_ram",
++				    "msgbus",
++				    "sideband",
++				    "uc_ram",
++				    "uc_per",
++				    "uc_mbox",
++				    "nhi",
++				    "cfg",
++				    "debug",
++				    "usb_cfg",
++				    "pcie_cfg",
++				    "dpin0_aux",
++				    "dpin0",
++				    "dpin0_cfg",
++				    "dpin1_aux",
++				    "dpin1",
++				    "dpin1_cfg";
++
++			interrupts-extended = <&intc GIC_SPI 605 IRQ_TYPE_LEVEL_HIGH>,
++					      <&intc GIC_SPI 604 IRQ_TYPE_LEVEL_HIGH>,
++					      <&intc GIC_SPI 607 IRQ_TYPE_LEVEL_HIGH>,
++					      <&intc GIC_SPI 603 IRQ_TYPE_LEVEL_HIGH>,
++					      <&intc GIC_SPI 602 IRQ_TYPE_LEVEL_HIGH>,
++					      <&intc GIC_SPI 606 IRQ_TYPE_LEVEL_HIGH>,
++					      <&intc GIC_SPI 601 IRQ_TYPE_LEVEL_HIGH>,
++					      <&pdc 22 IRQ_TYPE_EDGE_RISING>;
++			interrupt-names = "ring_data",
++					  "ring_ctrl",
++					  "fw",
++					  "dpap0",
++					  "dpap1",
++					  "pcieap",
++					  "clx_exit",
++					  "wake";
++
++			clocks = <&gcc GCC_USB4_1_MASTER_CLK>,
++				 <&gcc GCC_USB4_1_TMU_CLK>,
++				 <&gcc GCC_USB4_1_CFG_AHB_CLK>,
++				 <&gcc GCC_AGGRE_USB4_1_AXI_CLK>,
++				 <&gcc GCC_USB4_1_SB_IF_CLK>,
++				 <&gcc GCC_USB4_1_SYS_CLK>,
++				 <&gcc GCC_USB4_1_PHY_RX0_CLK>,
++				 <&gcc GCC_USB4_1_PHY_RX1_CLK>,
++				 <&gcc GCC_USB4_1_DP0_CLK>,
++				 <&gcc GCC_USB4_1_DP1_CLK>,
++				 <&gcc GCC_USB4_1_PHY_PCIE_PIPE_CLK>,
++				 <&gcc GCC_USB4_1_PHY_USB_PIPE_CLK>,
++				 <&gcc GCC_AGGRE_NOC_USB_SOUTH_AXI_CLK>,
++				 <&gcc GCC_SYS_NOC_USB_AXI_CLK>;
++			clock-names = "master",
++				      "tmu",
++				      "ahb",
++				      "axi",
++				      "sb",
++				      "sys",
++				      "phy_rx0",
++				      "phy_rx1",
++				      "dp0",
++				      "dp1",
++				      "pcie_pipe",
++				      "usb_pipe",
++				      "noc_aggr_south",
++				      "noc_sys";
++
++			assigned-clocks = <&gcc GCC_USB4_1_TMU_CLK>;
++			assigned-clock-rates = <250000000>;
++
++			resets = <&gcc GCC_USB4_1_BCR>,
++				 <&gcc GCC_USB4_1_MISC_USB4_SYS_BCR>,
++				 <&gcc GCC_USB4_1_MISC_RX_CLK_0_BCR>,
++				 <&gcc GCC_USB4_1_MISC_RX_CLK_1_BCR>,
++				 <&gcc GCC_USB4_1_MISC_USB_PIPE_BCR>,
++				 <&gcc GCC_USB4_1_MISC_PCIE_PIPE_BCR>,
++				 <&gcc GCC_USB4_1_MISC_TMU_BCR>,
++				 <&gcc GCC_USB4_1_MISC_SB_IF_BCR>,
++				 <&gcc GCC_USB4_1_MISC_HIA_MSTR_BCR>,
++				 <&gcc GCC_USB4_1_MISC_AHB_BCR>,
++				 <&gcc GCC_USB4_1_MISC_DP0_MAX_PCLK_BCR>,
++				 <&gcc GCC_USB4_1_MISC_DP1_MAX_PCLK_BCR>;
++			reset-names = "core",
++				      "sys",
++				      "rx0",
++				      "rx1",
++				      "usb_pipe",
++				      "pcie_pipe",
++				      "tmu",
++				      "sideband_iface",
++				      "hia_master",
++				      "ahb",
++				      "dp0",
++				      "dp1";
++
++			power-domains = <&gcc GCC_USB4_1_GDSC>,
++					<&gcc GCC_PCIE_1_TUNNEL_GDSC>;
++			power-domain-names = "usb4", "pcie";
++
++			phys = <&usb_1_ss1_qmpphy QMP_USB43DP_USB4_PHY>;
++			phy-names = "usb4";
++
++			iommus = <&apps_smmu 0x1480 0x0>;
++			/*
++			 * TODO: possibly may use msi-parent for this host only with Gunyah
++			 * and for others without it
++			 */
++
++			interconnects = <&usb_south_anoc MASTER_USB4_1 QCOM_ICC_TAG_ALWAYS
++					 &mc_virt SLAVE_EBI1 QCOM_ICC_TAG_ALWAYS>,
++					<&gem_noc MASTER_APPSS_PROC QCOM_ICC_TAG_ACTIVE_ONLY
++					 &config_noc SLAVE_USB4_1 QCOM_ICC_TAG_ACTIVE_ONLY>;
++			interconnect-names = "usb4-ddr",
++					     "apps-usb4";
++
++			operating-points-v2 = <&usb4_opp_table>;
++
++			pinctrl-0 = <&usb4_1_sbrx_active>, <&usb4_1_sbtx_active>;
++			pinctrl-1 = <&usb4_1_sbrx_reset>, <&usb4_1_sbtx_reset>;
++			pinctrl-names = "default",
++					"reset";
++
++			#mbox-cells = <2>;
++			#reset-cells = <1>;
++
++			firmware-name = "qcom/x1e80100/usb4.elf";
++
++			qcom,usb4-mode-sel = <&tcsr 0x1b000 1>;
++
++			orientation-switch;
++			mode-switch;
++
++			wakeup-source;
++
++			port {
++				usb4_1_mode_in: endpoint {
++				};
++			};
++		};
++
+ 		intc: interrupt-controller@17000000 {
+ 			compatible = "arm,gic-v3";
+ 			reg = <0 0x17000000 0 0x10000>,     /* GICD */
+diff --git a/arch/arm64/boot/dts/qcom/x1-crd.dtsi b/arch/arm64/boot/dts/qcom/x1-crd.dtsi
+index abe7238ef1de..b60c371da694 100644
+--- a/arch/arm64/boot/dts/qcom/x1-crd.dtsi
++++ b/arch/arm64/boot/dts/qcom/x1-crd.dtsi
+@@ -117,14 +117,6 @@ pmic_glink_ss0_ss_in: endpoint {
+ 						remote-endpoint = <&retimer_ss0_ss_out>;
+ 					};
+ 				};
+-
+-				port@2 {
+-					reg = <2>;
+-
+-					pmic_glink_ss0_con_sbu_in: endpoint {
+-						remote-endpoint = <&retimer_ss0_con_sbu_out>;
+-					};
+-				};
+ 			};
+ 		};
+ 
+@@ -154,14 +146,6 @@ pmic_glink_ss1_ss_in: endpoint {
+ 						remote-endpoint = <&retimer_ss1_ss_out>;
+ 					};
+ 				};
+-
+-				port@2 {
+-					reg = <2>;
+-
+-					pmic_glink_ss1_con_sbu_in: endpoint {
+-						remote-endpoint = <&retimer_ss1_con_sbu_out>;
+-					};
+-				};
+ 			};
+ 		};
+ 
+@@ -191,14 +175,6 @@ pmic_glink_ss2_ss_in: endpoint {
+ 						remote-endpoint = <&retimer_ss2_ss_out>;
+ 					};
+ 				};
+-
+-				port@2 {
+-					reg = <2>;
+-
+-					pmic_glink_ss2_con_sbu_in: endpoint {
+-						remote-endpoint = <&retimer_ss2_con_sbu_out>;
+-					};
+-				};
+ 			};
+ 		};
+ 	};
+@@ -1087,7 +1063,7 @@ port@2 {
+ 				reg = <2>;
+ 
+ 				retimer_ss2_con_sbu_out: endpoint {
+-					remote-endpoint = <&pmic_glink_ss2_con_sbu_in>;
++					remote-endpoint = <&usb4_2_mode_in>;
+ 				};
+ 			};
+ 		};
+@@ -1144,7 +1120,7 @@ port@2 {
+ 				reg = <2>;
+ 
+ 				retimer_ss0_con_sbu_out: endpoint {
+-					remote-endpoint = <&pmic_glink_ss0_con_sbu_in>;
++					remote-endpoint = <&usb4_0_mode_in>;
+ 				};
+ 			};
+ 		};
+@@ -1232,7 +1208,7 @@ port@2 {
+ 				reg = <2>;
+ 
+ 				retimer_ss1_con_sbu_out: endpoint {
+-					remote-endpoint = <&pmic_glink_ss1_con_sbu_in>;
++					remote-endpoint = <&usb4_1_mode_in>;
+ 				};
+ 			};
+ 		};
+@@ -1890,7 +1866,8 @@ &usb_1_ss0_qmpphy {
+ };
+ 
+ &usb_1_ss0 {
+-	dr_mode = "host";
++	dr_mode = "otg";
++	usb-role-switch;
+ 
+ 	status = "okay";
+ };
+@@ -1920,7 +1897,8 @@ &usb_1_ss1_qmpphy {
+ };
+ 
+ &usb_1_ss1 {
+-	dr_mode = "host";
++	dr_mode = "otg";
++	usb-role-switch;
+ 
+ 	status = "okay";
+ };
+@@ -1950,7 +1928,8 @@ &usb_1_ss2_qmpphy {
+ };
+ 
+ &usb_1_ss2 {
+-	dr_mode = "host";
++	dr_mode = "otg";
++	usb-role-switch;
+ 
+ 	status = "okay";
+ };
+@@ -1997,3 +1976,15 @@ &usb_mp_qmpphy1 {
+ 
+ 	status = "okay";
+ };
++
++&usb4_0_mode_in {
++	remote-endpoint = <&retimer_ss0_con_sbu_out>;
++};
++
++&usb4_1_mode_in {
++	remote-endpoint = <&retimer_ss1_con_sbu_out>;
++};
++
++&usb4_2_mode_in {
++	remote-endpoint = <&retimer_ss2_con_sbu_out>;
++};
+-- 
+2.34.1
+

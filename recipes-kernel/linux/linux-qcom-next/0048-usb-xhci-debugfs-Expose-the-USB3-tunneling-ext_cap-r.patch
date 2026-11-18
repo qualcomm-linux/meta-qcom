@@ -1,0 +1,73 @@
+From 9fbf83c8f336d9db2237af39430c97529a9820f9 Mon Sep 17 00:00:00 2001
+From: Konrad Dybcio <konrad.dybcio@oss.qualcomm.com>
+Date: Mon, 6 Jul 2026 18:49:07 +0200
+Subject: [PATCH 48/85] usb: xhci: debugfs: Expose the USB3 tunneling ext_cap
+ register value
+
+The USB3 Tunneling Support Capability (idx 18) features a single
+register. Expose it over debugfs, if supported by the controller.
+
+Reviewed-by: Thinh Nguyen <Thinh.Nguyen@synopsys.com>
+Signed-off-by: Konrad Dybcio <konrad.dybcio@oss.qualcomm.com>
+Upstream-Status: Pending
+---
+ drivers/usb/host/xhci-debugfs.c  | 9 +++++++++
+ drivers/usb/host/xhci-debugfs.h  | 2 ++
+ drivers/usb/host/xhci-ext-caps.h | 1 +
+ 3 files changed, 12 insertions(+)
+
+diff --git a/drivers/usb/host/xhci-debugfs.c b/drivers/usb/host/xhci-debugfs.c
+index 2aa01d99f23d..f4bb66a9845a 100644
+--- a/drivers/usb/host/xhci-debugfs.c
++++ b/drivers/usb/host/xhci-debugfs.c
+@@ -82,6 +82,10 @@ static const struct debugfs_reg32 xhci_extcap_dbc[] = {
+ 	dump_register(EXTCAP_DBC_DEVINFO2),
+ };
+ 
++static const struct debugfs_reg32 xhci_extcap_usb3_tunneling[] = {
++	dump_register(EXTCAP_USB3_TUNNELING),
++};
++
+ static struct dentry *xhci_debugfs_root;
+ 
+ static struct xhci_regset *xhci_debugfs_alloc_regset(struct xhci_hcd *xhci)
+@@ -816,6 +820,11 @@ void xhci_debugfs_init(struct xhci_hcd *xhci)
+ 				   ARRAY_SIZE(xhci_extcap_dbc),
+ 				   "reg-ext-dbc");
+ 
++	xhci_debugfs_extcap_regset(xhci, XHCI_EXT_CAPS_USB3_TUNNELING,
++				   xhci_extcap_usb3_tunneling,
++				   ARRAY_SIZE(xhci_extcap_usb3_tunneling),
++				   "reg-usb3-tunneling");
++
+ 	xhci_debugfs_create_ring_dir(xhci, &xhci->cmd_ring,
+ 				     "command-ring",
+ 				     xhci->debugfs_root);
+diff --git a/drivers/usb/host/xhci-debugfs.h b/drivers/usb/host/xhci-debugfs.h
+index 7c074b4be819..ca6b7f2da8e3 100644
+--- a/drivers/usb/host/xhci-debugfs.h
++++ b/drivers/usb/host/xhci-debugfs.h
+@@ -70,6 +70,8 @@
+ #define REG_EXTCAP_DBC_DEVINFO1				0x38
+ #define REG_EXTCAP_DBC_DEVINFO2				0x3c
+ 
++#define REG_EXTCAP_USB3_TUNNELING			0x00
++
+ #define dump_register(nm)				\
+ {							\
+ 	.name	= __stringify(nm),			\
+diff --git a/drivers/usb/host/xhci-ext-caps.h b/drivers/usb/host/xhci-ext-caps.h
+index 67ecf7320c62..22e53a750e2a 100644
+--- a/drivers/usb/host/xhci-ext-caps.h
++++ b/drivers/usb/host/xhci-ext-caps.h
+@@ -40,6 +40,7 @@
+ #define XHCI_EXT_CAPS_ROUTE	5
+ /* IDs 6-9 reserved */
+ #define XHCI_EXT_CAPS_DEBUG	10
++#define XHCI_EXT_CAPS_USB3_TUNNELING	18
+ /* Vendor caps */
+ #define XHCI_EXT_CAPS_VENDOR_INTEL	192
+ #define XHCI_EXT_CAPS_INTEL_SPR_SHADOW	206
+-- 
+2.34.1
+

@@ -1,0 +1,54 @@
+From fc0d4c6548f132235bfdf1dd3a9ae8f66a752d70 Mon Sep 17 00:00:00 2001
+From: Konrad Dybcio <konrad.dybcio@oss.qualcomm.com>
+Date: Mon, 2 Nov 2026 16:45:48 +0100
+Subject: [PATCH 15/85] irqchip/qcom-pdc: Handle ESPIs in qcom,pdc-ranges
+
+The qcom,pdc-ranges property maps GIC interrupts to PDC output pins.
+That data is then subsequently used by irq_domain to resolve into the
+interrupt parent (which again, is always GIC).
+
+The code that handles this hardcodes parent_fwspec.param[0] = 0
+(GIC_SPI). Make that conditional to prevent this warning at boot:
+
+GICv3: SPI 4115 out of range (use ESPI?)
+
+Fixes: 81ef8bf88065 ("irqchip/qcom-pdc: Add irqdomain for wakeup capable GPIOs")
+Link: https://patch.msgid.link/20261102-topic-pdc_map_espi-v2-1-64431c8f8ac3@oss.qualcomm.com
+Signed-off-by: Konrad Dybcio <konrad.dybcio@oss.qualcomm.com>
+Upstream-Status: Pending
+---
+ drivers/irqchip/qcom-pdc.c | 11 +++++++++--
+ 1 file changed, 9 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/irqchip/qcom-pdc.c b/drivers/irqchip/qcom-pdc.c
+index 29025a212ece..6c2a2d13629c 100644
+--- a/drivers/irqchip/qcom-pdc.c
++++ b/drivers/irqchip/qcom-pdc.c
+@@ -21,6 +21,7 @@
+ #include <linux/slab.h>
+ #include <linux/types.h>
+ #include <linux/firmware/qcom/qcom_scm.h>
++#include <dt-bindings/interrupt-controller/arm-gic.h>
+ 
+ #define PDC_MAX_IRQS			256
+ #define IRQ_ENABLE_BANK_MAX		BITS_TO_BYTES(PDC_MAX_IRQS)
+@@ -597,8 +598,14 @@ static int qcom_pdc_alloc(struct irq_domain *domain, unsigned int virq,
+ 
+ 	parent_fwspec.fwnode      = domain->parent->fwnode;
+ 	parent_fwspec.param_count = 3;
+-	parent_fwspec.param[0]    = 0;
+-	parent_fwspec.param[1]    = pin_to_hwirq(region, hwirq);
++	/* GIC ESPIs start at 4096 */
++	if (pin_to_hwirq(region, hwirq) >= 4096) {
++		parent_fwspec.param[0] = GIC_ESPI;
++		parent_fwspec.param[1] = pin_to_hwirq(region, hwirq) - 4096;
++	} else {
++		parent_fwspec.param[0] = GIC_SPI;
++		parent_fwspec.param[1] = pin_to_hwirq(region, hwirq);
++	}
+ 	parent_fwspec.param[2]    = type;
+ 
+ 	return irq_domain_alloc_irqs_parent(domain, virq, nr_irqs, &parent_fwspec);
+-- 
+2.34.1
+

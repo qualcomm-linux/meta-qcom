@@ -1,0 +1,33 @@
+From 9e7183a670eda7588b2f70fbd707a270c7230b25 Mon Sep 17 00:00:00 2001
+From: Wesley Cheng <wesley.cheng@oss.qualcomm.com>
+Date: Wed, 28 Oct 2026 15:50:38 +0100
+Subject: [PATCH 12/85] soc: qcom: pmic_glink_altmode: Pass xxxx
+
+Some implementations (including newer versions of Glymur SoCCP
+firmware) require that an argument is passed to ALTMODE_PAN_EN before
+USB4 tunneling is enabled. Take care of that.
+
+[missing W's s-o-b]
+[konrad: commit message]
+Signed-off-by: Konrad Dybcio <konrad.dybcio@oss.qualcomm.com>
+Upstream-Status: Pending
+---
+ drivers/soc/qcom/pmic_glink_altmode.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/soc/qcom/pmic_glink_altmode.c b/drivers/soc/qcom/pmic_glink_altmode.c
+index 9e5bf43a576a..3e4821fc7783 100644
+--- a/drivers/soc/qcom/pmic_glink_altmode.c
++++ b/drivers/soc/qcom/pmic_glink_altmode.c
+@@ -588,7 +588,7 @@ static void pmic_glink_altmode_enable_worker(struct work_struct *work)
+ 	struct pmic_glink_altmode *altmode = work_to_altmode(work);
+ 	int ret;
+ 
+-	ret = pmic_glink_altmode_request(altmode, ALTMODE_PAN_EN, 0);
++	ret = pmic_glink_altmode_request(altmode, ALTMODE_PAN_EN, (1 << 3));
+ 	if (ret)
+ 		dev_err(altmode->dev, "failed to request altmode notifications: %d\n", ret);
+ }
+-- 
+2.34.1
+

@@ -1,0 +1,178 @@
+From 599826ae644b96e0e1a9bb582a133feea7c40c03 Mon Sep 17 00:00:00 2001
+From: Konrad Dybcio <konrad.dybcio@oss.qualcomm.com>
+Date: Mon, 4 May 2026 14:48:59 +0200
+Subject: [PATCH 42/85] usb: core: Move USB4 router link creation from usb-acpi
+ to usb-hub
+
+There is nothing ACPI-specific about that logic - so much so that it
+even uses the fwnode_ APIs. Take advantage of that and simply lift it
+as-is to let the devlinks be created on OF platforms.
+
+Signed-off-by: Konrad Dybcio <konrad.dybcio@oss.qualcomm.com>
+Upstream-Status: Pending
+---
+ drivers/usb/core/hub.c      | 58 +++++++++++++++++++++++++++++++++++++
+ drivers/usb/core/usb-acpi.c | 57 ------------------------------------
+ 2 files changed, 58 insertions(+), 57 deletions(-)
+
+diff --git a/drivers/usb/core/hub.c b/drivers/usb/core/hub.c
+index b446905b48be..7ce357c5a688 100644
+--- a/drivers/usb/core/hub.c
++++ b/drivers/usb/core/hub.c
+@@ -4897,6 +4897,58 @@ static int get_bMaxPacketSize0(struct usb_device *udev,
+ 	return rc;
+ }
+ 
++/**
++ * hub_add_usb4_devlink - add device link to USB4 Host Interface for tunneled USB3 devices
++ *
++ * @udev: Tunneled USB3 device connected to a roothub.
++ *
++ * Adds a device link between a tunneled USB3 device and the USB4 Host Interface
++ * device to ensure correct runtime PM suspend and resume order. This function
++ * should only be called for tunneled USB3 devices.
++ * The USB4 Host Interface this tunneled device depends on is retrieved through the
++ * usb4-host-interface property.
++ *
++ * Return: negative error code on failure, 0 otherwise
++ */
++static int hub_add_usb4_devlink(struct usb_device *udev)
++{
++	struct device_link *link;
++	struct usb_port *port_dev;
++	struct usb_hub *hub;
++
++	if (!udev->parent || udev->parent->parent)
++		return 0;
++
++	hub = usb_hub_to_struct_hub(udev->parent);
++	if (!hub)
++		return 0;
++	port_dev = hub->ports[udev->portnum - 1];
++
++	struct fwnode_handle *nhi_fwnode __free(fwnode_handle) =
++		fwnode_find_reference(dev_fwnode(&port_dev->dev), "usb4-host-interface", 0);
++
++	if (IS_ERR(nhi_fwnode) || !nhi_fwnode->dev)
++		return 0;
++
++	link = device_link_add(&port_dev->child->dev, nhi_fwnode->dev,
++			       DL_FLAG_STATELESS |
++			       DL_FLAG_RPM_ACTIVE |
++			       DL_FLAG_PM_RUNTIME);
++	if (!link) {
++		dev_err(&port_dev->dev, "Failed to created device link from %s to %s\n",
++			dev_name(&port_dev->child->dev), dev_name(nhi_fwnode->dev));
++		return -EINVAL;
++	}
++
++	dev_dbg(&port_dev->dev, "Created device link from %s to %s\n",
++		dev_name(&port_dev->child->dev), dev_name(nhi_fwnode->dev));
++
++	udev->usb4_link = link;
++
++	return 0;
++}
++
++
+ #define GET_DESCRIPTOR_BUFSIZE	64
+ 
+ /* Reset device, (re)assign address, get device descriptor.
+@@ -5236,6 +5288,7 @@ hub_port_init(struct usb_hub *hub, struct usb_device *udev, int port1,
+ 	if (hcd->driver->update_device)
+ 		hcd->driver->update_device(hcd, udev);
+ 	hub_set_initial_usb2_lpm_policy(udev);
++
+ fail:
+ 	if (retval) {
+ 		hub_port_disable(hub, port1, 0);
+@@ -5603,6 +5656,11 @@ static void hub_port_connect(struct usb_hub *hub, int port1, u16 portstatus,
+ 		if (status)
+ 			dev_dbg(hub->intfdev, "%dmA power budget left\n", status);
+ 
++		/* Tunneled USB3 devices depend on USB4 Host Interface, set device link to it */
++		if (udev->speed >= USB_SPEED_SUPER &&
++		    udev->tunnel_mode != USB_LINK_NATIVE)
++			hub_add_usb4_devlink(udev);
++
+ 		return;
+ 
+ loop_disable:
+diff --git a/drivers/usb/core/usb-acpi.c b/drivers/usb/core/usb-acpi.c
+index 489dbdc96f94..814026f8549f 100644
+--- a/drivers/usb/core/usb-acpi.c
++++ b/drivers/usb/core/usb-acpi.c
+@@ -142,57 +142,6 @@ int usb_acpi_set_power_state(struct usb_device *hdev, int index, bool enable)
+ }
+ EXPORT_SYMBOL_GPL(usb_acpi_set_power_state);
+ 
+-/**
+- * usb_acpi_add_usb4_devlink - add device link to USB4 Host Interface for tunneled USB3 devices
+- *
+- * @udev: Tunneled USB3 device connected to a roothub.
+- *
+- * Adds a device link between a tunneled USB3 device and the USB4 Host Interface
+- * device to ensure correct runtime PM suspend and resume order. This function
+- * should only be called for tunneled USB3 devices.
+- * The USB4 Host Interface this tunneled device depends on is found from the roothub
+- * port ACPI device specific data _DSD entry.
+- *
+- * Return: negative error code on failure, 0 otherwise
+- */
+-static int usb_acpi_add_usb4_devlink(struct usb_device *udev)
+-{
+-	struct device_link *link;
+-	struct usb_port *port_dev;
+-	struct usb_hub *hub;
+-
+-	if (!udev->parent || udev->parent->parent)
+-		return 0;
+-
+-	hub = usb_hub_to_struct_hub(udev->parent);
+-	if (!hub)
+-		return 0;
+-	port_dev = hub->ports[udev->portnum - 1];
+-
+-	struct fwnode_handle *nhi_fwnode __free(fwnode_handle) =
+-		fwnode_find_reference(dev_fwnode(&port_dev->dev), "usb4-host-interface", 0);
+-
+-	if (IS_ERR(nhi_fwnode) || !nhi_fwnode->dev)
+-		return 0;
+-
+-	link = device_link_add(&port_dev->child->dev, nhi_fwnode->dev,
+-			       DL_FLAG_STATELESS |
+-			       DL_FLAG_RPM_ACTIVE |
+-			       DL_FLAG_PM_RUNTIME);
+-	if (!link) {
+-		dev_err(&port_dev->dev, "Failed to created device link from %s to %s\n",
+-			dev_name(&port_dev->child->dev), dev_name(nhi_fwnode->dev));
+-		return -EINVAL;
+-	}
+-
+-	dev_dbg(&port_dev->dev, "Created device link from %s to %s\n",
+-		dev_name(&port_dev->child->dev), dev_name(nhi_fwnode->dev));
+-
+-	udev->usb4_link = link;
+-
+-	return 0;
+-}
+-
+ /*
+  * Private to usb-acpi, all the core needs to know is that
+  * port_dev->location is non-zero when it has been set by the firmware.
+@@ -312,12 +261,6 @@ usb_acpi_find_companion_for_device(struct usb_device *udev)
+ 	if (!hub)
+ 		return NULL;
+ 
+-
+-	/* Tunneled USB3 devices depend on USB4 Host Interface, set device link to it */
+-	if (udev->speed >= USB_SPEED_SUPER &&
+-	    udev->tunnel_mode != USB_LINK_NATIVE)
+-		usb_acpi_add_usb4_devlink(udev);
+-
+ 	/*
+ 	 * This is an embedded USB device connected to a port and such
+ 	 * devices share port's ACPI companion.
+-- 
+2.34.1
+

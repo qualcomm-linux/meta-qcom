@@ -1,0 +1,50 @@
+From 97b184e7090e4bdc7d73f4b33d819bf19f9d8fb1 Mon Sep 17 00:00:00 2001
+From: Konrad Dybcio <konrad.dybcio@oss.qualcomm.com>
+Date: Tue, 15 Sep 2026 09:26:52 +0200
+Subject: [PATCH 61/85] usb: dwc3: qcom: Reset the controller on resume if
+ tunneling over USB4
+
+The controller gets stuck upon resuming the system if it went to sleep
+while servicing a tunneled link. Reset it upon resume.
+
+Assisted-by: LLM
+Signed-off-by: Konrad Dybcio <konrad.dybcio@oss.qualcomm.com>
+Upstream-Status: Pending
+---
+ drivers/usb/dwc3/host.c | 6 +++++-
+ 1 file changed, 5 insertions(+), 1 deletion(-)
+
+diff --git a/drivers/usb/dwc3/host.c b/drivers/usb/dwc3/host.c
+index 7b858965717b..8433dda19ae8 100644
+--- a/drivers/usb/dwc3/host.c
++++ b/drivers/usb/dwc3/host.c
+@@ -144,6 +144,7 @@ static int dwc3_host_get_irq(struct dwc3 *dwc)
+ 
+ int dwc3_host_init(struct dwc3 *dwc)
+ {
++	struct xhci_plat_priv xhci_plat_priv = dwc3_xhci_plat_quirk;
+ 	struct property_entry	props[7];
+ 	struct platform_device	*xhci;
+ 	int			ret, irq;
+@@ -191,6 +192,9 @@ int dwc3_host_init(struct dwc3 *dwc)
+ 	if (dwc->skip_phy_init)
+ 		props[prop_idx++] = PROPERTY_ENTRY_BOOL("xhci-skip-phy-init-quirk");
+ 
++	if (device_property_present(dwc->dev, "usb4-host-interface"))
++		xhci_plat_priv.power_lost = true;
++
+ 	/**
+ 	 * WORKAROUND: dwc3 revisions <=3.00a have a limitation
+ 	 * where Port Disable command doesn't work.
+@@ -214,7 +218,7 @@ int dwc3_host_init(struct dwc3 *dwc)
+ 		}
+ 	}
+ 
+-	ret = platform_device_add_data(xhci, &dwc3_xhci_plat_quirk,
++	ret = platform_device_add_data(xhci, &xhci_plat_priv,
+ 				       sizeof(struct xhci_plat_priv));
+ 	if (ret)
+ 		goto err;
+-- 
+2.34.1
+

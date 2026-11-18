@@ -1,0 +1,36 @@
+From 564a12b1580f61c8139892de8a1924afddd82bb5 Mon Sep 17 00:00:00 2001
+From: Konrad Dybcio <konrad.dybcio@oss.qualcomm.com>
+Date: Thu, 20 Aug 2026 12:36:54 +0200
+Subject: [PATCH 56/85] Revert "PCI: Allow D3 for native hotplug-capable Root
+ Ports on non-x86 platforms"
+
+This reverts commit d4c79b63d82d408c81f1629bcdc8cdbeebd85014.
+
+Upstream-Status: Pending
+---
+ drivers/pci/pci.c | 8 ++++----
+ 1 file changed, 4 insertions(+), 4 deletions(-)
+
+diff --git a/drivers/pci/pci.c b/drivers/pci/pci.c
+index cfdc04536c27..4091560fde9e 100644
+--- a/drivers/pci/pci.c
++++ b/drivers/pci/pci.c
+@@ -3060,11 +3060,11 @@ bool pci_bridge_d3_possible(struct pci_dev *bridge)
+ 			return true;
+ 
+ 		/*
+-		 * Hotplug ports handled natively by the OS on x86 platforms
+-		 * were not validated by vendors for runtime D3 at least until
+-		 * 2018 because there was no OS support.
++		 * Hotplug ports handled natively by the OS were not validated
++		 * by vendors for runtime D3 at least until 2018 because there
++		 * was no OS support.
+ 		 */
+-		if (IS_ENABLED(CONFIG_X86) && bridge->is_pciehp)
++		if (bridge->is_pciehp)
+ 			return false;
+ 
+ 		if (dmi_check_system(bridge_d3_blacklist))
+-- 
+2.34.1
+

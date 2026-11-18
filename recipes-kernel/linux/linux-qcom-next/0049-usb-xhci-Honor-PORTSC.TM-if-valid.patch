@@ -1,0 +1,129 @@
+From 5b63ec30382274982d74bb0b352851a1ffd153f0 Mon Sep 17 00:00:00 2001
+From: Konrad Dybcio <konrad.dybcio@oss.qualcomm.com>
+Date: Mon, 6 Jul 2026 18:50:33 +0200
+Subject: [PATCH 49/85] usb: xhci: Honor PORTSC.TM if valid
+
+Currently, the only way for the USB core to determine whether the link
+is native or tunneled is via an Intel vendor-specific Extended
+Capability.
+
+The XHCI specification v1.2 and newer expose a common ext_cap,
+indicating whether BIT(2) of PORTSC can be interpreted as the tunneling
+status.
+
+Make use of that and fall back to the existing Intel-specific path if
+the ext_cap is absent.
+
+Reviewed-by: Thinh Nguyen <Thinh.Nguyen@synopsys.com>
+Signed-off-by: Konrad Dybcio <konrad.dybcio@oss.qualcomm.com>
+Upstream-Status: Pending
+---
+ drivers/usb/host/xhci-ext-caps.h |  3 +++
+ drivers/usb/host/xhci-hub.c      | 11 ++++++++++-
+ drivers/usb/host/xhci-port.h     |  3 ++-
+ drivers/usb/host/xhci.c          |  8 ++++++++
+ drivers/usb/host/xhci.h          |  1 +
+ 5 files changed, 24 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/usb/host/xhci-ext-caps.h b/drivers/usb/host/xhci-ext-caps.h
+index 22e53a750e2a..af7d624cd38e 100644
+--- a/drivers/usb/host/xhci-ext-caps.h
++++ b/drivers/usb/host/xhci-ext-caps.h
+@@ -66,6 +66,9 @@
+ #define XHCI_HLC               (1 << 19)
+ #define XHCI_BLC               (1 << 20)
+ 
++/* USB3 tunneling support capability - section 7.11 */
++#define XHCI_USB3_TUNNELING_SUPPORTED	BIT(16)
++
+ /* Intel SPR shadow capability */
+ #define XHCI_INTEL_SPR_ESS_PORT_OFFSET  0x8ac4	/* SuperSpeed port control */
+ #define XHCI_INTEL_SPR_TUNEN	BIT(4)		/* Tunnel mode enabled */
+diff --git a/drivers/usb/host/xhci-hub.c b/drivers/usb/host/xhci-hub.c
+index 470bafe1802b..80f07bd5081d 100644
+--- a/drivers/usb/host/xhci-hub.c
++++ b/drivers/usb/host/xhci-hub.c
+@@ -769,8 +769,17 @@ enum usb_link_tunnel_mode xhci_port_is_tunneled(struct xhci_hcd *xhci,
+ 	struct usb_hcd *hcd;
+ 	void __iomem *base;
+ 	u32 offset;
++	u32 val;
+ 
+-	/* Don't try and probe this capability for non-Intel hosts */
++	if (xhci->portsc_tunnel_reporting) {
++		val = xhci_portsc_readl(port);
++		if (val & PORT_TM)
++			return USB_LINK_TUNNELED;
++
++		return USB_LINK_NATIVE;
++	}
++
++	/* Fall back to the legacy Intel-specific ext_cap */
+ 	hcd = xhci_to_hcd(xhci);
+ 	if (!dev_is_pci(hcd->self.controller) ||
+ 	    to_pci_dev(hcd->self.controller)->vendor != PCI_VENDOR_ID_INTEL)
+diff --git a/drivers/usb/host/xhci-port.h b/drivers/usb/host/xhci-port.h
+index 889b5fb0fcd8..215c9cadbc34 100644
+--- a/drivers/usb/host/xhci-port.h
++++ b/drivers/usb/host/xhci-port.h
+@@ -5,7 +5,8 @@
+ #define PORT_CONNECT	(1 << 0)
+ /* true: port enabled */
+ #define PORT_PE		(1 << 1)
+-/* bit 2 reserved and zeroed */
++/* true: port is tunneling traffic over USB4 */
++#define PORT_TM		(1 << 2)
+ /* true: port has an over-current condition */
+ #define PORT_OC		(1 << 3)
+ /* true: port reset signaling asserted */
+diff --git a/drivers/usb/host/xhci.c b/drivers/usb/host/xhci.c
+index a9e47e178c28..5fb78613a993 100644
+--- a/drivers/usb/host/xhci.c
++++ b/drivers/usb/host/xhci.c
+@@ -5433,9 +5433,11 @@ int xhci_gen_setup(struct usb_hcd *hcd, xhci_get_quirks_t get_quirks)
+ 	 * quirks
+ 	 */
+ 	struct device		*dev = hcd->self.sysdev;
++	void __iomem		*base;
+ 	int			retval;
+ 	u32			hcs_params1;
+ 	u32			hc_capbase;
++	u32			tunnel_cap;
+ 
+ 	/* Accept arbitrarily long scatter-gather lists */
+ 	hcd->self.sg_tablesize = ~0;
+@@ -5456,6 +5458,7 @@ int xhci_gen_setup(struct usb_hcd *hcd, xhci_get_quirks_t get_quirks)
+ 	mutex_init(&xhci->mutex);
+ 	xhci->main_hcd = hcd;
+ 	xhci->cap_regs = hcd->regs;
++	base = &xhci->cap_regs->hc_capbase;
+ 	hc_capbase = readl(&xhci->cap_regs->hc_capbase);
+ 	if (hc_capbase == U32_MAX) {
+ 		xhci_warn(xhci, "Host controller not accessible, removed?\n");
+@@ -5473,6 +5476,11 @@ int xhci_gen_setup(struct usb_hcd *hcd, xhci_get_quirks_t get_quirks)
+ 	xhci->hcc_params = readl(&xhci->cap_regs->hcc_params);
+ 	if (xhci->hci_version > 0x100)
+ 		xhci->hcc_params2 = readl(&xhci->cap_regs->hcc_params2);
++	tunnel_cap = xhci_find_next_ext_cap(base, 0, XHCI_EXT_CAPS_USB3_TUNNELING);
++	if (tunnel_cap) {
++		xhci->portsc_tunnel_reporting =
++			!!(readl(base + tunnel_cap) & XHCI_USB3_TUNNELING_SUPPORTED);
++	}
+ 
+ 	xhci->dma_mask_bits = 64;
+ 	xhci->max_slots = min(FIELD_GET(HCS_SLOTS_MASK, hcs_params1), MAX_HC_SLOTS);
+diff --git a/drivers/usb/host/xhci.h b/drivers/usb/host/xhci.h
+index c7bfa7f028d3..480fcbac4525 100644
+--- a/drivers/usb/host/xhci.h
++++ b/drivers/usb/host/xhci.h
+@@ -1662,6 +1662,7 @@ struct xhci_hcd {
+ 	/* cached extended protocol port capabilities */
+ 	struct xhci_port_cap	*port_caps;
+ 	unsigned int		num_port_caps;
++	bool			portsc_tunnel_reporting;
+ 	/* Compliance Mode Recovery Data */
+ 	struct timer_list	comp_mode_recovery_timer;
+ 	u32			port_status_u0;
+-- 
+2.34.1
+

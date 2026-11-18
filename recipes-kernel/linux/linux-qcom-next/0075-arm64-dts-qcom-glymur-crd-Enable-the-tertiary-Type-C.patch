@@ -1,0 +1,148 @@
+From 010771fbd514816e8b7d6e22c0f45b7c21863e98 Mon Sep 17 00:00:00 2001
+From: Konrad Dybcio <konrad.dybcio@oss.qualcomm.com>
+Date: Tue, 3 Nov 2026 13:47:53 +0100
+Subject: [PATCH 75/85] arm64: dts: qcom: glymur-crd: Enable the tertiary
+ Type-C
+
+Upstream-Status: Pending
+---
+ arch/arm64/boot/dts/qcom/glymur-crd.dtsi | 82 ++++++++++++++++++++++--
+ 1 file changed, 78 insertions(+), 4 deletions(-)
+
+diff --git a/arch/arm64/boot/dts/qcom/glymur-crd.dtsi b/arch/arm64/boot/dts/qcom/glymur-crd.dtsi
+index 850a04491da8..65bd0e39867d 100644
+--- a/arch/arm64/boot/dts/qcom/glymur-crd.dtsi
++++ b/arch/arm64/boot/dts/qcom/glymur-crd.dtsi
+@@ -133,16 +133,16 @@ pmic_glink_hs_in1: endpoint {
+ 					};
+ 				};
+ 
+-				port@1 {
+-					reg = <1>;
++				port@2 {
++					reg = <2>;
+ 
+ 					pmic_glink_ss_in1: endpoint {
+ 						remote-endpoint = <&usb_1_qmpphy_out>;
+ 					};
+ 				};
+ 
+-				port@2 {
+-					reg = <2>;
++				port@1 {
++					reg = <1>;
+ 
+ 					pmic_glink_usb4_in1: endpoint {
+ 						remote-endpoint = <&usb4_1_mode_in>;
+@@ -150,6 +150,42 @@ pmic_glink_usb4_in1: endpoint {
+ 				};
+ 			};
+ 		};
++
++		connector@2 {
++			compatible = "usb-c-connector";
++			reg = <2>;
++			power-role = "dual";
++			data-role = "dual";
++
++			ports {
++				#address-cells = <1>;
++				#size-cells = <0>;
++
++				port@0 {
++					reg = <0>;
++
++					pmic_glink_hs_in2: endpoint {
++						remote-endpoint = <&usb_2_dwc3_hs>;
++					};
++				};
++
++				port@2 {
++					reg = <2>;
++
++					pmic_glink_ss_in2: endpoint {
++						remote-endpoint = <&usb_2_qmpphy_out>;
++					};
++				};
++
++				port@1 {
++					reg = <1>;
++
++					pmic_glink_usb4_in2: endpoint {
++						remote-endpoint = <&usb4_2_mode_in>;
++					};
++				};
++			};
++		};
+ 	};
+ 
+ 	vreg_edp_3p3: regulator-edp-3p3 {
+@@ -932,6 +968,14 @@ &mdss {
+ 	status = "okay";
+ };
+ 
++&mdss_dp2 {
++	status = "okay";
++};
++
++&mdss_dp2_out {
++	link-frequencies = /bits/ 64 <1620000000 2700000000 5400000000 8100000000>;
++};
++
+ &mdss_dp3 {
+ 	/delete-property/ #sound-dai-cells;
+ 
+@@ -1268,6 +1312,10 @@ &smb2370_k_e2_eusb2_repeater {
+ 	vdd3-supply = <&vreg_l7b_e0_2p79>;
+ };
+ 
++&smb2370_l_e2 {
++	status = "okay";
++};
++
+ &sdhc_2 {
+ 	vmmc-supply = <&vreg_l9b_e0_2p9>;
+ 	vqmmc-supply = <&vreg_l2b_e0_2p9>;
+@@ -1709,6 +1757,10 @@ &usb4_1_mode_in {
+ 	remote-endpoint = <&pmic_glink_usb4_in1>;
+ };
+ 
++&usb4_2_mode_in {
++	remote-endpoint = <&pmic_glink_usb4_in2>;
++};
++
+ &usb_0 {
+ 	status = "okay";
+ };
+@@ -1767,6 +1819,28 @@ &usb_1_qmpphy_out {
+ 	remote-endpoint = <&pmic_glink_ss_in1>;
+ };
+ 
++&usb_2 {
++	status = "okay";
++};
++
++&usb_2_dwc3_hs {
++	remote-endpoint = <&pmic_glink_hs_in2>;
++};
++
++&usb_2_hsphy {
++	phys = <&smb2370_l_e2_eusb2_repeater>;
++
++	status = "okay";
++};
++
++&usb_2_qmpphy {
++	status = "okay";
++};
++
++&usb_2_qmpphy_out {
++	remote-endpoint = <&pmic_glink_ss_in2>;
++};
++
+ &usb_mp {
+ 	status = "okay";
+ };
+-- 
+2.34.1
+

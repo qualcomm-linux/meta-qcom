@@ -1,0 +1,49 @@
+From f83f1e5adf3b7e16921b5aa9eeba75c5de769b48 Mon Sep 17 00:00:00 2001
+From: Konrad Dybcio <konrad.dybcio@oss.qualcomm.com>
+Date: Wed, 4 Nov 2026 12:58:01 +0100
+Subject: [PATCH 25/85] clk: qcom: gcc-sc8280xp: Keep USB4 uC memory powered
+
+The USB4 uC memory loses its contents when the USB4 system clocks are
+gated, for example across system suspend. Nothing tells the clock
+controller to keep the memory powered while those clocks are off.
+
+Set FORCE_MEM_CORE_ON on the GCC_USB4_SYS_CLK and
+GCC_USB4_1_SYS_CLK branches from a clk_regs_configure hook. The
+Makena CBCR reset value already has this bit set, so on this design
+the hook may be a no-op. This has not been verified on hardware.
+
+Upstream-Status: Pending
+---
+ drivers/clk/qcom/gcc-sc8280xp.c | 11 +++++++++++
+ 1 file changed, 11 insertions(+)
+
+diff --git a/drivers/clk/qcom/gcc-sc8280xp.c b/drivers/clk/qcom/gcc-sc8280xp.c
+index dc42964b1101..c9db65b7b649 100644
+--- a/drivers/clk/qcom/gcc-sc8280xp.c
++++ b/drivers/clk/qcom/gcc-sc8280xp.c
+@@ -7541,11 +7541,22 @@ static const u32 gcc_sc8280xp_critical_cbcrs[] = {
+ 	0xbb028, /* GCC_DISP1_XO_CLK */
+ };
+ 
++static void clk_sc8280xp_regs_configure(struct device *dev, struct regmap *regmap)
++{
++	/*
++	 * FORCE_MEM_CORE_ON for the USB4 uC memory, otherwise it loses its contents when the
++	 * clocks are gated (e.g. across system suspend).
++	 */
++	qcom_branch_set_force_mem_core(regmap, gcc_usb4_sys_clk, true);
++	qcom_branch_set_force_mem_core(regmap, gcc_usb4_1_sys_clk, true);
++}
++
+ static const struct qcom_cc_driver_data gcc_sc8280xp_driver_data = {
+ 	.clk_cbcrs = gcc_sc8280xp_critical_cbcrs,
+ 	.num_clk_cbcrs = ARRAY_SIZE(gcc_sc8280xp_critical_cbcrs),
+ 	.dfs_rcgs = gcc_dfs_clocks,
+ 	.num_dfs_rcgs = ARRAY_SIZE(gcc_dfs_clocks),
++	.clk_regs_configure = clk_sc8280xp_regs_configure,
+ };
+ 
+ static const struct qcom_cc_desc gcc_sc8280xp_desc = {
+-- 
+2.34.1
+

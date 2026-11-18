@@ -1,0 +1,62 @@
+From 01bd80114c31610e20039ad4f301d60aafca254d Mon Sep 17 00:00:00 2001
+From: Konrad Dybcio <konrad.dybcio@oss.qualcomm.com>
+Date: Tue, 15 Sep 2026 13:18:52 +0200
+Subject: [PATCH 34/85] thunderbolt: Add pre_switch_suspend NHI hook
+
+The Qualcomm router firmware requires a three-way handshake during its
+suspend routines as the OS writes the SLP bit to a connected device.
+
+Add a hook right beforehand to allow synchronizing right as it happens.
+
+Signed-off-by: Konrad Dybcio <konrad.dybcio@oss.qualcomm.com>
+Upstream-Status: Pending
+---
+ drivers/thunderbolt/nhi.h    | 2 ++
+ drivers/thunderbolt/switch.c | 4 ++++
+ 2 files changed, 6 insertions(+)
+
+diff --git a/drivers/thunderbolt/nhi.h b/drivers/thunderbolt/nhi.h
+index 9195b7427280..3842a8559cf6 100644
+--- a/drivers/thunderbolt/nhi.h
++++ b/drivers/thunderbolt/nhi.h
+@@ -55,6 +55,7 @@ extern const struct dev_pm_ops nhi_pm_ops;
+  * @is_present: Whether the device is currently present on the parent bus
+  * @init_interrupts: NHI specific interrupt initialization hook
+  * @select_cm: optional hook to select a custom CM
++ * @post_switch_suspend: NHI specific hook to call before suspending a switch
+  */
+ struct tb_nhi_ops {
+ 	int (*init)(struct tb_nhi *nhi);
+@@ -71,6 +72,7 @@ struct tb_nhi_ops {
+ 	bool (*is_present)(struct tb_nhi *nhi);
+ 	int (*init_interrupts)(struct tb_nhi *nhi);
+ 	struct tb * (*select_cm)(struct tb_nhi *nhi);
++	void (*pre_switch_suspend)(struct tb_nhi *nhi);
+ };
+ 
+ /*
+diff --git a/drivers/thunderbolt/switch.c b/drivers/thunderbolt/switch.c
+index 0ffc4101bbb1..bdbeed3afcd5 100644
+--- a/drivers/thunderbolt/switch.c
++++ b/drivers/thunderbolt/switch.c
+@@ -3661,6 +3661,7 @@ int tb_switch_resume(struct tb_switch *sw, bool runtime)
+  */
+ void tb_switch_suspend(struct tb_switch *sw, bool runtime)
+ {
++	struct tb_nhi *nhi = sw->tb->nhi;
+ 	unsigned int flags = 0;
+ 	struct tb_port *port;
+ 	int err;
+@@ -3694,6 +3695,9 @@ void tb_switch_suspend(struct tb_switch *sw, bool runtime)
+ 
+ 	tb_switch_set_wake(sw, flags, runtime);
+ 
++	if (nhi->ops->pre_switch_suspend)
++		nhi->ops->pre_switch_suspend(nhi);
++
+ 	if (tb_switch_is_usb4(sw))
+ 		usb4_switch_set_sleep(sw);
+ 	else
+-- 
+2.34.1
+

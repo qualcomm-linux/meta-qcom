@@ -1,0 +1,206 @@
+From 1a5b1477288f5ea89f2a3cca5c74a2a2f3223817 Mon Sep 17 00:00:00 2001
+From: Konrad Dybcio <konrad.dybcio@oss.qualcomm.com>
+Date: Wed, 2 Sep 2026 18:54:27 +0200
+Subject: [PATCH 59/85] rpmsg: retain transport endpoints across deferred probe
+
+Some rpmsg transports close a channel when the endpoint created by
+rpmsg_dev_probe() is destroyed. That makes returning -EPROBE_DEFER
+from a driver probe destructive: the deferred retry may never see the
+original remote channel again.
+
+Allow transports to pause endpoint callbacks without closing their
+channel and resume them without reopening it. When a driver returns
+-EPROBE_DEFER, the rpmsg core parks the endpoint when the transport
+supports these operations and reuses it on the next probe attempt.
+Other probe failures retain the existing endpoint-destruction behavior.
+
+Upstream-Status: Pending
+---
+ drivers/rpmsg/qcom_glink_native.c | 38 +++++++++++++++++++++++---
+ drivers/rpmsg/rpmsg_core.c        | 44 ++++++++++++++++++++++---------
+ drivers/rpmsg/rpmsg_internal.h    |  6 +++++
+ include/linux/rpmsg.h             |  2 ++
+ 4 files changed, 73 insertions(+), 17 deletions(-)
+
+diff --git a/drivers/rpmsg/qcom_glink_native.c b/drivers/rpmsg/qcom_glink_native.c
+index 55793fc18293..40f88732fe19 100644
+--- a/drivers/rpmsg/qcom_glink_native.c
++++ b/drivers/rpmsg/qcom_glink_native.c
+@@ -1165,8 +1165,10 @@ static void qcom_glink_handle_signals(struct qcom_glink *glink,
+ 
+ 	enable = sigs & NATIVE_DSR_SIG || sigs & NATIVE_CTS_SIG;
+ 
++	spin_lock_irqsave(&channel->recv_lock, flags);
+ 	if (channel->ept.flow_cb)
+ 		channel->ept.flow_cb(channel->ept.rpdev, channel->ept.priv, enable);
++	spin_unlock_irqrestore(&channel->recv_lock, flags);
+ }
+ 
+ void qcom_glink_native_rx(struct qcom_glink *glink)
+@@ -1357,6 +1359,35 @@ static struct rpmsg_endpoint *qcom_glink_create_ept(struct rpmsg_device *rpdev,
+ 	return ept;
+ }
+ 
++static void qcom_glink_pause_ept(struct rpmsg_endpoint *ept)
++{
++	struct glink_channel *channel = to_glink_channel(ept);
++	unsigned long flags;
++
++	spin_lock_irqsave(&channel->recv_lock, flags);
++	channel->ept.cb = NULL;
++	channel->ept.flow_cb = NULL;
++	channel->ept.priv = NULL;
++	spin_unlock_irqrestore(&channel->recv_lock, flags);
++}
++
++static int qcom_glink_resume_ept(struct rpmsg_endpoint *ept,
++				 rpmsg_rx_cb_t cb,
++				 rpmsg_flowcontrol_cb_t flow_cb,
++				 void *priv)
++{
++	struct glink_channel *channel = to_glink_channel(ept);
++	unsigned long flags;
++
++	spin_lock_irqsave(&channel->recv_lock, flags);
++	channel->ept.cb = cb;
++	channel->ept.flow_cb = flow_cb;
++	channel->ept.priv = priv;
++	spin_unlock_irqrestore(&channel->recv_lock, flags);
++
++	return 0;
++}
++
+ static int qcom_glink_announce_create(struct rpmsg_device *rpdev)
+ {
+ 	struct glink_channel *channel = to_glink_channel(rpdev->ept);
+@@ -1412,11 +1443,8 @@ static void qcom_glink_destroy_ept(struct rpmsg_endpoint *ept)
+ {
+ 	struct glink_channel *channel = to_glink_channel(ept);
+ 	struct qcom_glink *glink = channel->glink;
+-	unsigned long flags;
+ 
+-	spin_lock_irqsave(&channel->recv_lock, flags);
+-	channel->ept.cb = NULL;
+-	spin_unlock_irqrestore(&channel->recv_lock, flags);
++	qcom_glink_pause_ept(ept);
+ 
+ 	qcom_glink_send_close_req(glink, channel);
+ }
+@@ -1612,6 +1640,8 @@ static const struct rpmsg_device_ops glink_device_ops = {
+ 
+ static const struct rpmsg_endpoint_ops glink_endpoint_ops = {
+ 	.destroy_ept = qcom_glink_destroy_ept,
++	.pause_ept = qcom_glink_pause_ept,
++	.resume_ept = qcom_glink_resume_ept,
+ 	.send = qcom_glink_send,
+ 	.sendto = qcom_glink_sendto,
+ 	.trysend = qcom_glink_trysend,
+diff --git a/drivers/rpmsg/rpmsg_core.c b/drivers/rpmsg/rpmsg_core.c
+index 04bfcc75f05b..8269c9f0a9ef 100644
+--- a/drivers/rpmsg/rpmsg_core.c
++++ b/drivers/rpmsg/rpmsg_core.c
+@@ -447,26 +447,44 @@ static int rpmsg_dev_probe(struct device *dev)
+ 		goto out;
+ 
+ 	if (rpdrv->callback) {
+-		strscpy(chinfo.name, rpdev->id.name, sizeof(chinfo.name));
+-		chinfo.src = rpdev->src;
+-		chinfo.dst = RPMSG_ADDR_ANY;
+-
+-		ept = rpmsg_create_ept(rpdev, rpdrv->callback, NULL, chinfo);
+-		if (!ept) {
+-			dev_err(dev, "failed to create endpoint\n");
+-			err = -ENOMEM;
+-			goto out;
+-		}
++		if (rpdev->ept_parked) {
++			ept = rpdev->ept;
++			err = ept->ops->resume_ept(ept, rpdrv->callback,
++						   rpdrv->flowcontrol, NULL);
++			if (err) {
++				rpdev->ept_parked = false;
++				goto destroy_ept;
++			}
+ 
+-		rpdev->ept = ept;
+-		rpdev->src = ept->addr;
++			rpdev->ept_parked = false;
++		} else {
++			strscpy(chinfo.name, rpdev->id.name, sizeof(chinfo.name));
++			chinfo.src = rpdev->src;
++			chinfo.dst = RPMSG_ADDR_ANY;
++
++			ept = rpmsg_create_ept(rpdev, rpdrv->callback, NULL, chinfo);
++			if (!ept) {
++				dev_err(dev, "failed to create endpoint\n");
++				err = -ENOMEM;
++				goto out;
++			}
+ 
+-		ept->flow_cb = rpdrv->flowcontrol;
++			rpdev->ept = ept;
++			rpdev->src = ept->addr;
++			ept->flow_cb = rpdrv->flowcontrol;
++		}
+ 	}
+ 
+ 	err = rpdrv->probe(rpdev);
+ 	if (err) {
+ 		dev_err(dev, "%s: failed: %d\n", __func__, err);
++		if (err == -EPROBE_DEFER && ept && ept->ops->pause_ept &&
++		    ept->ops->resume_ept) {
++			ept->ops->pause_ept(ept);
++			rpdev->ept_parked = true;
++			return err;
++		}
++
+ 		goto destroy_ept;
+ 	}
+ 
+diff --git a/drivers/rpmsg/rpmsg_internal.h b/drivers/rpmsg/rpmsg_internal.h
+index a8b7065fd165..b0e68f9ae24e 100644
+--- a/drivers/rpmsg/rpmsg_internal.h
++++ b/drivers/rpmsg/rpmsg_internal.h
+@@ -48,6 +48,9 @@ struct rpmsg_device_ops {
+ /**
+  * struct rpmsg_endpoint_ops - indirection table for rpmsg_endpoint operations
+  * @destroy_ept:	see @rpmsg_destroy_ept(), required
++ * @pause_ept:	pause callbacks without closing the channel, optional;
++	must quiesce in-flight callbacks
++ * @resume_ept:	resume callbacks without reopening the channel, optional
+  * @send:		see @rpmsg_send(), required
+  * @sendto:		see @rpmsg_sendto(), optional
+  * @trysend:		see @rpmsg_trysend(), required
+@@ -62,6 +65,9 @@ struct rpmsg_device_ops {
+  */
+ struct rpmsg_endpoint_ops {
+ 	void (*destroy_ept)(struct rpmsg_endpoint *ept);
++	void (*pause_ept)(struct rpmsg_endpoint *ept);
++	int (*resume_ept)(struct rpmsg_endpoint *ept, rpmsg_rx_cb_t cb,
++			  rpmsg_flowcontrol_cb_t flow_cb, void *priv);
+ 
+ 	int (*send)(struct rpmsg_endpoint *ept, const void *data, int len);
+ 	int (*sendto)(struct rpmsg_endpoint *ept, const void *data, int len, u32 dst);
+diff --git a/include/linux/rpmsg.h b/include/linux/rpmsg.h
+index 0171c490339c..4f28cfed28e8 100644
+--- a/include/linux/rpmsg.h
++++ b/include/linux/rpmsg.h
+@@ -44,6 +44,7 @@ struct rpmsg_channel_info {
+  * @src: local address
+  * @dst: destination address
+  * @ept: the rpmsg endpoint of this channel
++ * @ept_parked: endpoint callbacks are paused while probe is deferred
+  * @announce: if set, rpmsg will announce the creation/removal of this channel
+  * @little_endian: True if transport is using little endian byte representation
+  */
+@@ -53,6 +54,7 @@ struct rpmsg_device {
+ 	u32 src;
+ 	u32 dst;
+ 	struct rpmsg_endpoint *ept;
++	bool ept_parked;
+ 	bool announce;
+ 	bool little_endian;
+ 
+-- 
+2.34.1
+

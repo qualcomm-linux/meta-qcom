@@ -1,0 +1,47 @@
+From 4881be20a4b299ad28b1eec472cff1c5d9d076f8 Mon Sep 17 00:00:00 2001
+From: Konrad Dybcio <konrad.dybcio@oss.qualcomm.com>
+Date: Fri, 23 Oct 2026 13:31:12 +0200
+Subject: [PATCH 73/85] phy: qcom: qmp-combo: Clear DP AON toggle in USB4 mode
+
+In USB4 mode, qmp_combo_com_init() clears only the USB4 AON toggle
+enable. The Glymur USB4v2 PHY HSR also writes DP_AON_TOGGLE_ENABLE = 0
+in each of its USB4 DP tunneling clock sequences, but the driver never
+does that when the PHY is in USB4 mode, so the DP toggle is left in
+whatever state it was found in before DP is tunneled.
+
+The non-USB4 branch also writes cfg->regs[QPHY_DP_AON_TOGGLE_ENABLE]
+unconditionally. That is fine for the layouts that provide it today, but
+a layout that sets QPHY_AON_TOGGLE_ENABLE without a DP offset would end
+up clearing bit 0 of offset 0x0 instead, which is the USB3 AON clamp
+enable register on v8 PHYs.
+
+Clear the DP AON toggle as well when in USB4 mode, and only touch it in
+either branch if the layout actually defines an offset for it.
+
+Signed-off-by: Konrad Dybcio <konrad.dybcio@oss.qualcomm.com>
+Upstream-Status: Pending
+---
+ drivers/phy/qualcomm/phy-qcom-qmp-combo.c | 5 ++++-
+ 1 file changed, 4 insertions(+), 1 deletion(-)
+
+diff --git a/drivers/phy/qualcomm/phy-qcom-qmp-combo.c b/drivers/phy/qualcomm/phy-qcom-qmp-combo.c
+index 21cf18e12aee..afd372123c43 100644
+--- a/drivers/phy/qualcomm/phy-qcom-qmp-combo.c
++++ b/drivers/phy/qualcomm/phy-qcom-qmp-combo.c
+@@ -4667,9 +4667,12 @@ static int qmp_combo_com_init(struct qmp_combo *qmp, bool force)
+ 	if (aon_toggle) {
+ 		if (qmp->qmpphy_mode == QMPPHY_MODE_USB4 && cfg->regs[QPHY_USB4_AON_TOGGLE_ENABLE]) {
+ 			qphy_clrbits(aon_toggle, cfg->regs[QPHY_USB4_AON_TOGGLE_ENABLE], 0x1);
++			if (cfg->regs[QPHY_DP_AON_TOGGLE_ENABLE])
++				qphy_clrbits(aon_toggle, cfg->regs[QPHY_DP_AON_TOGGLE_ENABLE], 0x1);
+ 		} else if (cfg->regs[QPHY_AON_TOGGLE_ENABLE]) {
+ 			qphy_clrbits(aon_toggle, cfg->regs[QPHY_AON_TOGGLE_ENABLE], 0x1);
+-			qphy_clrbits(aon_toggle, cfg->regs[QPHY_DP_AON_TOGGLE_ENABLE], 0x1);
++			if (cfg->regs[QPHY_DP_AON_TOGGLE_ENABLE])
++				qphy_clrbits(aon_toggle, cfg->regs[QPHY_DP_AON_TOGGLE_ENABLE], 0x1);
+ 		}
+ 	}
+ 
+-- 
+2.34.1
+

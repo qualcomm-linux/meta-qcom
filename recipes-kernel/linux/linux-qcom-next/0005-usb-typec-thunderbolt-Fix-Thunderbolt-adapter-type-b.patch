@@ -1,0 +1,33 @@
+From c05a55221bfc8b03b2430c7b57875fb073b9af3c Mon Sep 17 00:00:00 2001
+From: Konrad Dybcio <konrad.dybcio@oss.qualcomm.com>
+Date: Sat, 7 Jun 2025 13:17:28 +0200
+Subject: [PATCH 05/85] usb: typec: thunderbolt: Fix Thunderbolt adapter type
+ bitfield values
+
+The value has been amended with the release of the USB Type-C
+Specification v2.1, reportedly as an erratum.
+
+Signed-off-by: Konrad Dybcio <konrad.dybcio@oss.qualcomm.com>
+Upstream-Status: Pending
+---
+ include/linux/usb/typec_tbt.h | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/include/linux/usb/typec_tbt.h b/include/linux/usb/typec_tbt.h
+index 0b570f1b8bc8..b8f7824803c3 100644
+--- a/include/linux/usb/typec_tbt.h
++++ b/include/linux/usb/typec_tbt.h
+@@ -27,8 +27,8 @@ struct typec_thunderbolt_data {
+ /* TBT3 Device Discover Mode VDO bits */
+ #define TBT_MODE			BIT(0)
+ #define TBT_ADAPTER(_vdo_)		FIELD_GET(BIT(16), _vdo_)
+-#define   TBT_ADAPTER_LEGACY		0
+-#define   TBT_ADAPTER_TBT3		1
++#define   TBT_ADAPTER_TBT3		0
++#define   TBT_ADAPTER_LEGACY		1
+ #define TBT_INTEL_SPECIFIC_B0		BIT(26)
+ #define TBT_VENDOR_SPECIFIC_B0		BIT(30)
+ #define TBT_VENDOR_SPECIFIC_B1		BIT(31)
+-- 
+2.34.1
+

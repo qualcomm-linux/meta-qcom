@@ -1,0 +1,273 @@
+From 90aa17f18e15d3719f377e9fa96479dfbf5a3c5d Mon Sep 17 00:00:00 2001
+From: Konrad Dybcio <konrad.dybcio@oss.qualcomm.com>
+Date: Tue, 22 Sep 2026 17:51:37 +0200
+Subject: [PATCH 66/85] thunderbolt: Add device links for OF PCIe tunnels
+
+ACPI systems link tunneled native PCIe ports to the NHI so system
+and runtime PM restore the tunnel before its PCI consumers. OF platforms
+require the same ordering, but the NHI and PCI host bridge may probe in
+either order.
+
+Factor out the common link creation and register a PCI bus notifier for
+OF-described host bridges. Also scan already registered bridges when the
+NHI probes.
+
+Assisted-by: LLM
+Signed-off-by: Konrad Dybcio <konrad.dybcio@oss.qualcomm.com>
+Upstream-Status: Pending
+---
+ drivers/thunderbolt/acpi.c |  26 +------
+ drivers/thunderbolt/nhi.c  | 152 ++++++++++++++++++++++++++++++++++++-
+ drivers/thunderbolt/nhi.h  |   1 +
+ 3 files changed, 152 insertions(+), 27 deletions(-)
+
+diff --git a/drivers/thunderbolt/acpi.c b/drivers/thunderbolt/acpi.c
+index 53546bc477a5..c2508b06453a 100644
+--- a/drivers/thunderbolt/acpi.c
++++ b/drivers/thunderbolt/acpi.c
+@@ -46,31 +46,7 @@ static acpi_status tb_acpi_add_link(acpi_handle handle, u32 level, void *data,
+ 	if (pci_is_pcie(pdev) &&
+ 	    (pci_pcie_type(pdev) == PCI_EXP_TYPE_ROOT_PORT ||
+ 	     pci_pcie_type(pdev) == PCI_EXP_TYPE_DOWNSTREAM)) {
+-		const struct device_link *link;
+-
+-		/*
+-		 * Make them both active first to make sure the NHI does
+-		 * not runtime suspend before the consumer. The
+-		 * pm_runtime_put() below then allows the consumer to
+-		 * runtime suspend again (which then allows NHI runtime
+-		 * suspend too now that the device link is established).
+-		 */
+-		pm_runtime_get_sync(&pdev->dev);
+-
+-		link = device_link_add(&pdev->dev, nhi->dev,
+-				       DL_FLAG_AUTOREMOVE_SUPPLIER |
+-				       DL_FLAG_RPM_ACTIVE |
+-				       DL_FLAG_PM_RUNTIME);
+-		if (link) {
+-			dev_dbg(nhi->dev, "created link from %s\n",
+-				dev_name(&pdev->dev));
+-			*(bool *)ret = true;
+-		} else {
+-			dev_warn(nhi->dev, "device link creation from %s failed\n",
+-				 dev_name(&pdev->dev));
+-		}
+-
+-		pm_runtime_put(&pdev->dev);
++		*(bool *)ret |= nhi_link_pcie(nhi, &pdev->dev);
+ 	}
+ 
+ out_put:
+diff --git a/drivers/thunderbolt/nhi.c b/drivers/thunderbolt/nhi.c
+index a332fee2a365..3cb734915c7a 100644
+--- a/drivers/thunderbolt/nhi.c
++++ b/drivers/thunderbolt/nhi.c
+@@ -9,7 +9,9 @@
+  * Copyright (C) 2018, Intel Corporation
+  */
+ 
++#include <linux/acpi.h>
+ #include <linux/pm_runtime.h>
++#include <linux/of.h>
+ #include <linux/slab.h>
+ #include <linux/errno.h>
+ #include <linux/dma-mapping.h>
+@@ -17,6 +19,7 @@
+ #include <linux/iommu.h>
+ #include <linux/lockdep.h>
+ #include <linux/module.h>
++#include <linux/notifier.h>
+ #include <linux/delay.h>
+ #include <linux/property.h>
+ #include <linux/string_choices.h>
+@@ -1341,6 +1344,142 @@ static void nhi_reset(struct tb_nhi *nhi)
+ 	dev_warn(nhi->dev, "timeout resetting host router\n");
+ }
+ 
++/**
++ * nhi_link_pcie() - Create runtime PM-enabled device links
++ * @nhi: Pointer to the NHI structure
++ * @pcie_port_dev: Pointer to the PCIe port device
++ *
++ * Return: %true if the link was created, %false otherwise.
++ */
++bool nhi_link_pcie(struct tb_nhi *nhi, struct device *pcie_port_dev)
++{
++	const struct device_link *link;
++
++	/*
++	 * Make them both active first to make sure the NHI does
++	 * not runtime suspend before the consumer. The
++	 * pm_runtime_put() below then allows the consumer to
++	 * runtime suspend again (which then allows NHI runtime
++	 * suspend too now that the device link is established).
++	 */
++	pm_runtime_get_sync(pcie_port_dev);
++
++	link = device_link_add(pcie_port_dev, nhi->dev,
++			       DL_FLAG_AUTOREMOVE_SUPPLIER |
++			       DL_FLAG_RPM_ACTIVE |
++			       DL_FLAG_PM_RUNTIME);
++	if (link) {
++		dev_dbg(nhi->dev, "created link from %s\n", dev_name(pcie_port_dev));
++	} else {
++		dev_warn(nhi->dev, "device link creation from %s failed\n",
++			 dev_name(pcie_port_dev));
++	}
++
++	pm_runtime_put(pcie_port_dev);
++
++	return !!link;
++}
++EXPORT_SYMBOL_GPL(nhi_link_pcie);
++
++static bool nhi_of_pcie_port_matches(struct tb_nhi *nhi,
++				     const struct device_node *node)
++{
++	struct device_node *nhi_node;
++	bool matches;
++
++	if (!node || !of_device_is_available(node) ||
++	    !of_node_is_type(node, "pci"))
++		return false;
++
++	nhi_node = of_parse_phandle(node, "usb4-host-interface", 0);
++	if (!nhi_node)
++		return false;
++
++	matches = device_match_of_node(nhi->dev, nhi_node);
++	of_node_put(nhi_node);
++
++	return matches;
++}
++
++static bool nhi_link_of_pcie_ports(struct tb_nhi *nhi)
++{
++	struct device_node *node;
++	bool linked = false;
++
++	for_each_node_with_property(node, "usb4-host-interface") {
++		struct device *dev;
++
++		if (!nhi_of_pcie_port_matches(nhi, node))
++			continue;
++
++		dev = bus_find_device_by_of_node(&pci_bus_type, node);
++		if (!dev)
++			continue;
++
++		linked |= nhi_link_pcie(nhi, dev);
++		put_device(dev);
++	}
++
++	return linked;
++}
++
++struct nhi_pcie_notifier {
++	struct notifier_block nb;
++	struct tb_nhi *nhi;
++};
++
++static int nhi_pcie_notifier_call(struct notifier_block *nb,
++				  unsigned long action, void *data)
++{
++	struct nhi_pcie_notifier *notifier =
++		container_of(nb, struct nhi_pcie_notifier, nb);
++	struct device *dev = data;
++
++	if (action != BUS_NOTIFY_ADD_DEVICE || !dev_is_pci(dev))
++		return NOTIFY_DONE;
++
++	if (!nhi_of_pcie_port_matches(notifier->nhi, dev->of_node))
++		return NOTIFY_DONE;
++
++	nhi_link_pcie(notifier->nhi, dev);
++	return NOTIFY_OK;
++}
++
++static void nhi_unregister_pcie_notifier(void *data)
++{
++	struct nhi_pcie_notifier *notifier = data;
++
++	bus_unregister_notifier(&pci_bus_type, &notifier->nb);
++}
++
++static int nhi_register_pcie_notifier(struct tb_nhi *nhi)
++{
++	struct nhi_pcie_notifier *notifier;
++	int ret;
++
++	if (!nhi->dev->of_node)
++		return 0;
++
++	notifier = devm_kzalloc(nhi->dev, sizeof(*notifier), GFP_KERNEL);
++	if (!notifier)
++		return -ENOMEM;
++
++	notifier->nhi = nhi;
++	notifier->nb.notifier_call = nhi_pcie_notifier_call;
++
++	ret = bus_register_notifier(&pci_bus_type, &notifier->nb);
++	if (ret)
++		return ret;
++
++	ret = devm_add_action_or_reset(nhi->dev, nhi_unregister_pcie_notifier,
++				       notifier);
++	if (ret)
++		return ret;
++
++	nhi_link_of_pcie_ports(nhi);
++	return 0;
++}
++
+ static struct tb *nhi_select_cm(struct tb_nhi *nhi)
+ {
+ 	bool linked = false;
+@@ -1362,14 +1501,14 @@ static struct tb *nhi_select_cm(struct tb_nhi *nhi)
+ 
+ 	if (nhi->ops->add_links)
+ 		linked = nhi->ops->add_links(nhi);
+-	if (!linked)
++	if (!linked && has_acpi_companion(nhi->dev))
+ 		linked = tb_acpi_add_links(nhi);
+ 	/*
+ 	 * Device links are needed to make sure we establish tunnels
+ 	 * before protocol stacks are resumed so complain here if we
+ 	 * found them missing.
+ 	 */
+-	if (!linked)
++	if (!linked && !nhi->dev->of_node)
+ 		dev_warn(nhi->dev,
+ 			 "device links to tunneled native ports are missing!\n");
+ 	return tb;
+@@ -1442,6 +1581,15 @@ int nhi_probe(struct tb_nhi *nhi)
+ 	}
+ 	dev_set_drvdata(dev, tb);
+ 
++	res = nhi_register_pcie_notifier(nhi);
++	if (res) {
++		tb_domain_remove(tb);
++		wait_for_completion(&nhi->domain_released);
++		nhi_shutdown(nhi);
++		return dev_err_probe(dev, res,
++				     "failed to register PCIe device notifier\n");
++	}
++
+ 	device_wakeup_enable(dev);
+ 
+ 	pm_runtime_allow(dev);
+diff --git a/drivers/thunderbolt/nhi.h b/drivers/thunderbolt/nhi.h
+index 3842a8559cf6..3409dd0cf0c3 100644
+--- a/drivers/thunderbolt/nhi.h
++++ b/drivers/thunderbolt/nhi.h
+@@ -38,6 +38,7 @@ irqreturn_t ring_msix(int irq, void *data);
+ int nhi_probe(struct tb_nhi *nhi);
+ void nhi_shutdown(struct tb_nhi *nhi);
+ extern const struct dev_pm_ops nhi_pm_ops;
++bool nhi_link_pcie(struct tb_nhi *nhi, struct device *pcie_port_dev);
+ 
+ /**
+  * struct tb_nhi_ops - NHI specific optional operations
+-- 
+2.34.1
+

@@ -1,0 +1,89 @@
+From 487f36fb75eb7e827ee6af6d49d83b7f7911b492 Mon Sep 17 00:00:00 2001
+From: Konrad Dybcio <konrad.dybcio@oss.qualcomm.com>
+Date: Thu, 12 Nov 2026 17:08:06 +0100
+Subject: [PATCH 83/85] thunderbolt: qcom: Track the cable's max gen instead of
+ a Gen3 flag
+
+Store the cable speed advertised in the EUDO as cable_max_gen rather
+than collapsing it into a "has Gen3" bool, so Gen4 capable cables can be
+told apart on USB4 v2 routers. Routers that aren't USB4 v2 capable are
+capped at Gen3. BEGIN_HSE's Gen3 bit keeps its meaning (>= Gen3).
+
+Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>
+Upstream-Status: Pending
+---
+ drivers/thunderbolt/qcom.c | 19 ++++++++++++-------
+ drivers/thunderbolt/qcom.h |  2 +-
+ 2 files changed, 13 insertions(+), 8 deletions(-)
+
+diff --git a/drivers/thunderbolt/qcom.c b/drivers/thunderbolt/qcom.c
+index c6d744682265..5857442956c9 100644
+--- a/drivers/thunderbolt/qcom.c
++++ b/drivers/thunderbolt/qcom.c
+@@ -1237,7 +1237,7 @@ static int qcom_usb4_mux_set(struct typec_mux_dev *mux, struct typec_mux_state *
+ 	struct enter_usb_data *usb4_data;
+ 	enum tbt_phy_submode phy_submode;
+ 	bool cable_legacy_tbt3 = false;
+-	bool cable_has_gen3 = false;
++	unsigned int cable_max_gen = 0;
+ 	bool active_cable = false;
+ 	int ret;
+ 
+@@ -1260,13 +1260,16 @@ static int qcom_usb4_mux_set(struct typec_mux_dev *mux, struct typec_mux_state *
+ 
+ 		usb4_data = state->data;
+ 
+-		if (FIELD_GET(EUDO_CABLE_SPEED_MASK, usb4_data->eudo) >= EUDO_CABLE_SPEED_USB4_GEN3)
+-			cable_has_gen3 = true;
++		cable_max_gen = FIELD_GET(EUDO_CABLE_SPEED_MASK, usb4_data->eudo);
++
++		/* Routers that aren't USB4 v2 capable can't go beyond Gen 3 regardless of the cable */
++		if (!is_usb4v2(qcusb4))
++			cable_max_gen = min(cable_max_gen, EUDO_CABLE_SPEED_USB4_GEN3);
+ 
+ 		if (FIELD_GET(EUDO_CABLE_TYPE_MASK, usb4_data->eudo) == EUDO_CABLE_TYPE_RE_TIMER)
+ 			active_cable = true;
+ 
+-		dev_err(dev, "USB4: has_gen3=%u active_cable=%u\n", !!cable_has_gen3, !!active_cable);
++		dev_err(dev, "USB4: cable_max_gen=%u active_cable=%u\n", cable_max_gen, !!active_cable);
+ 	} else if (state->mode == TYPEC_STATE_SAFE) {
+ 		/* SAFE may be transient, e.g. during DP altmode entry */
+ 		if (qcusb4->orientation != TYPEC_ORIENTATION_NONE)
+@@ -1307,7 +1310,7 @@ static int qcom_usb4_mux_set(struct typec_mux_dev *mux, struct typec_mux_state *
+ 	qcusb4->cable_phy_submode = phy_submode;
+ 	qcusb4->active_cable = active_cable;
+ 	qcusb4->cable_legacy_tbt3 = cable_legacy_tbt3;
+-	qcusb4->cable_has_gen3 = cable_has_gen3;
++	qcusb4->cable_max_gen = cable_max_gen;
+ 
+ 	/*
+ 	 * This needs to be done asynchronously, otherwise the long chain of typec_mux() calls will
+@@ -1624,8 +1627,10 @@ static void qcusb4_cable_plug_work(struct work_struct *work)
+ 	if (qcusb4->cable_legacy_tbt3)
+ 		begin_hse_args |= BIT(4);
+ 
+-	if (qcusb4->cable_has_gen3)
+-		begin_hse_args |= BIT(5);
++	if (qcusb4->cable_max_gen >= EUDO_CABLE_SPEED_USB4_GEN3) {
++		begin_hse_args |= FIELD_PREP(GENMASK(6, 5),
++					     qcusb4->cable_max_gen - EUDO_CABLE_SPEED_USB4_GEN2);
++	}
+ 
+ 	usb4_qcom_send_fw_cmd(qcusb4, FW_CMD_BEGIN_HSE, begin_hse_args);
+ 
+diff --git a/drivers/thunderbolt/qcom.h b/drivers/thunderbolt/qcom.h
+index ad10da6a5f5e..ff40189619ed 100644
+--- a/drivers/thunderbolt/qcom.h
++++ b/drivers/thunderbolt/qcom.h
+@@ -105,7 +105,7 @@ struct qcom_usb4 {
+ 	bool cable_present;
+ 	bool active_cable;
+ 	bool cable_legacy_tbt3;
+-	bool cable_has_gen3;
++	unsigned int cable_max_gen;
+ 	enum tbt_phy_submode cable_phy_submode;
+ 
+ 	bool hard_suspended;
+-- 
+2.34.1
+

@@ -1,0 +1,59 @@
+From 38a98f79d250a203947d2b6b1e1b45836e3da33f Mon Sep 17 00:00:00 2001
+From: Konrad Dybcio <konrad.dybcio@oss.qualcomm.com>
+Date: Tue, 10 Nov 2026 11:14:20 +0100
+Subject: [PATCH 23/85] clk: qcom: gcc-sc8280xp: Describe USB4 MISC resets
+
+The USB4 MISC reset bits for both USB4 instances on SC8280XP
+(GCC_USB4CIO_0_MISC_RESET and GCC_USB4CIO_1_MISC_RESET) are not
+described to the reset controller, so the USB4 system, RX clock, PIPE,
+TMU, SB_IF, HIA, AHB and DP max pclk resets cannot be asserted through
+the reset framework.
+
+Map the new reset IDs to the MISC registers at offset 0x2a188
+(instance 0) and 0xb80f8 (instance 1). Bits 0-9 follow the register
+field layout of each instance.
+
+Signed-off-by: Konrad Dybcio <konrad.dybcio@oss.qualcomm.com>
+Upstream-Status: Pending
+---
+ drivers/clk/qcom/gcc-sc8280xp.c | 20 ++++++++++++++++++++
+ 1 file changed, 20 insertions(+)
+
+diff --git a/drivers/clk/qcom/gcc-sc8280xp.c b/drivers/clk/qcom/gcc-sc8280xp.c
+index 2ab111585d7f..8199ae500850 100644
+--- a/drivers/clk/qcom/gcc-sc8280xp.c
++++ b/drivers/clk/qcom/gcc-sc8280xp.c
+@@ -7434,10 +7434,30 @@ static const struct qcom_reset_map gcc_sc8280xp_resets[] = {
+ 	[GCC_USB4_1_BCR] = { 0xb8000 },
+ 	[GCC_USB4_1_DP_PHY_PRIM_BCR] = { 0xb9020 },
+ 	[GCC_USB4_1_DPPHY_AUX_BCR] = { 0xb9024 },
++	[GCC_USB4_1_MISC_USB4_SYS_BCR] = { .reg = 0xb80f8, .bit = 0 },
++	[GCC_USB4_1_MISC_RX_CLK_0_BCR] = { .reg = 0xb80f8, .bit = 1 },
++	[GCC_USB4_1_MISC_RX_CLK_1_BCR] = { .reg = 0xb80f8, .bit = 2 },
++	[GCC_USB4_1_MISC_USB_PIPE_BCR] = { .reg = 0xb80f8, .bit = 3 },
++	[GCC_USB4_1_MISC_PCIE_PIPE_BCR] = { .reg = 0xb80f8, .bit = 4 },
++	[GCC_USB4_1_MISC_TMU_BCR] = { .reg = 0xb80f8, .bit = 5 },
++	[GCC_USB4_1_MISC_SB_IF_BCR] = { .reg = 0xb80f8, .bit = 6 },
++	[GCC_USB4_1_MISC_HIA_MSTR_BCR] = { .reg = 0xb80f8, .bit = 7 },
++	[GCC_USB4_1_MISC_AHB_BCR] = { .reg = 0xb80f8, .bit = 8 },
++	[GCC_USB4_1_MISC_DP_MAX_PCLK_BCR] = { .reg = 0xb80f8, .bit = 9 },
+ 	[GCC_USB4_1_PHY_PRIM_BCR] = { 0xb9018 },
+ 	[GCC_USB4_BCR] = { 0x2a000 },
+ 	[GCC_USB4_DP_PHY_PRIM_BCR] = { 0x4a008 },
+ 	[GCC_USB4_DPPHY_AUX_BCR] = { 0x4a00c },
++	[GCC_USB4_MISC_USB4_SYS_BCR] = { .reg = 0x2a188, .bit = 0 },
++	[GCC_USB4_MISC_RX_CLK_0_BCR] = { .reg = 0x2a188, .bit = 1 },
++	[GCC_USB4_MISC_RX_CLK_1_BCR] = { .reg = 0x2a188, .bit = 2 },
++	[GCC_USB4_MISC_USB_PIPE_BCR] = { .reg = 0x2a188, .bit = 3 },
++	[GCC_USB4_MISC_PCIE_PIPE_BCR] = { .reg = 0x2a188, .bit = 4 },
++	[GCC_USB4_MISC_TMU_BCR] = { .reg = 0x2a188, .bit = 5 },
++	[GCC_USB4_MISC_SB_IF_BCR] = { .reg = 0x2a188, .bit = 6 },
++	[GCC_USB4_MISC_HIA_MSTR_BCR] = { .reg = 0x2a188, .bit = 7 },
++	[GCC_USB4_MISC_AHB_BCR] = { .reg = 0x2a188, .bit = 8 },
++	[GCC_USB4_MISC_DP_MAX_PCLK_BCR] = { .reg = 0x2a188, .bit = 9 },
+ 	[GCC_USB4_PHY_PRIM_BCR] = { 0x4a000 },
+ 	[GCC_USB4PHY_1_PHY_PRIM_BCR] = { 0xb901c },
+ 	[GCC_USB4PHY_PHY_PRIM_BCR] = { 0x4a004 },
+-- 
+2.34.1
+

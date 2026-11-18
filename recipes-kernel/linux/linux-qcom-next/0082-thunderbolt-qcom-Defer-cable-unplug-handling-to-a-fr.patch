@@ -1,0 +1,399 @@
+From b3b03a5b17b12944813f04264a2b391fcaa2fd67 Mon Sep 17 00:00:00 2001
+From: Konrad Dybcio <konrad.dybcio@oss.qualcomm.com>
+Date: Fri, 6 Nov 2026 16:15:48 +0100
+Subject: [PATCH 82/85] thunderbolt: qcom: Defer cable unplug handling to a
+ freezable workqueue
+
+The typec mux callback ran the full disconnect sequence (PHYS_DISCONNECT,
+router suspend, PHY handover) synchronously, which could interleave with
+a system suspend/resume. Only flag the cable as gone from the callback
+and do the teardown from an ordered, freezable workqueue, which is
+thawed once all devices have resumed.
+
+Also make exit_sleep send WAKEUP with the disconnect reason if the cable
+went away in the meantime, rather than have the FW run a handshake on a
+dead link.
+
+Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>
+Upstream-Status: Pending
+---
+ drivers/thunderbolt/nhi.c  |   8 +-
+ drivers/thunderbolt/nhi.h  |   5 +-
+ drivers/thunderbolt/qcom.c | 186 ++++++++++++++++++++++++++-----------
+ drivers/thunderbolt/qcom.h |   4 +
+ 4 files changed, 146 insertions(+), 57 deletions(-)
+
+diff --git a/drivers/thunderbolt/nhi.c b/drivers/thunderbolt/nhi.c
+index 3cb734915c7a..5b30d51cda8d 100644
+--- a/drivers/thunderbolt/nhi.c
++++ b/drivers/thunderbolt/nhi.c
+@@ -1118,6 +1118,9 @@ static int __nhi_suspend_noirq(struct device *dev, bool wakeup)
+ 
+ 	nhi = tb->nhi;
+ 
++	if (nhi->ops->is_suspended && nhi->ops->is_suspended(nhi))
++		return 0;
++
+ 	ret = tb_domain_suspend_noirq(tb);
+ 	if (ret)
+ 		return ret;
+@@ -1198,8 +1201,11 @@ static int nhi_resume_noirq(struct device *dev)
+ 		nhi->going_away = true;
+ 	} else if (nhi->ops->resume_noirq) {
+ 		ret = nhi->ops->resume_noirq(nhi);
+-		if (ret)
++		if (ret < 0)
+ 			return ret;
++		/* Positive: the hardware stays off, whoever brings it up resumes the domain */
++		if (ret > 0)
++			return 0;
+ 	}
+ 
+ 	return tb_domain_resume_noirq(tb);
+diff --git a/drivers/thunderbolt/nhi.h b/drivers/thunderbolt/nhi.h
+index 3409dd0cf0c3..4740b7b755bf 100644
+--- a/drivers/thunderbolt/nhi.h
++++ b/drivers/thunderbolt/nhi.h
+@@ -44,8 +44,10 @@ bool nhi_link_pcie(struct tb_nhi *nhi, struct device *pcie_port_dev);
+  * struct tb_nhi_ops - NHI specific optional operations
+  * @init: NHI specific initialization
+  * @add_links: Setup device links for tunneling native protocols
++ * @is_suspended: whether the domain was already suspended (and the hardware shut down)
++ *		  by the NHI itself, in which case system suspend must leave it alone
+  * @suspend_noirq: NHI specific suspend_noirq hook
+- * @resume_noirq: NHI specific resume_noirq hook
++ * @resume_noirq: NHI specific resume_noirq hook (positive return: skip domain resume)
+  * @runtime_suspend: NHI specific runtime_suspend hook
+  * @runtime_resume: NHI specific runtime_resume hook
+  * @shutdown: NHI specific shutdown
+@@ -61,6 +63,7 @@ bool nhi_link_pcie(struct tb_nhi *nhi, struct device *pcie_port_dev);
+ struct tb_nhi_ops {
+ 	int (*init)(struct tb_nhi *nhi);
+ 	bool (*add_links)(struct tb_nhi *nhi);
++	bool (*is_suspended)(struct tb_nhi *nhi);
+ 	int (*suspend_noirq)(struct tb_nhi *nhi, bool wakeup);
+ 	int (*resume_noirq)(struct tb_nhi *nhi);
+ 	int (*runtime_suspend)(struct tb_nhi *nhi);
+diff --git a/drivers/thunderbolt/qcom.c b/drivers/thunderbolt/qcom.c
+index 927f27eb369a..c6d744682265 100644
+--- a/drivers/thunderbolt/qcom.c
++++ b/drivers/thunderbolt/qcom.c
+@@ -906,17 +906,18 @@ static int qcusb4_router_exit_sleep(struct qcom_usb4 *qcusb4)
+ 	 * Un-clamp the PHY I/Os first. The PHY itself keeps its configuration across sleep
+ 	 * and is not reprogrammed.
+ 	 */
+-	if (cable_present && qcusb4->phy_prepared) {
++	if (qcusb4->phy_prepared) {
++		/*
++		 * Even if the cable went away while suspended, the PHY is shared with the tunneled
++		 * USB3 controller, which may still resume after us. Only the unplug work gets to
++		 * hand it back.
++		 */
+ 		ret = phy_power_on(qcusb4->phy);
+ 		if (ret) {
+ 			dev_err_probe(dev, ret, "Couldn't power on the PHY\n");
+ 			goto err_disable_clks;
+ 		}
+ 		phy_powered = true;
+-	} else if (qcusb4->phy_prepared) {
+-		/* The cable went away while suspended, have the next plug prepare the PHY again */
+-		phy_exit(qcusb4->phy);
+-		qcusb4->phy_prepared = false;
+ 	}
+ 
+ 	ret = reset_control_bulk_assert(NUM_MISC_RESETS, qcusb4->misc_resets);
+@@ -1023,6 +1024,16 @@ static int qcusb4_router_exit_sleep(struct qcom_usb4 *qcusb4)
+ 	else
+ 		wakeup_reason = WAKEUP_REASON_SYSTEM;
+ 
++	/*
++	 * Unplugged while suspended/resuming, don't have the FW run a handshake on a dead link.
++	 * The cable state may have changed since it was sampled, so look at it again.
++	 */
++	if (!cable_present || !READ_ONCE(qcusb4->cable_present)) {
++		wakeup_reason = WAKEUP_REASON_CBL_DIS;
++		/* The FW now knows about the disconnect, the unplug work needn't repeat it */
++		qcusb4->fw_disconnected = true;
++	}
++
+ 	qcusb4_restore_router_state(qcusb4);
+ 
+ 	usb4_qcom_send_fw_cmd(qcusb4, FW_CMD_WAKEUP, wakeup_reason);
+@@ -1048,6 +1059,8 @@ static int qcusb4_router_exit_sleep(struct qcom_usb4 *qcusb4)
+ 
+ 	qcusb4->suspended = false;
+ 
++	enable_irq(qcusb4->pcieap_irq);
++
+ 	return 0;
+ 
+ err_disable_irq:
+@@ -1074,6 +1087,15 @@ static int qcusb4_router_resume_noirq(struct tb_nhi *nhi)
+ {
+ 	struct qcom_usb4 *qcusb4 = container_of(nhi, struct qcom_usb4, nhi);
+ 
++	/*
++	 * A router that was shut down on cable removal stays that way until the plug event
++	 * arrives (the typec work is frozen until later). Starting the FW now would have it
++	 * see a cable that was plugged in during sleep, without a PHY set up for it, which
++	 * takes the SoC down. The plug work resumes it with the PHY prepared.
++	 */
++	if (qcusb4->suspended && qcusb4->hard_suspended && !READ_ONCE(qcusb4->cable_present))
++		return 1;
++
+ 	return qcusb4_router_exit_sleep(qcusb4);
+ }
+ 
+@@ -1119,6 +1141,9 @@ static int qcusb4_router_sleep(struct tb_nhi *nhi)
+ 	/* Disable the IRQ to prevent events arriving after we disable the clocks */
+ 	disable_irq(qcusb4->fw_ev_irq);
+ 
++	/* Same for the PCIe AP IRQ, which is NO_SUSPEND and could otherwise fire on wake */
++	disable_irq(qcusb4->pcieap_irq);
++
+ 	/* Mask the firmware interrupt */
+ 	val = readl(qcusb4->uc_per + UC_PER_FW_INT_MASK);
+ 	writel(val & ~PER_FW_INT_MASK_FW_INT, qcusb4->uc_per + UC_PER_FW_INT_MASK);
+@@ -1170,14 +1195,23 @@ static int qcusb4_router_sleep(struct tb_nhi *nhi)
+ 	 * If the cable is gone, hand the PHY back to allow a USB3(+DP)-native mode switch.
+ 	 * Otherwise it keeps its configuration and is only powered on again on resume.
+ 	 */
+-	if (qcusb4->phy_prepared && !qcusb4->cable_present) {
++	if (qcusb4->phy_prepared && qcusb4->phy_release) {
+ 		phy_exit(qcusb4->phy);
+ 		qcusb4->phy_prepared = false;
++		qcusb4->phy_release = false;
+ 	}
+ 
+ 	return 0;
+ }
+ 
++static bool qcusb4_router_is_suspended(struct tb_nhi *nhi)
++{
++	struct qcom_usb4 *qcusb4 = container_of(nhi, struct qcom_usb4, nhi);
++
++	/* The domain was suspended along with the router when the cable went away */
++	return qcusb4->hard_suspended;
++}
++
+ static int qcusb4_router_suspend_noirq(struct tb_nhi *nhi, bool wakeup)
+ {
+ 	return qcusb4_router_sleep(nhi);
+@@ -1242,57 +1276,15 @@ static int qcom_usb4_mux_set(struct typec_mux_dev *mux, struct typec_mux_state *
+ 		if (!qcusb4->cable_present)
+ 			return 0;
+ 
+-		qcusb4->cable_present = false;
+-		qcusb4->current_mode = state->mode;
+-
+-		reinit_completion(&qcusb4->disconnect_acked);
+-
+-		ret = pm_runtime_resume_and_get(dev);
+-		if (ret) {
+-			dev_err(dev, "Couldn't enable the host router: %d\n", ret);
+-			return ret;
+-		}
+-
+-		usb4_qcom_send_fw_cmd(qcusb4, FW_CMD_PHYS_DISCONNECT, 0);
+-
+-		if (!wait_for_completion_timeout(&qcusb4->disconnect_acked, msecs_to_jiffies(500))) {
+-			dev_err(dev, "Router firmware didn't ack cable disconnect in time\n");
+-			return -ETIMEDOUT;
+-		}
+-
+ 		/*
+-		 *
+-		 * Almost all the various TBT sub-devices have PM callbacks that *must* carry out
+-		 * before we can continue, due to the fact that the framework queues config space
+-		 * accesses as work items.
+-		 * Some of those may still be in flight if these sub-devices are runtime-resumed.
+-		 * This is bad given we're about to pull the plug, so try our best to quiesce all
+-		 * traffic immediately.
++		 * Only flag the cable as gone here. The teardown talks to the FW and powers the
++		 * router down, which must not interleave with a system suspend/resume, so it runs
++		 * from a freezable workqueue that only gets thawed once all devices have resumed.
+ 		 */
+-		pm_runtime_dont_use_autosuspend(dev);
+-		pm_runtime_disable(dev);
+-
+-		// TODO: this skips the topology, need to make sure PCIe suspends beforehand
+-		// as the linkdown recovery sequence may race
+-		ret = pm_generic_suspend_noirq(dev);
+-		if (ret) {
+-			dev_err(dev, "Couldn't put the router to sleep: %d\n", ret);
+-			return ret;
+-		}
+-		qcusb4->hard_suspended = true;
+-
+-		/*
+-		 * The sleep path above has handed the PHY back (after the PHYS_DISCONNECT was
+-		 * acked, as unclocked access would otherwise cause a hard reset), allowing a
+-		 * USB3(+DP)-native mode switch. Have the next plug prepare it again.
+-		 */
+-		qcusb4->phy_prepared = false;
+-
+-		ret = pinctrl_select_state(qcusb4->pinctrl, qcusb4->pinctrl_inactive);
+-		if (ret)
+-			return dev_err_probe(dev, ret, "Couldn't set pinctrl reset state\n");
++		WRITE_ONCE(qcusb4->cable_present, false);
++		qcusb4->current_mode = state->mode;
+ 
+-		dev_pm_opp_set_opp(dev, NULL);
++		queue_work(qcusb4->wq, &qcusb4->cable_unplug_work);
+ 
+ 		return 0;
+ 	} else {
+@@ -1322,7 +1314,7 @@ static int qcom_usb4_mux_set(struct typec_mux_dev *mux, struct typec_mux_state *
+ 	 * cause the PAN_ACK will arrive too late and the FW will get confused (with the visible
+ 	 * result of that being repeated UCSI messages).
+ 	 */
+-	schedule_work(&qcusb4->cable_plug_work);
++	queue_work(qcusb4->wq, &qcusb4->cable_plug_work);
+ 
+ 	return 0;
+ }
+@@ -1481,6 +1473,78 @@ static int qcusb4_init_router_hw(struct qcom_usb4 *qcusb4)
+ 	return 0;
+ }
+ 
++static void qcusb4_cable_unplug_work(struct work_struct *work)
++{
++	struct qcom_usb4 *qcusb4 = container_of(work, struct qcom_usb4, cable_unplug_work);
++	struct device *dev = qcusb4->nhi.dev;
++	int ret;
++
++	guard(mutex)(&qcusb4->typec_lock);
++
++	/* Replugged since, or already torn down */
++	if (READ_ONCE(qcusb4->cable_present) || qcusb4->hard_suspended)
++		return;
++
++	reinit_completion(&qcusb4->disconnect_acked);
++
++	ret = pm_runtime_resume_and_get(dev);
++	if (ret) {
++		dev_err(dev, "Couldn't enable the host router: %d\n", ret);
++		return;
++	}
++
++	/* A resume that found the cable gone has already sent WAKEUP(CBL_DIS) */
++	if (!qcusb4->fw_disconnected) {
++		usb4_qcom_send_fw_cmd(qcusb4, FW_CMD_PHYS_DISCONNECT, 0);
++
++		if (!wait_for_completion_timeout(&qcusb4->disconnect_acked,
++						 msecs_to_jiffies(500))) {
++			dev_err(dev, "Router firmware didn't ack cable disconnect in time\n");
++			pm_runtime_put(dev);
++			return;
++		}
++	}
++
++	/*
++	 * Almost all the various TBT sub-devices have PM callbacks that *must* carry out
++	 * before we can continue, due to the fact that the framework queues config space
++	 * accesses as work items.
++	 * Some of those may still be in flight if these sub-devices are runtime-resumed.
++	 * This is bad given we're about to pull the plug, so try our best to quiesce all
++	 * traffic immediately.
++	 */
++	pm_runtime_dont_use_autosuspend(dev);
++	pm_runtime_disable(dev);
++
++	// TODO: this skips the topology, need to make sure PCIe suspends beforehand
++	// as the linkdown recovery sequence may race
++	qcusb4->phy_release = true;
++	ret = pm_generic_suspend_noirq(dev);
++	if (ret) {
++		dev_err(dev, "Couldn't put the router to sleep: %d\n", ret);
++		qcusb4->phy_release = false;
++		pm_runtime_use_autosuspend(dev);
++		pm_runtime_enable(dev);
++		pm_runtime_put(dev);
++		return;
++	}
++	qcusb4->hard_suspended = true;
++	qcusb4->fw_disconnected = false;
++
++	/*
++	 * The sleep path above has handed the PHY back (after the PHYS_DISCONNECT was
++	 * acked, as unclocked access would otherwise cause a hard reset), allowing a
++	 * USB3(+DP)-native mode switch. Have the next plug prepare it again.
++	 */
++	qcusb4->phy_prepared = false;
++
++	ret = pinctrl_select_state(qcusb4->pinctrl, qcusb4->pinctrl_inactive);
++	if (ret)
++		dev_err(dev, "Couldn't set pinctrl reset state: %d\n", ret);
++
++	dev_pm_opp_set_opp(dev, NULL);
++}
++
+ static void qcusb4_cable_plug_work(struct work_struct *work)
+ {
+ 	struct qcom_usb4 *qcusb4 = container_of(work, struct qcom_usb4, cable_plug_work);
+@@ -1532,6 +1596,7 @@ static void qcusb4_cable_plug_work(struct work_struct *work)
+ 	}
+ 
+ 	qcusb4->cable_present = true;
++	qcusb4->fw_disconnected = false;
+ 
+ 	/* Choose which PHY presets to offer during link establishment */
+ 	if (device_property_read_u64(dev, "tx-equalization-presets", &tx_eq_presets))
+@@ -1611,6 +1676,7 @@ static void qcusb4_pre_switch_suspend(struct tb_nhi *nhi)
+ }
+ 
+ const struct tb_nhi_ops qcom_nhi_ops = {
++	.is_suspended = qcusb4_router_is_suspended,
+ 	.suspend_noirq = qcusb4_router_suspend_noirq,
+ 	.resume_noirq = qcusb4_router_resume_noirq,
+ 	.runtime_suspend = qcusb4_router_sleep,
+@@ -1721,11 +1787,20 @@ static int qcom_usb4_probe(struct platform_device *pdev)
+ 	init_completion(&qcusb4->sleep_acked);
+ 	init_completion(&qcusb4->sleep_ready);
+ 
++	qcusb4->wq = devm_alloc_ordered_workqueue(dev, "qcusb4", WQ_FREEZABLE);
++	if (!qcusb4->wq)
++		return -ENOMEM;
++
+ 	ret = devm_work_autocancel(dev, &qcusb4->cable_plug_work,
+ 				   qcusb4_cable_plug_work);
+ 	if (ret)
+ 		return ret;
+ 
++	ret = devm_work_autocancel(dev, &qcusb4->cable_unplug_work,
++				   qcusb4_cable_unplug_work);
++	if (ret)
++		return ret;
++
+ 	/* Everything sits behind an SMMU instance, always */
+ 	qcusb4->nhi.iommu_dma_protection = true;
+ 	qcusb4->nhi.dev = dev;
+@@ -1951,6 +2026,7 @@ static void qcom_usb4_remove(struct platform_device *pdev)
+ 	devm_release_action(dev, qcom_usb4_unregister_typec_mux, qcusb4->typec_mux);
+ 	devm_release_action(dev, qcom_usb4_unregister_typec_switch, qcusb4->typec_sw);
+ 	devm_release_action(dev, devm_work_drop, &qcusb4->cable_plug_work);
++	devm_release_action(dev, devm_work_drop, &qcusb4->cable_unplug_work);
+ 
+ 	pm_runtime_get_sync(&pdev->dev);
+ 	pm_runtime_dont_use_autosuspend(&pdev->dev);
+diff --git a/drivers/thunderbolt/qcom.h b/drivers/thunderbolt/qcom.h
+index 50f9e47dbba0..ad10da6a5f5e 100644
+--- a/drivers/thunderbolt/qcom.h
++++ b/drivers/thunderbolt/qcom.h
+@@ -87,9 +87,13 @@ struct qcom_usb4 {
+ 	struct completion sleep_acked;
+ 	struct completion sleep_ready;
+ 
++	struct workqueue_struct *wq;
+ 	struct work_struct cable_plug_work;
++	struct work_struct cable_unplug_work;
+ 	unsigned long current_mode;
+ 	bool phy_prepared;
++	bool phy_release;
++	bool fw_disconnected;
+ 	bool mux_clks_on;
+ 
+ 	/* Registers that need manual save-restore */
+-- 
+2.34.1
+

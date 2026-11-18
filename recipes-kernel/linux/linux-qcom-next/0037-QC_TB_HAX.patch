@@ -1,0 +1,27 @@
+From bc339a3f00fd4738e2f2b52167b7dd7095fc534a Mon Sep 17 00:00:00 2001
+From: Konrad Dybcio <konrad.dybcio@oss.qualcomm.com>
+Date: Thu, 27 Mar 2025 16:31:15 +0100
+Subject: [PATCH 37/85] QC_TB_HAX
+
+Upstream-Status: Pending
+---
+ drivers/thunderbolt/nhi.c | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/drivers/thunderbolt/nhi.c b/drivers/thunderbolt/nhi.c
+index d248c03200b4..163c08cdd307 100644
+--- a/drivers/thunderbolt/nhi.c
++++ b/drivers/thunderbolt/nhi.c
+@@ -782,6 +782,9 @@ void tb_ring_start(struct tb_ring *ring)
+ 		ring_iowrite32options(ring, flags, 0);
+ 	}
+ 
++	//qcom errata
++	udelay(1100);
++
+ 	/*
+ 	 * Now that the ring valid bit is set we can configure E2E if
+ 	 * enabled for the ring.
+-- 
+2.34.1
+

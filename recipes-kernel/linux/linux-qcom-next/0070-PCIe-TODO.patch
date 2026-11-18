@@ -1,0 +1,27 @@
+From cee55cf7bf7a162a524e4faee93027ed682f02f5 Mon Sep 17 00:00:00 2001
+From: Konrad Dybcio <konrad.dybcio@oss.qualcomm.com>
+Date: Thu, 15 Oct 2026 09:47:27 +0200
+Subject: [PATCH 70/85] PCIe TODO
+
+Signed-off-by: Konrad Dybcio <konrad.dybcio@oss.qualcomm.com>
+Upstream-Status: Pending
+---
+ drivers/thunderbolt/qcom.c | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/drivers/thunderbolt/qcom.c b/drivers/thunderbolt/qcom.c
+index feab5c023022..927f27eb369a 100644
+--- a/drivers/thunderbolt/qcom.c
++++ b/drivers/thunderbolt/qcom.c
+@@ -1272,6 +1272,8 @@ static int qcom_usb4_mux_set(struct typec_mux_dev *mux, struct typec_mux_state *
+ 		pm_runtime_dont_use_autosuspend(dev);
+ 		pm_runtime_disable(dev);
+ 
++		// TODO: this skips the topology, need to make sure PCIe suspends beforehand
++		// as the linkdown recovery sequence may race
+ 		ret = pm_generic_suspend_noirq(dev);
+ 		if (ret) {
+ 			dev_err(dev, "Couldn't put the router to sleep: %d\n", ret);
+-- 
+2.34.1
+

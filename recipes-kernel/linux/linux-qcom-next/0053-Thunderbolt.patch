@@ -1,0 +1,98 @@
+From 120cf84982e9b858940a7686b72b3c2b17ec4224 Mon Sep 17 00:00:00 2001
+From: Konrad Dybcio <konrad.dybcio@oss.qualcomm.com>
+Date: Thu, 27 Mar 2025 14:47:09 +0100
+Subject: [PATCH 53/85] Thunderbolt
+
+Upstream-Status: Pending
+---
+ arch/arm64/boot/dts/qcom/x1-crd.dtsi |  1 +
+ drivers/thunderbolt/tb.h             |  6 +++---
+ drivers/thunderbolt/tunnel.c         | 12 +++++++++---
+ 3 files changed, 13 insertions(+), 6 deletions(-)
+
+diff --git a/arch/arm64/boot/dts/qcom/x1-crd.dtsi b/arch/arm64/boot/dts/qcom/x1-crd.dtsi
+index b60c371da694..5836c7c56f1d 100644
+--- a/arch/arm64/boot/dts/qcom/x1-crd.dtsi
++++ b/arch/arm64/boot/dts/qcom/x1-crd.dtsi
+@@ -48,6 +48,7 @@ wcd938x: audio-codec {
+ 	};
+ 
+ 	chosen {
++		bootargs = "thunderbolt.dyndbg=+p";
+ 		stdout-path = "serial0:115200n8";
+ 	};
+ 
+diff --git a/drivers/thunderbolt/tb.h b/drivers/thunderbolt/tb.h
+index e4d8e17744ca..86b8997b1178 100644
+--- a/drivers/thunderbolt/tb.h
++++ b/drivers/thunderbolt/tb.h
+@@ -732,7 +732,7 @@ static inline int tb_port_write(struct tb_port *port, const void *buffer,
+ #define tb_WARN(tb, fmt, arg...) dev_WARN((tb)->nhi->dev, fmt, ## arg)
+ #define tb_warn(tb, fmt, arg...) dev_warn((tb)->nhi->dev, fmt, ## arg)
+ #define tb_info(tb, fmt, arg...) dev_info((tb)->nhi->dev, fmt, ## arg)
+-#define tb_dbg(tb, fmt, arg...) dev_dbg((tb)->nhi->dev, fmt, ## arg)
++#define tb_dbg(tb, fmt, arg...) dev_info((tb)->nhi->dev, fmt, ## arg)
+ 
+ #define __TB_SW_PRINT(level, sw, fmt, arg...)           \
+ 	do {                                            \
+@@ -743,7 +743,7 @@ static inline int tb_port_write(struct tb_port *port, const void *buffer,
+ #define tb_sw_WARN(sw, fmt, arg...) __TB_SW_PRINT(tb_WARN, sw, fmt, ##arg)
+ #define tb_sw_warn(sw, fmt, arg...) __TB_SW_PRINT(tb_warn, sw, fmt, ##arg)
+ #define tb_sw_info(sw, fmt, arg...) __TB_SW_PRINT(tb_info, sw, fmt, ##arg)
+-#define tb_sw_dbg(sw, fmt, arg...) __TB_SW_PRINT(tb_dbg, sw, fmt, ##arg)
++#define tb_sw_dbg(sw, fmt, arg...) __TB_SW_PRINT(tb_info, sw, fmt, ##arg)
+ 
+ #define __TB_PORT_PRINT(level, _port, fmt, arg...)                      \
+ 	do {                                                            \
+@@ -758,7 +758,7 @@ static inline int tb_port_write(struct tb_port *port, const void *buffer,
+ #define tb_port_info(port, fmt, arg...) \
+ 	__TB_PORT_PRINT(tb_info, port, fmt, ##arg)
+ #define tb_port_dbg(port, fmt, arg...) \
+-	__TB_PORT_PRINT(tb_dbg, port, fmt, ##arg)
++	__TB_PORT_PRINT(tb_info, port, fmt, ##arg)
+ 
+ struct tb *icm_probe(struct tb_nhi *nhi);
+ struct tb *tb_probe(struct tb_nhi *nhi);
+diff --git a/drivers/thunderbolt/tunnel.c b/drivers/thunderbolt/tunnel.c
+index 8b2953fe97ee..dd07efd203ce 100644
+--- a/drivers/thunderbolt/tunnel.c
++++ b/drivers/thunderbolt/tunnel.c
+@@ -468,8 +468,10 @@ struct tb_tunnel *tb_tunnel_discover_pci(struct tb *tb, struct tb_port *down,
+ 	struct tb_tunnel *tunnel;
+ 	struct tb_path *path;
+ 
+-	if (!tb_pci_port_is_enabled(down))
++	if (!tb_pci_port_is_enabled(down)) {
++		tb_port_dbg(down, "PCI port is not enabled, skipping tunnel discovery\n");
+ 		return NULL;
++	}
+ 
+ 	tunnel = tb_tunnel_alloc(tb, 2, TB_TUNNEL_PCI);
+ 	if (!tunnel)
+@@ -1622,8 +1624,10 @@ struct tb_tunnel *tb_tunnel_discover_dp(struct tb *tb, struct tb_port *in,
+ 	if (WARN_ON(!callback))
+ 		return NULL;
+ 
+-	if (!tb_dp_port_is_enabled(in))
++	if (!tb_dp_port_is_enabled(in)) {
++		tb_port_dbg(in, "DP/HDMI IN port is not enabled, skipping tunnel discovery\n");
+ 		return NULL;
++	}
+ 
+ 	tunnel = tb_tunnel_alloc(tb, 3, TB_TUNNEL_DP);
+ 	if (!tunnel)
+@@ -2245,8 +2249,10 @@ struct tb_tunnel *tb_tunnel_discover_usb3(struct tb *tb, struct tb_port *down,
+ 	struct tb_tunnel *tunnel;
+ 	struct tb_path *path;
+ 
+-	if (!tb_usb3_port_is_enabled(down))
++	if (!tb_usb3_port_is_enabled(down)) {
++		tb_port_dbg(down, "USB3 port is not enabled, skipping tunnel discovery\n");
+ 		return NULL;
++	}
+ 
+ 	tunnel = tb_tunnel_alloc(tb, 2, TB_TUNNEL_USB3);
+ 	if (!tunnel)
+-- 
+2.34.1
+

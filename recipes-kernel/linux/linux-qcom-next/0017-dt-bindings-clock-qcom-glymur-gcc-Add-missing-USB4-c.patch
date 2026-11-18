@@ -1,0 +1,65 @@
+From 033764b166aff132a7bae66593d8947b48867270 Mon Sep 17 00:00:00 2001
+From: Konrad Dybcio <konrad.dybcio@oss.qualcomm.com>
+Date: Thu, 29 Oct 2026 13:38:45 +0100
+Subject: [PATCH 17/85] dt-bindings: clock: qcom,glymur-gcc: Add missing USB4
+ clocks/resets
+
+Some of the USB4 muxes, RCGs and resets were not initially described.
+
+Add indices for them to allow extending the driver.
+
+Signed-off-by: Konrad Dybcio <konrad.dybcio@oss.qualcomm.com>
+Upstream-Status: Pending
+---
+ include/dt-bindings/clock/qcom,glymur-gcc.h | 36 +++++++++++++++++++++
+ 1 file changed, 36 insertions(+)
+
+diff --git a/include/dt-bindings/clock/qcom,glymur-gcc.h b/include/dt-bindings/clock/qcom,glymur-gcc.h
+index 6907653c7992..79ab3e353423 100644
+--- a/include/dt-bindings/clock/qcom,glymur-gcc.h
++++ b/include/dt-bindings/clock/qcom,glymur-gcc.h
+@@ -575,5 +575,41 @@
+ #define GCC_VIDEO_AXI1_CLK_ARES					90
+ #define GCC_VIDEO_BCR						91
+ #define GCC_VIDEO_AXI0C_CLK_ARES				92
++#define GCC_USB4_0_MISC_USB4_SYS_BCR			93
++#define GCC_USB4_0_MISC_RX_CLK_0_BCR			94
++#define GCC_USB4_0_MISC_RX_CLK_1_BCR			95
++#define GCC_USB4_0_MISC_USB_PIPE_BCR			96
++#define GCC_USB4_0_MISC_PCIE_PIPE_BCR			97
++#define GCC_USB4_0_MISC_TMU_BCR				98
++#define GCC_USB4_0_MISC_SB_IF_BCR			99
++#define GCC_USB4_0_MISC_HIA_MSTR_BCR			100
++#define GCC_USB4_0_MISC_AHB_BCR				101
++#define GCC_USB4_0_MISC_DP0_MAX_PCLK_BCR		102
++#define GCC_USB4_0_MISC_DP1_MAX_PCLK_BCR		103
++#define GCC_USB4_0_MISC_HRR_BCR				104
++#define GCC_USB4_1_MISC_USB4_SYS_BCR			105
++#define GCC_USB4_1_MISC_RX_CLK_0_BCR			106
++#define GCC_USB4_1_MISC_RX_CLK_1_BCR			107
++#define GCC_USB4_1_MISC_USB_PIPE_BCR			108
++#define GCC_USB4_1_MISC_PCIE_PIPE_BCR			109
++#define GCC_USB4_1_MISC_TMU_BCR				110
++#define GCC_USB4_1_MISC_SB_IF_BCR			111
++#define GCC_USB4_1_MISC_HIA_MSTR_BCR			112
++#define GCC_USB4_1_MISC_AHB_BCR				113
++#define GCC_USB4_1_MISC_DP0_MAX_PCLK_BCR		114
++#define GCC_USB4_1_MISC_DP1_MAX_PCLK_BCR		115
++#define GCC_USB4_1_MISC_HRR_BCR				116
++#define GCC_USB4_2_MISC_USB4_SYS_BCR			117
++#define GCC_USB4_2_MISC_RX_CLK_0_BCR			118
++#define GCC_USB4_2_MISC_RX_CLK_1_BCR			119
++#define GCC_USB4_2_MISC_USB_PIPE_BCR			120
++#define GCC_USB4_2_MISC_PCIE_PIPE_BCR			121
++#define GCC_USB4_2_MISC_TMU_BCR				122
++#define GCC_USB4_2_MISC_SB_IF_BCR			123
++#define GCC_USB4_2_MISC_HIA_MSTR_BCR			124
++#define GCC_USB4_2_MISC_AHB_BCR				125
++#define GCC_USB4_2_MISC_DP0_MAX_PCLK_BCR		126
++#define GCC_USB4_2_MISC_DP1_MAX_PCLK_BCR		127
++#define GCC_USB4_2_MISC_HRR_BCR				128
+ 
+ #endif
+-- 
+2.34.1
+

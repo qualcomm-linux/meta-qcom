@@ -1,0 +1,46 @@
+From 037eca35c0b00e5ac9e83d165e373b5f647b6bd5 Mon Sep 17 00:00:00 2001
+From: Konrad Dybcio <konrad.dybcio@oss.qualcomm.com>
+Date: Tue, 5 May 2026 11:35:45 +0200
+Subject: [PATCH 43/85] USB4 devlink experiments for DT
+
+Upstream-Status: Pending
+---
+ arch/arm64/boot/dts/qcom/hamoa.dtsi | 1 +
+ drivers/usb/core/port.c             | 2 ++
+ 2 files changed, 3 insertions(+)
+
+diff --git a/arch/arm64/boot/dts/qcom/hamoa.dtsi b/arch/arm64/boot/dts/qcom/hamoa.dtsi
+index 2961635ea96c..cbb4b9462622 100644
+--- a/arch/arm64/boot/dts/qcom/hamoa.dtsi
++++ b/arch/arm64/boot/dts/qcom/hamoa.dtsi
+@@ -5699,6 +5699,7 @@ usb_1_ss2_dwc3_hs: endpoint {
+ 
+ 				port@1 {
+ 					reg = <1>;
++					usb4-host-interface = <&usb4_router2>;
+ 
+ 					usb_1_ss2_dwc3_ss: endpoint {
+ 						remote-endpoint = <&usb_1_ss2_qmpphy_usb_ss_in>;
+diff --git a/drivers/usb/core/port.c b/drivers/usb/core/port.c
+index b4452b665f59..b6d419598c13 100644
+--- a/drivers/usb/core/port.c
++++ b/drivers/usb/core/port.c
+@@ -8,6 +8,7 @@
+  */
+ 
+ #include <linux/kstrtox.h>
++#include <linux/of_graph.h>
+ #include <linux/slab.h>
+ #include <linux/string_choices.h>
+ #include <linux/sysfs.h>
+@@ -766,6 +767,7 @@ int usb_hub_create_port_device(struct usb_hub *hub, int port1)
+ 		return -ENOMEM;
+ 	}
+ 
++	port_dev->dev.of_node = of_graph_get_port_by_id(hdev->dev.of_node, port1);
+ 	port_dev->connect_type = usb_of_get_connect_type(hdev, port1);
+ 	hub->ports[port1 - 1] = port_dev;
+ 	port_dev->portnum = port1;
+-- 
+2.34.1
+

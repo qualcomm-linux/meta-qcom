@@ -1,0 +1,31 @@
+From 1664f0f3bff27bc08149e123f208aa9ac7c3eed7 Mon Sep 17 00:00:00 2001
+From: Konrad Dybcio <konrad.dybcio@oss.qualcomm.com>
+Date: Fri, 6 Nov 2026 11:19:55 +0100
+Subject: [PATCH 81/85] phy-exit-dwc3
+
+Upstream-Status: Pending
+---
+ drivers/phy/qualcomm/phy-qcom-qmp-combo.c | 7 +++++++
+ 1 file changed, 7 insertions(+)
+
+diff --git a/drivers/phy/qualcomm/phy-qcom-qmp-combo.c b/drivers/phy/qualcomm/phy-qcom-qmp-combo.c
+index ca0155c20945..f81c9d38324e 100644
+--- a/drivers/phy/qualcomm/phy-qcom-qmp-combo.c
++++ b/drivers/phy/qualcomm/phy-qcom-qmp-combo.c
+@@ -5164,6 +5164,13 @@ static int qmp_combo_usb4_exit(struct phy *phy)
+ 
+ 	clk_disable_unprepare(qmp->p2rr2p_pipe_clk);
+ 
++	/*
++	 * Don't leave a PHY that dwc3 still holds powered down: a mux_set that came in during
++	 * USB4 mode was ignored and won't be replayed.
++	 */
++	if (qmp->usb_init_count)
++		return qmp_combo_reconfigure_phy(qmp, QMPPHY_MODE_USB3_ONLY);
++
+ 	return 0;
+ }
+ 
+-- 
+2.34.1
+

@@ -1,0 +1,54 @@
+From 90df7ed9478d7dd1314766c1695a0f47903e08d0 Mon Sep 17 00:00:00 2001
+From: Konrad Dybcio <konrad.dybcio@oss.qualcomm.com>
+Date: Tue, 10 Nov 2026 11:14:20 +0100
+Subject: [PATCH 20/85] dt-bindings: clock: qcom,gcc-sc8280xp: Add USB4 MISC
+ resets
+
+The USB4 MISC reset bits for both USB4 instances on SC8280XP
+(GCC_USB4CIO_0_MISC_RESET and GCC_USB4CIO_1_MISC_RESET) are not
+described, so consumers cannot request the USB4 system, RX clock,
+PIPE, TMU, SB_IF, HIA, AHB and DP max pclk resets by name.
+
+Add reset IDs 79-98, ten per instance. Unlike Glymur, this design has
+no HRR bit and only one DP max pclk bit per instance.
+
+Signed-off-by: Konrad Dybcio <konrad.dybcio@oss.qualcomm.com>
+Upstream-Status: Pending
+---
+ include/dt-bindings/clock/qcom,gcc-sc8280xp.h | 20 +++++++++++++++++++
+ 1 file changed, 20 insertions(+)
+
+diff --git a/include/dt-bindings/clock/qcom,gcc-sc8280xp.h b/include/dt-bindings/clock/qcom,gcc-sc8280xp.h
+index 845491591784..649c4d841f3c 100644
+--- a/include/dt-bindings/clock/qcom,gcc-sc8280xp.h
++++ b/include/dt-bindings/clock/qcom,gcc-sc8280xp.h
+@@ -478,6 +478,26 @@
+ #define GCC_VIDEO_BCR					76
+ #define GCC_VIDEO_AXI0_CLK_ARES				77
+ #define GCC_VIDEO_AXI1_CLK_ARES				78
++#define GCC_USB4_MISC_USB4_SYS_BCR			79
++#define GCC_USB4_MISC_RX_CLK_0_BCR			80
++#define GCC_USB4_MISC_RX_CLK_1_BCR			81
++#define GCC_USB4_MISC_USB_PIPE_BCR			82
++#define GCC_USB4_MISC_PCIE_PIPE_BCR			83
++#define GCC_USB4_MISC_TMU_BCR				84
++#define GCC_USB4_MISC_SB_IF_BCR				85
++#define GCC_USB4_MISC_HIA_MSTR_BCR			86
++#define GCC_USB4_MISC_AHB_BCR				87
++#define GCC_USB4_MISC_DP_MAX_PCLK_BCR			88
++#define GCC_USB4_1_MISC_USB4_SYS_BCR			89
++#define GCC_USB4_1_MISC_RX_CLK_0_BCR			90
++#define GCC_USB4_1_MISC_RX_CLK_1_BCR			91
++#define GCC_USB4_1_MISC_USB_PIPE_BCR			92
++#define GCC_USB4_1_MISC_PCIE_PIPE_BCR			93
++#define GCC_USB4_1_MISC_TMU_BCR				94
++#define GCC_USB4_1_MISC_SB_IF_BCR			95
++#define GCC_USB4_1_MISC_HIA_MSTR_BCR			96
++#define GCC_USB4_1_MISC_AHB_BCR				97
++#define GCC_USB4_1_MISC_DP_MAX_PCLK_BCR			98
+ 
+ /* GCC GDSCs */
+ #define PCIE_0_TUNNEL_GDSC				0
+-- 
+2.34.1
+

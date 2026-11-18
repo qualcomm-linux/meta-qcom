@@ -1,0 +1,74 @@
+From a567a7cadf217ac88f7fbc05b23c0c258d04b1de Mon Sep 17 00:00:00 2001
+From: Konrad Dybcio <konrad.dybcio@oss.qualcomm.com>
+Date: Tue, 8 Sep 2026 09:54:09 +0200
+Subject: [PATCH 03/85] arm64: dts: qcom: hamoa: Extend QMPPHY description for
+ USB4
+
+The USB4 part of the QMPPHY requires that one more GCC clock (P2RR2P -
+PHY-to-Router, Router-to-PHY) is enabled for the PHY to initialize
+successfully. Describe that.
+
+Upstream-Status: Pending
+Reviewed-by: Dmitry Baryshkov <dmitry.baryshkov@oss.qualcomm.com>
+Reviewed-by: Abel Vesa <abel.vesa@oss.qualcomm.com>
+Acked-by: Manivannan Sadhasivam <manivannan.sadhasivam@oss.qualcomm.com>
+Signed-off-by: Konrad Dybcio <konrad.dybcio@oss.qualcomm.com>
+---
+ arch/arm64/boot/dts/qcom/hamoa.dtsi | 18 ++++++++++++------
+ 1 file changed, 12 insertions(+), 6 deletions(-)
+
+diff --git a/arch/arm64/boot/dts/qcom/hamoa.dtsi b/arch/arm64/boot/dts/qcom/hamoa.dtsi
+index 598332f2782d..a531c6b66d79 100644
+--- a/arch/arm64/boot/dts/qcom/hamoa.dtsi
++++ b/arch/arm64/boot/dts/qcom/hamoa.dtsi
+@@ -3090,11 +3090,13 @@ usb_1_ss0_qmpphy: phy@fd5000 {
+ 			clocks = <&gcc GCC_USB3_PRIM_PHY_AUX_CLK>,
+ 				 <&rpmhcc RPMH_CXO_CLK>,
+ 				 <&gcc GCC_USB3_PRIM_PHY_COM_AUX_CLK>,
+-				 <&gcc GCC_USB3_PRIM_PHY_PIPE_CLK>;
++				 <&gcc GCC_USB3_PRIM_PHY_PIPE_CLK>,
++				 <&gcc GCC_USB4_0_PHY_P2RR2P_PIPE_CLK>;
+ 			clock-names = "aux",
+ 				      "ref",
+ 				      "com_aux",
+-				      "usb3_pipe";
++				      "usb3_pipe",
++				      "p2rr2p_pipe";
+ 
+ 			power-domains = <&gcc GCC_USB_0_PHY_GDSC>;
+ 
+@@ -3161,11 +3163,13 @@ usb_1_ss1_qmpphy: phy@fda000 {
+ 			clocks = <&gcc GCC_USB3_SEC_PHY_AUX_CLK>,
+ 				 <&tcsr TCSR_USB4_1_CLKREF_EN>,
+ 				 <&gcc GCC_USB3_SEC_PHY_COM_AUX_CLK>,
+-				 <&gcc GCC_USB3_SEC_PHY_PIPE_CLK>;
++				 <&gcc GCC_USB3_SEC_PHY_PIPE_CLK>,
++				 <&gcc GCC_USB4_1_PHY_P2RR2P_PIPE_CLK>;
+ 			clock-names = "aux",
+ 				      "ref",
+ 				      "com_aux",
+-				      "usb3_pipe";
++				      "usb3_pipe",
++				      "p2rr2p_pipe";
+ 
+ 			power-domains = <&gcc GCC_USB_1_PHY_GDSC>;
+ 
+@@ -3232,11 +3236,13 @@ usb_1_ss2_qmpphy: phy@fdf000 {
+ 			clocks = <&gcc GCC_USB3_TERT_PHY_AUX_CLK>,
+ 				 <&tcsr TCSR_USB4_2_CLKREF_EN>,
+ 				 <&gcc GCC_USB3_TERT_PHY_COM_AUX_CLK>,
+-				 <&gcc GCC_USB3_TERT_PHY_PIPE_CLK>;
++				 <&gcc GCC_USB3_TERT_PHY_PIPE_CLK>,
++				 <&gcc GCC_USB4_2_PHY_P2RR2P_PIPE_CLK>;
+ 			clock-names = "aux",
+ 				      "ref",
+ 				      "com_aux",
+-				      "usb3_pipe";
++				      "usb3_pipe",
++				      "p2rr2p_pipe";
+ 
+ 			power-domains = <&gcc GCC_USB_2_PHY_GDSC>;
+ 
+-- 
+2.34.1
+

@@ -1,0 +1,35 @@
+From 11a97fce9bd7c3264dde5994b312bc86d2146a08 Mon Sep 17 00:00:00 2001
+From: Konrad Dybcio <konrad.dybcio@oss.qualcomm.com>
+Date: Wed, 16 Sep 2026 12:33:55 +0200
+Subject: [PATCH 64/85] usb: hcd-pci: avoid double disable on surprise removal
+
+A PCI HCD can be surprise-removed after suspend_common() disables it
+and before resume_common() re-enables it. Avoid a second call to
+pci_disable_device() in the remove path when no enable reference
+remains.
+
+Assisted-by: LLM
+Signed-off-by: Konrad Dybcio <konrad.dybcio@oss.qualcomm.com>
+Upstream-Status: Pending
+---
+ drivers/usb/core/hcd-pci.c | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
+
+diff --git a/drivers/usb/core/hcd-pci.c b/drivers/usb/core/hcd-pci.c
+index cd223475917e..34c4d352b40c 100644
+--- a/drivers/usb/core/hcd-pci.c
++++ b/drivers/usb/core/hcd-pci.c
+@@ -348,7 +348,9 @@ void usb_hcd_pci_remove(struct pci_dev *dev)
+ 	usb_put_hcd(hcd);
+ 	if ((hcd_driver_flags & HCD_MASK) < HCD_USB3)
+ 		pci_free_irq_vectors(dev);
+-	pci_disable_device(dev);
++
++	if (pci_is_enabled(dev))
++		pci_disable_device(dev);
+ }
+ EXPORT_SYMBOL_GPL(usb_hcd_pci_remove);
+ 
+-- 
+2.34.1
+

@@ -1,0 +1,71 @@
+From 81015fe0039b4fb3e8a6a90421c2f18f69750070 Mon Sep 17 00:00:00 2001
+From: Konrad Dybcio <konrad.dybcio@oss.qualcomm.com>
+Date: Fri, 6 Nov 2026 16:11:24 +0100
+Subject: [PATCH 22/85] gcc-glmur: halt_skip
+
+Upstream-Status: Pending
+---
+ drivers/clk/qcom/gcc-glymur.c | 12 ++++++------
+ 1 file changed, 6 insertions(+), 6 deletions(-)
+
+diff --git a/drivers/clk/qcom/gcc-glymur.c b/drivers/clk/qcom/gcc-glymur.c
+index 74872ccb32b0..0a056f8330fb 100644
+--- a/drivers/clk/qcom/gcc-glymur.c
++++ b/drivers/clk/qcom/gcc-glymur.c
+@@ -6861,7 +6861,7 @@ static struct clk_branch gcc_usb4_0_phy_pcie_pipe_clk = {
+ 
+ static struct clk_branch gcc_usb4_0_phy_rx0_clk = {
+ 	.halt_reg = 0x2b0c4,
+-	.halt_check = BRANCH_HALT,
++	.halt_check = BRANCH_HALT_SKIP,
+ 	.clkr = {
+ 		.enable_reg = 0x2b0c4,
+ 		.enable_mask = BIT(0),
+@@ -6879,7 +6879,7 @@ static struct clk_branch gcc_usb4_0_phy_rx0_clk = {
+ 
+ static struct clk_branch gcc_usb4_0_phy_rx1_clk = {
+ 	.halt_reg = 0x2b0d8,
+-	.halt_check = BRANCH_HALT,
++	.halt_check = BRANCH_HALT_SKIP,
+ 	.clkr = {
+ 		.enable_reg = 0x2b0d8,
+ 		.enable_mask = BIT(0),
+@@ -7096,7 +7096,7 @@ static struct clk_branch gcc_usb4_1_phy_pcie_pipe_clk = {
+ 
+ static struct clk_branch gcc_usb4_1_phy_rx0_clk = {
+ 	.halt_reg = 0x2d0e8,
+-	.halt_check = BRANCH_HALT,
++	.halt_check = BRANCH_HALT_SKIP,
+ 	.clkr = {
+ 		.enable_reg = 0x2d0e8,
+ 		.enable_mask = BIT(0),
+@@ -7114,7 +7114,7 @@ static struct clk_branch gcc_usb4_1_phy_rx0_clk = {
+ 
+ static struct clk_branch gcc_usb4_1_phy_rx1_clk = {
+ 	.halt_reg = 0x2d0fc,
+-	.halt_check = BRANCH_HALT,
++	.halt_check = BRANCH_HALT_SKIP,
+ 	.clkr = {
+ 		.enable_reg = 0x2d0fc,
+ 		.enable_mask = BIT(0),
+@@ -7331,7 +7331,7 @@ static struct clk_branch gcc_usb4_2_phy_pcie_pipe_clk = {
+ 
+ static struct clk_branch gcc_usb4_2_phy_rx0_clk = {
+ 	.halt_reg = 0xe00c8,
+-	.halt_check = BRANCH_HALT,
++	.halt_check = BRANCH_HALT_SKIP,
+ 	.clkr = {
+ 		.enable_reg = 0xe00c8,
+ 		.enable_mask = BIT(0),
+@@ -7349,7 +7349,7 @@ static struct clk_branch gcc_usb4_2_phy_rx0_clk = {
+ 
+ static struct clk_branch gcc_usb4_2_phy_rx1_clk = {
+ 	.halt_reg = 0xe00dc,
+-	.halt_check = BRANCH_HALT,
++	.halt_check = BRANCH_HALT_SKIP,
+ 	.clkr = {
+ 		.enable_reg = 0xe00dc,
+ 		.enable_mask = BIT(0),
+-- 
+2.34.1
+

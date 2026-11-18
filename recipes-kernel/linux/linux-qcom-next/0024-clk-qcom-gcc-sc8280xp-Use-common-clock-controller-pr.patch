@@ -1,0 +1,79 @@
+From 5c131362b6fcc30cdf352ee53d424047fa107bac Mon Sep 17 00:00:00 2001
+From: Abel Vesa <abel.vesa@oss.qualcomm.com>
+Date: Thu, 24 Sep 2026 15:06:34 +0300
+Subject: [PATCH 24/85] clk: qcom: gcc-sc8280xp: Use common clock controller
+ probe data
+
+Move the always-on branch register offsets into a critical_cbcrs array
+and describe the DFS RCGs through qcom_cc_driver_data.
+
+Delegate always-on branch and DFS initialization to the common probe
+path while retaining the device-specific setup in the driver's probe.
+
+Assisted-by: LLM
+Reviewed-by: Konrad Dybcio <konrad.dybcio@oss.qualcomm.com>
+Signed-off-by: Abel Vesa <abel.vesa@oss.qualcomm.com>
+Link: https://patch.msgid.link/20260924-clk-qcom-rework-legacy-always-on-clocks-v2-22-1479443ee016@oss.qualcomm.com
+Signed-off-by: Bjorn Andersson <andersson@kernel.org>
+Upstream-Status: Pending
+---
+ drivers/clk/qcom/gcc-sc8280xp.c | 35 +++++++++++++++++++--------------
+ 1 file changed, 20 insertions(+), 15 deletions(-)
+
+diff --git a/drivers/clk/qcom/gcc-sc8280xp.c b/drivers/clk/qcom/gcc-sc8280xp.c
+index 8199ae500850..dc42964b1101 100644
+--- a/drivers/clk/qcom/gcc-sc8280xp.c
++++ b/drivers/clk/qcom/gcc-sc8280xp.c
+@@ -7529,7 +7529,27 @@ static const struct regmap_config gcc_sc8280xp_regmap_config = {
+ 	.fast_io = true,
+ };
+ 
++static const u32 gcc_sc8280xp_critical_cbcrs[] = {
++	0x26004, /* GCC_CAMERA_AHB_CLK */
++	0x26020, /* GCC_CAMERA_XO_CLK */
++	0x27004, /* GCC_DISP_AHB_CLK */
++	0x27028, /* GCC_DISP_XO_CLK */
++	0x71004, /* GCC_GPU_CFG_AHB_CLK */
++	0x28004, /* GCC_VIDEO_AHB_CLK */
++	0x28028, /* GCC_VIDEO_XO_CLK */
++	0xbb004, /* GCC_DISP1_AHB_CLK */
++	0xbb028, /* GCC_DISP1_XO_CLK */
++};
++
++static const struct qcom_cc_driver_data gcc_sc8280xp_driver_data = {
++	.clk_cbcrs = gcc_sc8280xp_critical_cbcrs,
++	.num_clk_cbcrs = ARRAY_SIZE(gcc_sc8280xp_critical_cbcrs),
++	.dfs_rcgs = gcc_dfs_clocks,
++	.num_dfs_rcgs = ARRAY_SIZE(gcc_dfs_clocks),
++};
++
+ static const struct qcom_cc_desc gcc_sc8280xp_desc = {
++	.driver_data = &gcc_sc8280xp_driver_data,
+ 	.config = &gcc_sc8280xp_regmap_config,
+ 	.clks = gcc_sc8280xp_clocks,
+ 	.num_clks = ARRAY_SIZE(gcc_sc8280xp_clocks),
+@@ -7558,21 +7578,6 @@ static int gcc_sc8280xp_probe(struct platform_device *pdev)
+ 		goto err_put_rpm;
+ 	}
+ 
+-	/* Keep some clocks always-on */
+-	qcom_branch_set_clk_en(regmap, 0x26004); /* GCC_CAMERA_AHB_CLK */
+-	qcom_branch_set_clk_en(regmap, 0x26020); /* GCC_CAMERA_XO_CLK */
+-	qcom_branch_set_clk_en(regmap, 0x27004); /* GCC_DISP_AHB_CLK */
+-	qcom_branch_set_clk_en(regmap, 0x27028); /* GCC_DISP_XO_CLK */
+-	qcom_branch_set_clk_en(regmap, 0x71004); /* GCC_GPU_CFG_AHB_CLK */
+-	qcom_branch_set_clk_en(regmap, 0x28004); /* GCC_VIDEO_AHB_CLK */
+-	qcom_branch_set_clk_en(regmap, 0x28028); /* GCC_VIDEO_XO_CLK */
+-	qcom_branch_set_clk_en(regmap, 0xbb004); /* GCC_DISP1_AHB_CLK */
+-	qcom_branch_set_clk_en(regmap, 0xbb028); /* GCC_DISP1_XO_CLK */
+-
+-	ret = qcom_cc_register_rcg_dfs(regmap, gcc_dfs_clocks, ARRAY_SIZE(gcc_dfs_clocks));
+-	if (ret)
+-		goto err_put_rpm;
+-
+ 	ret = qcom_cc_really_probe(&pdev->dev, &gcc_sc8280xp_desc, regmap);
+ 	if (ret)
+ 		goto err_put_rpm;
+-- 
+2.34.1
+

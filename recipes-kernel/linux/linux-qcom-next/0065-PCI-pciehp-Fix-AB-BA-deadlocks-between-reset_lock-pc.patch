@@ -1,0 +1,315 @@
+From bf1c1addb43a8a585126cc1db9d7c5f5ddabc76d Mon Sep 17 00:00:00 2001
+From: Qiang Yu <qiang.yu@oss.qualcomm.com>
+Date: Mon, 17 Aug 2026 23:34:15 -0700
+Subject: [PATCH 65/85] PCI: pciehp: Fix AB-BA deadlocks between reset_lock,
+ pci_rescan_remove_lock and pci_slot_mutex
+
+Commit 5b3f7b7d062b ("PCI: pciehp: Avoid slot access during reset")
+introduced ctrl->reset_lock to serialize a Secondary Bus Reset (SBR)
+with the pciehp code paths that read the Link Active and Presence
+Detect bits, both of which flap during an SBR.
+
+pciehp_ist() holds reset_lock across the whole event handling,
+including enumerating or de-enumerating the hotplugged devices. That
+nests two PCI core locks inside reset_lock, each taken in the opposite
+order by a concurrent SBR, causing two AB-BA deadlocks.
+
+First, reset_lock vs pci_rescan_remove_lock. pciehp takes them as
+reset_lock -> pci_rescan_remove_lock:
+
+  pciehp_ist()                                 # down_read(reset_lock)
+    pciehp_handle_presence_or_link_change()
+      pciehp_enable_slot()
+        board_added()
+          pciehp_configure_device()
+            pci_lock_rescan_remove()           # pci_rescan_remove_lock
+
+A Root Port reset from link-down recovery takes them the other way
+round, pci_rescan_remove_lock -> reset_lock (the boot path, via
+pci_host_probe(), takes the same reverse order):
+
+  qcom_pcie_global_irq_thread()
+    pci_host_handle_link_down()
+      pci_host_reset_root_port()
+        pci_lock_rescan_remove()               # pci_rescan_remove_lock
+        pci_bus_error_reset()
+          pci_reset_bridge()
+            pci_slot_reset()
+              pci_reset_hotplug_slot()
+                pciehp_reset_slot()            # down_write(reset_lock)
+
+Second, reset_lock vs pci_slot_mutex. pciehp takes them as
+reset_lock -> pci_slot_mutex:
+
+  pciehp_ist()                                 # down_read(reset_lock)
+    pciehp_handle_presence_or_link_change()
+      pciehp_configure_device()
+        pci_scan_slot()
+          pci_scan_single_device()
+            pci_device_add()
+              pci_dev_assign_slot()
+                mutex_lock(&pci_slot_mutex)    # pci_slot_mutex
+
+An SBR of the same hierarchy (AER- or link-down-induced Root Port
+reset, or a sysfs "reset_subordinate" request) takes them the other
+way round, pci_slot_mutex -> reset_lock:
+
+  pci_bus_error_reset()  /  pci_try_reset_bridge()
+    pci_reset_bridge()
+      mutex_lock(&pci_slot_mutex)              # pci_slot_mutex
+      pci_slot_reset()
+        pci_slot_lock()
+        pci_reset_hotplug_slot()
+          pciehp_reset_slot()                  # down_write(reset_lock)
+
+The second deadlock constrains the fix: pci_reset_bridge() must hold
+pci_slot_mutex to walk the slot list before it can reach
+pciehp_reset_slot(), and pciehp cannot reorder that. As long as pciehp
+holds reset_lock while descending into pci_scan_slot(), the reverse
+nesting is unavoidable regardless of pci_rescan_remove_lock ordering.
+
+reset_lock only needs to protect the register reads against a
+concurrent SBR, not the enumeration itself. Fix both deadlocks by
+dropping reset_lock across the whole scan/remove section in
+pciehp_configure_device()/pciehp_unconfigure_device(), extending what
+commit f5eff5591b8f ("PCI: pciehp: Fix AB-BA deadlock between
+reset_lock and device_lock") already did around driver binding alone.
+
+Without reset_lock there, an SBR can again race pci_scan_slot() and
+leave a register unreadable during enumeration, so the device fails
+to be enumerated correctly. Hand that serialization to
+pci_rescan_remove_lock, which already spans the scan.
+
+pci_reset_bridge() and pci_reset_bus() issue the SBR unconditionally,
+with no check on what else is on the bus, so they need
+pci_rescan_remove_lock. pci_host_reset_root_port() no longer takes the
+lock itself, since pci_reset_bridge() now does.
+
+pci_reset_function()/pci_try_reset_function() are left without the
+lock: their SBR fallback (pci_dev_reset_slot_function(), then
+pci_parent_bus_reset()) only fires once it confirms the device is the
+sole occupant of its bus, so it cannot race the scan that populates
+that bus with a sibling device. And being able to call
+pci_reset_function(dev) at all means dev is already fully enumerated.
+
+vmd_enable_domain() calls the new pci_reset_bus_unlocked(), skipping
+pci_rescan_remove_lock, since it runs from vmd_probe() with
+device_lock already held and taking the lock there would invert the
+lock order. This is safe because there is no concurrent scanner to
+race: the VMD bridge was found by the initial root bus scan, and any
+hotplug controller below it does not exist yet at this point. Neither
+that scan nor pci_scan_child_bus() earlier in this same function was
+ever protected by reset_lock.
+
+Fixes: 5b3f7b7d062b ("PCI: pciehp: Avoid slot access during reset")
+Fixes: 4c99bace4f4e ("PCI: host-common: Add link down handling for Root Ports")
+Upstream-Status: Pending
+---
+ drivers/pci/controller/vmd.c     |  2 +-
+ drivers/pci/hotplug/pciehp_pci.c | 24 ++++++------
+ drivers/pci/pci.c                | 64 +++++++++++++++++++++++++++++---
+ include/linux/pci.h              |  1 +
+ 4 files changed, 73 insertions(+), 18 deletions(-)
+
+diff --git a/drivers/pci/controller/vmd.c b/drivers/pci/controller/vmd.c
+index c9a564299e05..1a218b95cb30 100644
+--- a/drivers/pci/controller/vmd.c
++++ b/drivers/pci/controller/vmd.c
+@@ -1058,7 +1058,7 @@ static int vmd_enable_domain(struct vmd_dev *vmd, unsigned long features)
+ 		if (!list_empty(&child->devices)) {
+ 			dev = list_first_entry(&child->devices,
+ 					       struct pci_dev, bus_list);
+-			ret = pci_reset_bus(dev);
++			ret = pci_reset_bus_unlocked(dev);
+ 			if (ret)
+ 				pci_warn(dev, "can't reset device: %d\n", ret);
+ 
+diff --git a/drivers/pci/hotplug/pciehp_pci.c b/drivers/pci/hotplug/pciehp_pci.c
+index 65e50bee1a8c..b2698a530f59 100644
+--- a/drivers/pci/hotplug/pciehp_pci.c
++++ b/drivers/pci/hotplug/pciehp_pci.c
+@@ -36,6 +36,11 @@ int pciehp_configure_device(struct controller *ctrl)
+ 	struct pci_bus *parent = bridge->subordinate;
+ 	int num, ret = 0;
+ 
++	/*
++	 * Release reset_lock before rescan/remove
++	 * to avoid AB-BA deadlock with pci_rescan_remove_lock.
++	 */
++	up_read(&ctrl->reset_lock);
+ 	pci_lock_rescan_remove();
+ 
+ 	dev = pci_get_slot(parent, PCI_DEVFN(0, 0));
+@@ -64,13 +69,7 @@ int pciehp_configure_device(struct controller *ctrl)
+ 	pci_assign_unassigned_bridge_resources(bridge);
+ 	pcie_bus_configure_settings(parent);
+ 
+-	/*
+-	 * Release reset_lock during driver binding
+-	 * to avoid AB-BA deadlock with device_lock.
+-	 */
+-	up_read(&ctrl->reset_lock);
+ 	pci_bus_add_devices(parent);
+-	down_read_nested(&ctrl->reset_lock, ctrl->depth);
+ 
+ 	dev = pci_get_slot(parent, PCI_DEVFN(0, 0));
+ 	ctrl->dsn = pci_get_dsn(dev);
+@@ -78,6 +77,7 @@ int pciehp_configure_device(struct controller *ctrl)
+ 
+  out:
+ 	pci_unlock_rescan_remove();
++	down_read_nested(&ctrl->reset_lock, ctrl->depth);
+ 	return ret;
+ }
+ 
+@@ -104,6 +104,11 @@ void pciehp_unconfigure_device(struct controller *ctrl, bool presence)
+ 	if (!presence)
+ 		pci_walk_bus(parent, pci_dev_set_disconnected, NULL);
+ 
++	/*
++	 * Release reset_lock before rescan/remove
++	 * to avoid AB-BA deadlock with pci_rescan_remove_lock.
++	 */
++	up_read(&ctrl->reset_lock);
+ 	pci_lock_rescan_remove();
+ 
+ 	/*
+@@ -116,13 +121,7 @@ void pciehp_unconfigure_device(struct controller *ctrl, bool presence)
+ 					 bus_list) {
+ 		pci_dev_get(dev);
+ 
+-		/*
+-		 * Release reset_lock during driver unbinding
+-		 * to avoid AB-BA deadlock with device_lock.
+-		 */
+-		up_read(&ctrl->reset_lock);
+ 		pci_stop_and_remove_bus_device(dev);
+-		down_read_nested(&ctrl->reset_lock, ctrl->depth);
+ 
+ 		/*
+ 		 * Ensure that no new Requests will be generated from
+@@ -138,4 +137,5 @@ void pciehp_unconfigure_device(struct controller *ctrl, bool presence)
+ 	}
+ 
+ 	pci_unlock_rescan_remove();
++	down_read_nested(&ctrl->reset_lock, ctrl->depth);
+ }
+diff --git a/drivers/pci/pci.c b/drivers/pci/pci.c
+index 4091560fde9e..c87837d19d25 100644
+--- a/drivers/pci/pci.c
++++ b/drivers/pci/pci.c
+@@ -5724,6 +5724,13 @@ static int pci_reset_bridge(struct pci_dev *bridge, bool restore)
+ 	if (!bus)
+ 		return -ENOTTY;
+ 
++	/*
++	 * The reset below may issue a Secondary Bus Reset, which races with
++	 * pciehp enumerating a newly inserted device. Serialize via
++	 * pci_rescan_remove_lock; callers must not already hold it.
++	 */
++	lockdep_assert_not_held(&pci_rescan_remove_lock);
++	pci_lock_rescan_remove();
+ 	mutex_lock(&pci_slot_mutex);
+ 	if (list_empty(&bus->slots))
+ 		goto bus_reset;
+@@ -5743,13 +5750,17 @@ static int pci_reset_bridge(struct pci_dev *bridge, bool restore)
+ 	}
+ 
+ 	mutex_unlock(&pci_slot_mutex);
++	pci_unlock_rescan_remove();
+ 	return ret;
+ bus_reset:
+ 	mutex_unlock(&pci_slot_mutex);
+ 
+ 	if (restore)
+-		return pci_try_reset_bus(bus);
+-	return pci_bus_reset(bridge->subordinate, PCI_RESET_DO_RESET);
++		ret = pci_try_reset_bus(bus);
++	else
++		ret = pci_bus_reset(bridge->subordinate, PCI_RESET_DO_RESET);
++	pci_unlock_rescan_remove();
++	return ret;
+ }
+ 
+ /**
+@@ -5779,19 +5790,62 @@ int pci_probe_reset_bus(struct pci_bus *bus)
+ }
+ EXPORT_SYMBOL_GPL(pci_probe_reset_bus);
+ 
++/*
++ * Core of pci_reset_bus(), run with pci_rescan_remove_lock already held or
++ * known not to be needed.  See pci_reset_bus_unlocked() for the latter case.
++ */
++static int __pci_reset_bus(struct pci_dev *pdev)
++{
++	return (!pci_probe_reset_slot(pdev->slot)) ?
++	    pci_try_reset_slot(pdev->slot) : pci_try_reset_bus(pdev->bus);
++}
++
+ /**
+  * pci_reset_bus - Try to reset a PCI bus
+  * @pdev: top level PCI device to reset via slot/bus
+  *
+- * Same as above except return -EAGAIN if the bus cannot be locked
++ * Same as above except this blocks until pci_rescan_remove_lock can be
++ * acquired, and still returns -EAGAIN if the underlying slot/bus device
++ * lock cannot be taken.
+  */
+ int pci_reset_bus(struct pci_dev *pdev)
+ {
+-	return (!pci_probe_reset_slot(pdev->slot)) ?
+-	    pci_try_reset_slot(pdev->slot) : pci_try_reset_bus(pdev->bus);
++	int rc;
++
++	/*
++	 * pci_try_reset_slot()/pci_try_reset_bus() below may issue a
++	 * Secondary Bus Reset, which races with concurrent bus scanning.
++	 * Serialize against that via pci_rescan_remove_lock, taken before
++	 * the slot's/bus's device locks to match the lock order used by
++	 * pciehp.
++	 */
++	pci_lock_rescan_remove();
++
++	rc = __pci_reset_bus(pdev);
++
++	pci_unlock_rescan_remove();
++
++	return rc;
+ }
+ EXPORT_SYMBOL_GPL(pci_reset_bus);
+ 
++/**
++ * pci_reset_bus_unlocked - Try to reset a PCI bus without taking
++ *			    pci_rescan_remove_lock
++ * @pdev: top level PCI device to reset via slot/bus
++ *
++ * Same as pci_reset_bus(), except it does not take pci_rescan_remove_lock.
++ * For callers reached from a driver .probe callback, where pci_rescan_
++ * remove_lock may already be held by the caller of pci_bus_add_devices(),
++ * or may not be held at all; taking it here either self-deadlocks or
++ * inverts the pci_rescan_remove_lock -> device_lock order.
++ */
++int pci_reset_bus_unlocked(struct pci_dev *pdev)
++{
++	return __pci_reset_bus(pdev);
++}
++EXPORT_SYMBOL_GPL(pci_reset_bus_unlocked);
++
+ /**
+  * pcix_get_max_mmrbc - get PCI-X maximum designed memory read byte count
+  * @dev: PCI device to query
+diff --git a/include/linux/pci.h b/include/linux/pci.h
+index 4deda6659fb9..2b629440b4e7 100644
+--- a/include/linux/pci.h
++++ b/include/linux/pci.h
+@@ -1490,6 +1490,7 @@ int pci_try_reset_function(struct pci_dev *dev);
+ int pci_probe_reset_slot(struct pci_slot *slot);
+ int pci_probe_reset_bus(struct pci_bus *bus);
+ int pci_reset_bus(struct pci_dev *dev);
++int pci_reset_bus_unlocked(struct pci_dev *dev);
+ void pci_reset_secondary_bus(struct pci_dev *dev);
+ void pcibios_reset_secondary_bus(struct pci_dev *dev);
+ void pci_update_resource(struct pci_dev *dev, int resno);
+-- 
+2.34.1
+

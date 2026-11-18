@@ -1,0 +1,51 @@
+From e605e690434cfe65eb1fa04ba4d8685c7d73bd25 Mon Sep 17 00:00:00 2001
+From: Konrad Dybcio <konrad.dybcio@oss.qualcomm.com>
+Date: Fri, 6 Nov 2026 16:29:59 +0100
+Subject: [PATCH 78/85] arm64: dts: qcom: glymur-crd: Disable PCIe4/6 and USB
+ HS
+
+These block system suspend/resume. Disable them for now so the USB4
+suspend work can be tested.
+
+Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>
+Upstream-Status: Pending
+---
+ arch/arm64/boot/dts/qcom/glymur-crd.dts | 25 +++++++++++++++++++++++++
+ 1 file changed, 25 insertions(+)
+
+diff --git a/arch/arm64/boot/dts/qcom/glymur-crd.dts b/arch/arm64/boot/dts/qcom/glymur-crd.dts
+index 44766a73b0d1..aaf89edc0bc4 100644
+--- a/arch/arm64/boot/dts/qcom/glymur-crd.dts
++++ b/arch/arm64/boot/dts/qcom/glymur-crd.dts
+@@ -48,3 +48,28 @@ &tcsr {
+ 	vdda-refgen4-0p9-supply = <&vreg_l1f_e1_0p82>;
+ 	vdda-refgen4-1p2-supply = <&vreg_l4f_e1_1p08>;
+ };
++
++/* TEMPORARY: these block system suspend/resume (per Konrad) */
++&pcie4 {
++	status = "disabled";
++};
++
++&pcie4_phy {
++	status = "disabled";
++};
++
++&pcie6 {
++	status = "disabled";
++};
++
++&pcie6_phy {
++	status = "disabled";
++};
++
++&usb_hs {
++	status = "disabled";
++};
++
++&usb_hs_phy {
++	status = "disabled";
++};
+-- 
+2.34.1
+

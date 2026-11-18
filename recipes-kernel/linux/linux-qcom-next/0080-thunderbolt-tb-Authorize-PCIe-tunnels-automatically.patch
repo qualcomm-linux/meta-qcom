@@ -1,0 +1,60 @@
+From a72ff3ab5b17f73aca025ba9bba7960af1ac8966 Mon Sep 17 00:00:00 2001
+From: Konrad Dybcio <konrad.dybcio@oss.qualcomm.com>
+Date: Thu, 5 Nov 2026 10:32:42 +0100
+Subject: [PATCH 80/85] thunderbolt: tb: Authorize PCIe tunnels automatically
+
+Upstream-Status: Pending
+---
+ drivers/thunderbolt/tb.c | 22 ++++++++++++++++++++++
+ 1 file changed, 22 insertions(+)
+
+diff --git a/drivers/thunderbolt/tb.c b/drivers/thunderbolt/tb.c
+index 3474c488b5cb..ba22d79e482a 100644
+--- a/drivers/thunderbolt/tb.c
++++ b/drivers/thunderbolt/tb.c
+@@ -1272,6 +1272,23 @@ static void tb_configure_link(struct tb_port *down, struct tb_port *up,
+ 	tb_switch_configure_link(sw);
+ }
+ 
++/*
++ * tb_auto_approve_switch() - approve switch if IOMMU DMA protection allows
++ */
++static void tb_auto_approve_switch(struct tb_switch *sw)
++{
++	if (sw->authorized || !tb_route(sw))
++		return;
++
++	if (sw->tb->security_level != TB_SECURITY_NONE &&
++	    !(sw->tb->security_level == TB_SECURITY_USER &&
++	      sw->tb->nhi->iommu_dma_protection))
++		return;
++
++	if (!tb_domain_approve_switch(sw->tb, sw))
++		sw->authorized = 1;
++}
++
+ /*
+  * tb_scan_switch() - scan for and initialize downstream switches
+  */
+@@ -1411,6 +1428,9 @@ static void tb_scan_port(struct tb_port *port)
+ 	 */
+ 	tb_switch_configuration_valid(sw);
+ 
++	if (!discovery)
++		tb_auto_approve_switch(sw);
++
+ 	/* Scan upstream retimers */
+ 	tb_retimer_scan(upstream_port, true);
+ 
+@@ -3018,6 +3038,8 @@ static int tb_scan_finalize_switch(struct device *dev, void *data)
+ 		 */
+ 		if (sw->boot)
+ 			sw->authorized = 1;
++		else
++			tb_auto_approve_switch(sw);
+ 
+ 		dev_set_uevent_suppress(dev, false);
+ 		kobject_uevent(&dev->kobj, KOBJ_ADD);
+-- 
+2.34.1
+

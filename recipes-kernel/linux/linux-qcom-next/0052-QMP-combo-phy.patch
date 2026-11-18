@@ -1,0 +1,193 @@
+From b83d582f2fed848ebeed61c4809092d6213cabf0 Mon Sep 17 00:00:00 2001
+From: Konrad Dybcio <konrad.dybcio@oss.qualcomm.com>
+Date: Mon, 20 Apr 2026 13:46:13 +0200
+Subject: [PATCH 52/85] QMP combo phy
+
+Upstream-Status: Pending
+---
+ drivers/phy/qualcomm/phy-qcom-qmp-combo.c | 48 ++++++++++++++++++++---
+ 1 file changed, 42 insertions(+), 6 deletions(-)
+
+diff --git a/drivers/phy/qualcomm/phy-qcom-qmp-combo.c b/drivers/phy/qualcomm/phy-qcom-qmp-combo.c
+index e74272360d6c..21cf18e12aee 100644
+--- a/drivers/phy/qualcomm/phy-qcom-qmp-combo.c
++++ b/drivers/phy/qualcomm/phy-qcom-qmp-combo.c
+@@ -59,6 +59,9 @@
+ 
+ #include "phy-qcom-qmp-com-aon-v10.h"
+ 
++#undef dev_dbg
++#define dev_dbg dev_err
++
+ /* QPHY_V3_DP_COM_RESET_OVRD_CTRL register bits */
+ /* DP PHY soft reset */
+ #define SW_DPPHY_RESET				BIT(0)
+@@ -4611,6 +4614,7 @@ static int qmp_combo_com_init(struct qmp_combo *qmp, bool force)
+ 		aon_toggle = qmp->pcs_aon;
+ 
+ 	if (qmp->qmpphy_mode == QMPPHY_MODE_USB4) {
++		pr_err("CALLING COM_INIT WITH QUSB4 INITIALIZED\n");
+ 		pcs = qmp->usb4_pcs;
+ 
+ 		qphy_setbits(pcs_aon, cfg->regs[QPHY_PCS_USB4_CLAMP_ENABLE], CLAMP_EN);
+@@ -4618,6 +4622,8 @@ static int qmp_combo_com_init(struct qmp_combo *qmp, bool force)
+ 		/* Do not disturb the DP PLL in case there's an active DP tunnel */
+ 		if (readl(com + QPHY_V3_DP_COM_RESET_OVRD_CTRL) & DP_TUNNELING_CLOCK_GEN_EN)
+ 			dp_reset_val &= ~SW_DPPHY_RESET_MUX;
++	} else {
++		pr_err("CALLING COM_INIT WITH QUSB4 >>>NOT<<< INITIALIZED\n");
+ 	}
+ 
+ 	ret = regulator_bulk_enable(cfg->num_vregs, qmp->vregs);
+@@ -4669,6 +4675,7 @@ static int qmp_combo_com_init(struct qmp_combo *qmp, bool force)
+ 
+ 	/* Use software based port select and switch on typec orientation */
+ 	val = SW_PORTSELECT_MUX;
++	pr_err("QMPPHY is %s reverse\n", (qmp->orientation == TYPEC_ORIENTATION_REVERSE) ? "" : "NOT");
+ 	if (qmp->orientation == TYPEC_ORIENTATION_REVERSE)
+ 		val |= SW_PORTSELECT_VAL;
+ 
+@@ -4923,7 +4930,15 @@ static int qmp_combo_usb_power_on(struct phy *phy)
+ 			PHY_INIT_COMPLETE_TIMEOUT);
+ 	if (ret) {
+ 		dev_err(qmp->dev, "phy initialization timed-out\n");
++
++		for (int i = 0; i < 7; i++) {
++			dev_err(qmp->dev, "PCS_STATUS%d = 0x%08x\n", i + 1,
++				readl(pcs + cfg->regs[QPHY_PCS_STATUS] + 4 * i));
++		}
+ 		goto err_disable_pipe_clk;
++	} else {
++		// TODO:
++		dev_err(qmp->dev, "phy init OKOKOK\n");
+ 	}
+ 
+ 	return 0;
+@@ -4975,6 +4990,7 @@ static int qmp_combo_usb_init(struct phy *phy)
+ 	if (ret)
+ 		return ret;
+ 
++	dev_err(qmp->dev, ">> qmp_combo_usb_power_on() from %s\n", __func__);
+ 	ret = qmp_combo_usb_power_on(phy);
+ 	if (ret) {
+ 		qmp_combo_com_exit(qmp, false);
+@@ -5000,6 +5016,7 @@ static int qmp_combo_usb_exit(struct phy *phy)
+ 		return 0;
+ 	}
+ 
++	dev_err(qmp->dev, "<< qmp_combo_usb_power_off() from %s\n", __func__);
+ 	ret = qmp_combo_usb_power_off(phy);
+ 	if (ret)
+ 		return ret;
+@@ -5027,8 +5044,10 @@ static int qmp_combo_reconfigure_phy(struct qmp_combo *qmp, enum qmpphy_mode new
+ 	dev_dbg(qmp->dev, "qmp_combo_reconfigure_phy: switching from qmpphy mode %d to %d\n",
+ 		qmp->qmpphy_mode, new_mode);
+ 
+-	if (qmp->usb_init_count || qmp->usb4_init_count)
++	if (qmp->usb_init_count || qmp->usb4_init_count) {
++		dev_err(qmp->dev, "<< qmp_combo_usb_power_off() from %s\n", __func__);
+ 		qmp_combo_usb_power_off(qmp->usb_phy);
++	}
+ 
+ 	if (qmp->dp_init_count)
+ 		writel(DP_PHY_PD_CTL_PSR_PWRDN, qmp->dp_dp_phy + QSERDES_DP_PHY_PD_CTL);
+@@ -5041,8 +5060,10 @@ static int qmp_combo_reconfigure_phy(struct qmp_combo *qmp, enum qmpphy_mode new
+ 	qmp_combo_com_init(qmp, true);
+ 
+ 	if ((qmp->usb_init_count || qmp->usb4_init_count) &&
+-	    new_mode != QMPPHY_MODE_DP_ONLY)
++	    new_mode != QMPPHY_MODE_DP_ONLY) {
++		dev_err(qmp->dev, ">> qmp_combo_usb_power_on() from %s\n", __func__);
+ 		qmp_combo_usb_power_on(qmp->usb_phy);
++	}
+ 
+ 	if ((new_mode == QMPPHY_MODE_USB3DP || new_mode == QMPPHY_MODE_DP_ONLY) &&
+ 	    qmp->dp_init_count)
+@@ -5083,6 +5104,7 @@ static int qmp_combo_usb4_init(struct phy *phy)
+ 		return ret;
+ 	}
+ 
++	dev_err(qmp->dev, ">> qmp_combo_usb_power_on() from %s\n", __func__);
+ 	ret = qmp_combo_usb_power_on(phy);
+ 	if (ret) {
+ 		clk_disable_unprepare(qmp->p2rr2p_pipe_clk);
+@@ -5107,10 +5129,12 @@ static int qmp_combo_usb4_exit(struct phy *phy)
+ 
+ 	guard(mutex)(&qmp->phy_mutex);
+ 
++	dev_err(qmp->dev, "<< qmp_combo_usb_power_off() from %s\n", __func__);
+ 	ret = qmp_combo_usb_power_off(qmp->usb_phy);
+ 	if (ret)
+ 		return ret;
+ 
++	dev_err(qmp->dev, "<< qmp_combo_com_exit() from %s\n", __func__);
+ 	ret = qmp_combo_com_exit(qmp, false);
+ 	if (ret)
+ 		return ret;
+@@ -5119,6 +5143,7 @@ static int qmp_combo_usb4_exit(struct phy *phy)
+ 	 * Mark the USB4 PHY uninitialized and wait for a mux_set event to determine the correct
+ 	 * setting. This will always be possible because USB4 requires Type-C.
+ 	 */
++	dev_err(qmp->dev, "<< usb4_init_count-- from %s\n", __func__);
+ 	qmp->usb4_init_count--;
+ 
+ 	clk_disable_unprepare(qmp->p2rr2p_pipe_clk);
+@@ -5618,15 +5643,21 @@ static int qmp_combo_typec_switch_set(struct typec_switch_dev *sw,
+ 
+ 	guard(mutex)(&qmp->phy_mutex);
+ 	qmp->orientation = orientation;
++	pr_err("QMPPHY setting orientation = %d\n", qmp->orientation);
+ 
+ 	if (qmp->init_count) {
+-		if (qmp->usb_init_count || qmp->usb4_init_count)
++		if (qmp->usb_init_count || qmp->usb4_init_count) {
++			dev_err(qmp->dev, "<< qmp_combo_usb_power_off() from %s\n", __func__);
+ 			qmp_combo_usb_power_off(qmp->usb_phy);
++		}
+ 		qmp_combo_com_exit(qmp, true);
+ 
+ 		qmp_combo_com_init(qmp, true);
+-		if (qmp->usb_init_count || qmp->usb4_init_count)
++
++		if (qmp->usb_init_count || qmp->usb4_init_count) {
++			dev_err(qmp->dev, ">> qmp_combo_usb_power_on() from %s\n", __func__);
+ 			qmp_combo_usb_power_on(qmp->usb_phy);
++		}
+ 		if (qmp->dp_init_count)
+ 			cfg->dp_aux_init(qmp);
+ 	}
+@@ -5642,6 +5673,7 @@ static int qmp_combo_typec_mux_set(struct typec_mux_dev *mux, struct typec_mux_s
+ 
+ 	guard(mutex)(&qmp->phy_mutex);
+ 
++	pr_err("qmpphy mux_set entered\n");
+ 	if (state->alt)
+ 		svid = state->alt->svid;
+ 	else
+@@ -5659,8 +5691,10 @@ static int qmp_combo_typec_mux_set(struct typec_mux_dev *mux, struct typec_mux_s
+ 	 * After the QMPPHY has been turned off through phy_exit(usb4_phy), the next mux_set
+ 	 * will initialize it in the right mode.
+ 	 */
+-	if (qmp->usb4_init_count)
++	if (qmp->usb4_init_count) {
++		pr_err("qmpphy mux_set usb4_initialized==true, ailing out\n");
+ 		return 0;
++	}
+ 
+ 	/*
+ 	 * Explicitly ignore TBT/USB4 mode requests that may come if the USB4 PHY hasn't been
+@@ -5704,8 +5738,10 @@ static int qmp_combo_typec_mux_set(struct typec_mux_dev *mux, struct typec_mux_s
+ 	}
+ 
+ 	/* The mux still receives Type-C events, even if all PHYs are uninitialized */
+-	if (!qmp->init_count)
++	if (!qmp->init_count) {
++		pr_err("qmpphy mux_set init_count==0, bail out\n");
+ 		return 0;
++	}
+ 
+ 	return qmp_combo_reconfigure_phy(qmp, new_mode);
+ }
+-- 
+2.34.1
+

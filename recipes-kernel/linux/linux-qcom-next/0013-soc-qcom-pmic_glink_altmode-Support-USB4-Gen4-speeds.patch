@@ -1,0 +1,43 @@
+From 76da468303ff475f3d4bd3820ad610dc1faf66f6 Mon Sep 17 00:00:00 2001
+From: Konrad Dybcio <konrad.dybcio@oss.qualcomm.com>
+Date: Wed, 4 Nov 2026 10:50:53 +0100
+Subject: [PATCH 13/85] soc: qcom: pmic_glink_altmode: Support USB4 Gen4 speeds
+
+Accept usb_speed values of 2 and 3 corresponding to symmetric and
+asymmetric USB4 Gen4 speeds respectively.
+
+Signed-off-by: Konrad Dybcio <konrad.dybcio@oss.qualcomm.com>
+Upstream-Status: Pending
+---
+ drivers/soc/qcom/pmic_glink_altmode.c | 2 ++
+ include/linux/usb/pd.h                | 1 +
+ 2 files changed, 3 insertions(+)
+
+diff --git a/drivers/soc/qcom/pmic_glink_altmode.c b/drivers/soc/qcom/pmic_glink_altmode.c
+index 3e4821fc7783..eb350d5742e2 100644
+--- a/drivers/soc/qcom/pmic_glink_altmode.c
++++ b/drivers/soc/qcom/pmic_glink_altmode.c
+@@ -309,6 +309,8 @@ static void pmic_glink_altmode_enable_usb4(struct pmic_glink_altmode *altmode,
+ 		data.eudo |= FIELD_PREP(EUDO_CABLE_SPEED_MASK, EUDO_CABLE_SPEED_USB4_GEN2);
+ 	} else if (tbt->usb_speed == 1) {
+ 		data.eudo |= FIELD_PREP(EUDO_CABLE_SPEED_MASK, EUDO_CABLE_SPEED_USB4_GEN3);
++	} else if (tbt->usb_speed == 2 || tbt->usb_speed == 3) {
++		data.eudo |= FIELD_PREP(EUDO_CABLE_SPEED_MASK, EUDO_CABLE_SPEED_USB4_GEN4);
+ 	} else {
+ 		pr_err("Got illegal USB4 cable speed value (%u), falling back to G2\n",
+ 		       tbt->usb_speed);
+diff --git a/include/linux/usb/pd.h b/include/linux/usb/pd.h
+index 914e78f8acfd..3a899eccf49d 100644
+--- a/include/linux/usb/pd.h
++++ b/include/linux/usb/pd.h
+@@ -629,6 +629,7 @@ static inline unsigned int rdo_max_power(u32 rdo)
+ #define   EUDO_CABLE_SPEED_USB3_GEN1	1
+ #define   EUDO_CABLE_SPEED_USB4_GEN2	2
+ #define   EUDO_CABLE_SPEED_USB4_GEN3	3
++#define   EUDO_CABLE_SPEED_USB4_GEN4	4
+ #define EUDO_CABLE_TYPE_MASK		GENMASK(20, 19)
+ #define EUDO_CABLE_TYPE_SHIFT		19
+ #define   EUDO_CABLE_TYPE_PASSIVE	0
+-- 
+2.34.1
+

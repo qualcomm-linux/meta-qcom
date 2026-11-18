@@ -1,0 +1,61 @@
+From 8aa95b7b31c80ba1419a0499398e2614afb2b117 Mon Sep 17 00:00:00 2001
+From: Prashanth K <prashk@qti.qualcomm.com>
+Date: Tue, 17 Nov 2026 15:59:47 +0530
+Subject: [PATCH] thunderbolt: qcom: Kconfig: Add the missing TYPEC dependency
+
+qcom.c registers a Type-C mux and a Type-C switch, so it needs
+typec_mux_register(), typec_switch_register() and friends. Nothing in
+USB4_QCOM's dependency list guarantees those symbols are reachable,
+which is harmless at USB4_QCOM=m but breaks the vmlinux link with
+CONFIG_USB4_QCOM=y and CONFIG_TYPEC=m:
+
+  aarch64-linux-gnu-ld: drivers/thunderbolt/qcom.o: in function
+    `qcom_usb4_probe': undefined reference to `typec_switch_register'
+  aarch64-linux-gnu-ld: drivers/thunderbolt/qcom.o: in function
+    `qcom_usb4_probe': undefined reference to `typec_mux_register'
+  ... (typec_{mux,switch}_unregister, typec_{mux,switch}_get_drvdata)
+
+Add the dependency so the combination cannot be configured.
+
+Signed-off-by: Udipto Goswami <udipto.goswami@oss.qualcomm.com>
+Upstream-Status: Pending
+Signed-off-by: Prashanth K <prashk@qti.qualcomm.com>
+---
+ arch/arm64/configs/qcom.config | 11 +++++++++++
+ drivers/thunderbolt/Kconfig    |  1 +
+ 2 files changed, 12 insertions(+)
+
+diff --git a/arch/arm64/configs/qcom.config b/arch/arm64/configs/qcom.config
+index 4e989da6d37f..2a6fe8d28e07 100644
+--- a/arch/arm64/configs/qcom.config
++++ b/arch/arm64/configs/qcom.config
+@@ -169,3 +169,14 @@ CONFIG_SCMI_QCOM_MEMLAT_DEVFREQ=m
+ # GPU Virtualization support
+ CONFIG_DRM_VIRTIO_GPU=m
+ CONFIG_DRM_VIRTIO_GPU_KMS=m
++
++# USB4/Thunderbolt host router support for Glymur / Hamoa (X1E) / Mahua.
++CONFIG_USB4=y
++CONFIG_USB4_QCOM=y
++CONFIG_TYPEC=y
++CONFIG_TYPEC_MUX_NB7VPQ904M=y
++CONFIG_PHY_QCOM_QMP_COMBO=y
++CONFIG_PCIE_QCOM=y
++CONFIG_USB_XHCI_PCI=y
++CONFIG_EXTRA_FIRMWARE="qcom/glymur/usb4.bin qcom/glymur/usb4_v2.bin"
++CONFIG_EXTRA_FIRMWARE_DIR="fw/"
+diff --git a/drivers/thunderbolt/Kconfig b/drivers/thunderbolt/Kconfig
+index 3b19a922f31e..4ae4f5957cb7 100644
+--- a/drivers/thunderbolt/Kconfig
++++ b/drivers/thunderbolt/Kconfig
+@@ -79,6 +79,7 @@ config USB4_QCOM
+ 	depends on OF
+ 	depends on ARCH_QCOM || COMPILE_TEST
+ 	depends on COMMON_CLK && PM
++	depends on TYPEC
+ 	help
+ 	  Say Y here to add support for the USB4 and Thunderbolt host
+ 	  routers found on Qualcomm SoCs.
+-- 
+2.34.1
+

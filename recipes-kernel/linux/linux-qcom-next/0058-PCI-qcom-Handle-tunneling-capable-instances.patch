@@ -1,0 +1,130 @@
+From 3b334becec49ceb4095bf58c298dd7b624703287 Mon Sep 17 00:00:00 2001
+From: Qiang Yu <qiang.yu@oss.qualcomm.com>
+Date: Fri, 26 Jun 2026 15:43:23 +0200
+Subject: [PATCH 58/85] PCI: qcom: Handle tunneling-capable instances
+
+Some instances of the Qualcomm PCIe controller are USB4-capable and as
+such they're hardwired to a USB4 PCIe protocol adapter.
+
+They largely behave the same as their "normal" counterparts from the
+OS perspective, other than having to reset said adapter upon linkdown
+(otherwise the subsequent hotplug wouldn't succeed).
+
+On top of that, some (but not all) implementations of the tunneling-
+capable RCs need to have the replay timer configuration adjusted.
+
+Handle both of these requirements.
+
+[konrad: rebase, reword]
+Signed-off-by: Konrad Dybcio <konrad.dybcio@oss.qualcomm.com>
+Upstream-Status: Pending
+---
+ drivers/pci/controller/dwc/pcie-designware.h |  2 ++
+ drivers/pci/controller/dwc/pcie-qcom.c       | 29 ++++++++++++++++----
+ 2 files changed, 25 insertions(+), 6 deletions(-)
+
+diff --git a/drivers/pci/controller/dwc/pcie-designware.h b/drivers/pci/controller/dwc/pcie-designware.h
+index aa79f000b160..d8b99b1fbec7 100644
+--- a/drivers/pci/controller/dwc/pcie-designware.h
++++ b/drivers/pci/controller/dwc/pcie-designware.h
+@@ -121,6 +121,8 @@
+  *   0x3 (SF_16): Scaling Factor is 16 (1ms is 64us)
+  */
+ #define TIMER_CTRL_MAX_FUNC_NUM		0x718
++#define PCIE_TIMER_CTRL_MAX_FUNC_NUM	TIMER_CTRL_MAX_FUNC_NUM
++#define PCIE_TIMER_CTRL_REPLAY_TIMER	GENMASK(18, 14)
+ #define  PORT_FLT_SF_MASK		GENMASK(30, 29)
+ #define  PORT_FLT_SF_VAL_1024		0x0
+ #define  PORT_FLT_SF_VAL_256		0x1
+diff --git a/drivers/pci/controller/dwc/pcie-qcom.c b/drivers/pci/controller/dwc/pcie-qcom.c
+index 7d85c954cde3..4115e3de5bbc 100644
+--- a/drivers/pci/controller/dwc/pcie-qcom.c
++++ b/drivers/pci/controller/dwc/pcie-qcom.c
+@@ -264,7 +264,7 @@ struct qcom_pcie_resources_2_7_0 {
+ 	struct clk_bulk_data *clks;
+ 	int num_clks;
+ 	struct regulator_bulk_data supplies[QCOM_PCIE_2_7_0_MAX_SUPPLIES];
+-	struct reset_control *rst;
++	struct reset_control_bulk_data rst[3]; /* adapter, pci, link_down */
+ };
+ 
+ struct qcom_pcie_resources_2_9_0 {
+@@ -341,6 +341,7 @@ struct qcom_pcie {
+ 	int global_irq;
+ 	bool use_pm_opp;
+ 	struct mutex hw_lock;
++	bool is_usb4;
+ };
+ 
+ #define to_qcom_pcie(x)		dev_get_drvdata((x)->dev)
+@@ -431,6 +432,7 @@ static void qcom_pcie_set_link_bw_notif_cap(struct dw_pcie *pci)
+ 
+ static void qcom_pcie_set_slot_cap(struct dw_pcie *pci)
+ {
++	struct qcom_pcie *pcie = to_qcom_pcie(pci);
+ 	u16 offset = dw_pcie_find_capability(pci, PCI_CAP_ID_EXP);
+ 	u32 val;
+ 
+@@ -451,6 +453,12 @@ static void qcom_pcie_set_slot_cap(struct dw_pcie *pci)
+ 	val &= ~PCI_EXP_SLTCAP_ABP;
+ 	writel(val, pci->dbi_base + offset + PCI_EXP_SLTCAP);
+ 
++	if (pcie->is_usb4 /* && hamoa|makena|purwa */) {
++		val = readl(pci->dbi_base + offset + PCIE_TIMER_CTRL_MAX_FUNC_NUM);
++		FIELD_MODIFY(PCIE_TIMER_CTRL_REPLAY_TIMER, &val, 0x4);
++		writel(val, pci->dbi_base + offset + PCIE_TIMER_CTRL_MAX_FUNC_NUM);
++	}
++
+ 	dw_pcie_dbi_ro_wr_dis(pci);
+ }
+ 
+@@ -1076,9 +1084,14 @@ static int qcom_pcie_get_resources_2_7_0(struct qcom_pcie *pcie)
+ 	struct device *dev = pci->dev;
+ 	int ret;
+ 
+-	res->rst = devm_reset_control_array_get_exclusive(dev);
+-	if (IS_ERR(res->rst))
+-		return PTR_ERR(res->rst);
++	res->rst[0].id = "adapter";
++	res->rst[1].id = "pci";
++	res->rst[2].id = "link_down";
++	ret = devm_reset_control_bulk_get_optional_exclusive(dev,
++							     ARRAY_SIZE(res->rst),
++							     res->rst);
++	if (ret)
++		return ret;
+ 
+ 	res->supplies[0].supply = "vdda";
+ 	res->supplies[1].supply = "vddpe-3v3";
+@@ -1114,7 +1127,7 @@ static int qcom_pcie_init_2_7_0(struct qcom_pcie *pcie)
+ 	if (ret < 0)
+ 		goto err_disable_regulators;
+ 
+-	ret = reset_control_assert(res->rst);
++	ret = reset_control_bulk_assert(ARRAY_SIZE(res->rst), res->rst);
+ 	if (ret) {
+ 		dev_err(dev, "reset assert failed (%d)\n", ret);
+ 		goto err_disable_clocks;
+@@ -1122,7 +1135,7 @@ static int qcom_pcie_init_2_7_0(struct qcom_pcie *pcie)
+ 
+ 	usleep_range(1000, 1500);
+ 
+-	ret = reset_control_deassert(res->rst);
++	ret = reset_control_bulk_deassert(ARRAY_SIZE(res->rst), res->rst);
+ 	if (ret) {
+ 		dev_err(dev, "reset deassert failed (%d)\n", ret);
+ 		goto err_disable_clocks;
+@@ -2206,6 +2219,10 @@ static int qcom_pcie_parse_port(struct qcom_pcie *pcie, struct device_node *node
+ 	struct phy *phy;
+ 	int ret;
+ 
++	/* The RC needs special treatment if any of the ports is used for tunneling */
++	if (of_property_present(node, "usb4-host-interface"))
++		pcie->is_usb4 = true;
++
+ 	phy = devm_of_phy_get(dev, node, NULL);
+ 	if (IS_ERR(phy))
+ 		return PTR_ERR(phy);
+-- 
+2.34.1
+

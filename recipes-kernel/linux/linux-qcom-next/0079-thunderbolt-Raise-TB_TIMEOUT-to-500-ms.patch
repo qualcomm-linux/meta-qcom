@@ -1,0 +1,34 @@
+From a7a1c3ead29071b74f3da530693139ac8757e268 Mon Sep 17 00:00:00 2001
+From: Konrad Dybcio <konrad.dybcio@oss.qualcomm.com>
+Date: Fri, 6 Nov 2026 16:29:59 +0100
+Subject: [PATCH 79/85] thunderbolt: Raise TB_TIMEOUT to 500 ms
+
+Routers with firmware-managed link training (e.g. Qualcomm) can take
+well over 100 ms to answer config requests while a link is coming up.
+
+Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>
+Upstream-Status: Pending
+---
+ drivers/thunderbolt/tb.c | 6 +++++-
+ 1 file changed, 5 insertions(+), 1 deletion(-)
+
+diff --git a/drivers/thunderbolt/tb.c b/drivers/thunderbolt/tb.c
+index 8e5492e1069f..3474c488b5cb 100644
+--- a/drivers/thunderbolt/tb.c
++++ b/drivers/thunderbolt/tb.c
+@@ -15,7 +15,11 @@
+ #include "tb_regs.h"
+ #include "tunnel.h"
+ 
+-#define TB_TIMEOUT		100	/* ms */
++/*
++ * Routers with firmware-managed link training (e.g. Qualcomm) can take
++ * well over 100 ms to answer config requests while a link is coming up.
++ */
++#define TB_TIMEOUT		500	/* ms */
+ #define TB_RELEASE_BW_TIMEOUT	10000	/* ms */
+ 
+ /*
+-- 
+2.34.1
+

@@ -1,0 +1,53 @@
+From bb80533cef52b1ebdffeeedadf1e8042c087fcb2 Mon Sep 17 00:00:00 2001
+From: Konrad Dybcio <konrad.dybcio@oss.qualcomm.com>
+Date: Thu, 5 Nov 2026 10:44:00 +0100
+Subject: [PATCH 10/85] soc: qcom: pmic_glink_altmode: Disable TBT/USB4
+ negotiation for now
+
+Some platforms (like Glymur) accept a versioned flavor of PAN_EN,
+allowing to specify a parameter that denotes the OS type, which
+influences Type-C capabilities. In particular, there's a setting for an
+installer image (which implicitly doesn't ship all the required
+drivers) which disables TBT/USB4 negotiation to let the connected
+devices fall back to USB3/DP mode cleanly.
+
+Utilize that. Older firmwares ignore the new arguments.
+
+Signed-off-by: Konrad Dybcio <konrad.dybcio@oss.qualcomm.com>
+Upstream-Status: Pending
+---
+ drivers/soc/qcom/pmic_glink_altmode.c | 11 ++++++++++-
+ 1 file changed, 10 insertions(+), 1 deletion(-)
+
+diff --git a/drivers/soc/qcom/pmic_glink_altmode.c b/drivers/soc/qcom/pmic_glink_altmode.c
+index 9e5bf43a576a..7562b055825d 100644
+--- a/drivers/soc/qcom/pmic_glink_altmode.c
++++ b/drivers/soc/qcom/pmic_glink_altmode.c
+@@ -32,6 +32,12 @@
+ #define ALTMODE_PAN_EN		0x10
+ #define ALTMODE_PAN_ACK		0x11
+ 
++/* The version field and subfields are ignored on firmwares implementing < v2 */
++#define PAN_EN_OS_TYPE		GENMASK(6 ,3)
++ #define PAN_EN_OS_DEFAULT	1
++ #define PAN_EN_OS_INSTALLER	2
++#define PAN_EN_VERSION		GENMASK(2, 0)
++
+ struct usbc_write_req {
+ 	struct pmic_glink_hdr   hdr;
+ 	__le32 cmd;
+@@ -588,7 +594,10 @@ static void pmic_glink_altmode_enable_worker(struct work_struct *work)
+ 	struct pmic_glink_altmode *altmode = work_to_altmode(work);
+ 	int ret;
+ 
+-	ret = pmic_glink_altmode_request(altmode, ALTMODE_PAN_EN, 0);
++	/* Set OS to installer for now to restrict USB4/TBT negotiation */
++	ret = pmic_glink_altmode_request(altmode, ALTMODE_PAN_EN,
++					 FIELD_PREP(PAN_EN_VERSION, 2) |
++					 FIELD_PREP(PAN_EN_OS_TYPE, PAN_EN_OS_INSTALLER));
+ 	if (ret)
+ 		dev_err(altmode->dev, "failed to request altmode notifications: %d\n", ret);
+ }
+-- 
+2.34.1
+

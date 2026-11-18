@@ -1,0 +1,67 @@
+From 42f18d0a0112e7b997dc5047d14d7c3476be06c2 Mon Sep 17 00:00:00 2001
+From: Konrad Dybcio <konrad.dybcio@oss.qualcomm.com>
+Date: Mon, 13 Oct 2025 14:02:44 +0200
+Subject: [PATCH 09/85] soc: qcom: smem: Add and export
+ qcom_smem_get_serial_no()
+
+The USB4 router expects that the OS programs a silicon-unique value as
+part of its initialization flow. The most obvious choice for that is
+the part's serial number.
+
+Export a function to get the SN retrieved from SMEM.
+
+Signed-off-by: Konrad Dybcio <konrad.dybcio@oss.qualcomm.com>
+Upstream-Status: Pending
+---
+ drivers/soc/qcom/smem.c       | 22 ++++++++++++++++++++++
+ include/linux/soc/qcom/smem.h |  1 +
+ 2 files changed, 23 insertions(+)
+
+diff --git a/drivers/soc/qcom/smem.c b/drivers/soc/qcom/smem.c
+index b5e7bd8c1512..293cee1af4e8 100644
+--- a/drivers/soc/qcom/smem.c
++++ b/drivers/soc/qcom/smem.c
+@@ -870,6 +870,28 @@ int qcom_smem_get_feature_code(u32 *code)
+ }
+ EXPORT_SYMBOL_GPL(qcom_smem_get_feature_code);
+ 
++/**
++ * qcom_smem_get_serial_no() - return the unique serial number of the SoC
++ * @id: Pointer to where to store the serial number upon success.
++ *
++ * Look up serial number from HW/SW build ID and return it.
++ *
++ * Return: 0 on success, negative errno on failure.
++ */
++int qcom_smem_get_serial_no(u32 *id)
++{
++	struct socinfo *info;
++
++	info = qcom_smem_get(QCOM_SMEM_HOST_ANY, SMEM_HW_SW_BUILD_ID, NULL);
++	if (IS_ERR(info))
++		return PTR_ERR(info);
++
++	*id = __le32_to_cpu(info->serial_num);
++
++	return 0;
++}
++EXPORT_SYMBOL_GPL(qcom_smem_get_serial_no);
++
+ static int qcom_smem_get_sbl_version(struct qcom_smem *smem)
+ {
+ 	struct smem_header *header;
+diff --git a/include/linux/soc/qcom/smem.h b/include/linux/soc/qcom/smem.h
+index 3249cbd2016b..294b49a629b9 100644
+--- a/include/linux/soc/qcom/smem.h
++++ b/include/linux/soc/qcom/smem.h
+@@ -14,6 +14,7 @@ phys_addr_t qcom_smem_virt_to_phys(void *p);
+ 
+ int qcom_smem_get_soc_id(u32 *id);
+ int qcom_smem_get_feature_code(u32 *code);
++int qcom_smem_get_serial_no(u32 *id);
+ 
+ int qcom_smem_bust_hwspin_lock_by_host(unsigned int host);
+ 
+-- 
+2.34.1
+

@@ -1,0 +1,201 @@
+From b118d88cb787472bf9332068abb2e751adc6818e Mon Sep 17 00:00:00 2001
+From: Konrad Dybcio <konrad.dybcio@oss.qualcomm.com>
+Date: Mon, 13 Apr 2026 11:32:26 +0200
+Subject: [PATCH 33/85] thunderbolt: Skip reading Rsvd SB registers on
+ older-gen hardware
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+The Linux TBT subsystem supports hardware aligned with the latest
+USB4 v2.0 specification. In some places though, it assumes registers
+only defined in that specification version (previously marked as
+Reserved) are always accessible.
+
+Every version of the spec states:
+
+"""
+Unless specified otherwise, the Connection Manager shall not write a
+register with a value that is marked as “Rsvd”. Writing a register with
+a value that is marked as “Rsvd” results in undefined behavior.
+"""
+
+The effective list of SB registers that need this guarding currently
+exclusively contains ones that aren't used outside the debugfs dump
+logic, so just add the required checks there.
+
+Fixes: 54e418106c76 ("thunderbolt: Add debugfs interface")
+Signed-off-by: Konrad Dybcio <konrad.dybcio@oss.qualcomm.com>
+Upstream-Status: Pending
+---
+ drivers/thunderbolt/debugfs.c | 20 ++++++++++++--------
+ drivers/thunderbolt/retimer.c | 11 ++++++++++-
+ drivers/thunderbolt/sb_regs.h | 11 ++++++-----
+ drivers/thunderbolt/tb.h      |  2 ++
+ 4 files changed, 30 insertions(+), 14 deletions(-)
+
+diff --git a/drivers/thunderbolt/debugfs.c b/drivers/thunderbolt/debugfs.c
+index 6e9080e7bcec..3f2867e5ad5a 100644
+--- a/drivers/thunderbolt/debugfs.c
++++ b/drivers/thunderbolt/debugfs.c
+@@ -67,6 +67,7 @@ enum usb4_margin_cap_time_indp {
+ struct sb_reg {
+ 	unsigned int reg;
+ 	unsigned int size;
++	u8 min_spec_ver;
+ };
+ 
+ #define SB_MAX_SIZE		64
+@@ -75,9 +76,9 @@ struct sb_reg {
+ static const struct sb_reg port_sb_regs[] = {
+ 	{ USB4_SB_VENDOR_ID, 4 },
+ 	{ USB4_SB_PRODUCT_ID, 4 },
+-	{ USB4_SB_DEBUG_CONF, 4 },
+-	{ USB4_SB_DEBUG, 54 },
+-	{ USB4_SB_LRD_TUNING, 4 },
++	{ USB4_SB_DEBUG_CONF, 4, .min_spec_ver = 2 },
++	{ USB4_SB_DEBUG, 54, .min_spec_ver = 2 },
++	{ USB4_SB_LRD_TUNING, 4, .min_spec_ver = 2 },
+ 	{ USB4_SB_OPCODE, 4 },
+ 	{ USB4_SB_METADATA, 4 },
+ 	{ USB4_SB_LINK_CONF, 3 },
+@@ -92,11 +93,11 @@ static const struct sb_reg retimer_sb_regs[] = {
+ 	{ USB4_SB_VENDOR_ID, 4 },
+ 	{ USB4_SB_PRODUCT_ID, 4 },
+ 	{ USB4_SB_FW_VERSION, 4 },
+-	{ USB4_SB_LRD_TUNING, 4 },
++	{ USB4_SB_LRD_TUNING, 4, .min_spec_ver = 2 },
+ 	{ USB4_SB_OPCODE, 4 },
+ 	{ USB4_SB_METADATA, 4 },
+ 	{ USB4_SB_GEN23_TXFFE, 4 },
+-	{ USB4_SB_GEN4_TXFFE, 4 },
++	{ USB4_SB_GEN4_TXFFE, 4, .min_spec_ver = 2 },
+ 	{ USB4_SB_VERSION, 4 },
+ 	{ USB4_SB_DATA, 64 },
+ };
+@@ -2355,7 +2356,7 @@ DEBUGFS_ATTR_RW(counters);
+ 
+ static int sb_regs_show(struct tb_port *port, const struct sb_reg *sb_regs,
+ 			size_t size, enum usb4_sb_target target, u8 index,
+-			struct seq_file *s)
++			u8 spec_version, struct seq_file *s)
+ {
+ 	int ret, i;
+ 
+@@ -2366,6 +2367,9 @@ static int sb_regs_show(struct tb_port *port, const struct sb_reg *sb_regs,
+ 		u8 data[64];
+ 		int j;
+ 
++		if (regs->min_spec_ver > spec_version)
++			continue;
++
+ 		memset(data, 0, sizeof(data));
+ 		ret = usb4_port_sb_read(port, target, index, regs->reg, data,
+ 					regs->size);
+@@ -2398,7 +2402,7 @@ static int port_sb_regs_show(struct seq_file *s, void *not_used)
+ 	}
+ 
+ 	ret = sb_regs_show(port, port_sb_regs, ARRAY_SIZE(port_sb_regs),
+-			   USB4_SB_TARGET_ROUTER, 0, s);
++			   USB4_SB_TARGET_ROUTER, 0, port->config.thunderbolt_version, s);
+ 
+ 	mutex_unlock(&tb->lock);
+ out_rpm_put:
+@@ -2513,7 +2517,7 @@ static int retimer_sb_regs_show(struct seq_file *s, void *not_used)
+ 	}
+ 
+ 	ret = sb_regs_show(rt->port, retimer_sb_regs, ARRAY_SIZE(retimer_sb_regs),
+-			   USB4_SB_TARGET_RETIMER, rt->index, s);
++			   USB4_SB_TARGET_RETIMER, rt->index, rt->spec_version, s);
+ 
+ 	mutex_unlock(&tb->lock);
+ out_rpm_put:
+diff --git a/drivers/thunderbolt/retimer.c b/drivers/thunderbolt/retimer.c
+index b1e8d9d6454d..b27a34fe83ea 100644
+--- a/drivers/thunderbolt/retimer.c
++++ b/drivers/thunderbolt/retimer.c
+@@ -389,8 +389,8 @@ const struct device_type tb_retimer_type = {
+ static int tb_retimer_add(struct tb_port *port, u8 index, u32 auth_status,
+ 			  bool on_board)
+ {
++	u32 vendor, device, version;
+ 	struct tb_retimer *rt;
+-	u32 vendor, device;
+ 	int ret;
+ 
+ 	ret = usb4_port_sb_read(port, USB4_SB_TARGET_RETIMER, index,
+@@ -409,6 +409,14 @@ static int tb_retimer_add(struct tb_port *port, u8 index, u32 auth_status,
+ 		return ret;
+ 	}
+ 
++	ret = usb4_port_sb_read(port, USB4_SB_TARGET_RETIMER, index,
++				USB4_SB_FW_VERSION, &version, sizeof(version));
++	if (ret) {
++		if (ret != -ENODEV)
++			tb_port_warn(port, "failed read retimer Version: %d\n", ret);
++		return ret;
++	}
++
+ 
+ 	rt = kzalloc_obj(*rt);
+ 	if (!rt)
+@@ -417,6 +425,7 @@ static int tb_retimer_add(struct tb_port *port, u8 index, u32 auth_status,
+ 	rt->index = index;
+ 	rt->vendor = vendor;
+ 	rt->device = device;
++	rt->spec_version = FIELD_GET(USB4_SB_FW_VERSION_VERSION, version);
+ 	rt->auth_status = auth_status;
+ 	rt->port = port;
+ 	rt->tb = port->sw->tb;
+diff --git a/drivers/thunderbolt/sb_regs.h b/drivers/thunderbolt/sb_regs.h
+index 5391502a4b87..a9c2d22ff69f 100644
+--- a/drivers/thunderbolt/sb_regs.h
++++ b/drivers/thunderbolt/sb_regs.h
+@@ -12,10 +12,11 @@
+ 
+ #define USB4_SB_VENDOR_ID			0x00
+ #define USB4_SB_PRODUCT_ID			0x01
+-#define USB4_SB_FW_VERSION			0x02
+-#define USB4_SB_DEBUG_CONF			0x05
+-#define USB4_SB_DEBUG				0x06
+-#define USB4_SB_LRD_TUNING			0x07
++#define USB4_SB_FW_VERSION			0x02 /* Retimer-only */
++#define USB4_SB_FW_VERSION_VERSION		GENMASK(7, 0)
++#define USB4_SB_DEBUG_CONF			0x05 /* Port-only, USB4 v2.0 */
++#define USB4_SB_DEBUG				0x06 /* Port-only, USB4 v2.0 */
++#define USB4_SB_LRD_TUNING			0x07 /* USB4 v2.0 */
+ #define USB4_SB_OPCODE				0x08
+ 
+ enum usb4_sb_opcode {
+@@ -42,7 +43,7 @@ enum usb4_sb_opcode {
+ #define USB4_SB_METADATA_NVM_AUTH_WRITE_MASK	GENMASK(5, 0)
+ #define USB4_SB_LINK_CONF			0x0c
+ #define USB4_SB_GEN23_TXFFE			0x0d
+-#define USB4_SB_GEN4_TXFFE			0x0e
++#define USB4_SB_GEN4_TXFFE			0x0e /* USB4 v2.0 */
+ #define USB4_SB_VERSION				0x0f
+ #define USB4_SB_DATA				0x12
+ 
+diff --git a/drivers/thunderbolt/tb.h b/drivers/thunderbolt/tb.h
+index 87c4e00cb26a..6d4fe42af724 100644
+--- a/drivers/thunderbolt/tb.h
++++ b/drivers/thunderbolt/tb.h
+@@ -335,6 +335,7 @@ struct usb4_port {
+  * @no_nvm_upgrade: Prevent NVM upgrade of this retimer
+  * @auth_status: Status of last NVM authentication
+  * @margining: Pointer to margining structure if enabled
++ * @spec_version: The implemented USB4 Retimer Specification version
+  */
+ struct tb_retimer {
+ 	struct device dev;
+@@ -346,6 +347,7 @@ struct tb_retimer {
+ 	struct tb_nvm *nvm;
+ 	bool no_nvm_upgrade;
+ 	u32 auth_status;
++	u8 spec_version;
+ #ifdef CONFIG_USB4_DEBUGFS_MARGINING
+ 	struct tb_margining *margining;
+ #endif
+-- 
+2.34.1
+

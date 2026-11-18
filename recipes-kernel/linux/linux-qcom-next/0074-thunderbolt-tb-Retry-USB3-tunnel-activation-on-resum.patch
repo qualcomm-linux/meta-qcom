@@ -1,0 +1,59 @@
+From bc69c8663ac9590801a0c870bee36c8a19b4577b Mon Sep 17 00:00:00 2001
+From: Konrad Dybcio <konrad.dybcio@oss.qualcomm.com>
+Date: Fri, 30 Oct 2026 22:45:59 +0100
+Subject: [PATCH 74/85] thunderbolt: tb: Retry USB3 tunnel activation on resume
+ completion
+
+Re-activating a USB3 tunnel starts with a bandwidth allocation, which
+requires the host controller to acknowledge the Connection Manager
+request (ADP_USB3_CS_1.HCA). This happens from the resume_noirq phase.
+
+On platforms where the xHCI is a separate device that is not part of
+the host router (e.g. Qualcomm Glymur), it is only resumed later in the
+regular resume phase. The HCA wait then times out, the tunnel paths are
+never activated and the error goes unnoticed, leaving any tunneled USB3
+devices disconnected after resume.
+
+Retry activating any USB3 tunnels that are not active from the
+.complete() callback, at which point all devices have been resumed.
+
+Assisted-by: LLM
+Upstream-Status: Pending
+---
+ drivers/thunderbolt/tb.c | 20 ++++++++++++++++++++
+ 1 file changed, 20 insertions(+)
+
+diff --git a/drivers/thunderbolt/tb.c b/drivers/thunderbolt/tb.c
+index 4da608ccbccb..8e5492e1069f 100644
+--- a/drivers/thunderbolt/tb.c
++++ b/drivers/thunderbolt/tb.c
+@@ -3249,6 +3249,26 @@ static int tb_thaw_noirq(struct tb *tb)
+ 
+ static void tb_complete(struct tb *tb)
+ {
++	struct tb_cm *tcm = tb_priv(tb);
++	struct tb_tunnel *tunnel, *n;
++
++	/*
++	 * Re-activating a USB3 tunnel needs the host controller to ack the
++	 * bandwidth request (HCA). With the xHCI living outside of the
++	 * router, it may not have resumed yet back in the noirq phase, so
++	 * retry any USB3 tunnels that didn't come up then.
++	 */
++	scoped_guard(mutex, &tb->lock) {
++		list_for_each_entry_safe(tunnel, n, &tcm->tunnel_list, list) {
++			if (!tb_tunnel_is_usb3(tunnel) || tb_tunnel_is_active(tunnel))
++				continue;
++
++			tb_tunnel_dbg(tunnel, "retrying activation after resume\n");
++			if (tb_tunnel_activate(tunnel))
++				tb_tunnel_warn(tunnel, "activation retry failed\n");
++		}
++	}
++
+ 	/*
+ 	 * Unregister unplugged XDomains and if there is a case where
+ 	 * another domain is swapped in place of unplugged XDomain we
+-- 
+2.34.1
+

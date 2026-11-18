@@ -1,0 +1,283 @@
+From 0af6118a7d79db795e6dd77f187fcd251a155e33 Mon Sep 17 00:00:00 2001
+From: Konrad Dybcio <konrad.dybcio@oss.qualcomm.com>
+Date: Tue, 22 Sep 2026 17:53:48 +0200
+Subject: [PATCH 67/85] PCI: qcom: Support suspending USB4-tunneled PCIe hosts
+
+On USB4 platforms the PCIe root complex talks to the outside world
+through a router whose firmware manages the tunnel across system sleep.
+Sleeping the router resets the tunneled hierarchy at the protocol level,
+so the devices behind it come back as if from D3cold even though nothing
+was powered off. A PME_Turn_Off handshake with such a hierarchy is not
+tolerated by the router firmware and ends in a lost tunnel or a RAMDUMP.
+
+Add a DWC host flag to skip PME_Turn_Off and go straight to host
+teardown, and set it for USB4 RCs. The tunneled devices then use
+ordinary PCI power management and are restored by the PCI core on
+resume.
+
+Two more pieces are needed for that to work. The post-link-up ASPM walk
+requests every link state, including L1SS PCI-PM, and the ASPM core
+forces the device to D0 for that before it checks what the link
+supports. On a USB4 resume that hits children that are still in D3
+behind a freshly reset hierarchy, and the access fails. The USB4 RCs
+support neither L0s nor L1SS, so the walk has nothing to enable there;
+skip it for USB4 RCs altogether.
+
+Finally, give a populated USB4 link up to 12 s to train on resume: the
+far end takes about 8.5 s to come back after the router restarts it,
+and the stock DWC wait gives up long before that, failing the resume.
+An RC with nothing behind it keeps the stock wait, as a device that
+shows up later is picked up by hotplug.
+
+Assisted-by: LLM
+Signed-off-by: Konrad Dybcio <konrad.dybcio@oss.qualcomm.com>
+Upstream-Status: Pending
+---
+ .../pci/controller/dwc/pcie-designware-host.c | 21 +++++++++-
+ drivers/pci/controller/dwc/pcie-designware.c  | 27 ++++++++++---
+ drivers/pci/controller/dwc/pcie-designware.h  | 11 ++++++
+ drivers/pci/controller/dwc/pcie-qcom.c        | 38 ++++++++++++++++++-
+ 4 files changed, 89 insertions(+), 8 deletions(-)
+
+diff --git a/drivers/pci/controller/dwc/pcie-designware-host.c b/drivers/pci/controller/dwc/pcie-designware-host.c
+index a9b841d504c9..c4c200359450 100644
+--- a/drivers/pci/controller/dwc/pcie-designware-host.c
++++ b/drivers/pci/controller/dwc/pcie-designware-host.c
+@@ -1217,6 +1217,15 @@ int dw_pcie_suspend_noirq(struct dw_pcie *pci)
+ 	int ret = 0;
+ 	u32 val;
+ 
++	/*
++	 * Some platforms tunnel PCIe over a fabric that is suspended by its
++	 * own firmware. That firmware resets the tunneled hierarchy and does
++	 * not tolerate a PME_Turn_Off handshake, so go straight to tearing
++	 * down the host.
++	 */
++	if (pci->pp.skip_pme_turn_off)
++		goto stop_link;
++
+ 	if (!dw_pcie_link_up(pci))
+ 		goto stop_link;
+ 
+@@ -1283,7 +1292,8 @@ int dw_pcie_suspend_noirq(struct dw_pcie *pci)
+ }
+ EXPORT_SYMBOL_GPL(dw_pcie_suspend_noirq);
+ 
+-int dw_pcie_resume_noirq(struct dw_pcie *pci)
++int dw_pcie_resume_noirq_timeout(struct dw_pcie *pci,
++				 unsigned int timeout_ms)
+ {
+ 	int ret;
+ 
+@@ -1304,7 +1314,7 @@ int dw_pcie_resume_noirq(struct dw_pcie *pci)
+ 	if (ret)
+ 		goto err_deinit;
+ 
+-	ret = dw_pcie_wait_for_link(pci);
++	ret = dw_pcie_wait_for_link_timeout(pci, timeout_ms);
+ 	if (ret == -ETIMEDOUT)
+ 		goto err_stop_link;
+ 
+@@ -1324,4 +1334,11 @@ int dw_pcie_resume_noirq(struct dw_pcie *pci)
+ 
+ 	return ret;
+ }
++EXPORT_SYMBOL_GPL(dw_pcie_resume_noirq_timeout);
++
++int dw_pcie_resume_noirq(struct dw_pcie *pci)
++{
++	return dw_pcie_resume_noirq_timeout(pci,
++			PCIE_LINK_WAIT_MAX_RETRIES * PCIE_LINK_WAIT_SLEEP_MS);
++}
+ EXPORT_SYMBOL_GPL(dw_pcie_resume_noirq);
+diff --git a/drivers/pci/controller/dwc/pcie-designware.c b/drivers/pci/controller/dwc/pcie-designware.c
+index 855d2a54b3c6..8fd1522c4c45 100644
+--- a/drivers/pci/controller/dwc/pcie-designware.c
++++ b/drivers/pci/controller/dwc/pcie-designware.c
+@@ -757,27 +757,30 @@ const char *dw_pcie_ltssm_status_string(enum dw_pcie_ltssm ltssm)
+ }
+ 
+ /**
+- * dw_pcie_wait_for_link - Wait for the PCIe link to be up
++ * dw_pcie_wait_for_link_timeout - Wait for the PCIe link to be up
+  * @pci: DWC instance
+  *
+  * Returns: 0 if link is up, -ENODEV if device is not found, -EIO if the device
+  * is found but not active and -ETIMEDOUT if the link fails to come up for other
+  * reasons.
+  */
+-int dw_pcie_wait_for_link(struct dw_pcie *pci)
++int dw_pcie_wait_for_link_timeout(struct dw_pcie *pci,
++				  unsigned int timeout_ms)
+ {
+ 	u32 offset, val, ltssm;
+-	int retries;
++	unsigned int retries, max_retries;
++
++	max_retries = DIV_ROUND_UP(timeout_ms, PCIE_LINK_WAIT_SLEEP_MS);
+ 
+ 	/* Check if the link is up or not */
+-	for (retries = 0; retries < PCIE_LINK_WAIT_MAX_RETRIES; retries++) {
++	for (retries = 0; retries < max_retries; retries++) {
+ 		if (dw_pcie_link_up(pci))
+ 			break;
+ 
+ 		msleep(PCIE_LINK_WAIT_SLEEP_MS);
+ 	}
+ 
+-	if (retries >= PCIE_LINK_WAIT_MAX_RETRIES) {
++	if (retries >= max_retries) {
+ 		/*
+ 		 * If the link is in Detect.Quiet or Detect.Active state, it
+ 		 * indicates that no device is detected.
+@@ -815,6 +818,20 @@ int dw_pcie_wait_for_link(struct dw_pcie *pci)
+ 
+ 	return 0;
+ }
++
++/**
++ * dw_pcie_wait_for_link - Wait for the PCIe link to be up
++ * @pci: DWC instance
++ *
++ * Uses the standard PCI core link-training timeout.
++ *
++ * Returns: 0 if the link is up, a negative error code otherwise.
++ */
++int dw_pcie_wait_for_link(struct dw_pcie *pci)
++{
++	return dw_pcie_wait_for_link_timeout(pci,
++			PCIE_LINK_WAIT_MAX_RETRIES * PCIE_LINK_WAIT_SLEEP_MS);
++}
+ EXPORT_SYMBOL_GPL(dw_pcie_wait_for_link);
+ 
+ bool dw_pcie_link_up(struct dw_pcie *pci)
+diff --git a/drivers/pci/controller/dwc/pcie-designware.h b/drivers/pci/controller/dwc/pcie-designware.h
+index d8b99b1fbec7..2571fdd2d1f8 100644
+--- a/drivers/pci/controller/dwc/pcie-designware.h
++++ b/drivers/pci/controller/dwc/pcie-designware.h
+@@ -485,6 +485,7 @@ struct dw_pcie_rp {
+ 	bool			ecam_enabled;
+ 	bool			native_ecam;
+ 	bool                    skip_l23_ready;
++	bool			skip_pme_turn_off;
+ 	bool			skip_pwrctrl_off;
+ };
+ 
+@@ -634,6 +635,8 @@ void dw_pcie_write_dbi2(struct dw_pcie *pci, u32 reg, size_t size, u32 val);
+ bool dw_pcie_link_up(struct dw_pcie *pci);
+ void dw_pcie_upconfig_setup(struct dw_pcie *pci);
+ int dw_pcie_wait_for_link(struct dw_pcie *pci);
++int dw_pcie_wait_for_link_timeout(struct dw_pcie *pci,
++				  unsigned int timeout_ms);
+ int dw_pcie_link_get_max_link_width(struct dw_pcie *pci);
+ int dw_pcie_prog_outbound_atu(struct dw_pcie *pci,
+ 			      const struct dw_pcie_ob_atu_cfg *atu);
+@@ -876,6 +879,8 @@ const char *dw_pcie_ltssm_status_string(enum dw_pcie_ltssm ltssm);
+ #ifdef CONFIG_PCIE_DW_HOST
+ int dw_pcie_suspend_noirq(struct dw_pcie *pci);
+ int dw_pcie_resume_noirq(struct dw_pcie *pci);
++int dw_pcie_resume_noirq_timeout(struct dw_pcie *pci,
++				 unsigned int timeout_ms);
+ void dw_handle_msi_irq(struct dw_pcie_rp *pp);
+ void dw_pcie_msi_init(struct dw_pcie_rp *pp);
+ int dw_pcie_msi_host_init(struct dw_pcie_rp *pp);
+@@ -897,6 +902,12 @@ static inline int dw_pcie_resume_noirq(struct dw_pcie *pci)
+ 	return 0;
+ }
+ 
++static inline int dw_pcie_resume_noirq_timeout(struct dw_pcie *pci,
++					       unsigned int timeout_ms)
++{
++	return 0;
++}
++
+ static inline void dw_handle_msi_irq(struct dw_pcie_rp *pp) { }
+ 
+ static inline void dw_pcie_msi_init(struct dw_pcie_rp *pp)
+diff --git a/drivers/pci/controller/dwc/pcie-qcom.c b/drivers/pci/controller/dwc/pcie-qcom.c
+index 4115e3de5bbc..7c052f68804e 100644
+--- a/drivers/pci/controller/dwc/pcie-qcom.c
++++ b/drivers/pci/controller/dwc/pcie-qcom.c
+@@ -185,6 +185,8 @@
+ /* PARF_STATUS fields */
+ #define FLUSH_COMPLETED				BIT(8)
+ 
++#define USB4_PCIE_LINK_WAIT_MS			12000
++
+ /* ELBI_SYS_CTRL register fields */
+ #define ELBI_SYS_CTRL_LT_ENABLE			BIT(0)
+ #define ELBI_SYS_CTRL_PME_TURNOFF_MSG		BIT(4)
+@@ -342,6 +344,7 @@ struct qcom_pcie {
+ 	bool use_pm_opp;
+ 	struct mutex hw_lock;
+ 	bool is_usb4;
++	bool usb4_had_downstream;
+ };
+ 
+ #define to_qcom_pcie(x)		dev_get_drvdata((x)->dev)
+@@ -1229,6 +1232,16 @@ static void qcom_pcie_host_post_init_2_7_0(struct qcom_pcie *pcie)
+ {
+ 	struct dw_pcie_rp *pp = &pcie->pci->pp;
+ 
++	/*
++	 * The USB4 root complexes support neither L0s nor L1SS, so there is
++	 * nothing for the walk below to enable. Its only effect would be
++	 * pci_enable_link_state_locked() forcing every child to D0, which
++	 * breaks resume: the tunneled hierarchy has been reset by the router
++	 * and the children are still in D3 behind a link that has just come up.
++	 */
++	if (pcie->is_usb4)
++		return;
++
+ 	pci_walk_bus(pp->bridge->bus, qcom_pcie_enable_aspm, NULL);
+ }
+ 
+@@ -1591,6 +1604,7 @@ static int qcom_pcie_host_init(struct dw_pcie_rp *pp)
+ 	}
+ 
+ 	pp->bridge->reset_root_port = qcom_pcie_reset_root_port;
++	pp->skip_pme_turn_off = pcie->is_usb4;
+ 
+ 	return 0;
+ 
+@@ -2539,6 +2553,16 @@ static int qcom_pcie_suspend_noirq(struct device *dev)
+ 	if (!pcie)
+ 		return 0;
+ 
++	if (pcie->is_usb4) {
++		struct pci_bus *bus = pcie->pci->pp.bridge->bus;
++		struct pci_dev *root_port;
++
++		root_port = pci_get_slot(bus, PCI_DEVFN(0, 0));
++		pcie->usb4_had_downstream = root_port && root_port->subordinate &&
++			!list_empty(&root_port->subordinate->devices);
++		pci_dev_put(root_port);
++	}
++
+ 	ret = dw_pcie_suspend_noirq(pcie->pci);
+ 	if (ret)
+ 		return ret;
+@@ -2622,7 +2646,19 @@ static int qcom_pcie_resume_noirq(struct device *dev)
+ 		 * Ignore -ENODEV & -EIO here since it is expected when no
+ 		 * endpoint is connected to the PCIe link.
+ 		 */
+-		ret = dw_pcie_resume_noirq(pcie->pci);
++		if (pcie->is_usb4) {
++			/*
++			 * A populated tunnel needs the downstream device to
++			 * train again, which takes ~8.5 s after the router
++			 * restarts it. An empty one has nothing to wait for:
++			 * a device showing up later is picked up by hotplug.
++			 */
++			ret = dw_pcie_resume_noirq_timeout(pcie->pci,
++				pcie->usb4_had_downstream ?
++				USB4_PCIE_LINK_WAIT_MS : PCIE_LINK_WAIT_SLEEP_MS);
++		} else {
++			ret = dw_pcie_resume_noirq(pcie->pci);
++		}
+ 		if (ret && ret != -ENODEV && ret != -EIO)
+ 			goto disable_icc_mem;
+ 	} else {
+-- 
+2.34.1
+

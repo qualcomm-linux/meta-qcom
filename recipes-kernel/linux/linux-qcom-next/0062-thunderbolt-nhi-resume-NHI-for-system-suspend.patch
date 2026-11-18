@@ -1,0 +1,49 @@
+From aa27da0501661c01baeeb161dd6faf8c8375a991 Mon Sep 17 00:00:00 2001
+From: Konrad Dybcio <konrad.dybcio@oss.qualcomm.com>
+Date: Wed, 16 Sep 2026 13:15:53 +0200
+Subject: [PATCH 62/85] thunderbolt: nhi: resume NHI for system suspend
+
+Resume a runtime-suspended NHI before system suspend so the noirq phase
+can access the host interface. The PM core's prepare reference keeps it
+active until the transition completes.
+
+Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>
+Upstream-Status: Pending
+---
+ drivers/thunderbolt/nhi.c | 16 ++++++++++++++++
+ 1 file changed, 16 insertions(+)
+
+diff --git a/drivers/thunderbolt/nhi.c b/drivers/thunderbolt/nhi.c
+index 163c08cdd307..a332fee2a365 100644
+--- a/drivers/thunderbolt/nhi.c
++++ b/drivers/thunderbolt/nhi.c
+@@ -1205,10 +1205,26 @@ static int nhi_resume_noirq(struct device *dev)
+ static int nhi_suspend(struct device *dev)
+ {
+ 	struct tb *tb = dev_get_drvdata(dev);
++	int ret;
+ 
+ 	if (!tb)
+ 		return 0;
+ 
++	/*
++	 * System suspend callbacks can run while the NHI is runtime
++	 * suspended. Resume it through runtime PM here, while clocks are
++	 * still available, so the noirq phase can access the host interface.
++	 * The PM core's prepare phase holds a runtime PM reference until the
++	 * system suspend transition completes.
++	 */
++	if (pm_runtime_suspended(dev)) {
++		ret = pm_runtime_resume_and_get(dev);
++		if (ret < 0)
++			return ret;
++
++		pm_runtime_put_noidle(dev);
++	}
++
+ 	return tb_domain_suspend(tb);
+ }
+ 
+-- 
+2.34.1
+

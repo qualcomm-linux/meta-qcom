@@ -1,0 +1,55 @@
+From 24f624bd0312326925e2a2f95b88626c4984eaad Mon Sep 17 00:00:00 2001
+From: Konrad Dybcio <konrad.dybcio@oss.qualcomm.com>
+Date: Wed, 4 Nov 2026 15:15:10 +0100
+Subject: [PATCH 77/85] WIP:combophy:usb4clamps
+
+Upstream-Status: Pending
+---
+ drivers/phy/qualcomm/phy-qcom-qmp-combo.c | 24 +++++++++++++++++++++++
+ 1 file changed, 24 insertions(+)
+
+diff --git a/drivers/phy/qualcomm/phy-qcom-qmp-combo.c b/drivers/phy/qualcomm/phy-qcom-qmp-combo.c
+index fd583bd62690..ca0155c20945 100644
+--- a/drivers/phy/qualcomm/phy-qcom-qmp-combo.c
++++ b/drivers/phy/qualcomm/phy-qcom-qmp-combo.c
+@@ -5167,6 +5167,28 @@ static int qmp_combo_usb4_exit(struct phy *phy)
+ 	return 0;
+ }
+ 
++static int qmp_combo_usb4_power_on(struct phy *phy)
++{
++	struct qmp_combo *qmp = phy_get_drvdata(phy);
++
++	guard(mutex)(&qmp->phy_mutex);
++
++	qphy_setbits(qmp->pcs_aon, qmp->cfg->regs[QPHY_PCS_USB4_CLAMP_ENABLE], CLAMP_EN);
++
++	return 0;
++}
++
++static int qmp_combo_usb4_power_off(struct phy *phy)
++{
++	struct qmp_combo *qmp = phy_get_drvdata(phy);
++
++	guard(mutex)(&qmp->phy_mutex);
++
++	qphy_clrbits(qmp->pcs_aon, qmp->cfg->regs[QPHY_PCS_USB4_CLAMP_ENABLE], CLAMP_EN);
++
++	return 0;
++}
++
+ static int qmp_combo_usb4_set_mode(struct phy *phy, enum phy_mode mode, int submode)
+ {
+ 	struct qmp_combo *qmp = phy_get_drvdata(phy);
+@@ -5192,6 +5214,8 @@ static const struct phy_ops qmp_combo_usb_phy_ops = {
+ static const struct phy_ops qmp_combo_usb4_phy_ops = {
+ 	.init		= qmp_combo_usb4_init,
+ 	.exit		= qmp_combo_usb4_exit,
++	.power_on	= qmp_combo_usb4_power_on,
++	.power_off	= qmp_combo_usb4_power_off,
+ 	.set_mode	= qmp_combo_usb4_set_mode,
+ 	.owner		= THIS_MODULE,
+ };
+-- 
+2.34.1
+

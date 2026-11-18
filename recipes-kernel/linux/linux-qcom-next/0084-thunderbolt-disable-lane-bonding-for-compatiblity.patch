@@ -1,0 +1,28 @@
+From 463f88d136b6d1f3b637a963826e55e6719d09d7 Mon Sep 17 00:00:00 2001
+From: Konrad Dybcio <konrad.dybcio@oss.qualcomm.com>
+Date: Thu, 12 Nov 2026 17:54:21 +0100
+Subject: [PATCH 84/85] thunderbolt: disable lane bonding for compatiblity
+
+Required at least on the Dell TB16 dock
+
+Upstream-Status: Pending
+---
+ drivers/thunderbolt/tb.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/thunderbolt/tb.c b/drivers/thunderbolt/tb.c
+index ba22d79e482a..d6f3b97a57b1 100644
+--- a/drivers/thunderbolt/tb.c
++++ b/drivers/thunderbolt/tb.c
+@@ -1251,7 +1251,7 @@ static void tb_configure_link(struct tb_port *down, struct tb_port *up,
+ 	 * Enable lane bonding if the link is currently two single lane
+ 	 * links.
+ 	 */
+-	if (sw->link_width < TB_LINK_WIDTH_DUAL)
++	if (0 && sw->link_width < TB_LINK_WIDTH_DUAL)
+ 		tb_switch_set_link_width(sw, TB_LINK_WIDTH_DUAL);
+ 
+ 	/*
+-- 
+2.34.1
+

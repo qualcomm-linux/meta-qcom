@@ -1,0 +1,45 @@
+From ad947bd24e355f65d724b9f45ef1dcc5a120d437 Mon Sep 17 00:00:00 2001
+From: Konrad Dybcio <konrad.dybcio@oss.qualcomm.com>
+Date: Thu, 5 Nov 2026 13:27:22 +0100
+Subject: [PATCH 11/85] Revert "soc: qcom: pmic_glink_altmode: Disable TBT/USB4
+ negotiation for now"
+
+This reverts commit 5656b8d5a9671414b1eff07f1cfdacb512a0fe07.
+
+Upstream-Status: Pending
+---
+ drivers/soc/qcom/pmic_glink_altmode.c | 11 +----------
+ 1 file changed, 1 insertion(+), 10 deletions(-)
+
+diff --git a/drivers/soc/qcom/pmic_glink_altmode.c b/drivers/soc/qcom/pmic_glink_altmode.c
+index 7562b055825d..9e5bf43a576a 100644
+--- a/drivers/soc/qcom/pmic_glink_altmode.c
++++ b/drivers/soc/qcom/pmic_glink_altmode.c
+@@ -32,12 +32,6 @@
+ #define ALTMODE_PAN_EN		0x10
+ #define ALTMODE_PAN_ACK		0x11
+ 
+-/* The version field and subfields are ignored on firmwares implementing < v2 */
+-#define PAN_EN_OS_TYPE		GENMASK(6 ,3)
+- #define PAN_EN_OS_DEFAULT	1
+- #define PAN_EN_OS_INSTALLER	2
+-#define PAN_EN_VERSION		GENMASK(2, 0)
+-
+ struct usbc_write_req {
+ 	struct pmic_glink_hdr   hdr;
+ 	__le32 cmd;
+@@ -594,10 +588,7 @@ static void pmic_glink_altmode_enable_worker(struct work_struct *work)
+ 	struct pmic_glink_altmode *altmode = work_to_altmode(work);
+ 	int ret;
+ 
+-	/* Set OS to installer for now to restrict USB4/TBT negotiation */
+-	ret = pmic_glink_altmode_request(altmode, ALTMODE_PAN_EN,
+-					 FIELD_PREP(PAN_EN_VERSION, 2) |
+-					 FIELD_PREP(PAN_EN_OS_TYPE, PAN_EN_OS_INSTALLER));
++	ret = pmic_glink_altmode_request(altmode, ALTMODE_PAN_EN, 0);
+ 	if (ret)
+ 		dev_err(altmode->dev, "failed to request altmode notifications: %d\n", ret);
+ }
+-- 
+2.34.1
+

@@ -1,0 +1,368 @@
+From 9a807712f5fd34f88b0cf1c06095bb7befc7c8c5 Mon Sep 17 00:00:00 2001
+From: Konrad Dybcio <konrad.dybcio@oss.qualcomm.com>
+Date: Thu, 27 Mar 2025 13:08:56 +0100
+Subject: [PATCH 38/85] arm64: dts: qcom: hamoa: Wire up USB4 PCIe hosts
+
+Each USB4 block contains a connection to an actual PCIe host.
+Describe those for Hamoa.
+
+All are left enabled by default, as they don't really have any
+dependencies for powering up alone and making Linux aware of them
+regardless of presence of the USB4 router ensures they're in a
+known state.
+
+Signed-off-by: Konrad Dybcio <konrad.dybcio@oss.qualcomm.com>
+Upstream-Status: Pending
+---
+ arch/arm64/boot/dts/qcom/hamoa.dtsi | 335 ++++++++++++++++++++++++++++
+ 1 file changed, 335 insertions(+)
+
+diff --git a/arch/arm64/boot/dts/qcom/hamoa.dtsi b/arch/arm64/boot/dts/qcom/hamoa.dtsi
+index a531c6b66d79..787085ea1869 100644
+--- a/arch/arm64/boot/dts/qcom/hamoa.dtsi
++++ b/arch/arm64/boot/dts/qcom/hamoa.dtsi
+@@ -4100,6 +4100,341 @@ pcie4_phy: phy@1c0e000 {
+ 			status = "disabled";
+ 		};
+ 
++		pcie2: pcie@1c18000 {
++			device_type = "pci";
++			compatible = "qcom,pcie-x1e80100";
++			reg = <0x0 0x01c18000 0x0 0x3000>,
++			      <0x0 0x60000000 0x0 0xf20>,
++			      <0x0 0x60000f20 0x0 0xa8>,
++			      <0x0 0x60001000 0x0 0x4000>,
++			      <0x0 0x60100000 0x0 0x100000>,
++			      <0x0 0x01c1b000 0x0 0x1000>;
++			reg-names = "parf",
++			            "dbi",
++				    "elbi",
++				    "atu",
++				    "config",
++				    "mhi";
++			#address-cells = <3>;
++			#size-cells = <2>;
++
++			/* PCIe2 has one BAR region less than the others */
++			ranges = <0x01000000 0x0 0x00000000 0x0 0x60200000 0x0 0x100000>,
++				 <0x02000000 0x0 0x60300000 0x0 0x60300000 0x0 0xd00000>,
++				 <0x43000000 0x60 0x00000000 0x60 0x00000000 0x10 0x00000000>;
++
++			bus-range = <0x00 0xff>;
++
++			dma-coherent;
++
++			linux,pci-domain = <2>;
++			max-link-speed = <1>;
++			num-lanes = <16>;
++
++			interrupts = <GIC_SPI 753 IRQ_TYPE_LEVEL_HIGH>,
++				     <GIC_SPI 754 IRQ_TYPE_LEVEL_HIGH>,
++				     <GIC_SPI 755 IRQ_TYPE_LEVEL_HIGH>,
++				     <GIC_SPI 756 IRQ_TYPE_LEVEL_HIGH>,
++				     <GIC_SPI 851 IRQ_TYPE_LEVEL_HIGH>,
++				     <GIC_SPI 852 IRQ_TYPE_LEVEL_HIGH>,
++				     <GIC_SPI 853 IRQ_TYPE_LEVEL_HIGH>,
++				     <GIC_SPI 854 IRQ_TYPE_LEVEL_HIGH>,
++				     <GIC_SPI 747 IRQ_TYPE_LEVEL_HIGH>;
++			interrupt-names = "msi0",
++					  "msi1",
++					  "msi2",
++					  "msi3",
++					  "msi4",
++					  "msi5",
++					  "msi6",
++					  "msi7",
++					  "global";
++
++			#interrupt-cells = <1>;
++			interrupt-map-mask = <0 0 0 0x7>;
++			interrupt-map = <0 0 0 1 &intc 0 0 GIC_SPI 757 IRQ_TYPE_LEVEL_HIGH>,
++					<0 0 0 2 &intc 0 0 GIC_SPI 748 IRQ_TYPE_LEVEL_HIGH>,
++					<0 0 0 3 &intc 0 0 GIC_SPI 749 IRQ_TYPE_LEVEL_HIGH>,
++					<0 0 0 4 &intc 0 0 GIC_SPI 750 IRQ_TYPE_LEVEL_HIGH>;
++
++			clocks = <&gcc GCC_PCIE_2_AUX_CLK>,
++				 <&gcc GCC_PCIE_2_CFG_AHB_CLK>,
++				 <&gcc GCC_PCIE_2_MSTR_AXI_CLK>,
++				 <&gcc GCC_PCIE_2_SLV_AXI_CLK>,
++				 <&gcc GCC_PCIE_2_SLV_Q2A_AXI_CLK>,
++				 <&gcc GCC_CFG_NOC_PCIE_ANOC_SOUTH_AHB_CLK>,
++				 <&gcc GCC_CNOC_PCIE_SOUTH_SF_AXI_CLK>,
++				 <&gcc GCC_PCIE2_PHY_RCHNG_CLK>,
++				 <&gcc GCC_PCIE_2_PIPE_CLK>,
++				 <&gcc GCC_CNOC_PCIE_TUNNEL_CLK>,
++				 <&gcc GCC_CNOC_PCIE2_TUNNEL_CLK>;
++			clock-names = "aux",
++				      "cfg",
++				      "bus_master",
++				      "bus_slave",
++				      "slave_q2a",
++				      "noc_aggr",
++				      "cnoc_sf_axi",
++				      "rchng",
++				      "pipe",
++				      "tunnel_common",
++				      "tunnel_lane";
++
++			assigned-clocks = <&gcc GCC_PCIE2_PHY_RCHNG_CLK>,
++					  <&gcc GCC_PCIE_2_AUX_CLK>;
++			assigned-clock-rates = <100000000>,
++					       <19200000>;
++
++			interconnects = <&pcie_south_anoc MASTER_PCIE_2 QCOM_ICC_TAG_ALWAYS
++					 &mc_virt SLAVE_EBI1 QCOM_ICC_TAG_ALWAYS>,
++					<&gem_noc MASTER_APPSS_PROC QCOM_ICC_TAG_ACTIVE_ONLY
++					 &cnoc_main SLAVE_PCIE_2 QCOM_ICC_TAG_ACTIVE_ONLY>;
++			interconnect-names = "pcie-mem",
++					     "cpu-pcie";
++
++			resets = <&gcc GCC_PCIE_2_TUNNEL_BCR>,
++				 <&gcc GCC_PCIE_2_LINK_DOWN_BCR>,
++				 <&usb4_router2 0>;
++			reset-names = "pci",
++				      "link_down",
++				      "adapter";
++
++			power-domains = <&gcc GCC_PCIE_2_TUNNEL_GDSC>;
++			required-opps = <&rpmhpd_opp_nom>;
++
++			pcie2_port0: pcie@0,0 {
++				device_type = "pci";
++				compatible = "pciclass,0604";
++				reg = <0x0 0x0 0x0 0x0 0x0>;
++				bus-range = <0x01 0xff>;
++
++				#address-cells = <3>;
++				#size-cells = <2>;
++				ranges;
++			};
++		};
++
++		pcie1: pcie@1c20000 {
++			device_type = "pci";
++			compatible = "qcom,pcie-x1e80100";
++			reg = <0x0 0x01c20000 0x0 0x3000>,
++			      <0x5 0x00000000 0x0 0xf20>,
++			      <0x5 0x00000f20 0x0 0xa8>,
++			      <0x5 0x00001000 0x0 0x4000>,
++			      <0x5 0x00100000 0x0 0x10000000>,
++			      <0x0 0x01c23000 0x0 0x1000>;
++			reg-names = "parf",
++			            "dbi",
++				    "elbi",
++				    "atu",
++				    "config",
++				    "mhi";
++			#address-cells = <3>;
++			#size-cells = <2>;
++			ranges = <0x01000000 0x0 0x00000000 0x0 0x50000000 0x0 0x100000>,
++				 <0x02000000 0x0 0x50100000 0x0 0x50100000 0x0 0xff00000>,
++				 <0x03000000 0x5 0x10100000 0x5 0x10100000 0x0 0xeff00000>,
++				 <0x43000000 0x50 0x00000000 0x50 0x00000000 0x10 0x00000000>;
++
++			bus-range = <0x00 0xff>;
++
++			dma-coherent;
++
++			linux,pci-domain = <1>;
++			max-link-speed = <1>;
++			num-lanes = <16>;
++
++			interrupts = <GIC_SPI 729 IRQ_TYPE_LEVEL_HIGH>,
++				     <GIC_SPI 736 IRQ_TYPE_LEVEL_HIGH>,
++				     <GIC_SPI 737 IRQ_TYPE_LEVEL_HIGH>,
++				     <GIC_SPI 738 IRQ_TYPE_LEVEL_HIGH>,
++				     <GIC_SPI 847 IRQ_TYPE_LEVEL_HIGH>,
++				     <GIC_SPI 848 IRQ_TYPE_LEVEL_HIGH>,
++				     <GIC_SPI 849 IRQ_TYPE_LEVEL_HIGH>,
++				     <GIC_SPI 850 IRQ_TYPE_LEVEL_HIGH>,
++				     <GIC_SPI 758 IRQ_TYPE_LEVEL_HIGH>;
++			interrupt-names = "msi0",
++					  "msi1",
++					  "msi2",
++					  "msi3",
++					  "msi4",
++					  "msi5",
++					  "msi6",
++					  "msi7",
++					  "global";
++
++			#interrupt-cells = <1>;
++			interrupt-map-mask = <0 0 0 0x7>;
++			interrupt-map = <0 0 0 1 &intc 0 0 GIC_SPI 306 IRQ_TYPE_LEVEL_HIGH>,
++					<0 0 0 2 &intc 0 0 GIC_SPI 744 IRQ_TYPE_LEVEL_HIGH>,
++					<0 0 0 3 &intc 0 0 GIC_SPI 745 IRQ_TYPE_LEVEL_HIGH>,
++					<0 0 0 4 &intc 0 0 GIC_SPI 746 IRQ_TYPE_LEVEL_HIGH>;
++
++			clocks = <&gcc GCC_PCIE_1_AUX_CLK>,
++				 <&gcc GCC_PCIE_1_CFG_AHB_CLK>,
++				 <&gcc GCC_PCIE_1_MSTR_AXI_CLK>,
++				 <&gcc GCC_PCIE_1_SLV_AXI_CLK>,
++				 <&gcc GCC_PCIE_1_SLV_Q2A_AXI_CLK>,
++				 <&gcc GCC_CFG_NOC_PCIE_ANOC_SOUTH_AHB_CLK>,
++				 <&gcc GCC_CNOC_PCIE_SOUTH_SF_AXI_CLK>,
++				 <&gcc GCC_PCIE1_PHY_RCHNG_CLK>,
++				 <&gcc GCC_PCIE_1_PIPE_CLK>,
++				 <&gcc GCC_CNOC_PCIE_TUNNEL_CLK>,
++				 <&gcc GCC_CNOC_PCIE1_TUNNEL_CLK>;
++			clock-names = "aux",
++				      "cfg",
++				      "bus_master",
++				      "bus_slave",
++				      "slave_q2a",
++				      "noc_aggr",
++				      "cnoc_sf_axi",
++				      "rchng",
++				      "pipe",
++				      "tunnel_common",
++				      "tunnel_lane";
++
++			assigned-clocks = <&gcc GCC_PCIE1_PHY_RCHNG_CLK>,
++					  <&gcc GCC_PCIE_1_AUX_CLK>;
++			assigned-clock-rates = <100000000>,
++					       <19200000>;
++
++			interconnects = <&pcie_south_anoc MASTER_PCIE_1 QCOM_ICC_TAG_ALWAYS
++					 &mc_virt SLAVE_EBI1 QCOM_ICC_TAG_ALWAYS>,
++					<&gem_noc MASTER_APPSS_PROC QCOM_ICC_TAG_ACTIVE_ONLY
++					 &cnoc_main SLAVE_PCIE_1 QCOM_ICC_TAG_ACTIVE_ONLY>;
++			interconnect-names = "pcie-mem",
++					     "cpu-pcie";
++
++			resets = <&gcc GCC_PCIE_1_TUNNEL_BCR>,
++				 <&gcc GCC_PCIE_1_LINK_DOWN_BCR>,
++				 <&usb4_router1 0>;
++			reset-names = "pci",
++				      "link_down",
++				      "adapter";
++
++			power-domains = <&gcc GCC_PCIE_1_TUNNEL_GDSC>;
++			required-opps = <&rpmhpd_opp_nom>;
++
++			pcie1_port0: pcie@0,0 {
++				device_type = "pci";
++				compatible = "pciclass,0604";
++				reg = <0x0 0x0 0x0 0x0 0x0>;
++				bus-range = <0x01 0xff>;
++
++				#address-cells = <3>;
++				#size-cells = <2>;
++				ranges;
++			};
++		};
++
++		pcie0: pcie@1c28000 {
++			device_type = "pci";
++			compatible = "qcom,pcie-x1e80100";
++			reg = <0x0 0x01c28000 0x0 0x3000>,
++			      <0x4 0x00000000 0x0 0xf20>,
++			      <0x4 0x00000f20 0x0 0xa8>,
++			      <0x4 0x00001000 0x0 0x4000>,
++			      <0x4 0x00100000 0x0 0x10000000>,
++			      <0x0 0x01c2b000 0x0 0x1000>;
++			reg-names = "parf",
++			            "dbi",
++				    "elbi",
++				    "atu",
++				    "config",
++				    "mhi";
++			#address-cells = <3>;
++			#size-cells = <2>;
++			ranges = <0x01000000 0x0 0x00000000 0x0 0x40000000 0x0 0x100000>,
++				 <0x02000000 0x0 0x40100000 0x0 0x40100000 0x0 0xff00000>,
++				 <0x03000000 0x4 0x10100000 0x4 0x10100000 0x0 0xeff00000>,
++				 <0x43000000 0x40 0x00000000 0x40 0x00000000 0x10 0x00000000>;
++			bus-range = <0x00 0xff>;
++
++			dma-coherent;
++
++			linux,pci-domain = <0>;
++			max-link-speed = <1>;
++			num-lanes = <16>;
++
++			interrupts = <GIC_SPI 655 IRQ_TYPE_LEVEL_HIGH>,
++				     <GIC_SPI 657 IRQ_TYPE_LEVEL_HIGH>,
++				     <GIC_SPI 664 IRQ_TYPE_LEVEL_HIGH>,
++				     <GIC_SPI 668 IRQ_TYPE_LEVEL_HIGH>,
++				     <GIC_SPI 348 IRQ_TYPE_LEVEL_HIGH>,
++				     <GIC_SPI 349 IRQ_TYPE_LEVEL_HIGH>,
++				     <GIC_SPI 351 IRQ_TYPE_LEVEL_HIGH>,
++				     <GIC_SPI 702 IRQ_TYPE_LEVEL_HIGH>,
++				     <GIC_SPI 167 IRQ_TYPE_LEVEL_HIGH>;
++			interrupt-names = "msi0",
++					  "msi1",
++					  "msi2",
++					  "msi3",
++					  "msi4",
++					  "msi5",
++					  "msi6",
++					  "msi7",
++					  "global";
++
++			#interrupt-cells = <1>;
++			interrupt-map-mask = <0 0 0 0x7>;
++			interrupt-map = <0 0 0 1 &intc 0 0 GIC_SPI 703 IRQ_TYPE_LEVEL_HIGH>,
++					<0 0 0 2 &intc 0 0 GIC_SPI 708 IRQ_TYPE_LEVEL_HIGH>,
++					<0 0 0 3 &intc 0 0 GIC_SPI 714 IRQ_TYPE_LEVEL_HIGH>,
++					<0 0 0 4 &intc 0 0 GIC_SPI 716 IRQ_TYPE_LEVEL_HIGH>;
++
++			clocks = <&gcc GCC_PCIE_0_AUX_CLK>,
++				 <&gcc GCC_PCIE_0_CFG_AHB_CLK>,
++				 <&gcc GCC_PCIE_0_MSTR_AXI_CLK>,
++				 <&gcc GCC_PCIE_0_SLV_AXI_CLK>,
++				 <&gcc GCC_PCIE_0_SLV_Q2A_AXI_CLK>,
++				 <&gcc GCC_CFG_NOC_PCIE_ANOC_SOUTH_AHB_CLK>,
++				 <&gcc GCC_CNOC_PCIE_SOUTH_SF_AXI_CLK>,
++				 <&gcc GCC_PCIE0_PHY_RCHNG_CLK>,
++				 <&gcc GCC_PCIE_0_PIPE_CLK>,
++				 <&gcc GCC_CNOC_PCIE_TUNNEL_CLK>;
++			clock-names = "aux",
++				      "cfg",
++				      "bus_master",
++				      "bus_slave",
++				      "slave_q2a",
++				      "noc_aggr",
++				      "cnoc_sf_axi",
++				      "rchng",
++				      "pipe",
++				      "tunnel_common";
++
++			assigned-clocks = <&gcc GCC_PCIE_0_AUX_CLK>;
++			assigned-clock-rates = <19200000>;
++
++			interconnects = <&pcie_south_anoc MASTER_PCIE_0 QCOM_ICC_TAG_ALWAYS
++					 &mc_virt SLAVE_EBI1 QCOM_ICC_TAG_ALWAYS>,
++					<&gem_noc MASTER_APPSS_PROC QCOM_ICC_TAG_ACTIVE_ONLY
++					 &cnoc_main SLAVE_PCIE_0 QCOM_ICC_TAG_ACTIVE_ONLY>;
++			interconnect-names = "pcie-mem",
++					     "cpu-pcie";
++
++			resets = <&gcc GCC_PCIE_0_TUNNEL_BCR>,
++				 <&gcc GCC_PCIE_0_LINK_DOWN_BCR>,
++				 <&usb4_router0 0>;
++			reset-names = "pci",
++				      "link_down",
++				      "adapter";
++
++			power-domains = <&gcc GCC_PCIE_0_TUNNEL_GDSC>;
++			required-opps = <&rpmhpd_opp_nom>;
++
++			pcie0_port0: pcie@0,0 {
++				device_type = "pci";
++				compatible = "pciclass,0604";
++				reg = <0x0 0x0 0x0 0x0 0x0>;
++				bus-range = <0x01 0xff>;
++
++				#address-cells = <3>;
++				#size-cells = <2>;
++				ranges;
++			};
++		};
++
+ 		ufs_mem_phy: phy@1d80000 {
+ 			compatible = "qcom,x1e80100-qmp-ufs-phy",
+ 				     "qcom,sm8550-qmp-ufs-phy";
+-- 
+2.34.1
+

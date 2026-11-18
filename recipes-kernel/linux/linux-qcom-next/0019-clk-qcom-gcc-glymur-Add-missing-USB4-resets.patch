@@ -1,0 +1,64 @@
+From 20fc8cf264386b80492ac5a4916f4ea6158da71b Mon Sep 17 00:00:00 2001
+From: Konrad Dybcio <konrad.dybcio@oss.qualcomm.com>
+Date: Thu, 29 Oct 2026 13:39:33 +0100
+Subject: [PATCH 19/85] clk: qcom: gcc-glymur: Add missing USB4 resets
+
+A number of the USB4-related resets were left undescribed. Plumb them
+in.
+
+Signed-off-by: Konrad Dybcio <konrad.dybcio@oss.qualcomm.com>
+Upstream-Status: Pending
+---
+ drivers/clk/qcom/gcc-glymur.c | 36 +++++++++++++++++++++++++++++++++++
+ 1 file changed, 36 insertions(+)
+
+diff --git a/drivers/clk/qcom/gcc-glymur.c b/drivers/clk/qcom/gcc-glymur.c
+index e6bd15b88be2..cbde198feaae 100644
+--- a/drivers/clk/qcom/gcc-glymur.c
++++ b/drivers/clk/qcom/gcc-glymur.c
+@@ -8436,6 +8436,42 @@ static const struct qcom_reset_map gcc_glymur_resets[] = {
+ 	[GCC_USB4_0_DP0_PHY_PRIM_BCR] = { 0xdb010 },
+ 	[GCC_USB4_1_BCR] = { 0x2d004 },
+ 	[GCC_USB4_2_BCR] = { 0xe0004 },
++	[GCC_USB4_0_MISC_USB4_SYS_BCR] = { .reg = 0x600c0, .bit = 0 },
++	[GCC_USB4_0_MISC_RX_CLK_0_BCR] = { .reg = 0x600c0, .bit = 1 },
++	[GCC_USB4_0_MISC_RX_CLK_1_BCR] = { .reg = 0x600c0, .bit = 2 },
++	[GCC_USB4_0_MISC_USB_PIPE_BCR] = { .reg = 0x600c0, .bit = 3 },
++	[GCC_USB4_0_MISC_PCIE_PIPE_BCR] = { .reg = 0x600c0, .bit = 4 },
++	[GCC_USB4_0_MISC_TMU_BCR] = { .reg = 0x600c0, .bit = 5 },
++	[GCC_USB4_0_MISC_SB_IF_BCR] = { .reg = 0x600c0, .bit = 6 },
++	[GCC_USB4_0_MISC_HIA_MSTR_BCR] = { .reg = 0x600c0, .bit = 7 },
++	[GCC_USB4_0_MISC_AHB_BCR] = { .reg = 0x600c0, .bit = 8 },
++	[GCC_USB4_0_MISC_DP0_MAX_PCLK_BCR] = { .reg = 0x600c0, .bit = 9 },
++	[GCC_USB4_0_MISC_DP1_MAX_PCLK_BCR] = { .reg = 0x600c0, .bit = 10 },
++	[GCC_USB4_0_MISC_HRR_BCR] = { .reg = 0x600c0, .bit = 11 },
++	[GCC_USB4_1_MISC_USB4_SYS_BCR] = { .reg = 0x600ac, .bit = 0 },
++	[GCC_USB4_1_MISC_RX_CLK_0_BCR] = { .reg = 0x600ac, .bit = 1 },
++	[GCC_USB4_1_MISC_RX_CLK_1_BCR] = { .reg = 0x600ac, .bit = 2 },
++	[GCC_USB4_1_MISC_USB_PIPE_BCR] = { .reg = 0x600ac, .bit = 3 },
++	[GCC_USB4_1_MISC_PCIE_PIPE_BCR] = { .reg = 0x600ac, .bit = 4 },
++	[GCC_USB4_1_MISC_TMU_BCR] = { .reg = 0x600ac, .bit = 5 },
++	[GCC_USB4_1_MISC_SB_IF_BCR] = { .reg = 0x600ac, .bit = 6 },
++	[GCC_USB4_1_MISC_HIA_MSTR_BCR] = { .reg = 0x600ac, .bit = 7 },
++	[GCC_USB4_1_MISC_AHB_BCR] = { .reg = 0x600ac, .bit = 8 },
++	[GCC_USB4_1_MISC_DP0_MAX_PCLK_BCR] = { .reg = 0x600ac, .bit = 9 },
++	[GCC_USB4_1_MISC_DP1_MAX_PCLK_BCR] = { .reg = 0x600ac, .bit = 10 },
++	[GCC_USB4_1_MISC_HRR_BCR] = { .reg = 0x600ac, .bit = 11 },
++	[GCC_USB4_2_MISC_USB4_SYS_BCR] = { .reg = 0x600c4, .bit = 0 },
++	[GCC_USB4_2_MISC_RX_CLK_0_BCR] = { .reg = 0x600c4, .bit = 1 },
++	[GCC_USB4_2_MISC_RX_CLK_1_BCR] = { .reg = 0x600c4, .bit = 2 },
++	[GCC_USB4_2_MISC_USB_PIPE_BCR] = { .reg = 0x600c4, .bit = 3 },
++	[GCC_USB4_2_MISC_PCIE_PIPE_BCR] = { .reg = 0x600c4, .bit = 4 },
++	[GCC_USB4_2_MISC_TMU_BCR] = { .reg = 0x600c4, .bit = 5 },
++	[GCC_USB4_2_MISC_SB_IF_BCR] = { .reg = 0x600c4, .bit = 6 },
++	[GCC_USB4_2_MISC_HIA_MSTR_BCR] = { .reg = 0x600c4, .bit = 7 },
++	[GCC_USB4_2_MISC_AHB_BCR] = { .reg = 0x600c4, .bit = 8 },
++	[GCC_USB4_2_MISC_DP0_MAX_PCLK_BCR] = { .reg = 0x600c4, .bit = 9 },
++	[GCC_USB4_2_MISC_DP1_MAX_PCLK_BCR] = { .reg = 0x600c4, .bit = 10 },
++	[GCC_USB4_2_MISC_HRR_BCR] = { .reg = 0x600c4, .bit = 11 },
+ 	[GCC_USB_0_PHY_BCR] = { 0xdb020 },
+ 	[GCC_USB_1_PHY_BCR] = { 0x2c020 },
+ 	[GCC_USB_2_PHY_BCR] = { 0xbe020 },
+-- 
+2.34.1
+

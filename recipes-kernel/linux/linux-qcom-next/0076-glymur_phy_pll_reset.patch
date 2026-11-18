@@ -1,0 +1,70 @@
+From b8b2c133afd407f36023a995642c968304bbbe61 Mon Sep 17 00:00:00 2001
+From: Konrad Dybcio <konrad.dybcio@oss.qualcomm.com>
+Date: Tue, 3 Nov 2026 17:08:30 +0100
+Subject: [PATCH 76/85] glymur_phy_pll_reset
+
+Upstream-Status: Pending
+---
+ drivers/phy/qualcomm/phy-qcom-qmp-combo.c     | 13 +++++++++++++
+ drivers/phy/qualcomm/phy-qcom-qmp-dp-com-v3.h |  1 +
+ 2 files changed, 14 insertions(+)
+
+diff --git a/drivers/phy/qualcomm/phy-qcom-qmp-combo.c b/drivers/phy/qualcomm/phy-qcom-qmp-combo.c
+index afd372123c43..fd583bd62690 100644
+--- a/drivers/phy/qualcomm/phy-qcom-qmp-combo.c
++++ b/drivers/phy/qualcomm/phy-qcom-qmp-combo.c
+@@ -4594,6 +4594,16 @@ static int qmp_combo_dp_calibrate(struct phy *phy)
+ 	return ret;
+ }
+ 
++/*
++ * TODO: the HPG only requires this when transitioning to or from USB4 mode (including
++ * DP-only), not on every mode entry
++ */
++static void qmp_combo_toggle_c0_pll_reset(void __iomem *com)
++{
++	qphy_setbits(com, QPHY_V3_DP_COM_RESET_OVRD_CTRL2, 0x6);
++	qphy_clrbits(com, QPHY_V3_DP_COM_RESET_OVRD_CTRL2, 0x4);
++}
++
+ static int qmp_combo_com_init(struct qmp_combo *qmp, bool force)
+ {
+ 	const struct qmp_phy_cfg *cfg = qmp->cfg;
+@@ -4694,6 +4704,7 @@ static int qmp_combo_com_init(struct qmp_combo *qmp, bool force)
+ 	switch (qmp->qmpphy_mode) {
+ 	case QMPPHY_MODE_USB3DP:
+ 		writel(USB3_MODE | DP_MODE, com + QPHY_V3_DP_COM_PHY_MODE_CTRL);
++		qmp_combo_toggle_c0_pll_reset(com);
+ 
+ 		/* bring both QMP USB and QMP DP PHYs PCS block out of reset */
+ 		qphy_clrbits(com, QPHY_V3_DP_COM_RESET_OVRD_CTRL,
+@@ -4711,6 +4722,7 @@ static int qmp_combo_com_init(struct qmp_combo *qmp, bool force)
+ 
+ 	case QMPPHY_MODE_USB3_ONLY:
+ 		writel(USB3_MODE, com + QPHY_V3_DP_COM_PHY_MODE_CTRL);
++		qmp_combo_toggle_c0_pll_reset(com);
+ 
+ 		/* bring QMP USB PHY PCS block out of reset */
+ 		qphy_clrbits(com, QPHY_V3_DP_COM_RESET_OVRD_CTRL,
+@@ -4718,6 +4730,7 @@ static int qmp_combo_com_init(struct qmp_combo *qmp, bool force)
+ 		break;
+ 	case QMPPHY_MODE_USB4:
+ 		writel(USB4_MODE, com + QPHY_V3_DP_COM_PHY_MODE_CTRL);
++		qmp_combo_toggle_c0_pll_reset(com);
+ 
+ 		/* bring both QMP USB and QMP DP PHYs PCS block out of reset */
+ 		/*
+diff --git a/drivers/phy/qualcomm/phy-qcom-qmp-dp-com-v3.h b/drivers/phy/qualcomm/phy-qcom-qmp-dp-com-v3.h
+index 396179ef38b0..d17571eff23b 100644
+--- a/drivers/phy/qualcomm/phy-qcom-qmp-dp-com-v3.h
++++ b/drivers/phy/qualcomm/phy-qcom-qmp-dp-com-v3.h
+@@ -14,5 +14,6 @@
+ #define QPHY_V3_DP_COM_TYPEC_CTRL			0x10
+ #define QPHY_V3_DP_COM_TYPEC_PWRDN_CTRL			0x14
+ #define QPHY_V3_DP_COM_RESET_OVRD_CTRL			0x1c
++#define QPHY_V3_DP_COM_RESET_OVRD_CTRL2			0x20
+ 
+ #endif
+-- 
+2.34.1
+

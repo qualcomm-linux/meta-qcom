@@ -1,0 +1,42 @@
+From 5a8b0f49f586d85bee8ac7f8b134e0ee1422d113 Mon Sep 17 00:00:00 2001
+From: Konrad Dybcio <konrad.dybcio@oss.qualcomm.com>
+Date: Tue, 10 Feb 2026 14:33:44 +0100
+Subject: [PATCH 40/85] usb: typec: mux: Mark mux/switch devices as 'PM not
+ required'
+
+These are spawned as children of the device that normally represents
+the chip/hw block providing Type-C functionality. They don't have PM
+callbacks, so it makes no sense for them to be taken into account
+there.
+
+Signed-off-by: Konrad Dybcio <konrad.dybcio@oss.qualcomm.com>
+Upstream-Status: Pending
+---
+ drivers/usb/typec/mux.c | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/drivers/usb/typec/mux.c b/drivers/usb/typec/mux.c
+index afa6fc181397..9e24fcfe8f5b 100644
+--- a/drivers/usb/typec/mux.c
++++ b/drivers/usb/typec/mux.c
+@@ -201,6 +201,8 @@ typec_switch_register(struct device *parent,
+ 		return ERR_PTR(ret);
+ 	}
+ 
++	device_set_pm_not_required(&sw_dev->dev);
++
+ 	ret = device_add(&sw_dev->dev);
+ 	if (ret) {
+ 		dev_err(parent, "failed to register switch (%d)\n", ret);
+@@ -458,6 +460,8 @@ typec_mux_register(struct device *parent, const struct typec_mux_desc *desc)
+ 		return ERR_PTR(ret);
+ 	}
+ 
++	device_set_pm_not_required(&mux_dev->dev);
++
+ 	ret = device_add(&mux_dev->dev);
+ 	if (ret) {
+ 		dev_err(parent, "failed to register mux (%d)\n", ret);
+-- 
+2.34.1
+

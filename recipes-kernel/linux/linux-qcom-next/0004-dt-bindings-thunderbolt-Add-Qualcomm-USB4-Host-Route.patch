@@ -1,0 +1,479 @@
+From 7684b9e959730a444b3028020a2a568b8aeae403 Mon Sep 17 00:00:00 2001
+From: Konrad Dybcio <konrad.dybcio@oss.qualcomm.com>
+Date: Tue, 16 Sep 2025 19:28:32 +0200
+Subject: [PATCH 04/85] dt-bindings: thunderbolt: Add Qualcomm USB4 Host Router
+
+Several Qualcomm platforms feature an in-house Host Router IP block
+enabling USB4 (and TBT3) functionality, in line with the USB4
+specification, utilizing the common NHI interface.
+
+Signed-off-by: Konrad Dybcio <konrad.dybcio@oss.qualcomm.com>
+Upstream-Status: Pending
+---
+ .../bindings/thunderbolt/common.yaml          |  26 ++
+ .../thunderbolt/qcom,x1e80100-usb4-hr.yaml    | 420 ++++++++++++++++++
+ 2 files changed, 446 insertions(+)
+ create mode 100644 Documentation/devicetree/bindings/thunderbolt/common.yaml
+ create mode 100644 Documentation/devicetree/bindings/thunderbolt/qcom,x1e80100-usb4-hr.yaml
+
+diff --git a/Documentation/devicetree/bindings/thunderbolt/common.yaml b/Documentation/devicetree/bindings/thunderbolt/common.yaml
+new file mode 100644
+index 000000000000..1c78825aae1f
+--- /dev/null
++++ b/Documentation/devicetree/bindings/thunderbolt/common.yaml
+@@ -0,0 +1,26 @@
++# SPDX-License-Identifier: (GPL-2.0 OR BSD-2-Clause)
++%YAML 1.2
++---
++$id: http://devicetree.org/schemas/thunderbolt/common.yaml#
++$schema: http://devicetree.org/meta-schemas/core.yaml#
++
++title: Common Thunderbolt/USB4 properties
++
++maintainers:
++  - Konrad Dybcio <konradybcio@kernel.org>
++
++description:
++  Thunderbolt/USB4 devices share certain common properties, mandated by the
++  respective specifications.
++
++properties:
++  tx-equalization-presets:
++    description:
++      Bitmask representing the subset of used transmitter equalization presets.
++    minimum: 1 # At least one preset is required for link training
++    maximum: 4398046511103 # GENMASK(41, 0) for USB4 v2.0
++    $ref: /schemas/types.yaml#/definitions/uint64
++
++additionalProperties: true
++
++...
+diff --git a/Documentation/devicetree/bindings/thunderbolt/qcom,x1e80100-usb4-hr.yaml b/Documentation/devicetree/bindings/thunderbolt/qcom,x1e80100-usb4-hr.yaml
+new file mode 100644
+index 000000000000..8431626dca3f
+--- /dev/null
++++ b/Documentation/devicetree/bindings/thunderbolt/qcom,x1e80100-usb4-hr.yaml
+@@ -0,0 +1,420 @@
++# SPDX-License-Identifier: (GPL-2.0 OR BSD-2-Clause)
++%YAML 1.2
++---
++$id: http://devicetree.org/schemas/thunderbolt/qcom,x1e80100-usb4-hr.yaml#
++$schema: http://devicetree.org/meta-schemas/core.yaml#
++
++title: Qualcomm USB4 Host Router
++
++maintainers:
++  - Konrad Dybcio <konrad.dybcio@oss.qualcomm.com>
++
++description:
++  The Qualcomm USB4 Host Router IP block implements the NHI standard
++  as described in the USB4 specification.
++
++properties:
++  compatible:
++    items:
++      - enum:
++          - qcom,x1e80100-usb4-hr # USB4v1
++
++  reg:
++    maxItems: 35
++
++  reg-names:
++    items:
++      - const: router_cs
++      - const: tmu_cs
++      - const: hia_cs
++      - const: lane0_cs
++      - const: lane1_cs
++      - const: pcie_cs
++      - const: usb_cs
++      - const: dpin0_cs
++      - const: dpin0_path_cs
++      - const: dpin1_cs
++      - const: dpin1_path_cs
++      - const: router_cfg
++      - const: tmu_cfg
++      - const: hia
++      - const: port_group
++      - const: pcie
++      - const: usb
++      - const: cp
++      - const: cp_ram
++      - const: msgbus
++      - const: sideband
++      - const: uc_ram
++      - const: uc_per
++      - const: uc_mbox
++      - const: nhi
++      - const: cfg
++      - const: debug
++      - const: usb_cfg
++      - const: pcie_cfg
++      - const: dpin0_aux
++      - const: dpin0
++      - const: dpin0_cfg
++      - const: dpin1_aux
++      - const: dpin1
++      - const: dpin1_cfg
++
++  interrupts:
++    items:
++      - description: Combined event interrupt for all three rings
++      - description: Control ring interrupt (unused)
++      - description: OOB Firmware interrupt
++      - description: DPIN0 event interrupt
++      - description: DPIN1 event interrupt
++      - description: PCIe adapter interrupt
++      - description: CLx exit interrupt
++      - description: Wake interrupt
++
++  interrupt-names:
++    items:
++      - const: ring_data
++      - const: ring_ctrl
++      - const: fw
++      - const: dpap0
++      - const: dpap1
++      - const: pcieap
++      - const: clx_exit
++      - const: wake
++
++  clocks:
++    minItems: 14
++    maxItems: 15
++
++  clock-names:
++    minItems: 14
++    items:
++      - const: master
++      - const: tmu
++      - const: ahb
++      - const: axi
++      - const: sb
++      - const: sys
++      - const: phy_rx0
++      - const: phy_rx1
++      - const: dp0
++      - const: dp1
++      - const: pcie_pipe
++      - const: usb_pipe
++      - const: noc_aggr_south
++      - const: noc_sys
++      - const: hrr # USB4v2 hosts
++
++  resets:
++    minItems: 11
++    maxItems: 13
++
++  reset-names:
++    minItems: 12
++    items:
++      - const: core
++      - const: sys
++      - const: rx0
++      - const: rx1
++      - const: usb_pipe
++      - const: pcie_pipe
++      - const: tmu
++      - const: sideband_iface
++      - const: hia_master
++      - const: ahb
++      - const: dp0
++      - const: dp1
++      # USB4v2 hosts:
++      - const: hrr_misc
++      - const: hrr
++
++  power-domains:
++    items:
++      - description: USB4 router power domain
++      - description: Paired PCIe tunnel power domain
++
++  power-domain-names:
++    items:
++      - const: usb4
++      - const: pcie
++
++  required-opps:
++    maxItems: 1
++
++  phys:
++    maxItems: 1
++
++  phy-names:
++    const: usb4
++
++  iommus:
++    maxItems: 1
++
++  interconnects:
++    maxItems: 2
++
++  interconnect-names:
++    items:
++      - const: usb4-ddr
++      - const: apps-usb4
++
++  operating-points-v2: true
++
++  '#mbox-cells':
++    const: 2
++
++  firmware-name:
++    maxItems: 1
++
++  qcom,usb4-mode-sel:
++    description: USB4 mode toggle
++    $ref: /schemas/types.yaml#/definitions/phandle-array
++    items:
++      - items:
++          - description: phandle of TCSR syscon
++          - description: offset of the configuration register
++          - description: offset of configuration bit for this router
++
++  orientation-switch: true
++  mode-switch: true
++
++  port:
++    $ref: /schemas/graph.yaml#/properties/port
++    description: Alternate mode (TBT3) / USB mode (USB4) input
++    unevaluatedProperties: false
++
++    properties:
++      endpoint:
++        $ref: /schemas/graph.yaml#/$defs/endpoint-base
++        unevaluatedProperties: false
++
++  opp-table:
++    type: object
++
++  wakeup-source: true
++
++required:
++  - compatible
++  - reg
++  - reg-names
++  - interrupts
++  - interrupt-names
++  - clocks
++  - clock-names
++  - resets
++  - reset-names
++  - power-domains
++  - power-domain-names
++  - phys
++  - phy-names
++  - iommus
++  - '#mbox-cells'
++  - firmware-name
++  - qcom,usb4-mode-sel
++  - interconnects
++  - interconnect-names
++  - pinctrl-0
++  - pinctrl-1
++  - pinctrl-names
++  - orientation-switch
++  - mode-switch
++  - wakeup-source
++  - port
++
++unevaluatedProperties: false
++
++examples:
++  - |
++    #include <dt-bindings/interrupt-controller/arm-gic.h>
++    #include <dt-bindings/interrupt-controller/irq.h>
++
++    soc {
++        #address-cells = <2>;
++        #size-cells = <2>;
++
++        usb4_router0: usb4-router@15600000 {
++            compatible = "qcom,x1e80100-usb4-hr";
++            reg = <0x0 0x15600000 0x0 0x70>,
++                  <0x0 0x15600070 0x0 0x500>,
++                  <0x0 0x15601000 0x0 0x1000>,
++                  <0x0 0x15602000 0x0 0x1000>,
++                  <0x0 0x15603000 0x0 0x1000>,
++                  <0x0 0x15604000 0x0 0x1000>,
++                  <0x0 0x15605000 0x0 0x1000>,
++                  <0x0 0x15606000 0x0 0x400>,
++                  <0x0 0x15606400 0x0 0xc00>,
++                  <0x0 0x15607000 0x0 0x400>,
++                  <0x0 0x15607400 0x0 0xc00>,
++                  <0x0 0x15608000 0x0 0x70>,
++                  <0x0 0x15608070 0x0 0x500>,
++                  <0x0 0x15609000 0x0 0x4000>,
++                  <0x0 0x1560d000 0x0 0x1000>,
++                  <0x0 0x1560e000 0x0 0x1000>,
++                  <0x0 0x1560f000 0x0 0x1000>,
++                  <0x0 0x15610000 0x0 0x800>,
++                  <0x0 0x15610800 0x0 0x800>,
++                  <0x0 0x15611000 0x0 0x1000>,
++                  <0x0 0x15612000 0x0 0x1000>,
++                  <0x0 0x15613000 0x0 0xe000>,
++                  <0x0 0x15621000 0x0 0x2000>,
++                  <0x0 0x15623000 0x0 0x2000>,
++                  <0x0 0x1563f000 0x0 0x40000>,
++                  <0x0 0x1567f000 0x0 0x1000>,
++                  <0x0 0x15680000 0x0 0x1000>,
++                  <0x0 0x15681000 0x0 0x1000>,
++                  <0x0 0x15682000 0x0 0x1000>,
++                  <0x0 0x15683000 0x0 0x1000>,
++                  <0x0 0x15684000 0x0 0x1000>,
++                  <0x0 0x15685000 0x0 0x1000>,
++                  <0x0 0x15686000 0x0 0x1000>,
++                  <0x0 0x15687000 0x0 0x1000>,
++                  <0x0 0x15688000 0x0 0x1000>;
++            reg-names = "router_cs",
++                        "tmu_cs",
++                        "hia_cs",
++                        "lane0_cs",
++                        "lane1_cs",
++                        "pcie_cs",
++                        "usb_cs",
++                        "dpin0_cs",
++                        "dpin0_path_cs",
++                        "dpin1_cs",
++                        "dpin1_path_cs",
++                        "router_cfg",
++                        "tmu_cfg",
++                        "hia",
++                        "port_group",
++                        "pcie",
++                        "usb",
++                        "cp",
++                        "cp_ram",
++                        "msgbus",
++                        "sideband",
++                        "uc_ram",
++                        "uc_per",
++                        "uc_mbox",
++                        "nhi",
++                        "cfg",
++                        "debug",
++                        "usb_cfg",
++                        "pcie_cfg",
++                        "dpin0_aux",
++                        "dpin0",
++                        "dpin0_cfg",
++                        "dpin1_aux",
++                        "dpin1",
++                        "dpin1_cfg";
++
++            interrupts-extended = <&intc GIC_SPI 472 IRQ_TYPE_LEVEL_HIGH>,
++                                  <&intc GIC_SPI 450 IRQ_TYPE_LEVEL_HIGH>,
++                                  <&intc GIC_SPI 579 IRQ_TYPE_LEVEL_HIGH>,
++                                  <&intc GIC_SPI 449 IRQ_TYPE_LEVEL_HIGH>,
++                                  <&intc GIC_SPI 448 IRQ_TYPE_LEVEL_HIGH>,
++                                  <&intc GIC_SPI 473 IRQ_TYPE_LEVEL_HIGH>,
++                                  <&intc GIC_SPI 440 IRQ_TYPE_LEVEL_HIGH>,
++                                  <&pdc 20 IRQ_TYPE_EDGE_RISING>;
++            interrupt-names = "ring_data",
++                              "ring_ctrl",
++                              "fw",
++                              "dpap0",
++                              "dpap1",
++                              "pcieap",
++                              "clx_exit",
++                              "wake";
++
++            clocks = <&gcc_usb4_0_master_clk>,
++                     <&gcc_usb4_0_tmu_clk>,
++                     <&gcc_usb4_0_cfg_ahb_clk>,
++                     <&gcc_aggre_usb4_0_axi_clk>,
++                     <&gcc_usb4_0_sb_if_clk>,
++                     <&gcc_usb4_0_sys_clk>,
++                     <&gcc_usb4_0_phy_rx0_clk>,
++                     <&gcc_usb4_0_phy_rx1_clk>,
++                     <&gcc_usb4_0_dp0_clk>,
++                     <&gcc_usb4_0_dp1_clk>,
++                     <&gcc_usb4_0_phy_pcie_pipe_clk>,
++                     <&gcc_usb4_0_phy_usb_pipe_clk>,
++                     <&gcc_aggre_noc_usb_south_axi_clk>,
++                     <&gcc_sys_noc_usb_axi_clk>;
++            clock-names = "master",
++                          "tmu",
++                          "ahb",
++                          "axi",
++                          "sb",
++                          "sys",
++                          "phy_rx0",
++                          "phy_rx1",
++                          "dp0",
++                          "dp1",
++                          "pcie_pipe",
++                          "usb_pipe",
++                          "noc_aggr_south",
++                          "noc_sys";
++
++            assigned-clocks = <&gcc_usb4_0_tmu_clk>;
++            assigned-clock-rates = <250000000>;
++
++            resets = <&gcc_usb4_0_bcr>,
++                     <&gcc_usb4_0_misc_usb4_sys_bcr>,
++                     <&gcc_usb4_0_misc_rx_clk_0_bcr>,
++                     <&gcc_usb4_0_misc_rx_clk_1_bcr>,
++                     <&gcc_usb4_0_misc_usb_pipe_bcr>,
++                     <&gcc_usb4_0_misc_pcie_pipe_bcr>,
++                     <&gcc_usb4_0_misc_tmu_bcr>,
++                     <&gcc_usb4_0_misc_sb_if_bcr>,
++                     <&gcc_usb4_0_misc_hia_mstr_bcr>,
++                     <&gcc_usb4_0_misc_ahb_bcr>,
++                     <&gcc_usb4_0_misc_dp0_max_pclk_bcr>,
++                     <&gcc_usb4_0_misc_dp1_max_pclk_bcr>;
++            reset-names = "core",
++                          "sys",
++                          "rx0",
++                          "rx1",
++                          "usb_pipe",
++                          "pcie_pipe",
++                          "tmu",
++                          "sideband_iface",
++                          "hia_master",
++                          "ahb",
++                          "dp0",
++                          "dp1";
++
++            power-domains = <&gcc_usb4_0_gdsc>,
++                            <&gcc_pcie_0_tunnel_gdsc>;
++            power-domain-names = "usb4", "pcie";
++
++            phys = <&usb4_phy>;
++            phy-names = "usb4";
++
++            iommus = <&apps_smmu 0x1440 0x0>;
++
++            interconnects = <&icc0 &icc1>,
++                            <&icc2 &icc3>;
++            interconnect-names = "usb4-ddr",
++                                 "apps-usb4";
++
++            operating-points-v2 = <&usb4_opp_table>;
++
++            pinctrl-0 = <&usb4_0_sbrx_active>, <&usb4_0_sbtx_active>, <&usb4_0_sbtx_dir_active>;
++            pinctrl-1 = <&usb4_0_sbrx_active>, <&usb4_0_sbtx_reset>, <&usb4_0_sbtx_dir_reset>;
++            pinctrl-names = "default",
++                            "reset";
++
++            #mbox-cells = <2>;
++
++            firmware-name = "qcom/x1e80100/usb4.elf";
++
++            qcom,usb4-mode-sel = <&tcsr 0x1b000 0>;
++
++            orientation-switch;
++            mode-switch;
++
++            wakeup-source;
++
++            port {
++                usb4_0_mode_in: endpoint {
++                };
++            };
++        };
++    };
++...
+-- 
+2.34.1
+

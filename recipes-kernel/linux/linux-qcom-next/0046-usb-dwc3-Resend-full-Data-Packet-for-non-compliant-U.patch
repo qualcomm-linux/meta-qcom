@@ -1,0 +1,52 @@
+From 81c6693ec08010230cbfa2e048c1d3a067af8596 Mon Sep 17 00:00:00 2001
+From: Konrad Dybcio <konrad.dybcio@oss.qualcomm.com>
+Date: Mon, 11 May 2026 16:25:17 +0200
+Subject: [PATCH 46/85] usb: dwc3: Resend full Data Packet for non-compliant
+ USB3.1 devices
+
+Some non-compliant devices require that a full Data Packet (and not
+only the header) is resent upon LBAD. One such device is the USB3
+protocol adapter within the Qualcomm USB4 router.
+
+DWC3 has a toggle to enable that behavior within LLINKDBGCTRL, use it.
+
+Signed-off-by: Konrad Dybcio <konrad.dybcio@oss.qualcomm.com>
+Upstream-Status: Pending
+---
+ drivers/usb/dwc3/core.c | 6 ++++++
+ drivers/usb/dwc3/core.h | 2 ++
+ 2 files changed, 8 insertions(+)
+
+diff --git a/drivers/usb/dwc3/core.c b/drivers/usb/dwc3/core.c
+index d9f4e4109abb..efc172cf5e9e 100644
+--- a/drivers/usb/dwc3/core.c
++++ b/drivers/usb/dwc3/core.c
+@@ -1514,6 +1514,12 @@ int dwc3_core_init(struct dwc3 *dwc)
+ 		}
+ 	}
+ 
++	for (int i = 0; i < dwc->num_usb3_ports; i++) {
++		reg = dwc3_readl(dwc, DWC3_LLINKDBGCTRL(i));
++		reg |= DWC3_LLINKDBGCTRL_RETRY_DP;
++		dwc3_writel(dwc, DWC3_LLINKDBGCTRL(i), reg);
++	}
++
+ 	/*
+ 	 * STAR 9001346572: This issue affects DWC_usb31 versions 1.80a and
+ 	 * prior. When an active endpoint not currently cached in the host
+diff --git a/drivers/usb/dwc3/core.h b/drivers/usb/dwc3/core.h
+index 1c8d441ea9f8..c2f4c5354824 100644
+--- a/drivers/usb/dwc3/core.h
++++ b/drivers/usb/dwc3/core.h
+@@ -181,6 +181,8 @@
+ #define DWC3_OSTS		0xcc10
+ 
+ #define DWC3_LLUCTL(n)		(0xd024 + ((n) * 0x80))
++#define DWC3_LLINKDBGCTRL(n)	(0xd058 + ((n) * 0x80))
++#define DWC3_LLINKDBGCTRL_RETRY_DP	BIT(31)
+ 
+ /* Bit fields */
+ 
+-- 
+2.34.1
+

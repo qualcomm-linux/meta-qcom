@@ -1,0 +1,31 @@
+From e68b71baa900ae10abaabdd0af2cab3f5cac2a05 Mon Sep 17 00:00:00 2001
+From: Konrad Dybcio <konrad.dybcio@oss.qualcomm.com>
+Date: Wed, 13 May 2026 12:16:09 +0200
+Subject: [PATCH 44/85] phy: qcom: phy-snps-eusb2: Ensure reset is held for 10
+ us for QC PHYs
+
+The Hardware Programming Guide states that the POR bit must be asserted
+for at least 10 us after the supplied had ramped up. Ensure that.
+
+Fixes: 80090810f5d3 ("phy: qcom: Add QCOM SNPS eUSB2 driver")
+Signed-off-by: Konrad Dybcio <konrad.dybcio@oss.qualcomm.com>
+Upstream-Status: Pending
+---
+ drivers/phy/phy-snps-eusb2.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/drivers/phy/phy-snps-eusb2.c b/drivers/phy/phy-snps-eusb2.c
+index 8429599f428b..35a03b9d59aa 100644
+--- a/drivers/phy/phy-snps-eusb2.c
++++ b/drivers/phy/phy-snps-eusb2.c
+@@ -372,6 +372,7 @@ static int qcom_snps_eusb2_hsphy_init(struct phy *p)
+ 				    CMN_CTRL_OVERRIDE_EN, CMN_CTRL_OVERRIDE_EN);
+ 
+ 	snps_eusb2_hsphy_write_mask(phy->base, QCOM_USB_PHY_UTMI_CTRL5, POR, POR);
++	usleep_range(10, 20);
+ 
+ 	snps_eusb2_hsphy_write_mask(phy->base, QCOM_USB_PHY_HS_PHY_CTRL_COMMON0,
+ 				    PHY_ENABLE | RETENABLEN, PHY_ENABLE | RETENABLEN);
+-- 
+2.34.1
+

@@ -1,0 +1,40 @@
+From 419f62e3401df8c0219e44642d0a87c6e492e09a Mon Sep 17 00:00:00 2001
+From: Abel Vesa <abel.vesa@linaro.org>
+Date: Wed, 5 Feb 2025 13:45:05 +0200
+Subject: [PATCH 26/85] usb: typec: ucsi: Schedule connector worker on
+ freezable workqueue
+
+Currently, the UCSI connector worker is scheduled on the non-freezable
+system workqueue. During system suspend, on a plug/unplug event, the
+worker can run before the devices have actually resumed. The UCSI
+instances can implement operations that might need to do some HW accesses
+while the devices are still suspended.
+
+Scheduling the USCI connector worker on the freezable system workqueue
+instead will ensure the devices are resumed by the time the worker is
+scheduled to run.
+
+Signed-off-by: Abel Vesa <abel.vesa@linaro.org>
+Tested-by: Joonhoe Kim <26rote@gmail.com> # Lenovo Legion Tab Y700 Gen 5 (SM8850)
+Tested-by: Vladyslav Tymoshchuk <tvlad744@gmail.com> # OnePlus Pad 3 (SM8750)
+Upstream-Status: Pending
+---
+ drivers/usb/typec/ucsi/ucsi.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/usb/typec/ucsi/ucsi.c b/drivers/usb/typec/ucsi/ucsi.c
+index c1450639c795..f272f4d47f43 100644
+--- a/drivers/usb/typec/ucsi/ucsi.c
++++ b/drivers/usb/typec/ucsi/ucsi.c
+@@ -1575,7 +1575,7 @@ void ucsi_connector_change(struct ucsi *ucsi, u8 num)
+ 	con = &ucsi->connector[num - 1];
+ 
+ 	if (!test_and_set_bit(EVENT_PENDING, &ucsi->flags))
+-		schedule_work(&con->work);
++		queue_work(system_freezable_wq, &con->work);
+ }
+ EXPORT_SYMBOL_GPL(ucsi_connector_change);
+ 
+-- 
+2.34.1
+

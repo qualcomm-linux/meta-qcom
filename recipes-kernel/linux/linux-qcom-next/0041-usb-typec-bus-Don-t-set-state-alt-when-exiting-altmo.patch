@@ -1,0 +1,52 @@
+From 3cc73dc420f01ff7382cab7921d61d77b66c8efd Mon Sep 17 00:00:00 2001
+From: Konrad Dybcio <konrad.dybcio@oss.qualcomm.com>
+Date: Tue, 31 Mar 2026 17:20:24 +0200
+Subject: [PATCH 41/85] usb: typec: bus: Don't set state->alt when exiting
+ altmode
+
+Currently, typec_altmode_enter/exit() and typec_remove() make a call to
+typec_altmode_set_state(adev, TYPEC_STATE_SAFE, NULL) in order to
+configure the chained muxes/retimers appropriately.
+
+The drivers for those retimers and muxes however, almost unilaterally
+trust that if state->alt is set, we're *entering* an alternate mode.
+
+This may lead to NULL pointer dereferences, since most drivers would
+then check the (still set) state->alt->svid and proceed to dereference
+state->data. which is NULL in this call site. This on top of the fact
+that the SAFE configuration wouldn't take place due to th
+aforementioned assumption.
+
+Stop sending these mixed signals.
+
+Signed-off-by: Konrad Dybcio <konrad.dybcio@oss.qualcomm.com>
+Upstream-Status: Pending
+---
+ drivers/usb/typec/bus.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/usb/typec/bus.c b/drivers/usb/typec/bus.c
+index e84b134a3381..3423f6f35b22 100644
+--- a/drivers/usb/typec/bus.c
++++ b/drivers/usb/typec/bus.c
+@@ -21,7 +21,7 @@ typec_altmode_set_retimer(struct altmode *alt, unsigned long conf, void *data)
+ 	if (!alt->retimer)
+ 		return 0;
+ 
+-	state.alt = &alt->adev;
++	state.alt = conf >= TYPEC_STATE_MODAL ? &alt->adev : NULL;
+ 	state.mode = conf;
+ 	state.data = data;
+ 
+@@ -36,7 +36,7 @@ typec_altmode_set_mux(struct altmode *alt, unsigned long conf, void *data)
+ 	if (!alt->mux)
+ 		return 0;
+ 
+-	state.alt = &alt->adev;
++	state.alt = conf >= TYPEC_STATE_MODAL ? &alt->adev : NULL;
+ 	state.mode = conf;
+ 	state.data = data;
+ 
+-- 
+2.34.1
+

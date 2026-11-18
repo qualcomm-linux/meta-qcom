@@ -1,0 +1,188 @@
+From b57700ebb4c558923526641f09e7d8548079583c Mon Sep 17 00:00:00 2001
+From: Wesley Cheng <wesley.cheng@oss.qualcomm.com>
+Date: Fri, 23 Jan 2026 16:50:31 +0100
+Subject: [PATCH 31/85] thunderbolt: nhi: Process ring completions in the
+ threaded IRQ
+
+The Qualcomm USB4 router uses a shared IRQ for all NHI rings.
+Scheduling a work item from its threaded handler adds another delay
+before completed RX frames are consumed and replacement buffers areu
+posted.
+
+Process completed descriptors directly from the threaded IRQ instead.
+Harvest all completed frames while holding the NHI and ring locks,
+replenish RX rings immediately, then invoke frame callbacks after
+dropping the locks. Preserve the existing polling-ring path, which must
+continue to mask the interrupt and start polling instead.
+
+This removes the workqueue round trip from the common IRQ path without
+calling ring consumers under NHI locking.
+
+Assisted-by: LLM
+Signed-off-by: Konrad Dybcio <konrad.dybcio@oss.qualcomm.com>
+Upstream-Status: Pending
+---
+ drivers/thunderbolt/nhi.c   | 82 +++++++++++++++++++++++++++++++++----
+ drivers/thunderbolt/nhi.h   |  1 +
+ include/linux/thunderbolt.h |  4 ++
+ 3 files changed, 78 insertions(+), 9 deletions(-)
+
+diff --git a/drivers/thunderbolt/nhi.c b/drivers/thunderbolt/nhi.c
+index 61eed2cf228c..263bd04d0e7d 100644
+--- a/drivers/thunderbolt/nhi.c
++++ b/drivers/thunderbolt/nhi.c
+@@ -349,6 +349,58 @@ static void ring_work(struct work_struct *work)
+ 	wake_up(&ring->wait);
+ }
+ 
++/*
++ * Harvest completions and advance the ring before running callbacks. This is
++ * used by controllers where all rings share a single threaded interrupt and
++ * deferring the work can leave the RX ring without buffers during a burst.
++ * The caller must hold both nhi->lock and ring->lock.
++ */
++static int ring_harvest_completions(struct tb_ring *ring,
++				    struct list_head *completed_frames)
++{
++	struct ring_frame *frame;
++	int completed = 0;
++
++	if (!ring->running)
++		return 0;
++
++	while (!ring_empty(ring)) {
++		if (!(ring->descriptors[ring->tail].flags & RING_DESC_COMPLETED))
++			break;
++
++		frame = list_first_entry(&ring->in_flight, typeof(*frame), list);
++		list_move_tail(&frame->list, completed_frames);
++		if (!ring->is_tx) {
++			frame->size = ring->descriptors[ring->tail].length;
++			frame->eof = ring->descriptors[ring->tail].eof;
++			frame->sof = ring->descriptors[ring->tail].sof;
++			frame->flags = ring->descriptors[ring->tail].flags;
++		}
++		frame->ring = ring;
++		frame->canceled = false;
++		ring->tail = (ring->tail + 1) % ring->size;
++		completed++;
++	}
++
++	/* Post any buffers that were waiting for space immediately. */
++	ring_write_descriptors(ring, true);
++	if (completed)
++		wake_up(&ring->wait);
++
++	return completed;
++}
++
++static void ring_process_completions(struct list_head *completed_frames)
++{
++	struct ring_frame *frame, *next;
++
++	list_for_each_entry_safe(frame, next, completed_frames, list) {
++		list_del_init(&frame->list);
++		if (frame->callback)
++			frame->callback(frame->ring, frame, frame->canceled);
++	}
++}
++
+ int __tb_ring_enqueue(struct tb_ring *ring, struct ring_frame *frame, bool more)
+ {
+ 	unsigned long flags;
+@@ -980,16 +1032,19 @@ enum nhi_fw_mode nhi_mailbox_mode(struct tb_nhi *nhi)
+ }
+ EXPORT_SYMBOL_GPL(nhi_mailbox_mode);
+ 
+-void nhi_interrupt_work(struct work_struct *work)
++irqreturn_t nhi_msi_thread_optimized(int irq, void *data)
+ {
+-	struct tb_nhi *nhi = container_of(work, typeof(*nhi), interrupt_work);
++	struct tb_nhi *nhi = data;
++	LIST_HEAD(completed_frames);
++	unsigned long flags;
+ 	int value = 0; /* Suppress uninitialized usage warning. */
++	int completed = 0;
+ 	int bit;
+ 	int hop = -1;
+ 	int type = 0; /* current interrupt type 0: TX, 1: RX, 2: RX overflow */
+ 	struct tb_ring *ring;
+ 
+-	spin_lock_irq(&nhi->lock);
++	spin_lock_irqsave(&nhi->lock, flags);
+ 
+ 	/*
+ 	 * Starting at REG_RING_NOTIFY_BASE there are three status bitfields
+@@ -1024,18 +1079,27 @@ void nhi_interrupt_work(struct work_struct *work)
+ 		}
+ 
+ 		spin_lock(&ring->lock);
+-		__ring_interrupt(ring);
++		if (ring->start_poll)
++			__ring_interrupt(ring);
++		else
++			completed += ring_harvest_completions(ring,
++							 &completed_frames);
+ 		spin_unlock(&ring->lock);
+ 	}
+-	spin_unlock_irq(&nhi->lock);
++	spin_unlock_irqrestore(&nhi->lock, flags);
++
++	if (completed)
++		ring_process_completions(&completed_frames);
++
++	return IRQ_HANDLED;
+ }
+-EXPORT_SYMBOL_GPL(nhi_interrupt_work);
++EXPORT_SYMBOL_GPL(nhi_msi_thread_optimized);
+ 
+ irqreturn_t nhi_msi(int irq, void *data)
+ {
+-	struct tb_nhi *nhi = data;
+-	schedule_work(&nhi->interrupt_work);
+-	return IRQ_HANDLED;
++//	struct tb_nhi *nhi = data;
++	// schedule_work(&nhi->interrupt_work);
++	return IRQ_WAKE_THREAD;
+ }
+ EXPORT_SYMBOL_GPL(nhi_msi);
+ 
+diff --git a/drivers/thunderbolt/nhi.h b/drivers/thunderbolt/nhi.h
+index ead08b5e24ee..9195b7427280 100644
+--- a/drivers/thunderbolt/nhi.h
++++ b/drivers/thunderbolt/nhi.h
+@@ -33,6 +33,7 @@ void nhi_enable_int_throttling(struct tb_nhi *nhi);
+ void nhi_disable_interrupts(struct tb_nhi *nhi);
+ void nhi_interrupt_work(struct work_struct *work);
+ irqreturn_t nhi_msi(int irq, void *data);
++irqreturn_t nhi_msi_thread_optimized(int irq, void *data);
+ irqreturn_t ring_msix(int irq, void *data);
+ int nhi_probe(struct tb_nhi *nhi);
+ void nhi_shutdown(struct tb_nhi *nhi);
+diff --git a/include/linux/thunderbolt.h b/include/linux/thunderbolt.h
+index 7fb9e7e1aae4..a927463cc36f 100644
+--- a/include/linux/thunderbolt.h
++++ b/include/linux/thunderbolt.h
+@@ -637,15 +637,19 @@ enum ring_desc_flags {
+  * @flags: Flags for the frame (see &enum ring_desc_flags)
+  * @eof: End of frame protocol defined field
+  * @sof: Start of frame protocol defined field
++ * @ring: Ring associated with a completion being processed
++ * @canceled: Whether the completed frame was canceled
+  */
+ struct ring_frame {
+ 	dma_addr_t buffer_phy;
+ 	ring_cb callback;
+ 	struct list_head list;
++	struct tb_ring *ring;
+ 	u32 size:12;
+ 	u32 flags:12;
+ 	u32 eof:4;
+ 	u32 sof:4;
++	bool canceled;
+ };
+ 
+ /* Minimum size for ring_rx */
+-- 
+2.34.1
+

@@ -1,0 +1,67 @@
+From aa338dc5cbdb1da1d5f519abde37e2126341be6b Mon Sep 17 00:00:00 2001
+From: Konrad Dybcio <konrad.dybcio@oss.qualcomm.com>
+Date: Fri, 6 Mar 2026 11:59:10 +0100
+Subject: [PATCH 54/85] PG_ALTMODE
+
+Upstream-Status: Pending
+---
+ drivers/soc/qcom/pmic_glink_altmode.c | 15 +++++++++++++--
+ 1 file changed, 13 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/soc/qcom/pmic_glink_altmode.c b/drivers/soc/qcom/pmic_glink_altmode.c
+index eb350d5742e2..69c1f3035e45 100644
+--- a/drivers/soc/qcom/pmic_glink_altmode.c
++++ b/drivers/soc/qcom/pmic_glink_altmode.c
+@@ -268,6 +268,8 @@ static void pmic_glink_altmode_enable_tbt(struct pmic_glink_altmode *altmode,
+ 		tbt_data.cable_mode |= TBT_SET_CABLE_ROUNDED(tbt->rounded_cable);
+ 	}
+ 
++	pr_err("tbt usb_speed = %u tbt->rounded_cable=%u tbt->cable_type = %u\n", tbt->usb_speed, tbt->rounded_cable, tbt->cable_type);
++
+ 	/* Enter Mode VDO */
+ 	tbt_data.enter_vdo |= TBT_MODE;
+ 	tbt_data.enter_vdo |= TBT_ENTER_MODE_CABLE_SPEED(cable_speed);
+@@ -399,8 +401,10 @@ static void pmic_glink_altmode_worker(struct work_struct *work)
+ 	 */
+ 	if (alt_port->svid == USB_TYPEC_DP_SID) {
+ 		if (alt_port->mux_ctrl == MUX_CTRL_STATE_NO_CONN) {
++			pr_err(" ===== PORT%u: POST-DP-safe mode pmicglink\n", alt_port->index);
+ 			pmic_glink_altmode_safe(altmode, alt_port);
+ 		} else {
++			pr_err(" ===== PORT%u: dp altmode notif\n", alt_port->index);
+ 			pmic_glink_altmode_enable_dp(altmode, alt_port,
+ 						     alt_port->mode,
+ 						     alt_port->hpd_state,
+@@ -418,13 +422,18 @@ static void pmic_glink_altmode_worker(struct work_struct *work)
+ 						DRM_CONNECTOR_DP_IRQ_HPD :
+ 						DRM_CONNECTOR_NO_EXTRA_STATUS);
+ 	} else if (alt_port->mux_ctrl == MUX_CTRL_STATE_TUNNELING) {
+-		if (alt_port->svid == USB_TYPEC_TBT_SID)
++		if (alt_port->svid == USB_TYPEC_TBT_SID) {
++			pr_err(" ===== PORT%u: tbt3 altmode notification\n", alt_port->index);
+ 			pmic_glink_altmode_enable_tbt(altmode, alt_port);
+-		else
++		} else {
++			pr_err(" ===== PORT%u: usb4 altmode notification\n", alt_port->index);
+ 			pmic_glink_altmode_enable_usb4(altmode, alt_port);
++		}
+ 	} else if (alt_port->mux_ctrl == MUX_CTRL_STATE_USB3_ONLY) {
++		pr_err(" ===== PORT%u: back to usb3\n", alt_port->index);
+ 		pmic_glink_altmode_enable_usb(altmode, alt_port);
+ 	} else if (alt_port->mux_ctrl == MUX_CTRL_STATE_NO_CONN) {
++		pr_err(" ===== PORT%u: safe mode pmicglink\n", alt_port->index);
+ 		pmic_glink_altmode_safe(altmode, alt_port);
+ 	} else {
+ 		dev_err(altmode->dev, "Got unknown mux_ctrl: %u on port %u, forcing safe mode\n",
+@@ -521,6 +530,8 @@ static void pmic_glink_altmode_sc8280xp_notify(struct pmic_glink_altmode *altmod
+ 	port = notify->port_idx;
+ 	orientation = notify->orientation;
+ 
++	pr_err("----------- PORT%u orientation = %u\n", notify->port_idx, orientation);
++
+ 	if (port >= ARRAY_SIZE(altmode->ports) || !altmode->ports[port].altmode) {
+ 		dev_dbg(altmode->dev, "notification on undefined port %d\n", port);
+ 		return;
+-- 
+2.34.1
+

@@ -1,0 +1,118 @@
+From 3eaaccfbbd986a2dd8987f91884196c4005f5750 Mon Sep 17 00:00:00 2001
+From: Konrad Dybcio <konrad.dybcio@oss.qualcomm.com>
+Date: Tue, 8 Sep 2026 09:54:05 +0200
+Subject: [PATCH 01/85] dt-bindings: phy: qcom,qmp-usb3-dp: Extend X1E
+ description for USB4
+
+Some instances of the QMP combo PHY (called USB43DP) feature a third
+functional sub-block, responsible for USB4/Thunderbolt 3 communication.
+
+Compared to the today's state of the binding, one more clock (P2RR2P -
+PHY-to-Router, Router-to-PHY) needs to be enabled for the PHY to be
+able to switch to USB4 mode. Allow that for X1E.
+
+Also, add a bindings define to let consumers access it.
+
+Upstream-Status: Pending
+Assisted-by: Claude:sonnet-5
+Reviewed-by: Krzysztof Kozlowski <krzysztof.kozlowski@oss.qualcomm.com>
+Acked-by: Manivannan Sadhasivam <manivannan.sadhasivam@oss.qualcomm.com>
+Signed-off-by: Konrad Dybcio <konrad.dybcio@oss.qualcomm.com>
+---
+ .../phy/qcom,sc8280xp-qmp-usb43dp-phy.yaml    | 50 ++++++++++++++++---
+ include/dt-bindings/phy/phy-qcom-qmp.h        |  1 +
+ 2 files changed, 43 insertions(+), 8 deletions(-)
+
+diff --git a/Documentation/devicetree/bindings/phy/qcom,sc8280xp-qmp-usb43dp-phy.yaml b/Documentation/devicetree/bindings/phy/qcom,sc8280xp-qmp-usb43dp-phy.yaml
+index 4d243d2b15f9..2cf40d54304a 100644
+--- a/Documentation/devicetree/bindings/phy/qcom,sc8280xp-qmp-usb43dp-phy.yaml
++++ b/Documentation/devicetree/bindings/phy/qcom,sc8280xp-qmp-usb43dp-phy.yaml
+@@ -58,12 +58,7 @@ properties:
+ 
+   clock-names:
+     minItems: 4
+-    items:
+-      - const: aux
+-      - const: ref
+-      - const: com_aux
+-      - const: usb3_pipe
+-      - const: cfg_ahb
++    maxItems: 5
+ 
+   power-domains:
+     maxItems: 1
+@@ -198,18 +193,57 @@ allOf:
+             - qcom,nord-qmp-usb3-dp-phy
+             - qcom,sc7180-qmp-usb3-dp-phy
+             - qcom,sdm845-qmp-usb3-dp-phy
++            - qcom,x1e80100-qmp-usb3-dp-phy
+     then:
+       properties:
+         clocks:
+           maxItems: 5
+         clock-names:
++          items:
++            - const: aux
++            - const: ref
++            - const: com_aux
++            - const: usb3_pipe
++            - const: p2rr2p_pipe
++
++  - if:
++      properties:
++        compatible:
++          contains:
++            enum:
++              - qcom,sc7180-qmp-usb3-dp-phy
++              - qcom,sdm845-qmp-usb3-dp-phy
++    then:
++      properties:
++        clocks:
+           maxItems: 5
+-    else:
++        clock-names:
++          items:
++            - const: aux
++            - const: ref
++            - const: com_aux
++            - const: usb3_pipe
++            - const: cfg_ahb
++
++  - if:
++      not:
++        properties:
++          compatible:
++            contains:
++              enum:
++                - qcom,x1e80100-qmp-usb3-dp-phy
++                - qcom,sc7180-qmp-usb3-dp-phy
++                - qcom,sdm845-qmp-usb3-dp-phy
++    then:
+       properties:
+         clocks:
+           maxItems: 4
+         clock-names:
+-          maxItems: 4
++          items:
++            - const: aux
++            - const: ref
++            - const: com_aux
++            - const: usb3_pipe
+ 
+   - if:
+       properties:
+diff --git a/include/dt-bindings/phy/phy-qcom-qmp.h b/include/dt-bindings/phy/phy-qcom-qmp.h
+index 6b43ea9e0051..1c3ce0c02b0c 100644
+--- a/include/dt-bindings/phy/phy-qcom-qmp.h
++++ b/include/dt-bindings/phy/phy-qcom-qmp.h
+@@ -16,6 +16,7 @@
+ /* QMP USB4-USB3-DP PHYs */
+ #define QMP_USB43DP_USB3_PHY		0
+ #define QMP_USB43DP_DP_PHY		1
++#define QMP_USB43DP_USB4_PHY		2
+ 
+ /* QMP PCIE PHYs */
+ #define QMP_PCIE_PIPE_CLK		0
+-- 
+2.34.1
+
