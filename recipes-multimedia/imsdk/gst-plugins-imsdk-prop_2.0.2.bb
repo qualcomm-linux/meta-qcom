@@ -6,4 +6,4 @@ DESCRIPTION = "Proprietary Qualcomm IMSDK GStreamer plugins including camera, ML
 
 DEPENDS += "gst-plugins-imsdk-base"
 
-PACKAGECONFIG ??= "qairt smartvencbin"
+PACKAGECONFIG ??= "qairt smartvencbin qualcomm"
