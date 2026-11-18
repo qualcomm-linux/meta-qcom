@@ -14,14 +14,12 @@ COMPATIBLE_MACHINE:aarch64 = "(qcom)"
 
 PV = "2026.10+git"
 
-# tag: qcom-next-v2026.10-20261106
-SRCREV = "0766fef311064ef58a78282fd92c1eed74aa494b"
-SRCBRANCH = "nobranch=1"
+SRC_TAG = "tag=qcom-next-v2026.10-20261115"
+SRCREV_uboot = "331595c5af3baf383c482b24538ce2a717be5e49"
 
-SRC_URI = "git://github.com/qualcomm-linux/u-boot.git;${SRCBRANCH};protocol=https;name=uboot"
+SRC_URI = "git://github.com/qualcomm-linux/u-boot.git;protocol=https;name=uboot;nobranch=1;${SRC_TAG}"
 SRC_URI += " \
     file://0001-Add-support-for-OpenSSL-Provider-API.patch \
-    file://0002-configs-qcom-re-enable-the-SoC-clock-drivers-in-SPL.patch \
     file://disable-eficapsule-tool.cfg \
     file://efi-rt-volatile-store.cfg \
     ${@bb.utils.contains('MACHINE_FEATURES', 'optee', 'file://tfa-optee.cfg', '', d)} \
