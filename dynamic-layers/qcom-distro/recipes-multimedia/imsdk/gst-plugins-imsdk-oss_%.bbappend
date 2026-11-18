@@ -1,2 +1,2 @@
-# Dependency recipe for tflite, tensorflow-lite, is provided by the meta-qcom-distro layer.
-PACKAGECONFIG:append = " tflite"
+# Dependency recipe for tensorflow-lite and litert is provided by the meta-ai layer.
+PACKAGECONFIG:append = " tflite litert"
