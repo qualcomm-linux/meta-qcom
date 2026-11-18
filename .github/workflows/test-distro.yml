@@ -132,6 +132,37 @@ jobs:
           result_file_name: "${{ matrix.target.result_file }}"
           test_job_file_name_prefix: "${{ inputs.distro_name }}${{ inputs.distro_suffix }}-"
 
+      # The submit step stops waiting at its timeout, or when the run is
+      # canceled, but the LAVA job keeps its place in the queue or its
+      # board. Cancel it.
+      - name: Cancel the LAVA job left behind
+        if: ${{ always() && steps.submit.outcome != 'success' }}
+        timeout-minutes: 5
+        shell: bash
+        env:
+          LAVA_TOKEN: ${{ secrets.LAVATOKEN }}
+          JOB_DETAILS_PREFIX: "${{ inputs.distro_name }}${{ inputs.distro_suffix }}-test-job-"
+        run: |
+          for DETAILS in "${JOB_DETAILS_PREFIX}"*.json; do
+              [ -f "${DETAILS}" ] || continue
+              JOB_ID="${DETAILS#"${JOB_DETAILS_PREFIX}"}"
+              JOB_ID="${JOB_ID%.json}"
+              case "${JOB_ID}" in ''|*[!0-9]*) continue ;; esac
+              JOB_API="https://${LAVA_URL}/api/v0.2/jobs/${JOB_ID}"
+              STATE=$(curl -sS --fail-with-body --retry 3 --max-time 60 \
+                  -H "Authorization: Token ${LAVA_TOKEN}" "${JOB_API}/" | jq -er '.state')
+              case "${STATE}" in
+              Submitted|Scheduling|Scheduled|Running)
+                  echo "Canceling ${STATE} job https://${LAVA_URL}/scheduler/job/${JOB_ID}"
+                  curl -sS --fail-with-body --retry 3 --max-time 60 \
+                      -H "Authorization: Token ${LAVA_TOKEN}" "${JOB_API}/cancel/"
+                  ;;
+              *)
+                  echo "Leaving ${STATE} job https://${LAVA_URL}/scheduler/job/${JOB_ID}"
+                  ;;
+              esac
+          done
+
       # A job that did not run to the end, usually because it waited in the
       # LAVA queue past the timeout above or was canceled there, leaves no
       # results or an empty result file, and neither can fail the Test
@@ -284,6 +315,7 @@ jobs:
         # It may spend some time in LAVA queue as there is a limited number
         # of devices
         timeout-minutes: 120
+        id: submit
         uses: foundriesio/lava-action@2392ee48130c6d99c97bb91cddb46d1fcde43f3e # v14
         with:
           lava_token: ${{ secrets.LAVATOKEN }}
@@ -296,6 +328,37 @@ jobs:
           save_job_details: true
           result_file_name: "${{ matrix.target.result_file }}"
           test_job_file_name_prefix: "${{ inputs.distro_name }}${{ inputs.distro_suffix }}-"
+
+      # The submit step stops waiting at its timeout, or when the run is
+      # canceled, but the LAVA job keeps its place in the queue or its
+      # board. Cancel it.
+      - name: Cancel the LAVA job left behind
+        if: ${{ always() && steps.submit.outcome != 'success' }}
+        timeout-minutes: 5
+        shell: bash
+        env:
+          LAVA_TOKEN: ${{ secrets.LAVATOKEN }}
+          JOB_DETAILS_PREFIX: "${{ inputs.distro_name }}${{ inputs.distro_suffix }}-test-job-"
+        run: |
+          for DETAILS in "${JOB_DETAILS_PREFIX}"*.json; do
+              [ -f "${DETAILS}" ] || continue
+              JOB_ID="${DETAILS#"${JOB_DETAILS_PREFIX}"}"
+              JOB_ID="${JOB_ID%.json}"
+              case "${JOB_ID}" in ''|*[!0-9]*) continue ;; esac
+              JOB_API="https://${LAVA_URL}/api/v0.2/jobs/${JOB_ID}"
+              STATE=$(curl -sS --fail-with-body --retry 3 --max-time 60 \
+                  -H "Authorization: Token ${LAVA_TOKEN}" "${JOB_API}/" | jq -er '.state')
+              case "${STATE}" in
+              Submitted|Scheduling|Scheduled|Running)
+                  echo "Canceling ${STATE} job https://${LAVA_URL}/scheduler/job/${JOB_ID}"
+                  curl -sS --fail-with-body --retry 3 --max-time 60 \
+                      -H "Authorization: Token ${LAVA_TOKEN}" "${JOB_API}/cancel/"
+                  ;;
+              *)
+                  echo "Leaving ${STATE} job https://${LAVA_URL}/scheduler/job/${JOB_ID}"
+                  ;;
+              esac
+          done
 
       # A job that did not run to the end, usually because it waited in the
       # LAVA queue past the timeout above or was canceled there, leaves no
