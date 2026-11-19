@@ -90,3 +90,5 @@ fi
 
 echo "Binding Gadget to UDC: $best_udc (maximum_speed='$(read_max_speed "$UDC_FOLDER/$best_udc")')" >&2
 echo -n "$best_udc" > "$GADGET_PATH/UDC"
+
+/usr/bin/android-gadget-watch "$best_udc" &

@@ -1,0 +1,29 @@
+#!/bin/sh
+
+# Polls "suspended" since the UDC core gives no other event for it; a
+# missing/unreadable node (UDC unbind/rebind) is treated the same way.
+
+set -e
+
+UDC="$1"
+POLL_INTERVAL="${ANDROID_GADGET_SUSPEND_POLL_INTERVAL:-1}"
+
+# suspended's location varies by controller: under /sys/class/udc/$UDC on
+# some, a sibling of it under /sys/bus/platform/devices/$UDC on others.
+SEARCH_PATHS="/sys/class/udc/$UDC"
+if [ -d "/sys/bus/platform/devices/$UDC" ]; then
+	SEARCH_PATHS="$SEARCH_PATHS /sys/bus/platform/devices/$UDC"
+fi
+SUSPENDED="$(find -L $SEARCH_PATHS -maxdepth 3 -name suspended 2>/dev/null | head -n1)"
+[ -n "$SUSPENDED" ] && [ -r "$SUSPENDED" ] || exit 0
+
+while true; do
+	sleep "$POLL_INTERVAL"
+	if [ ! -r "$SUSPENDED" ] || [ "$(cat "$SUSPENDED" 2>/dev/null)" = "1" ]; then
+		echo "UDC $UDC suspended or removed, restarting adbd" >&2
+		# SIGKILL, not SIGTERM: systemd's Restart=on-failure treats SIGTERM
+		# as a clean stop and won't restart the service.
+		killall -9 adbd
+		exit 0
+	fi
+done
