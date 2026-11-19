@@ -90,3 +90,11 @@ fi
 
 echo "Binding Gadget to UDC: $best_udc (maximum_speed='$(read_max_speed "$UDC_FOLDER/$best_udc")')" >&2
 echo -n "$best_udc" > "$GADGET_PATH/UDC"
+
+# Watch for the host going away (reported as UDC suspend, since a gadget
+# has no other disconnect indication). On suspend the watcher kills adbd;
+# android-tools-adbd.service is Restart=on-failure, so systemd tears the
+# gadget down and rebuilds it from scratch, rebinding the UDC and spawning
+# the next watcher generation as part of its own ExecStopPost/ExecStart*
+# lifecycle - recovery is not duplicated here.
+/usr/bin/android-gadget-watch "$best_udc" &

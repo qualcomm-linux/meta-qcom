@@ -1,0 +1,48 @@
+#!/bin/sh
+
+# A ConfigFS gadget has no disconnect uevent - the UDC core only exposes it
+# via the "suspended" attribute, polled here. Killing adbd on suspend lets
+# android-tools-adbd.service's Restart=on-failure tear down and rebuild the
+# gadget via its own ExecStopPost/ExecStart* hooks; SIGKILL is used since
+# SIGTERM is excluded from on-failure restarts. We act as soon as suspend
+# fires rather than waiting for it to clear first - it can stay at "1"
+# indefinitely even once the host is back, which would otherwise deadlock.
+# "suspended"'s location varies by controller/kernel, so it is discovered.
+#
+# Separately, a bind can complete with no host ever enumerating it, seen as
+# "not attached" in the UDC's "state" attribute. Give it one retry window
+# after each bind; if still "not attached", restart adbd the same way so
+# the next generation's bind gets a fresh attempt.
+
+set -e
+
+UDC="$1"
+GADGET_PATH="/sys/kernel/config/usb_gadget/adb"
+POLL_INTERVAL="${ANDROID_GADGET_SUSPEND_POLL_INTERVAL:-2}"
+ENUM_RETRY_INTERVAL="${ANDROID_GADGET_ENUM_RETRY_INTERVAL:-10}"
+STATE="/sys/class/udc/$UDC/state"
+
+SUSPENDED="$(find -L "/sys/class/udc/$UDC" -maxdepth 3 -name suspended 2>/dev/null | head -n1)"
+[ -n "$SUSPENDED" ] && [ -r "$SUSPENDED" ] || exit 0
+
+if [ -r "$STATE" ]; then
+	sleep "$ENUM_RETRY_INTERVAL"
+	if [ -d "$GADGET_PATH" ] && [ "$(cat "$STATE" 2>/dev/null)" = "not attached" ]; then
+		echo "UDC $UDC still not attached after bind, restarting adbd to retry" >&2
+		killall -9 adbd
+		exit 0
+	fi
+fi
+
+while [ -d "$GADGET_PATH" ]; do
+	sleep "$POLL_INTERVAL"
+	[ -r "$SUSPENDED" ] || exit 0
+	if [ "$(cat "$SUSPENDED")" = "1" ]; then
+		echo "UDC $UDC suspended, restarting adbd (treating as USB disconnect)" >&2
+		# SIGTERM is excluded from Restart=on-failure (systemd treats it as a
+		# clean stop, so the service would stay down instead of restarting);
+		# SIGKILL counts as abnormal termination and does trigger a restart.
+		killall -9 adbd
+		exit 0
+	fi
+done
