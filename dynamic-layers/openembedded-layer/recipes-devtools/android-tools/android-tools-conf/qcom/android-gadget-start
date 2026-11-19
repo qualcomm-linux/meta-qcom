@@ -90,3 +90,7 @@ fi
 
 echo "Binding Gadget to UDC: $best_udc (maximum_speed='$(read_max_speed "$UDC_FOLDER/$best_udc")')" >&2
 echo -n "$best_udc" > "$GADGET_PATH/UDC"
+
+# Watch for the host going away (reported as UDC suspend, since a gadget
+# has no other disconnect indication) and clean the gadget up when it does.
+/usr/bin/android-gadget-watch "$best_udc" &

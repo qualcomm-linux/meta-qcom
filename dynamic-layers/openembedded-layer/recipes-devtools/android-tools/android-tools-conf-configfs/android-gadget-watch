@@ -1,0 +1,24 @@
+#!/bin/sh
+
+# A ConfigFS gadget has no explicit "disconnected" sysfs state - when the
+# host stops servicing the bus the UDC core only reports it as "suspended".
+# That transition raises no uevent, so poll it periodically and tear the
+# gadget down once it fires, treating it as a USB disconnect.
+
+set -e
+
+UDC="$1"
+GADGET_PATH="/sys/kernel/config/usb_gadget/adb"
+SUSPENDED="/sys/class/udc/$UDC/device/gadget/suspended"
+POLL_INTERVAL="${ANDROID_GADGET_SUSPEND_POLL_INTERVAL:-2}"
+
+[ -r "$SUSPENDED" ] || exit 0
+
+while [ -d "$GADGET_PATH" ]; do
+	sleep "$POLL_INTERVAL"
+	[ -r "$SUSPENDED" ] || exit 0
+	if [ "$(cat "$SUSPENDED")" = "1" ]; then
+		echo "UDC $UDC suspended, treating as USB disconnect" >&2
+		exec /usr/bin/android-gadget-cleanup
+	fi
+done
