@@ -1,6 +1,6 @@
 DESCRIPTION = "QCOM NHLOS Firmware for Qualcomm IQ-X7181 platform"
 LICENSE = "LicenseRef-LICENSE.qcom-2"
-LIC_FILES_CHKSUM = "file://${UNPACKDIR}/${BOOTBINARIES}/LICENSE.qcom-2;md5=fd357a091fc044021a9ddf5c1e3b5117"
+LIC_FILES_CHKSUM = "file://${UNPACKDIR}/${BOOTBINARIES}/LICENSE.qcom-2;md5=165287851294f2fb8ac8cbc5e24b02b0"
 
 include firmware-qcom-boot-common.inc
 
