@@ -115,16 +115,16 @@ FIT_DTB_COMPATIBLE[qcom_qcs8275-iot-camx-staging] = \
     "monaco-evk monaco-evk-camx monaco-el2 monaco-camx-el2 monaco-staging monaco-evk-sd-card"
 FIT_DTB_COMPATIBLE[qcom_qcs8275-iot-camx-staging-emmc] = \
     "monaco-evk monaco-evk-camx monaco-staging monaco-el2 monaco-camx-el2 monaco-evk-emmc"
-FIT_DTB_COMPATIBLE[qcom_qcs8275-iot-subtype0] = "monaco-ac-evk monaco-evk-camera-imx577 monaco-evk-sd-card"
-FIT_DTB_COMPATIBLE[qcom_qcs8275-iot-subtype0-emmc] = "monaco-ac-evk monaco-evk-camera-imx577 monaco-evk-emmc"
-FIT_DTB_COMPATIBLE[qcom_qcs8275-iot-subtype1] = "monaco-ac-evk monaco-evk-ifp-mezzanine monaco-evk-sd-card"
-FIT_DTB_COMPATIBLE[qcom_qcs8275-iot-subtype1-emmc] = "monaco-ac-evk monaco-evk-ifp-mezzanine monaco-evk-emmc"
-FIT_DTB_COMPATIBLE[qcom_qcs8275-iot-subtype3] = "monaco-evk monaco-evk-ifp-mezzanine monaco-evk-sd-card"
-FIT_DTB_COMPATIBLE[qcom_qcs8275-iot-subtype3-emmc] = "monaco-evk monaco-evk-ifp-mezzanine monaco-evk-emmc"
+FIT_DTB_COMPATIBLE[qcom_qcs8275-iot-subtype0] = "monaco-ac-evk monaco-evk-camera-imx577 monaco-el2 monaco-evk-sd-card"
+FIT_DTB_COMPATIBLE[qcom_qcs8275-iot-subtype0-emmc] = "monaco-ac-evk monaco-evk-camera-imx577 monaco-el2 monaco-evk-emmc"
+FIT_DTB_COMPATIBLE[qcom_qcs8275-iot-subtype1] = "monaco-ac-evk monaco-evk-ifp-mezzanine monaco-el2 monaco-evk-sd-card"
+FIT_DTB_COMPATIBLE[qcom_qcs8275-iot-subtype1-emmc] = "monaco-ac-evk monaco-evk-ifp-mezzanine monaco-el2 monaco-evk-emmc"
+FIT_DTB_COMPATIBLE[qcom_qcs8275-iot-subtype3] = "monaco-evk monaco-evk-ifp-mezzanine monaco-el2 monaco-evk-sd-card"
+FIT_DTB_COMPATIBLE[qcom_qcs8275-iot-subtype3-emmc] = "monaco-evk monaco-evk-ifp-mezzanine monaco-el2 monaco-evk-emmc"
 FIT_DTB_COMPATIBLE[qcom_qcs8275-iot-subtype3-staging] = \
-    "monaco-evk monaco-evk-ifp-mezzanine monaco-staging monaco-evk-staging monaco-evk-sd-card"
+    "monaco-evk monaco-evk-ifp-mezzanine monaco-staging monaco-evk-staging monaco-el2 monaco-evk-sd-card"
 FIT_DTB_COMPATIBLE[qcom_qcs8275-iot-subtype3-staging-emmc] = \
-    "monaco-evk monaco-evk-ifp-mezzanine monaco-staging monaco-evk-staging monaco-evk-emmc"
+    "monaco-evk monaco-evk-ifp-mezzanine monaco-staging monaco-evk-staging monaco-el2 monaco-evk-emmc"
 
 FIT_DTB_COMPATIBLE[qcom_qcs8300-adp-el2gh-staging] = "qcs8300-ride monaco-staging"
 FIT_DTB_COMPATIBLE[qcom_qcs8300-adp-staging] = \
