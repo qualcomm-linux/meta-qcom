@@ -1,6 +1,6 @@
 # Default reviewers for all changes in entire repository,
 # unless a later match takes precedence
-*  @vkraleti @ricardosalveti @sbanerjee-quic @ndechesne @lumag @anujm1 @koenkooi
+*  @vkraleti @ricardosalveti @sbanerjeeqc @ndechesne @lumag @anujm1 @koenkooi
 
 # Reviewers to be assigned for any changes in ci/ subdirectory
-ci/*  @quaresmajose @ricardosalveti @sbanerjee-quic @ndechesne @mwasilew @lumag
+ci/*  @quaresmajose @ricardosalveti @sbanerjeeqc @ndechesne @mwasilew @lumag
