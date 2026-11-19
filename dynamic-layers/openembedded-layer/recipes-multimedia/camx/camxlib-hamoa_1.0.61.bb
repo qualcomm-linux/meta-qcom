@@ -13,12 +13,12 @@ DEPENDS += "opencv userspace-resource-manager"
 
 do_install:append() {
     # copy skel file
-    install -d ${D}${datadir}/qcom
-    cp -r ${S}/usr/share/qcom/x1e80100 ${D}${datadir}/qcom/
+    install -d ${D}${HEXAGON_DSP_DIR}
+    cp -r ${S}/usr/share/qcom/x1e80100 ${D}${HEXAGON_DSP_DIR}/
 }
 PACKAGE_BEFORE_PN += "${PN}-skel"
 RDEPENDS:${PN} += "${PN}-skel"
-FILES:${PN}-skel = "${datadir}/qcom"
+FILES:${PN}-skel = "${HEXAGON_DSP_DIR}"
 # Algo librarires are pre-compiled, pre-stripped.
 # Skipping QA checks: 'already-stripped', 'arch', 'libdir' because:
 # - Library files are Pre-stripped  (already-stripped)

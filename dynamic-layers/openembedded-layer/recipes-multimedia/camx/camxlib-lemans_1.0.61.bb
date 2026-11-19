@@ -25,7 +25,8 @@ do_install:append() {
     # copy Deep Learning based binary
     cp -r ${S}/usr/share/camx ${D}${datadir}
     # copy skel file
-    cp -r ${S}/usr/share/qcom ${D}${datadir}
+    install -d ${D}${HEXAGON_DSP_DIR}
+    cp -r ${S}/usr/share/qcom/. ${D}${HEXAGON_DSP_DIR}/
 
     # Remove OpenCL-dependent libraries when opencl is not enabled.
     if ${@bb.utils.contains('DISTRO_FEATURES', 'opencl', 'false', 'true', d)}; then
@@ -45,7 +46,7 @@ FILES:camx-nhx = "\
 "
 FILES:${PN}-skel = "\
     ${datadir}/camx \
-    ${datadir}/qcom \
+    ${HEXAGON_DSP_DIR} \
 "
 # OpenCL-related camx files
 CAMX_OPENCL_FILES = " \
