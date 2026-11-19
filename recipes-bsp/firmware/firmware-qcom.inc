@@ -22,12 +22,12 @@ RRECOMMENDS:${PN} += "${SPLIT_FIRMWARE_PACKAGES}"
 
 # Default settings for several split packages
 FILES:linux-firmware-qcom-${FW_QCOM_NAME}-adreno = "${FW_QCOM_PATH}/*_zap.mbn*"
-FILES:linux-firmware-qcom-${FW_QCOM_NAME}-audio = "${FW_QCOM_PATH}/adsp.mbn* ${FW_QCOM_PATH}/adsp_dtb.mbn* ${FW_QCOM_PATH}/adsp*.jsn ${FW_QCOM_PATH}/battmgr.jsn"
-FILES:linux-firmware-qcom-${FW_QCOM_NAME}-compute = "${FW_QCOM_PATH}/cdsp*.mbn* ${FW_QCOM_PATH}/cdsp_dtb.mbn* ${FW_QCOM_PATH}/cdsp*.jsn"
+FILES:linux-firmware-qcom-${FW_QCOM_NAME}-audio = "${FW_QCOM_PATH}/adsp.mbn* ${FW_QCOM_PATH}/adsp_dtb* ${FW_QCOM_PATH}/adsp*.jsn ${FW_QCOM_PATH}/battmgr.jsn"
+FILES:linux-firmware-qcom-${FW_QCOM_NAME}-compute = "${FW_QCOM_PATH}/cdsp*.mbn* ${FW_QCOM_PATH}/cdsp_dtb* ${FW_QCOM_PATH}/cdsp*.jsn"
 FILES:linux-firmware-qcom-${FW_QCOM_NAME}-dsps = "${FW_QCOM_PATH}/dsps.mbn*"
 FILES:linux-firmware-qcom-${FW_QCOM_NAME}-generalpurpose = "${FW_QCOM_PATH}/gpdsp*.mbn*"
 FILES:linux-firmware-qcom-${FW_QCOM_NAME}-gss = "${FW_QCOM_PATH}/gss.mbn*"
-FILES:linux-firmware-qcom-${FW_QCOM_NAME}-ipa = "${FW_QCOM_PATH}/ipa_fws.mbn* ${FW_QCOM_PATH}/ipa_fws.elf*"
+FILES:linux-firmware-qcom-${FW_QCOM_NAME}-ipa = "${FW_QCOM_PATH}/ipa_fws.mbn* ${FW_QCOM_PATH}/ipa_fws.elf* ${FW_QCOM_PATH}/fw_ipa_*"
 FILES:linux-firmware-qcom-${FW_QCOM_NAME}-modem = "${FW_QCOM_PATH}/mba.mbn* ${FW_QCOM_PATH}/modem.mbn* \
                                                    ${FW_QCOM_PATH}/modem*.jsn ${FW_QCOM_PATH}/modem_pr/so/*.mbn"
 FILES:linux-firmware-qcom-${FW_QCOM_NAME}-q6 = "${FW_QCOM_PATH}/q6.mbn*"

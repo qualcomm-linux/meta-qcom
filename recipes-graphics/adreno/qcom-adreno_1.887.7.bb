@@ -32,7 +32,7 @@ COMPATIBLE_MACHINE:aarch64 = "(qcom)"
 PACKAGE_BEFORE_PN += " \
     ${PN}-common \
     ${@bb.utils.contains('DISTRO_FEATURES', 'glvnd', '${PN}-gles1 ${PN}-gles2 ${PN}-egl', '', d)} \
-    ${@bb.utils.contains('DISTRO_FEATURES', 'opengl vulkan', '${PN}-vulkan', '', d)} \
+    ${@bb.utils.contains('DISTRO_FEATURES', 'opengl vulkan wayland x11', '${PN}-vulkan', '', d)} \
     ${@bb.utils.contains('DISTRO_FEATURES', 'opencl', '${PN}-cl', '', d)} \
 "
 
@@ -47,7 +47,7 @@ RDEPENDS:${PN}-dev += "${@bb.utils.contains('DISTRO_FEATURES', 'opencl', 'opencl
 
 RDEPENDS:${PN} = " \
     ${@bb.utils.contains('DISTRO_FEATURES', 'glvnd', 'qcom-adreno-egl', '', d)} \
-    ${@bb.utils.contains('DISTRO_FEATURES', 'opengl vulkan', 'qcom-adreno-vulkan', '', d)} \
+    ${@bb.utils.contains('DISTRO_FEATURES', 'opengl vulkan wayland x11', 'qcom-adreno-vulkan', '', d)} \
     ${@bb.utils.contains('DISTRO_FEATURES', 'opencl', 'qcom-adreno-cl', '', d)} \
 "
 
@@ -74,7 +74,7 @@ do_install () {
             ${D}${libdir}/libEGL_*.so*
     fi
 
-    if ${@bb.utils.contains('DISTRO_FEATURES', 'opengl vulkan', 'true', 'false', d)}; then
+    if ${@bb.utils.contains('DISTRO_FEATURES', 'opengl vulkan wayland x11', 'true', 'false', d)}; then
         install -d ${D}${datadir}/vulkan/icd.d
         cp ${S}/usr/share/vulkan/icd.d/adrenovk.json ${D}${datadir}/vulkan/icd.d/
     else
