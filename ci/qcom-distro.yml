@@ -52,6 +52,13 @@ repos:
 local_conf_header:
   virtualization:
     SKIP_META_VIRT_SANITY_CHECK = "1"
+  no-onnxruntime: |
+    # TEMPORARY: github.com/microsoft/onnxruntime is unreachable; revert when it is back.
+    SKIP_RECIPE[onnxruntime] = "temporarily disabled: upstream git unreachable"
+    SKIP_RECIPE[onnxruntime-qnn] = "temporarily disabled: depends on onnxruntime"
+    PACKAGECONFIG:remove:pn-gst-plugins-imsdk-oss = "onnx"
+    # Every image that requires qcom-multimedia-proprietary-image.bb inherits it.
+    CORE_IMAGE_BASE_INSTALL:remove = "onnxruntime-qnn"
 
 target:
   - qcom-multimedia-image
