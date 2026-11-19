@@ -26,13 +26,6 @@ lemans-evk:
   - test: AudioRecord_Config10
     comment: https://github.com/qualcomm-linux/meta-qcom/issues/3547
 
-shikra-iqs-evk:
-  # CPU hotplug fails with the legacy (QTEE) boot flow once KVM is the
-  # default hypervisor. QTEE is not PoR for Shikra; OPTEE is, and the fix
-  # comes with a new QTEE boot-critical binary.
-  - test: hotplug
-    comment: https://github.com/qualcomm-linux/meta-qcom/issues/3643
-
 sm8750-mtp:
   # average FPS stays around 81 on a 120 Hz display, below the 102 threshold
   - test: weston-simple-egl
