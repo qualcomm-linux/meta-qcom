@@ -345,7 +345,6 @@ jobs:
           - nord-rrd
           - qcm6490-idp
           - qcom-armv8a
-          - qcs615-ride
           - qcs8300-ride-sx
           - qcs9100-ride-sx
           - rb1-core-kit
@@ -638,7 +637,6 @@ jobs:
       fail-fast: false
       matrix:
         machine:
-          - qcs615-ride
           - rb3gen2-core-kit
           - iq-9075-evk
           - iq-615-evk
