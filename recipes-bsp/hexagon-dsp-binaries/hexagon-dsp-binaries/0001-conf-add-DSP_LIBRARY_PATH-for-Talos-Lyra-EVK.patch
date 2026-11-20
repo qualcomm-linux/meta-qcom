@@ -1,0 +1,48 @@
+From fb5233893160f4e332f8250bc3e4af37d57a0ba0 Mon Sep 17 00:00:00 2001
+From: Jianping Li <jianping.li@oss.qualcomm.com>
+Date: Mon, 28 Sep 2026 19:07:45 +0800
+Subject: [PATCH] conf: add DSP_LIBRARY_PATH for Talos Lyra EVK
+
+Talos Lyra EVK is not a RIDE board, add a separate config
+file for it. It reuses the QCS615 DSP binaries (Hexagon v66).
+
+Upstream-Status: Backport [https://github.com/linux-msm/hexagon-dsp-binaries/commit/fb5233893160f4e332f8250bc3e4af37d57a0ba0]
+Signed-off-by: Jianping Li <jianping.li@oss.qualcomm.com>
+---
+ conf.d/hexagon-dsp-binaries-qualcomm-talos-lyra-evk.yaml | 8 ++++++++
+ config.txt                                               | 4 ++++
+ 2 files changed, 12 insertions(+)
+ create mode 100644 conf.d/hexagon-dsp-binaries-qualcomm-talos-lyra-evk.yaml
+
+diff --git a/conf.d/hexagon-dsp-binaries-qualcomm-talos-lyra-evk.yaml b/conf.d/hexagon-dsp-binaries-qualcomm-talos-lyra-evk.yaml
+new file mode 100644
+index 000000000000..00e875bb3207
+--- /dev/null
++++ b/conf.d/hexagon-dsp-binaries-qualcomm-talos-lyra-evk.yaml
+@@ -0,0 +1,8 @@
++# SPDX-License-Identifier: MIT
++# Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
++# yaml-language-server: $schema=schema.json
++machines:
++  Qualcomm Technologies, Inc. QCS615 Talos Lyra EVK:
++    DSP_LIBRARY_PATH: qcs615/Qualcomm/Talos-Lyra-EVK/dsp
++    ADSP_ARCH: v66
++    CDSP_ARCH: v66
+diff --git a/config.txt b/config.txt
+index c643f61c776c..516a290d579e 100644
+--- a/config.txt
++++ b/config.txt
+@@ -60,6 +60,10 @@ Install: qcm6490/Thundercomm/RB3gen2	cdsp	CDSP.HT.2.5.c3-00134-KODIAK-1
+ Install: qcs615/Qualcomm/QCS615-RIDE	adsp	ADSP.VT.5.2.c6-00095-SM6150-8
+ Install: qcs615/Qualcomm/QCS615-RIDE	cdsp	CDSP.VT.2.2.c4-00019-SM6150-1
+ 
++# QCS615 Talos Lyra EVK
++Link: qcs615/Qualcomm/QCS615-RIDE/dsp/adsp qcs615/Qualcomm/Talos-Lyra-EVK/dsp/adsp
++Link: qcs615/Qualcomm/QCS615-RIDE/dsp/cdsp qcs615/Qualcomm/Talos-Lyra-EVK/dsp/cdsp
++
+ # Thundercomm RUBIK Pi 3
+ Install: qcs6490/Thundercomm/RubikPi3	adsp	ADSP.HT.5.5.c8-00249.1-KODIAK-1
+ Link: qcm6490/Thundercomm/RB3gen2/dsp/cdsp	qcs6490/Thundercomm/RubikPi3/dsp/cdsp
+-- 
+2.43.0
+

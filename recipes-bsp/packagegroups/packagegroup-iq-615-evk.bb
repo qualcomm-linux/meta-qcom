@@ -21,4 +21,6 @@ RRECOMMENDS:${PN}-firmware = " \
 RRECOMMENDS:${PN}-hexagon-dsp-binaries = " \
     hexagon-dsp-binaries-qcom-qcs615-ride-adsp \
     hexagon-dsp-binaries-qcom-qcs615-ride-cdsp \
+    hexagon-dsp-binaries-qcom-talos-lyra-evk-adsp \
+    hexagon-dsp-binaries-qcom-talos-lyra-evk-cdsp \
 "
