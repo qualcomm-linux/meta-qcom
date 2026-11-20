@@ -144,9 +144,13 @@ jobs:
         run: |
           ci/kas-container-shell-helper.sh ci/yocto-patchreview.sh
 
-      - name: Run yocto-check-layer
+      - name: Run yocto-check-layer 1s step
         run: |
           ci/kas-container-shell-helper.sh ci/yocto-check-layer.sh
+
+      - name: Run yocto-check-layer 2s step
+        run: |
+          ci/kas-container-shell-helper.sh ci/yocto-check-layer-bsp.sh
 
       - name: Run oe-selftest
         run: |

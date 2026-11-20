@@ -37,7 +37,8 @@ CMD="$CMD --no-auto"
 CMD="$CMD --dependency $WORK_DIR/oe-core/meta"
 # Disable automatic testing of dependencies
 CMD="$CMD --no-auto-dependency"
-# Set machines to all machines defined in this BSP layer
-CMD="$CMD --machines $(echo $(find meta-qcom/conf/machine/ -maxdepth 1 -name *.conf -exec basename {} .conf \; ))"
+# Run common distro tests module
+CMD="$CMD --run-tests common distro"
 
+echo $CMD
 exec $CMD
