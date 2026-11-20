@@ -1,0 +1,75 @@
+From 1d0396e390473668985b08dbb7d223034d1f177d Mon Sep 17 00:00:00 2001
+From: Igor Opaniuk <igor.opaniuk@oss.qualcomm.com>
+Date: Tue, 20 Oct 2026 14:25:56 +0200
+Subject: [PATCH] uefi_capsule: parse FvUpdate.xml with the stdlib parser
+
+Commit c66dd22064bf made defusedxml a runtime dependency. That library
+is effectively unmaintained: its last stable release, 0.7.1, dates from
+2021, 0.8.0 has been stuck at a release candidate since 2023, and there
+have been no commits since. It is also not in OpenEmbedded's core layer,
+so it pulls a whole extra layer into builds of qcom-capsule-tool.
+
+It is not needed: ElementTree never resolves external entities, and
+expat 2.4.1+ rejects entity-amplification attacks itself. Go back to
+xml.etree.ElementTree and refuse to load on an expat older than 2.4.1
+instead.
+
+Upstream-Status: Submitted [https://github.com/qualcomm/cbsp-boot-utilities/pull/57]
+
+Fixes: c66dd22064bf ("fix: use defusedxml to parse FvUpdate.xml, prevent entity expansion DoS")
+Signed-off-by: Igor Opaniuk <igor.opaniuk@oss.qualcomm.com>
+---
+ uefi_capsule_generation/pyproject.toml              |  3 +--
+ .../src/qcom_capsule_tool/XmlParser.py              | 13 +++++++++++--
+ 2 files changed, 12 insertions(+), 4 deletions(-)
+
+diff --git a/uefi_capsule_generation/pyproject.toml b/uefi_capsule_generation/pyproject.toml
+index a71a431..7f911b4 100644
+--- a/uefi_capsule_generation/pyproject.toml
++++ b/uefi_capsule_generation/pyproject.toml
+@@ -12,7 +12,6 @@ packages = [{ include = "qcom_capsule_tool", from = "src" }]
+ 
+ [tool.poetry.dependencies]
+ python = "^3.9"
+-defusedxml = "*"
+ pyelftools = "*"
+ pylibfdt = "*"
+ 
+@@ -39,5 +38,5 @@ python_version = "3.9"
+ # Third-party deps without type stubs or py.typed markers. Silence
+ # mypy's import-untyped error rather than wrapping each call site.
+ [[tool.mypy.overrides]]
+-module = ["libfdt", "elftools.*", "defusedxml.*"]
++module = ["libfdt", "elftools.*"]
+ ignore_missing_imports = true
+diff --git a/uefi_capsule_generation/src/qcom_capsule_tool/XmlParser.py b/uefi_capsule_generation/src/qcom_capsule_tool/XmlParser.py
+index 9957c24..0be868b 100644
+--- a/uefi_capsule_generation/src/qcom_capsule_tool/XmlParser.py
++++ b/uefi_capsule_generation/src/qcom_capsule_tool/XmlParser.py
+@@ -4,14 +4,23 @@
+ # --------------------------------------------------------------------
+ 
+ 
++import pyexpat
+ import re
+ import traceback
++import xml.etree.ElementTree as ET
+ from collections import OrderedDict
+ 
+-import defusedxml.ElementTree as ET
+-
+ from . import FVCreation_header as FVC_h
+ 
++# ElementTree never resolves external entities, and expat 2.4.1+ rejects
++# entity-amplification attacks ("billion laughs"), so the stdlib parser is
++# safe for FvUpdate.xml as long as expat is not older than that.
++if pyexpat.version_info < (2, 4, 1):
++    raise ImportError(
++        "expat %s is too old to parse FvUpdate.xml safely; 2.4.1 or newer is required"
++        % pyexpat.EXPAT_VERSION
++    )
++
+ 
+ def print_all_level_d(d, indent=0, log_file_obj=None):
+     """
+

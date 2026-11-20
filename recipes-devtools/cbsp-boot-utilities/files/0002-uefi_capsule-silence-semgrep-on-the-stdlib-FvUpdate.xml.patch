@@ -1,0 +1,32 @@
+From d00b6b96de3543a2ad2d7668ca4d3af16a12d1b8 Mon Sep 17 00:00:00 2001
+From: Igor Opaniuk <igor.opaniuk@oss.qualcomm.com>
+Date: Tue, 20 Oct 2026 14:36:00 +0200
+Subject: [PATCH] uefi_capsule: silence semgrep on the stdlib FvUpdate.xml
+ parse
+
+Semgrep's use-defused-xml-parse rule flags every xml.etree parse and
+fails the QC preflight check. The parse is safe here: ElementTree never
+resolves external entities and the module refuses to load on an expat
+older than 2.4.1, which rejects entity-amplification attacks. Suppress
+the rule on that line and point at the guard.
+
+Upstream-Status: Submitted [https://github.com/qualcomm/cbsp-boot-utilities/pull/57]
+
+Signed-off-by: Igor Opaniuk <igor.opaniuk@oss.qualcomm.com>
+---
+ uefi_capsule_generation/src/qcom_capsule_tool/XmlParser.py | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/uefi_capsule_generation/src/qcom_capsule_tool/XmlParser.py b/uefi_capsule_generation/src/qcom_capsule_tool/XmlParser.py
+index 0be868b..03c4b69 100644
+--- a/uefi_capsule_generation/src/qcom_capsule_tool/XmlParser.py
++++ b/uefi_capsule_generation/src/qcom_capsule_tool/XmlParser.py
+@@ -109,6 +109,8 @@ def xml_to_dict(ele):
+ def parse_input_xml(s_xml_file, s_breaking_change_number, g_dynamic_var):
+ 
+     try:
++        # Safe with the stdlib parser: see the expat version guard at the top.
++        # nosemgrep: python.lang.security.use-defused-xml-parse.use-defused-xml-parse
+         tree = ET.parse(s_xml_file)
+         root = tree.getroot()
+ 
