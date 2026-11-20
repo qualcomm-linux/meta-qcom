@@ -1,0 +1,30 @@
+From 32e7621c0dffc79351b162a8308b25262477781c Mon Sep 17 00:00:00 2001
+From: Prasad Kumpatla <prasad.kumpatla@oss.qualcomm.com>
+Date: Tue, 22 Jul 2026 11:16:55 +0000
+Subject: [PATCH] FROMGIT: ASoC: qcom: qdsp6: Remove unused Q6AFE_MAX_CLK_ID
+ define
+
+Q6AFE_MAX_CLK_ID is not used anywhere. Remove the unused define.
+
+Signed-off-by: Prasad Kumpatla <prasad.kumpatla@oss.qualcomm.com>
+Reviewed-by: Dmitry Baryshkov <dmitry.baryshkov@oss.qualcomm.com>
+Link: https://patch.msgid.link/20260722111655.3558096-1-prasad.kumpatla@oss.qualcomm.com
+Signed-off-by: Mark Brown <broonie@kernel.org>
+Upstream-Status: Backport [https://github.com/qualcomm-linux/kernel/pull/1491]
+---
+ include/dt-bindings/sound/qcom,q6dsp-lpass-ports.h | 2 --
+ 1 file changed, 2 deletions(-)
+
+diff --git a/include/dt-bindings/sound/qcom,q6dsp-lpass-ports.h b/include/dt-bindings/sound/qcom,q6dsp-lpass-ports.h
+index 83e2a207be777..d6051dbfa3516 100644
+--- a/include/dt-bindings/sound/qcom,q6dsp-lpass-ports.h
++++ b/include/dt-bindings/sound/qcom,q6dsp-lpass-ports.h
+@@ -350,8 +350,6 @@
+ #define LPASS_HW_MACRO_VOTE		102
+ #define LPASS_HW_DCODEC_VOTE		103
+ 
+-#define Q6AFE_MAX_CLK_ID			104
+-
+ #define LPASS_CLK_ATTRIBUTE_INVALID		0x0
+ #define LPASS_CLK_ATTRIBUTE_COUPLE_NO		0x1
+ #define LPASS_CLK_ATTRIBUTE_COUPLE_DIVIDEND	0x2

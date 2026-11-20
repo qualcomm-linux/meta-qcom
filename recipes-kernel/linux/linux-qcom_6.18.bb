@@ -34,6 +34,14 @@ SRC_URI = " \
     file://0001-tools-use-basename-to-identify-file-in-gen-mach-type.patch \
 "
 
+# Fix Q6DSP_MAX_CLK_ID out of bound issue (CRs-Fixed: 4751464)
+# https://github.com/qualcomm-linux/kernel/pull/1491
+SRC_URI:append = " \
+    file://0002-ASoC-qcom-qdsp6-Remove-unused-Q6AFE_MAX_CLK_ID-defin.patch \
+    file://0003-ASoC-dt-bindings-qcom-add-LPASS-LPR-vote-clock-ID.patch \
+    file://0004-ASoC-qcom-qdsp6-Increase-Q6DSP_MAX_CLK_ID-for-LPASS.patch \
+"
+
 # Additional kernel configs.
 SRC_URI += " \
     file://configs/bsp-additions.cfg \

@@ -1,0 +1,39 @@
+From 5b477a586bd0e36ef26221a75faecccca53b3001 Mon Sep 17 00:00:00 2001
+From: Prasad Kumpatla <prasad.kumpatla@oss.qualcomm.com>
+Date: Thu, 24 Jul 2026 14:17:07 +0000
+Subject: [PATCH] FROMGIT: ASoC: dt-bindings: qcom: add LPASS LPR vote clock
+ ID
+
+Add a new clock ID, LPASS_HW_LPR_VOTE, to represent the LPASS low-power
+resource (LPR) vote through the PRM interface.
+
+The LPASS PRM supports a resource voting mechanism to control low-power
+states via PARAM_ID_RSC_CPU_LPR. Exposing this as a q6prm clock ID allows
+clients to request the LPR vote using the existing qcom,q6prm clock
+provider interface.
+
+This functionality is required on newer platforms (e.g. Hawi) where LPASS
+clients need to explicitly manage LPR resource voting via PRM.
+
+Acked-by: Krzysztof Kozlowski <krzysztof.kozlowski@oss.qualcomm.com>
+Signed-off-by: Prasad Kumpatla <prasad.kumpatla@oss.qualcomm.com>
+Acked-by: Bartosz Golaszewski <bartosz.golaszewski@oss.qualcomm.com>
+Link: https://patch.msgid.link/20260724141708.2212057-2-prasad.kumpatla@oss.qualcomm.com
+Signed-off-by: Mark Brown <broonie@kernel.org>
+Upstream-Status: Backport [https://github.com/qualcomm-linux/kernel/pull/1491]
+---
+ include/dt-bindings/sound/qcom,q6dsp-lpass-ports.h | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/include/dt-bindings/sound/qcom,q6dsp-lpass-ports.h b/include/dt-bindings/sound/qcom,q6dsp-lpass-ports.h
+index d6051dbfa3516..bf9384d3b610f 100644
+--- a/include/dt-bindings/sound/qcom,q6dsp-lpass-ports.h
++++ b/include/dt-bindings/sound/qcom,q6dsp-lpass-ports.h
+@@ -349,6 +349,7 @@
+ #define LPASS_HW_AVTIMER_VOTE		101
+ #define LPASS_HW_MACRO_VOTE		102
+ #define LPASS_HW_DCODEC_VOTE		103
++#define LPASS_HW_LPR_VOTE		104
+ 
+ #define LPASS_CLK_ATTRIBUTE_INVALID		0x0
+ #define LPASS_CLK_ATTRIBUTE_COUPLE_NO		0x1
