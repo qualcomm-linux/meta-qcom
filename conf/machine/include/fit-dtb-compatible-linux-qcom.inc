@@ -196,6 +196,9 @@ FIT_DTB_COMPATIBLE[qcom_qcm6490-idp-el2gh-staging] = "qcm6490-idp kodiak-staging
 FIT_DTB_COMPATIBLE[qcom_qcm6490-idp] = "qcm6490-idp kodiak-el2"
 FIT_DTB_COMPATIBLE[qcom_qcm6490-idp-el2gh] = "qcm6490-idp"
 
+FIT_DTB_COMPATIBLE[qcom_qcs5430-idp-subtype0] = \
+    "qcm6490-idp kodiak-el2"
+
 FIT_DTB_COMPATIBLE[qcom_qcs5430-iot] = \
     "qcs6490-rb3gen2 kodiak-el2"
 FIT_DTB_COMPATIBLE[qcom_qcs5430-iot-el2gh] = \
