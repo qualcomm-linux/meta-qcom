@@ -36,6 +36,13 @@ SRC_URI += " \
     file://configs/bsp-additions.cfg \
 "
 
+# Monaco Draco EVK board support (pending upstream).
+SRC_URI += " \
+    file://patches/0001-dt-bindings-arm-qcom-add-Monaco-Draco-EVK-board.patch \
+    file://patches/0002-arm64-dts-qcom-add-Monaco-Draco-AC-SoM.patch \
+    file://patches/0003-arm64-dts-qcom-add-Monaco-Draco-EVK-board.patch \
+"
+
 # To build tip of qcom-next branch set preferred
 # virtual/kernel provider to 'linux-qcom-next-upstream'
 BBCLASSEXTEND = "devupstream:target"

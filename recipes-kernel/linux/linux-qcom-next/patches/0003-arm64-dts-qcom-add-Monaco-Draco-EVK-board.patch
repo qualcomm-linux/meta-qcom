@@ -1,0 +1,612 @@
+From 2aa51ee0cb479b3faa1c6a4e848435e3c6b6801b Mon Sep 17 00:00:00 2001
+From: Faruque Ansari <faruque.ansari@oss.qualcomm.com>
+Date: Thu, 8 Oct 2026 18:23:59 +0530
+Subject: [PATCH 3/3] arm64: dts: qcom: add Monaco Draco EVK board
+
+The Monaco Draco EVK pairs the Monaco Draco AC SoM with the Draco
+carrier board. Add its device tree, describing the board-specific
+peripherals layered on top of the SoM:
+
+ - I2C GPIO expanders: 4x KTS1622 on i2c14 and 2x TCA9538 on i2c15
+ - EEPROM with a MAC-address nvmem layout on i2c15
+ - Native DisplayPort output (DP0)
+ - Gigabit Ethernet (ethernet0, 2500base-x) over an HSGMII PHY, with
+   the MAC address sourced from the EEPROM
+ - Dual PCIe (pcie0/pcie1) behind an on-board TC9563 PCIe switch
+ - ST33HTPM TPM over spi10
+ - AMC6821 fan controller on i2c13
+ - M.2 E-key slot connector and carrier debug UART (uart2)
+
+Also hook the board dtb into the Makefile, together with an EL2
+overlay variant that boots the kernel at EL2 for KVM.
+
+Co-developed-by: Vishnu Saini <vishnu.saini@oss.qualcomm.com>
+Signed-off-by: Vishnu Saini <vishnu.saini@oss.qualcomm.com>
+Co-developed-by: Khalid Faisal Ansari <khalid.ansari@oss.qualcomm.com>
+Signed-off-by: Khalid Faisal Ansari <khalid.ansari@oss.qualcomm.com>
+Co-developed-by: Dipa Mantre <dipa.mantre@oss.qualcomm.com>
+Signed-off-by: Dipa Mantre <dipa.mantre@oss.qualcomm.com>
+Co-developed-by: Sravani Tella <tella@hu-tella-hyd.qualcomm.com>
+Signed-off-by: Sravani Tella <tella@hu-tella-hyd.qualcomm.com>
+Co-developed-by: Monish Chunara <monish.chunara@oss.qualcomm.com>
+Signed-off-by: Monish Chunara <monish.chunara@oss.qualcomm.com>
+Co-developed-by: Ajinkya Inchure <ainchure@qti.qualcomm.com>
+Signed-off-by: Ajinkya Inchure <ainchure@qti.qualcomm.com>
+Signed-off-by: Faruque Ansari <faruque.ansari@oss.qualcomm.com>
+---
+ arch/arm64/boot/dts/qcom/Makefile             |   5 +
+ arch/arm64/boot/dts/qcom/monaco-draco-evk.dts | 546 ++++++++++++++++++
+ 2 files changed, 551 insertions(+)
+ create mode 100644 arch/arm64/boot/dts/qcom/monaco-draco-evk.dts
+
+diff --git a/arch/arm64/boot/dts/qcom/Makefile b/arch/arm64/boot/dts/qcom/Makefile
+index 88230c4e00ea..7212bd1d2358 100644
+--- a/arch/arm64/boot/dts/qcom/Makefile
++++ b/arch/arm64/boot/dts/qcom/Makefile
+@@ -69,6 +69,11 @@ dtb-$(CONFIG_ARCH_QCOM)	+= milos-fairphone-fp6.dtb
+ dtb-$(CONFIG_ARCH_QCOM)	+= milos-nothing-asteroids.dtb
+ dtb-$(CONFIG_ARCH_QCOM)	+= monaco-arduino-monza.dtb
+ dtb-$(CONFIG_ARCH_QCOM)	+= monaco-ac-evk.dtb
++dtb-$(CONFIG_ARCH_QCOM)	+= monaco-draco-evk.dtb
++
++monaco-draco-evk-el2-dtbs := monaco-draco-evk.dtb monaco-el2.dtbo
++dtb-$(CONFIG_ARCH_QCOM)	+= monaco-draco-evk-el2.dtb
++
+ dtb-$(CONFIG_ARCH_QCOM)	+= monaco-evk.dtb
+ 
+ monaco-evk-camera-imx577-dtbs	:= monaco-evk.dtb monaco-evk-camera-imx577.dtbo
+diff --git a/arch/arm64/boot/dts/qcom/monaco-draco-evk.dts b/arch/arm64/boot/dts/qcom/monaco-draco-evk.dts
+new file mode 100644
+index 000000000000..ad416f586514
+--- /dev/null
++++ b/arch/arm64/boot/dts/qcom/monaco-draco-evk.dts
+@@ -0,0 +1,546 @@
++// SPDX-License-Identifier: BSD-3-Clause
++/*
++ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
++ */
++
++/dts-v1/;
++
++#include <dt-bindings/pwm/pwm.h>
++
++#include "monaco-draco-ac-som.dtsi"
++
++/ {
++	model = "Qualcomm Technologies, Inc. Monaco Draco EVK";
++	compatible = "qcom,monaco-draco-evk", "qcom,monaco-draco-ac-som",
++		     "qcom,qcs8300";
++	chassis-type = "embedded";
++
++	aliases {
++		ethernet0 = &ethernet0;
++		serial1 = &uart2;
++	};
++
++	vreg_0p9: regulator-0v9 {
++		compatible = "regulator-fixed";
++		regulator-name = "VREG_0P9";
++		regulator-min-microvolt = <900000>;
++		regulator-max-microvolt = <900000>;
++		regulator-always-on;
++		regulator-boot-on;
++	};
++
++	vreg_1p8: regulator-1v8 {
++		compatible = "regulator-fixed";
++		regulator-name = "VREG_1P8";
++		regulator-min-microvolt = <1800000>;
++		regulator-max-microvolt = <1800000>;
++		regulator-always-on;
++		regulator-boot-on;
++	};
++
++	vreg_keye_3p3: regulator-keye-3p3 {
++		compatible = "regulator-fixed";
++		regulator-name = "vreg_keye_3p3";
++		regulator-min-microvolt = <3300000>;
++		regulator-max-microvolt = <3300000>;
++		regulator-always-on;
++	};
++
++	vreg_dp0_pwr: regulator-dp0-pwr {
++		compatible = "regulator-fixed";
++		regulator-name = "VREG_DP0_PWR_3P3";
++		regulator-min-microvolt = <3300000>;
++		regulator-max-microvolt = <3300000>;
++		gpio = <&expander1 7 GPIO_ACTIVE_HIGH>;
++	};
++
++	dp0-connector {
++		compatible = "dp-connector";
++		label = "DP0";
++		type = "full-size";
++		dp-pwr-supply = <&vreg_dp0_pwr>;
++
++		port {
++			dp0_connector_in: endpoint {
++				remote-endpoint = <&mdss_dp0_out>;
++			};
++		};
++	};
++
++	wifi-bt-connector {
++		compatible = "pcie-m2-e-connector";
++		vpcie3v3-supply = <&vreg_keye_3p3>;
++
++		w-disable2-gpios = <&tlmm 55 GPIO_ACTIVE_LOW>;
++
++		pinctrl-0 = <&bt_en>;
++		pinctrl-names = "default";
++
++		ports {
++			#address-cells = <1>;
++			#size-cells = <0>;
++
++			port@0 {
++				reg = <0>;
++				#address-cells = <1>;
++				#size-cells = <0>;
++
++				m2_e_pcie_ep: endpoint@0 {
++					reg = <0>;
++					remote-endpoint = <&tc9563_pcie1_ep>;
++				};
++			};
++
++			port@3 {
++				reg = <3>;
++				#address-cells = <1>;
++				#size-cells = <0>;
++
++				m2_e_uart_ep: endpoint@0 {
++					reg = <0>;
++					remote-endpoint = <&uart2_ep>;
++				};
++			};
++		};
++	};
++};
++
++&ethernet0 {
++	phy-handle = <&hsgmii_phy0>;
++	phy-mode = "2500base-x";
++
++	pinctrl-0 = <&ethernet0_default>;
++	pinctrl-names = "default";
++
++	snps,mtl-rx-config = <&mtl_rx_setup>;
++	snps,mtl-tx-config = <&mtl_tx_setup>;
++
++	nvmem-cells = <&mac_addr0>;
++	nvmem-cell-names = "mac-address";
++
++	status = "okay";
++
++	mdio {
++		compatible = "snps,dwmac-mdio";
++		#address-cells = <1>;
++		#size-cells = <0>;
++
++		hsgmii_phy0: ethernet-phy@1c {
++			compatible = "ethernet-phy-id004d.d101";
++			reg = <0x1c>;
++			reset-gpios = <&tlmm 31 GPIO_ACTIVE_LOW>;
++			reset-assert-us = <11000>;
++			reset-deassert-us = <70000>;
++		};
++	};
++
++	mtl_rx_setup: rx-queues-config {
++		snps,rx-queues-to-use = <4>;
++		snps,rx-sched-sp;
++
++		queue0 {
++			snps,dcb-algorithm;
++			snps,map-to-dma-channel = <0x0>;
++			snps,route-up;
++			snps,priority = <0x1>;
++		};
++
++		queue1 {
++			snps,dcb-algorithm;
++			snps,map-to-dma-channel = <0x1>;
++			snps,route-ptp;
++		};
++
++		queue2 {
++			snps,avb-algorithm;
++			snps,map-to-dma-channel = <0x2>;
++			snps,route-avcp;
++		};
++
++		queue3 {
++			snps,avb-algorithm;
++			snps,map-to-dma-channel = <0x3>;
++			snps,priority = <0xc>;
++		};
++	};
++
++	mtl_tx_setup: tx-queues-config {
++		snps,tx-queues-to-use = <4>;
++
++		queue0 {
++			snps,dcb-algorithm;
++		};
++
++		queue1 {
++			snps,dcb-algorithm;
++		};
++
++		queue2 {
++			snps,avb-algorithm;
++			snps,send_slope = <0x1000>;
++			snps,idle_slope = <0x1000>;
++			snps,high_credit = <0x3e800>;
++			snps,low_credit = <0xffc18000>;
++		};
++
++		queue3 {
++			snps,avb-algorithm;
++			snps,send_slope = <0x1000>;
++			snps,idle_slope = <0x1000>;
++			snps,high_credit = <0x3e800>;
++			snps,low_credit = <0xffc18000>;
++		};
++	};
++};
++
++&i2c13 {
++	status = "okay";
++
++	fan_controller: fan@1a {
++		compatible = "ti,amc6821";
++		reg = <0x1a>;
++		#pwm-cells = <2>;
++
++		fan {
++			pwms = <&fan_controller 40000 PWM_POLARITY_INVERTED>;
++		};
++	};
++};
++
++&i2c14 {
++	status = "okay";
++
++	expander0: gpio@20 {
++		compatible = "kinetic,kts1622", "ti,tcal6416";
++		reg = <0x20>;
++		#gpio-cells = <2>;
++		gpio-controller;
++	};
++
++	expander1: gpio@21 {
++		compatible = "kinetic,kts1622", "ti,tcal6416";
++		reg = <0x21>;
++		#gpio-cells = <2>;
++		gpio-controller;
++	};
++
++	expander2: gpio@22 {
++		compatible = "kinetic,kts1622", "ti,tcal6416";
++		reg = <0x22>;
++		#gpio-cells = <2>;
++		gpio-controller;
++	};
++
++	expander3: gpio@23 {
++		compatible = "kinetic,kts1622", "ti,tcal6416";
++		reg = <0x23>;
++		#gpio-cells = <2>;
++		gpio-controller;
++
++		pwr-en0-hog {
++			gpio-hog;
++			gpios = <0 GPIO_ACTIVE_HIGH>;
++			output-high;
++			line-name = "pwr_en0";
++		};
++
++		pwr-en1-hog {
++			gpio-hog;
++			gpios = <1 GPIO_ACTIVE_HIGH>;
++			output-high;
++			line-name = "pwr_en1";
++		};
++
++		pwr-en4-hog {
++			gpio-hog;
++			gpios = <4 GPIO_ACTIVE_HIGH>;
++			output-high;
++			line-name = "pwr_en4";
++		};
++
++		pwr-en6-hog {
++			gpio-hog;
++			gpios = <6 GPIO_ACTIVE_HIGH>;
++			output-high;
++			line-name = "pwr_en6";
++		};
++
++		pwr-en8-hog {
++			gpio-hog;
++			gpios = <8 GPIO_ACTIVE_HIGH>;
++			output-high;
++			line-name = "pwr_en8";
++		};
++
++		keye-pwr-en1-hog {
++			gpio-hog;
++			gpios = <9 GPIO_ACTIVE_HIGH>;
++			output-high;
++			line-name = "keye_pwr_en1";
++		};
++
++		keye-pwr-en2-hog {
++			gpio-hog;
++			gpios = <10 GPIO_ACTIVE_HIGH>;
++			output-high;
++			line-name = "keye_pwr_en2";
++		};
++	};
++};
++
++&i2c15 {
++	status = "okay";
++
++	expander4: gpio@38 {
++		compatible = "ti,tca9538";
++		reg = <0x38>;
++		#gpio-cells = <2>;
++		gpio-controller;
++	};
++
++	expander5: gpio@3c {
++		compatible = "ti,tca9538";
++		reg = <0x3c>;
++		#gpio-cells = <2>;
++		gpio-controller;
++	};
++
++	eeprom@50 {
++		compatible = "giantec,gt24c256c", "atmel,24c256";
++		reg = <0x50>;
++		pagesize = <64>;
++
++		nvmem-layout {
++			compatible = "fixed-layout";
++			#address-cells = <1>;
++			#size-cells = <1>;
++
++			mac_addr0: mac-addr@0 {
++				reg = <0x0 0x6>;
++			};
++		};
++	};
++};
++
++&mdss {
++	status = "okay";
++};
++
++&mdss_dp0 {
++	pinctrl-0 = <&dp_hot_plug_det>;
++	pinctrl-names = "default";
++
++	status = "okay";
++};
++
++&mdss_dp0_out {
++	data-lanes = <0 1 2 3>;
++	link-frequencies = /bits/ 64 <1620000000 2700000000 5400000000 8100000000>;
++	remote-endpoint = <&dp0_connector_in>;
++};
++
++&pcie0 {
++	perst-gpios = <&tlmm 2 GPIO_ACTIVE_LOW>;
++	wake-gpios = <&tlmm 0 GPIO_ACTIVE_HIGH>;
++	pinctrl-0 = <&pcie0_default_state>;
++	pinctrl-names = "default";
++
++	iommu-map = <0x0 &pcie_smmu 0x0 0x0 0x1>,
++		    <0x100 &pcie_smmu 0x1 0x0 0x1>,
++		    <0x208 &pcie_smmu 0x2 0x0 0x1>,
++		    <0x210 &pcie_smmu 0x3 0x0 0x1>,
++		    <0x218 &pcie_smmu 0x4 0x0 0x1>,
++		    <0x300 &pcie_smmu 0x5 0x0 0x1>,
++		    <0x400 &pcie_smmu 0x6 0x0 0x1>,
++		    <0x500 &pcie_smmu 0x7 0x0 0x1>,
++		    <0x501 &pcie_smmu 0x8 0x0 0x1>;
++
++	status = "okay";
++};
++
++&pcie1 {
++	perst-gpios = <&tlmm 23 GPIO_ACTIVE_LOW>;
++	wake-gpios = <&tlmm 21 GPIO_ACTIVE_HIGH>;
++	pinctrl-0 = <&pcie1_default_state>;
++	pinctrl-names = "default";
++
++	status = "okay";
++};
++
++&pcieport0 {
++	#address-cells = <3>;
++	#size-cells = <2>;
++
++	pcie@0,0 {
++		compatible = "pci1179,0623";
++		reg = <0x10000 0x0 0x0 0x0 0x0>;
++		#address-cells = <3>;
++		#size-cells = <2>;
++		device_type = "pci";
++		ranges;
++		bus-range = <0x2 0xff>;
++
++		vddc-supply = <&vreg_0p9>;
++		vdd18-supply = <&vreg_1p8>;
++		vdd09-supply = <&vreg_0p9>;
++		vddio1-supply = <&vreg_1p8>;
++		vddio2-supply = <&vreg_1p8>;
++		vddio18-supply = <&vreg_1p8>;
++		i2c-parent = <&i2c15 0x77>;
++		resx-gpios = <&tlmm 96 GPIO_ACTIVE_LOW>;
++		pinctrl-0 = <&tc9563_resx_n>;
++		pinctrl-names = "default";
++
++		pcie@1,0 {
++			reg = <0x20800 0x0 0x0 0x0 0x0>;
++			#address-cells = <3>;
++			#size-cells = <2>;
++			device_type = "pci";
++			ranges;
++			bus-range = <0x3 0xff>;
++
++			port {
++				tc9563_pcie1_ep: endpoint {
++					remote-endpoint = <&m2_e_pcie_ep>;
++				};
++			};
++		};
++
++		pcie@2,0 {
++			reg = <0x21000 0x0 0x0 0x0 0x0>;
++			#address-cells = <3>;
++			#size-cells = <2>;
++			device_type = "pci";
++			ranges;
++			bus-range = <0x4 0xff>;
++		};
++
++		pcie@3,0 {
++			reg = <0x21800 0x0 0x0 0x0 0x0>;
++			#address-cells = <3>;
++			#size-cells = <2>;
++			device_type = "pci";
++			ranges;
++			bus-range = <0x5 0xff>;
++
++			pcie@0,0 {
++				reg = <0x50000 0x0 0x0 0x0 0x0>;
++				#address-cells = <3>;
++				#size-cells = <2>;
++				device_type = "pci";
++				ranges;
++			};
++
++			pcie@0,1 {
++				reg = <0x50100 0x0 0x0 0x0 0x0>;
++				#address-cells = <3>;
++				#size-cells = <2>;
++				device_type = "pci";
++				ranges;
++			};
++		};
++	};
++};
++
++&qup_i2c13_data_clk {
++	drive-strength = <6>;
++	bias-pull-up;
++};
++
++&spi10 {
++	status = "okay";
++
++	tpm@0 {
++		compatible = "st,st33htpm-spi", "tcg,tpm_tis-spi";
++		reg = <0>;
++		spi-max-frequency = <20000000>;
++	};
++};
++
++&tlmm {
++	bt_en: bt-en-state {
++		pins = "gpio55";
++		function = "gpio";
++		drive-strength = <2>;
++		bias-disable;
++	};
++
++	ethernet0_default: ethernet0-default-state {
++		ethernet0_mdc: ethernet0-mdc-pins {
++			pins = "gpio5";
++			function = "emac0_mdc";
++			drive-strength = <16>;
++			bias-pull-up;
++		};
++
++		ethernet0_mdio: ethernet0-mdio-pins {
++			pins = "gpio6";
++			function = "emac0_mdio";
++			drive-strength = <16>;
++			bias-pull-up;
++		};
++	};
++
++	pcie0_default_state: pcie0-default-state {
++		clkreq-pins {
++			pins = "gpio1";
++			function = "pcie0_clkreq";
++			drive-strength = <2>;
++			bias-pull-up;
++		};
++
++		perst-pins {
++			pins = "gpio2";
++			function = "gpio";
++			drive-strength = <2>;
++			bias-pull-up;
++		};
++
++		wake-pins {
++			pins = "gpio0";
++			function = "gpio";
++			drive-strength = <2>;
++			bias-pull-up;
++		};
++	};
++
++	pcie1_default_state: pcie1-default-state {
++		clkreq-pins {
++			pins = "gpio22";
++			function = "pcie1_clkreq";
++			drive-strength = <2>;
++			bias-pull-up;
++		};
++
++		perst-pins {
++			pins = "gpio23";
++			function = "gpio";
++			drive-strength = <2>;
++			bias-pull-up;
++		};
++
++		wake-pins {
++			pins = "gpio21";
++			function = "gpio";
++			drive-strength = <2>;
++			bias-pull-up;
++		};
++	};
++
++	tc9563_resx_n: tc9563-resx-state {
++		pins = "gpio96";
++		function = "gpio";
++		bias-disable;
++		output-high;
++	};
++};
++
++&uart2 {
++	status = "okay";
++
++	port {
++		uart2_ep: endpoint {
++			remote-endpoint = <&m2_e_uart_ep>;
++		};
++	};
++};
+-- 
+2.34.1
+
