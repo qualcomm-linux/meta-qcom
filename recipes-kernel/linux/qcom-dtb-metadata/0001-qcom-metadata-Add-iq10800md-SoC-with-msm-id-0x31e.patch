@@ -1,0 +1,36 @@
+From 1ac1f10c485d02f7c37b21bfe5628f526a2f0fa9 Mon Sep 17 00:00:00 2001
+From: Roshan Sivakumar <roshs@qti.qualcomm.com>
+Date: Tue, 17 Nov 2026 17:33:18 +0530
+Subject: [PATCH] qcom-metadata: Add iq10800md SoC with msm-id 0x31e
+
+The IQ10 Robotics Reference Design (RRD) board (MCN 10-94444-1040)
+reports chip ID 0x31e, which is not listed in qcom-metadata.dts, so
+UEFI cannot resolve a SoC name for it and fails DTB selection.
+
+Add an iq10800md SoC node with msm-id 0x31e.
+
+Upstream-Status: Submitted [https://github.com/qualcomm-linux/qcom-dtb-metadata/pull/169]
+Assisted-by: Claude Code:claude-opus-5-5
+Signed-off-by: Roshan Sivakumar <roshs@qti.qualcomm.com>
+---
+ qcom-metadata.dts | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/qcom-metadata.dts b/qcom-metadata.dts
+index 4bf4f80..618ba8d 100644
+--- a/qcom-metadata.dts
++++ b/qcom-metadata.dts
+@@ -28,6 +28,10 @@
+ 			msm-id = <0x000002c3>;
+ 		};
+ 
++		iq10800md {
++			msm-id = <0x0000031e>;
++		};
++
+ 		kaanapali {
+ 			msm-id = <0x00000294>;
+ 		};
+-- 
+2.34.1
+

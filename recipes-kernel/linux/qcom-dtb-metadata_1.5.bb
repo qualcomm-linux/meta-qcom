@@ -7,6 +7,7 @@ LIC_FILES_CHKSUM = "file://LICENSE.txt;md5=2998c54c288b081076c9af987bdf4838"
 DEPENDS += "dtc-native"
 
 SRC_URI = "git://github.com/qualcomm-linux/qcom-dtb-metadata.git;branch=main;protocol=https;tag=v${PV}"
+SRC_URI += "file://0001-qcom-metadata-Add-iq10800md-SoC-with-msm-id-0x31e.patch"
 
 SRCREV = "36202c4c6e67178975024d38c8109f466e0aea81"
 
