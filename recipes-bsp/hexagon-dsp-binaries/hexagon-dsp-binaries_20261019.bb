@@ -18,6 +18,7 @@ NORD_HPASS_VER = "HPASS.AT.1.0.1-00032-NORD-1"
 SRC_URI += "\
     git://github.com/linux-msm/dsp-binaries;protocol=https;branch=trunk;name=nord-hpass;destsuffix=dsp-binaries-nord-hpass \
     file://0001-nord-update-hpass-dynamic-modules-for-SA8797P-Ride-E.patch \
+    file://0001-nord-fix-machine-name-in-SA8797P-Ride-config-yaml.patch \
 "
 SRCREV_nord-hpass = "29ba5422bfd4ee595360738f8f62c3394ad1c146"
 SRCREV_FORMAT = "default_nord-hpass"
