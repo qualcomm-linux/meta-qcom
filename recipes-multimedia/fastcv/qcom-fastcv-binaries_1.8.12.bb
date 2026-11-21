@@ -4,13 +4,13 @@ LICENSE = "LicenseRef-LICENSE.qcom-2"
 LIC_FILES_CHKSUM = "file://${UNPACKDIR}/usr/share/doc/${PN}/NOLOGINBINARYLICENSEQTI.pdf;md5=4ceffe94cb40cdce6d2f4fb93cc063d1 \
                     file://${UNPACKDIR}/usr/share/doc/${PN}/NOTICE;md5=4b722aa0574e24873e07b94e40b92e4d "
 
-PBT_BUILD_DATE = "261023"
+PBT_BUILD_DATE = "261117"
 BRANCH = "wrynose"
 ARTIFACTORY_URL = "https://qartifactory-edge.qualcomm.com/artifactory/qsc_releases/software/chip/component/computervision-fastcv.qclinux.0.1/${PBT_BUILD_DATE}/prebuilt_yocto_${BRANCH}"
 PBT_ARCH = "armv8a"
 
 SRC_URI = "${ARTIFACTORY_URL}/${BPN}_${PV}_${BRANCH}_${PBT_ARCH}.tar.gz"
-SRC_URI[sha256sum] = "acc32906a30aa90d918f331ca60a9a958b2cd7242124526f3307f4486f9a8b1f"
+SRC_URI[sha256sum] = "2ebb17e7ead752abdca784e5c998a3ccf708ddee865eabe44f8b6dcefd5ee44f"
 S = "${UNPACKDIR}"
 
 DEPENDS += "glib-2.0 fastrpc"
@@ -25,6 +25,7 @@ do_install() {
     install -d ${D}${libdir}/pkgconfig
     install -d ${D}${datadir}/doc/${PN}
     install -d ${D}${includedir}/fastcv
+    install -d ${D}${datadir}/qcom/eliza/Qualcomm/Eliza-MTP/dsp/cdsp
     install -d ${D}${datadir}/qcom/glymur/Qualcomm/Glymur-CRD/dsp/cdsp
     install -d ${D}${datadir}/qcom/hawi/Qualcomm/Hawi-MTP/dsp/cdsp
     install -d ${D}${datadir}/qcom/kaanapali/Qualcomm/Kaanapali-MTP/dsp/cdsp
@@ -53,6 +54,7 @@ do_install() {
     install -m 0644 ${S}/usr/share/dsp/cdsp/cv/v65/TALOS_MOOREA/*.so ${D}${datadir}/qcom/qcs615/Qualcomm/QCS615-RIDE/dsp/cdsp
     install -m 0644 ${S}/usr/share/dsp/cdsp/cv/v66/SHIKRA/*.so ${D}${datadir}/qcom/shikra/Qualcomm/Shikra-CQS-EVK/dsp/cdsp
     install -m 0644 ${S}/usr/share/dsp/cdsp/cv/v68/KODIAK/*.so ${D}${datadir}/qcom/qcm6490/Thundercomm/RB3gen2/dsp/cdsp
+    install -m 0644 ${S}/usr/share/dsp/cdsp/cv/v73/ELIZA/*.so ${D}${datadir}/qcom/eliza/Qualcomm/Eliza-MTP/dsp/cdsp
     install -m 0644 ${S}/usr/share/dsp/cdsp/cv/v73/HAMOA/*.so ${D}${datadir}/qcom/x1e80100/Qualcomm/Hamoa-IoT-EVK/dsp/cdsp
     install -m 0644 ${S}/usr/share/dsp/cdsp/cv/v73/LEMANS/*.so ${D}${datadir}/qcom/sa8775p/Qualcomm/SA8775P-RIDE/dsp/cdsp
     install -m 0644 ${S}/usr/share/dsp/cdsp/cv/v75/MONACO/*.so ${D}${datadir}/qcom/qcs8300/Qualcomm/QCS8300-RIDE/dsp/cdsp
@@ -68,6 +70,7 @@ do_install() {
 PACKAGE_BEFORE_PN = "${PN}-dsp fastcv-apps"
 
 PACKAGES += "\
+    ${PN}-eliza-mtp-dsp \
     ${PN}-glymur-crd-dsp \
     ${PN}-hamoa-iot-evk-dsp \
     ${PN}-hawi-mtp-dsp \
@@ -86,6 +89,7 @@ PACKAGES += "\
 FILES:${PN}-dsp = "${libdir}/libfastcvdsp_stub.so.*"
 FILES:fastcv-apps = "${bindir}/fastcv_simple_test64"
 
+RDEPENDS:${PN}-eliza-mtp-dsp = "${PN}-dsp"
 RDEPENDS:${PN}-glymur-crd-dsp = "${PN}-dsp"
 RDEPENDS:${PN}-hamoa-iot-evk-dsp = "${PN}-dsp"
 RDEPENDS:${PN}-hawi-mtp-dsp = "${PN}-dsp"
@@ -102,6 +106,7 @@ RDEPENDS:${PN}-thundercomm-rb3gen2-dsp = "${PN}-dsp"
 
 SKIP_FILEDEPS:${PN}-sa8797p-ride-embedded-dsp = "1"
 
+INSANE_SKIP:${PN}-eliza-mtp-dsp = "arch ldflags libdir"
 INSANE_SKIP:${PN}-glymur-crd-dsp = "arch ldflags libdir"
 INSANE_SKIP:${PN}-hamoa-iot-evk-dsp = "arch ldflags libdir"
 INSANE_SKIP:${PN}-hawi-mtp-dsp = "arch ldflags libdir"
@@ -117,6 +122,7 @@ INSANE_SKIP:${PN}-thundercomm-rb3gen2-dsp = "arch ldflags libdir"
 ALLOW_EMPTY:${PN}-maili-mtp-dsp = "1"
 ALLOW_EMPTY:${PN}-purwa-iot-evk-dsp = "1"
 
+FILES:${PN}-eliza-mtp-dsp += "${datadir}/qcom/eliza/Qualcomm/Eliza-MTP/dsp/cdsp"
 FILES:${PN}-glymur-crd-dsp += "${datadir}/qcom/glymur/Qualcomm/Glymur-CRD/dsp/cdsp"
 FILES:${PN}-hamoa-iot-evk-dsp += "${datadir}/qcom/x1e80100/Qualcomm/Hamoa-IoT-EVK/dsp/cdsp"
 FILES:${PN}-hawi-mtp-dsp += "${datadir}/qcom/hawi/Qualcomm/Hawi-MTP/dsp/cdsp"
