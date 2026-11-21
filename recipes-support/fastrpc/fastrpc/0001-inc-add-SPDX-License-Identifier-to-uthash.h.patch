@@ -1,0 +1,25 @@
+From b399d10f48adb1f8fa8b947c31e5357ae7439d79 Mon Sep 17 00:00:00 2001
+From: Ekansh Gupta <ekansh.gupta@oss.qualcomm.com>
+Date: Thu, 19 Nov 2026 02:36:07 +0530
+Subject: [PATCH] inc: add SPDX-License-Identifier to uthash.h
+
+uthash.h is bundled and compiled into libadsprpc, libcdsprpc, and
+libsdsprpc but was missed by the SPDX tagging in #413. Tag it with its
+actual upstream license (BSD-1-Clause) rather than this repo's usual
+BSD-3-Clause.
+
+Upstream-Status: Submitted [https://github.com/qualcomm/fastrpc/pull/424]
+Signed-off-by: Ekansh Gupta <ekansh.gupta@oss.qualcomm.com>
+---
+ inc/uthash.h | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/inc/uthash.h b/inc/uthash.h
+index 96322074..5539f42d 100644
+--- a/inc/uthash.h
++++ b/inc/uthash.h
+@@ -1,3 +1,4 @@
++/* SPDX-License-Identifier: BSD-1-Clause */
+ /*
+ Copyright (c) 2003-2011, Troy D. Hanson     http://uthash.sourceforge.net
+ All rights reserved.
