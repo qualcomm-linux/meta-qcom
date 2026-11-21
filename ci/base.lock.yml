@@ -23,6 +23,6 @@ overrides:
         meta-dpdk:
             commit: 7b1d81a157636bc1c16707b5bc656a986dfd3e35
         meta-ai:
-            commit: ec488d7f302c0bccd4a903c0963e9794f4409592
+            commit: ac73fd1897a8db91bc05263b2d55e687093bc14d 
         meta-yocto:
             commit: 8becfabefdf5df564aafe2d07d10e4b05fbaedb1
