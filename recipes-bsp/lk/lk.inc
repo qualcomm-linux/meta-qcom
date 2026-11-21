@@ -1,3 +1,5 @@
+require recipes-bsp/lk/lk-toolchain.inc
+
 LICENSE = "MIT"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=5a1abdab641eec675725c843f43f03af"
 
@@ -5,30 +7,22 @@ LK_BRANCH ?= "master"
 LK_URI ?= "git://git.codelinaro.org/linaro/qcomlt/lk.git;protocol=https;branch=${LK_BRANCH};name=lk"
 LK_REVISION ?= "179191bda57a555ca1803e157a03d2f0d33fa3c5"
 LK_SOC ?= "msm8916"
-LK_BUILDARGS ?= "EMMC_BOOT=1 TOOLCHAIN_PREFIX=${UNPACKDIR}/gcc/bin/arm-eabi- LD=${UNPACKDIR}/gcc/bin/arm-eabi-ld NOECHO="
+# This LK tree predates GCC 10 (-fno-common) and GCC 14 (implicit declarations
+# and int/pointer conversions became errors).
+LK_BUILDARGS ?= "EMMC_BOOT=1 TOOLCHAIN_PREFIX=arm-none-eabi- CC='arm-none-eabi-gcc -fcommon -fpermissive' LD=arm-none-eabi-ld NOECHO="
 LK_PV ?= "1.2.7-03810"
 
 LK_MACHINE ?= "none"
 LK_FLAVOUR ?= ""
 
-# Use the "original" gcc for now
-LK_GCC_URI ?= "git://git.codelinaro.org/clo/la/platform/prebuilts/gcc/linux-x86/arm/arm-eabi-4.8.git;protocol=https;name=gcc;subdir=gcc;nobranch=1"
-#caf_migration/LA.BR.1.1.3.c4
-LK_GCC_REVISION = "26e93f6af47f7bd3a9beb5c102a5f45e19bfa38a"
-
-SRC_URI = " \
-    ${LK_URI} \
-    ${LK_GCC_URI} \
-"
+SRC_URI = "${LK_URI}"
 SRCREV_lk = "${LK_REVISION}"
-SRCREV_gcc = "${LK_GCC_REVISION}"
 
 EXTRA_OEMAKE = "${LK_SOC} ${LK_BUILDARGS}"
 
-SRCREV_FORMAT = "lk_gcc"
 PV = "${LK_PV}+git"
 
-DEPENDS += "qtestsign-native"
+DEPENDS += "gcc-arm-none-eabi-native qtestsign-native"
 
 do_compile:append() {
     export CRYPTOGRAPHY_OPENSSL_NO_LEGACY=1
