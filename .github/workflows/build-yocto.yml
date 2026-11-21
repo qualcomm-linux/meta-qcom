@@ -28,7 +28,7 @@ concurrency:
 env:
   CACHE_DIR: /efsx/qli/meta-qcom
   KAS_CLONE_DEPTH: 1
-  KAS_CONTAINER: ${{ github.workspace }}/kas-container
+  KAS_CONTAINER: ${{ github.workspace }}/ci/kas-container
   KAS_CONTAINER_IMAGE: ghcr.io/siemens/kas/kas@sha256:3f3d3257e8d4ca3adfcb2e0025e6da24339fb8d68a6999ca36c37381351582d5 # 5.5-9-g0555188
 
 jobs:
@@ -40,13 +40,12 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Setting up kas-container
+      - name: Check kas-container version
         run: |
-          docker create --name kas ${KAS_CONTAINER_IMAGE}
-          docker cp kas:/usr/local/bin/kas-container $KAS_CONTAINER
           LATEST=$(git ls-remote --tags --refs --sort="v:refname" https://github.com/siemens/kas | tail -n1 | sed 's/.*\///')
-          if ! grep -q "KAS_CONTAINER_SCRIPT_VERSION=\"${LATEST}\"" $KAS_CONTAINER ; then
-            echo "Version "${LATEST}" of kas is available, please update "KAS_CONTAINER_IMAGE: $KAS_CONTAINER_IMAGE""
+          CURRENT=$(${KAS_CONTAINER} --version | cut -d' ' -f 2)
+          if [[ "${CURRENT}" != "${LATEST}" ]]; then
+            echo "Version "${LATEST}" of kas is available and we are at "${CURRENT}", please update "KAS_CONTAINER_IMAGE: $KAS_CONTAINER_IMAGE""
           fi
 
       - name: Run kas lock
@@ -60,7 +59,6 @@ jobs:
           if-no-files-found: error
           path: |
             ci/*.lock.yml
-            kas-container
 
   github-cache-check:
     needs: kas-setup
@@ -78,6 +76,7 @@ jobs:
         uses: actions/download-artifact@v7
         with:
           name: kas
+          path: ci
 
       - name: Compute build input hash
         id: hash
@@ -130,10 +129,7 @@ jobs:
         uses: actions/download-artifact@v7
         with:
           name: kas
-
-      - name: Setting up kas-container
-        run: |
-          chmod +x $KAS_CONTAINER
+          path: ci
 
       - name: Setup cache variables (used by oe-selftest)
         run: |
