@@ -13,6 +13,10 @@ repos:
   meta-qcom-distro:
     url: https://github.com/qualcomm-linux/meta-qcom-distro
     branch: main
+    patches:
+      libcamera-0.8.0:
+        repo: meta-qcom
+        path: patches/meta-qcom-distro/0001-libcamera-refresh-the-CMA-patches-for-0.8.0.patch
 
   meta-openembedded:
     url: https://github.com/openembedded/meta-openembedded
@@ -50,10 +54,6 @@ repos:
 
   meta-security:
     url: https://git.yoctoproject.org/meta-security
-    patches:
-      tpm2-openssl-openssl-4.1:
-        repo: meta-qcom
-        path: patches/meta-security/0001-tpm2-openssl-Fix-build-with-OpenSSL-4.1.patch
     layers:
       .:
       meta-tpm:
