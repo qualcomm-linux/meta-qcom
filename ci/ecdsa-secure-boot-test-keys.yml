@@ -15,3 +15,9 @@ local_conf_header:
     QCOM_FIRMWARE_SIGN_CA_CERT   = "${LAYERDIR_qcom}/ci/test-keys/ecdsa/qpsa_attestca0.cer"
     QCOM_FIRMWARE_SIGN_CA_KEY    = "${LAYERDIR_qcom}/ci/test-keys/ecdsa/qpsa_attestca0.key"
     QCOM_FIRMWARE_SIGN_ROOT_HASH = "${LAYERDIR_qcom}/ci/test-keys/ecdsa/sha384_roots_hash.txt"
+
+    # Fuse identifiers that go with these keys: blown by
+    # firmware-qcom-fuse-blower, so set them together with the OEM keys.
+    QCOM_FUSE_OEM_HW_ID              = "0x0001"
+    QCOM_FUSE_OEM_PRODUCT_ID         = "0xabcd"
+    QCOM_FUSE_SEC_KEY_DERIVATION_KEY = ""
