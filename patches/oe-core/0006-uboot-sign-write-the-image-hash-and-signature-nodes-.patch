@@ -1,0 +1,141 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Viswanath Kraleti <viswanath.kraleti@oss.qualcomm.com>
+Date: Sun, 15 Nov 2026 23:51:33 +0530
+Subject: [OE-core][PATCH] uboot-sign: write the image hash and signature nodes
+ in one place
+
+The uboot, fdt, tee and atf image nodes each carry their own copy of the
+hash and signature nodes SPL_SIGN_CONF and SPL_SIGN_INDIVIDUAL ask for.
+
+Write them from uboot_fitimage_image_signing instead, so that every
+image node is signed the same way, including the ones added next.
+
+AI-Generated: Uses Claude Code
+Signed-off-by: Viswanath Kraleti <viswanath.kraleti@oss.qualcomm.com>
+Upstream-Status: Pending
+---
+ meta/classes-recipe/uboot-sign.bbclass | 83 +++++++-------------------
+ 1 file changed, 22 insertions(+), 61 deletions(-)
+
+diff --git a/meta/classes-recipe/uboot-sign.bbclass b/meta/classes-recipe/uboot-sign.bbclass
+index c1dae56582..1c738f7f9d 100644
+--- a/meta/classes-recipe/uboot-sign.bbclass
++++ b/meta/classes-recipe/uboot-sign.bbclass
+@@ -352,19 +352,9 @@ do_uboot_generate_rsa_keys() {
+ 
+ addtask uboot_generate_rsa_keys before do_uboot_assemble_fitimage after do_compile
+ 
+-# Create a ITS file for the atf
+-uboot_fitimage_atf() {
+-	cat << EOF >> ${UBOOT_ITS}
+-        atf {
+-            description = "ARM Trusted Firmware";
+-            data = /incbin/("${UBOOT_FIT_ARM_TRUSTED_FIRMWARE_IMAGE}");
+-            type = "firmware";
+-            arch = "${UBOOT_ARCH}";
+-            os = "arm-trusted-firmware";
+-            load = <${UBOOT_FIT_ARM_TRUSTED_FIRMWARE_LOADADDRESS}>;
+-            entry = <${UBOOT_FIT_ARM_TRUSTED_FIRMWARE_ENTRYPOINT}>;
+-            compression = "none";
+-EOF
++# Write the hash and signature nodes of the image node being written, as
++# SPL_SIGN_CONF and SPL_SIGN_INDIVIDUAL ask for them
++uboot_fitimage_image_signing() {
+ 	if [ "${SPL_SIGN_ENABLE}" = "1" ] && [ "${SPL_SIGN_CONF}" = "1" ] ; then
+ 		cat << EOF >> ${UBOOT_ITS}
+             hash-1 {
+@@ -381,6 +371,22 @@ EOF
+             };
+ EOF
+ 	fi
++}
++
++# Create a ITS file for the atf
++uboot_fitimage_atf() {
++	cat << EOF >> ${UBOOT_ITS}
++        atf {
++            description = "ARM Trusted Firmware";
++            data = /incbin/("${UBOOT_FIT_ARM_TRUSTED_FIRMWARE_IMAGE}");
++            type = "firmware";
++            arch = "${UBOOT_ARCH}";
++            os = "arm-trusted-firmware";
++            load = <${UBOOT_FIT_ARM_TRUSTED_FIRMWARE_LOADADDRESS}>;
++            entry = <${UBOOT_FIT_ARM_TRUSTED_FIRMWARE_ENTRYPOINT}>;
++            compression = "none";
++EOF
++	uboot_fitimage_image_signing
+ 
+ 	cat << EOF >> ${UBOOT_ITS}
+         };
+@@ -400,22 +406,7 @@ uboot_fitimage_tee() {
+             entry = <${UBOOT_FIT_TEE_ENTRYPOINT}>;
+             compression = "none";
+ EOF
+-	if [ "${SPL_SIGN_ENABLE}" = "1" ] && [ "${SPL_SIGN_CONF}" = "1" ] ; then
+-		cat << EOF >> ${UBOOT_ITS}
+-            hash-1 {
+-                algo = "${UBOOT_FIT_HASH_ALG}";
+-            };
+-EOF
+-	fi
+-
+-	if [ "${SPL_SIGN_ENABLE}" = "1" ] && [ "${SPL_SIGN_INDIVIDUAL}" = "1" ] ; then
+-		cat << EOF >> ${UBOOT_ITS}
+-            signature {
+-                algo = "${UBOOT_FIT_HASH_ALG},${UBOOT_FIT_SIGN_ALG}";
+-                key-name-hint = "${SPL_SIGN_KEYNAME}";
+-            };
+-EOF
+-	fi
++	uboot_fitimage_image_signing
+ 
+ 	cat << EOF >> ${UBOOT_ITS}
+         };
+@@ -449,22 +440,7 @@ uboot_fitimage_assemble() {
+             entry = <${UBOOT_FIT_UBOOT_ENTRYPOINT}>;
+ EOF
+ 
+-	if [ "${SPL_SIGN_ENABLE}" = "1" ] && [ "${SPL_SIGN_CONF}" = "1" ] ; then
+-		cat << EOF >> ${UBOOT_ITS}
+-            hash-1 {
+-                algo = "${UBOOT_FIT_HASH_ALG}";
+-            };
+-EOF
+-	fi
+-
+-	if [ "${SPL_SIGN_ENABLE}" = "1" ] && [ "${SPL_SIGN_INDIVIDUAL}" = "1" ] ; then
+-		cat << EOF >> ${UBOOT_ITS}
+-            signature {
+-                algo = "${UBOOT_FIT_HASH_ALG},${UBOOT_FIT_SIGN_ALG}";
+-                key-name-hint = "${SPL_SIGN_KEYNAME}";
+-            };
+-EOF
+-	fi
++	uboot_fitimage_image_signing
+ 
+ 	cat << EOF >> ${UBOOT_ITS}
+         };
+@@ -476,22 +452,7 @@ EOF
+             compression = "none";
+ EOF
+ 
+-	if [ "${SPL_SIGN_ENABLE}" = "1" ] && [ "${SPL_SIGN_CONF}" = "1" ] ; then
+-		cat << EOF >> ${UBOOT_ITS}
+-            hash-1 {
+-                algo = "${UBOOT_FIT_HASH_ALG}";
+-            };
+-EOF
+-	fi
+-
+-	if [ "${SPL_SIGN_ENABLE}" = "1" ] && [ "${SPL_SIGN_INDIVIDUAL}" = "1" ] ; then
+-		cat << EOF >> ${UBOOT_ITS}
+-            signature {
+-                algo = "${UBOOT_FIT_HASH_ALG},${UBOOT_FIT_SIGN_ALG}";
+-                key-name-hint = "${SPL_SIGN_KEYNAME}";
+-            };
+-EOF
+-	fi
++	uboot_fitimage_image_signing
+ 
+ 	cat << EOF >> ${UBOOT_ITS}
+         };
