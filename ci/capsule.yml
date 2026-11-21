@@ -4,8 +4,10 @@
 # It sets QCOM_CAPSULE_FIRMWARE which wires firmware-qcom-capsule into the
 # qcomflash image tarball via image_types_qcom.bbclass.
 #
-# Usage: kas build ci/base.yml:ci/<machine>.yml:ci/capsule.yml
-#        kas build ci/base.yml:ci/<machine>.yml:ci/capsule.yml:ci/capsule-test-keys.yml
+# firmware-qcom-capsule needs meta-arm, so include ci/meta-arm.yml as well.
+#
+# Usage: kas build ci/base.yml:ci/<machine>.yml:ci/meta-arm.yml:ci/capsule.yml
+#        kas build ci/base.yml:ci/<machine>.yml:ci/meta-arm.yml:ci/capsule.yml:ci/capsule-test-keys.yml
 
 header:
   version: 14
