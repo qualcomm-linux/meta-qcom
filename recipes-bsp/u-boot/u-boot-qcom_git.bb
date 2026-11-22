@@ -39,6 +39,7 @@ SRCREV_uboot = "331595c5af3baf383c482b24538ce2a717be5e49"
 SRC_URI = "git://github.com/qualcomm-linux/u-boot.git;protocol=https;name=uboot;nobranch=1;${SRC_TAG}"
 SRC_URI += " \
     file://0001-Add-support-for-OpenSSL-Provider-API.patch \
+    file://0002-configs-qcom_shikra_spl-give-the-fit-structure-room.patch \
     file://disable-eficapsule-tool.cfg \
     file://efi-rt-volatile-store.cfg \
     ${@bb.utils.contains('MACHINE_FEATURES', 'optee', 'file://tfa-optee.cfg', '', d)} \
