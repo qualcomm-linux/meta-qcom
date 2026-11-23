@@ -6,6 +6,7 @@ SRC_URI:append:qcom = " \
     file://0001-freedreno-Modify-reg_size_vec4-for-a608-and-a612-to-32.patch \
     file://0001-tu-autotune-Disable-autotuning-for-small-renderpasse.patch \
     file://0001-freedreno-Increase-reg_size_vec4-for-A702.patch \
+    file://0001-freedreno-Enable-A753-and-A735.patch \
 "
 
 # Enable freedreno driver
