@@ -13,9 +13,6 @@ on:
         default: false
         description: "Skip the build matrix if the github actions cache already records a previously-successful run for the same inputs"
     outputs:
-      artifacts_url:
-        description: "URL to retrieve build artifacts"
-        value: ${{ jobs.create-output.outputs.url }}
       build_skipped:
         description: "True when the compile matrix was skipped because the github cache recorded a previously-successful build for the same inputs"
         value: ${{ jobs.github-cache-check.outputs.cache_hit }}
