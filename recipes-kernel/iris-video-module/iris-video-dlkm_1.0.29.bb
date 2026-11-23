@@ -35,25 +35,15 @@ FILES:${PN}-bl-vidc += "${sysconfdir}/modprobe.d/blacklist-video.conf.vidc"
 
 ALTERNATIVE:${PN}-bl-vidc  = "blacklist-video"
 ALTERNATIVE_TARGET_${PN}-bl-vidc = "${sysconfdir}/modprobe.d/blacklist-video.conf.vidc"
-ALTERNATIVE_PRIORITY_${PN}-bl-vidc = "50"
+# By default, use the in-kernel qcom_iris driver.
+ALTERNATIVE_PRIORITY_${PN}-bl-vidc = "150"
 
-# On QCS615, prioritize blacklisting unsupported Vidc.
-ALTERNATIVE_PRIORITY_${PN}-bl-vidc:qcs615 = "150"
-
-# On shikra, prioritize blacklisting unsupported iris_vpu to load qcom-iris.
-ALTERNATIVE_PRIORITY_${PN}-bl-vidc:shikra = "150"
-
-# On kaanapali, prioritize blacklisting unsupported iris_vpu to load qcom-iris.
-ALTERNATIVE_PRIORITY_${PN}-bl-vidc:kaanapali = "150"
-
-# On sm8750, prioritize blacklisting unsupported iris_vpu to load qcom-iris.
-ALTERNATIVE_PRIORITY_${PN}-bl-vidc:sm8750 = "150"
-
-# On purwa, prioritize blacklisting unsupported iris_vpu to load qcom-iris.
-ALTERNATIVE_PRIORITY_${PN}-bl-vidc:purwa = "150"
-
-# On hamoa, prioritize blacklisting unsupported iris_vpu to load qcom-iris.
-ALTERNATIVE_PRIORITY_${PN}-bl-vidc:hamoa = "150"
+# On kodiak (qcm6490), lemans (qcs9100), monaco (qcs8300) and glymur, keep
+# the out-of-tree iris_vidc driver: let the Venus blacklist (priority 100) win.
+ALTERNATIVE_PRIORITY_${PN}-bl-vidc:qcm6490 = "50"
+ALTERNATIVE_PRIORITY_${PN}-bl-vidc:qcs9100 = "50"
+ALTERNATIVE_PRIORITY_${PN}-bl-vidc:qcs8300 = "50"
+ALTERNATIVE_PRIORITY_${PN}-bl-vidc:glymur = "50"
 
 ALTERNATIVE:${PN}-bl-venus = "blacklist-video"
 ALTERNATIVE_TARGET_${PN}-bl-venus = "${sysconfdir}/modprobe.d/blacklist-video.conf.venus"
