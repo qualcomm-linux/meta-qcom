@@ -58,10 +58,6 @@ do_install:append() {
         rm -f ${D}${libdir}/camx/kodiak/camera/components/libiwarp*
     fi
 
-    # copy Deep Learning based binary
-    cp -r ${S}/usr/share/camx ${D}${datadir}
-    # copy skel file
-    cp -r ${S}/usr/share/qcom ${D}${datadir}
 
     # Install bin files only if /usr/bin exists in ${S}
     if [ -d "${S}${libexecdir}" ]; then
@@ -94,8 +90,8 @@ do_install:append() {
     fi
 }
 
-PACKAGE_BEFORE_PN += "camx-kodiak chicdk-kodiak ${PN}-skel"
-RDEPENDS:${PN} += "chicdk-kodiak ${PN}-skel"
+PACKAGE_BEFORE_PN += "camx-kodiak chicdk-kodiak"
+RDEPENDS:${PN} += "chicdk-kodiak"
 RDEPENDS:${PN}-dev += "camxcommon-headers-dev"
 RRECOMMENDS:${PN} += "sensinghub qcom-fastcv-binaries"
 
@@ -130,10 +126,6 @@ FILES:chicdk-kodiak = "\
     ${libdir}/camx/kodiak/hw/com.qti.chi.*${SOLIBS} \
     ${libexecdir}/ \
     "
-FILES:${PN}-skel = "\
-    ${datadir}/camx \
-    ${datadir}/qcom \
-    "
 FILES:${PN} = "\
     ${libdir}/libcamx_metadata_kodiak*${SOLIBS} \
     ${libdir}/camx/kodiak/*${SOLIBS} \
@@ -145,14 +137,11 @@ FILES:${PN}-dev = "\
     "
 FILES:${PN}-staticdev = "${libdir}/camx/kodiak/*.a"
 
-# Preserve ${PN},${PN}-skel naming to avoid ambiguity in package identification.
+# Preserve ${PN} naming to avoid ambiguity in package identification.
 DEBIAN_NOAUTONAME:${PN} = "1"
-DEBIAN_NOAUTONAME:${PN}-skel = "1"
 
 # Algo librarires are pre-compiled, pre-stripped.
-# Skipping QA checks: 'already-stripped', 'arch', 'libdir' because:
-# - Library files are Pre-stripped  (already-stripped)
-# - skel binaries/library are not AArch64 (arch mismatch)      (arch)
-# - Files are installed under /usr/share (non-libdir path) (libdir)
 INSANE_SKIP:${PN} = "already-stripped"
-INSANE_SKIP:${PN}-skel += " arch libdir already-stripped"
+
+CAMXLIB_SKEL_SOCS = "qcm6490"
+require camxlib-skel.inc
