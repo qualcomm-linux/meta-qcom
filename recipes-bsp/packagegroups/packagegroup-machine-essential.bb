@@ -176,6 +176,7 @@ RRECOMMENDS:${PN}-qcom-qcm2290-soc += " \
     kernel-module-ath10k-snoc \
     kernel-module-dispcc-qcm2290 \
     kernel-module-dwc3-qcom \
+    kernel-module-dwc3-qcom-legacy \
     kernel-module-gpucc-qcm2290 \
     kernel-module-q6adm \
     kernel-module-q6afe \
