@@ -5,4 +5,4 @@
 #
 
 # Root directory for Hexagon DSP libraries and FastRPC configuration
-HEXAGON_DSP_DIR ??= "${datadir}/qcom"
+HEXAGON_DSP_DIR ??= "${datadir}/hexagon-dsp"
