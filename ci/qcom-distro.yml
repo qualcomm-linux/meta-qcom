@@ -13,10 +13,6 @@ repos:
   meta-qcom-distro:
     url: https://github.com/qualcomm-linux/meta-qcom-distro
     branch: main
-    patches:
-      libcamera-0.8.0:
-        repo: meta-qcom
-        path: patches/meta-qcom-distro/0001-libcamera-refresh-the-CMA-patches-for-0.8.0.patch
 
   meta-openembedded:
     url: https://github.com/openembedded/meta-openembedded
