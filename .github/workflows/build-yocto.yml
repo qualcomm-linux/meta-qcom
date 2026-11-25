@@ -582,6 +582,14 @@ jobs:
                 type: u-boot-qcom-fit-6.18
                 dirname: "_linux-qcom-6.18_u-boot-qcom-fit"
                 yamlfile: ":ci/linux-qcom-6.18.yml:ci/u-boot-qcom.yml:ci/kernel-fit-image.yml"
+          - machine: nord-rrd
+            distro:
+                name: qcom-distro
+                yamlfile: ':ci/qcom-distro.yml'
+            kernel:
+                type: 7.3-es
+                dirname: "_linux-qcom-7.3-es"
+                yamlfile: ":ci/linux-qcom-7.3-es.yml"
           - machine: sdx75-idp
             distro:
                 name: nodistro
