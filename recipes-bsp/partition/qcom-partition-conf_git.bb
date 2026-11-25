@@ -10,7 +10,7 @@ inherit deploy allarch
 do_install[noexec] = "1"
 
 do_deploy() {
-    cd ${S}/platforms
+    cd ${S}/platforms/out
     for gpt in `find . -name gpt_main0.bin` ; do
         QCOM_PLATFORM_SUBDIR=${gpt%%/gpt_main0.bin}
         install -d ${DEPLOYDIR}/partitions/${QCOM_PLATFORM_SUBDIR}
