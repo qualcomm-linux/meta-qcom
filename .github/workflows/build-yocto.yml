@@ -570,6 +570,14 @@ jobs:
                 type: u-boot-qcom-fit
                 dirname: "_u-boot-qcom-fit"
                 yamlfile: ":ci/u-boot-qcom.yml:ci/kernel-fit-image.yml"
+          - machine: nord-rrd
+            distro:
+                name: qcom-distro
+                yamlfile: ':ci/qcom-distro.yml'
+            kernel:
+                type: 7.3-es
+                dirname: "_linux-qcom-7.3-es"
+                yamlfile: ":ci/linux-qcom-7.3-es.yml"
     uses: $/.github/workflows/compile.yml
     with:
       name: ${{ matrix.machine }}/${{ matrix.distro.name }}${{ matrix.kernel.dirname }}
