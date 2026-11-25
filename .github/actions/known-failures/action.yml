@@ -16,6 +16,15 @@ inputs:
       affects. Only that file is taken from it, and it is read as data.
     required: false
     default: ""
+  base:
+    description: >
+      Commit that the build merged "ref" into, such as the base commit of the
+      pull request event. The file is then read from the same merge, so that
+      entries the base has since changed are not taken from an older "ref".
+      It is ignored unless it is in the history of the checked out commit,
+      at or after the point "ref" branched from it.
+    required: false
+    default: ""
   kernel:
     description: >
       Kernel flavour under test. An entry that names a "kernels" filter only
@@ -39,6 +48,7 @@ runs:
         env:
           INPUTS_FILE: ${{ inputs.file }}
           INPUTS_REF: ${{ inputs.ref }}
+          INPUTS_BASE: ${{ inputs.base }}
           INPUTS_KERNEL: ${{ inputs.kernel }}
         run: |
           set -eo pipefail
@@ -48,8 +58,31 @@ runs:
               LIST="${RUNNER_TEMP}/known-failures.yml"
               rm -f "${LIST}"
               git fetch --no-tags origin "${INPUTS_REF}"
-              if git cat-file -e "FETCH_HEAD:${INPUTS_FILE}" 2>/dev/null; then
-                  git show "FETCH_HEAD:${INPUTS_FILE}" > "${LIST}"
+              COMMIT=$(git rev-parse --verify "FETCH_HEAD^{commit}")
+              # The base comes from the event file of the build, which the
+              # pull request can write. Only take a commit of the checked
+              # out history that the ref branched from, so that every entry
+              # comes from the ref or from that history.
+              BASE=""
+              if [ -n "${INPUTS_BASE}" ]; then
+                  if [[ "${INPUTS_BASE}" =~ ^[0-9a-f]{40}$ ]] &&
+                      git fetch --no-tags origin "${INPUTS_BASE}" &&
+                      git merge-base --is-ancestor "${INPUTS_BASE}" HEAD &&
+                      git merge-base --is-ancestor "$(git merge-base HEAD "${COMMIT}")" "${INPUTS_BASE}"; then
+                      BASE="${INPUTS_BASE}"
+                  else
+                      echo "::warning::ignoring the base of ${INPUTS_REF}, not a commit it branched from in the checked out history"
+                  fi
+              fi
+              if [ -n "${BASE}" ]; then
+                  if TREE=$(git merge-tree --write-tree "${BASE}" "${COMMIT}"); then
+                      COMMIT="${TREE}"
+                  else
+                      echo "::warning::${INPUTS_REF} does not merge into ${BASE}, reading ${INPUTS_FILE} from ${INPUTS_REF}"
+                  fi
+              fi
+              if git cat-file -e "${COMMIT}:${INPUTS_FILE}" 2>/dev/null; then
+                  git show "${COMMIT}:${INPUTS_FILE}" > "${LIST}"
               fi
           fi
           # An entry is either a bare test name or a mapping with a "test",

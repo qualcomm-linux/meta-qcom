@@ -34,6 +34,7 @@ jobs:
       branch: ${{ steps.branch.outputs.value }}
       pr_number: ${{ steps.branch.outputs.pr_number }}
       pr_url: ${{ steps.branch.outputs.pr_url }}
+      pr_base_sha: ${{ steps.branch.outputs.pr_base_sha }}
     steps:
       # github.event.workflow_run.pull_requests is empty for PRs opened from
       # forked repositories, so the target branch can't be read from the event
@@ -59,6 +60,9 @@ jobs:
           echo "::notice title=Pull request::PR #${PR_NUMBER} (${PR_URL})"
           echo "pr_number=$PR_NUMBER" >> "$GITHUB_OUTPUT"
           echo "pr_url=$PR_URL" >> "$GITHUB_OUTPUT"
+          # the build merged the pull request into this commit of its base
+          PR_BASE_SHA=$(jq -r '.pull_request.base.sha // "" | select(test("^[0-9a-f]{40}\\z")) // ""' event.json)
+          echo "pr_base_sha=$PR_BASE_SHA" >> "$GITHUB_OUTPUT"
 
   test:
     needs: determine-target-branch
@@ -76,6 +80,7 @@ jobs:
       pr_number: ${{ needs.determine-target-branch.outputs.pr_number }}
       pr_url: ${{ needs.determine-target-branch.outputs.pr_url }}
       pr_head_sha: ${{ github.event.workflow_run.head_sha }}
+      pr_base_sha: ${{ needs.determine-target-branch.outputs.pr_base_sha }}
 
   comment-on-pr:
     name: "Comment on PR"

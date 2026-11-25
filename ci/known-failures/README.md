@@ -25,5 +25,6 @@ the listed kernel flavours, as passed in `kernel` by `test.yml`
 (`linux-qcom-next` or `linux-qcom-6.18`); without it the entry applies to
 every kernel.
 
-For pull requests, the list is read from the head of the pull request,
-so a change can add or remove the entries it affects.
+For pull requests, the list is read from the pull request as it was
+built, its head merged into its base, so a change can add or remove the
+entries it affects.

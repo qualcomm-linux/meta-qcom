@@ -56,6 +56,10 @@ on:
         required: false
         type: string
         description: "Commit to read the known failures list from, instead of the checked out one. Set to the head of a pull request"
+      known_failures_base:
+        required: false
+        type: string
+        description: "Commit the build merged known_failures_ref into. The known failures list is read from the same merge"
     outputs:
       summary_id:
         description: "ID of the test summary artifact"
@@ -478,6 +482,7 @@ jobs:
         with:
           file: ${{ inputs.known_failures_file }}
           ref: ${{ inputs.known_failures_ref }}
+          base: ${{ inputs.known_failures_base }}
           kernel: ${{ inputs.kernel }}
 
       - name: Generate Summary
