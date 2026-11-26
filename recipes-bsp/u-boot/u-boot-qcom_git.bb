@@ -9,12 +9,13 @@ DEPENDS += "bc-native dtc-native gnutls-native python3-pyelftools-native qtestsi
 QCOM_UBOOT_SPL_FIT ?= "0"
 QCOM_UBOOT_SPL_FIT_ATF ?= ""
 QCOM_UBOOT_SPL_FIT_TEE ?= ""
+QCOM_SPL_FW_TYPE ?= "tz"
 
 # The machines using the SPL FIT name the recipes providing the FIT images.
 # The names stay empty for every other machine, so they add nothing there.
 DEPENDS += "${QCOM_UBOOT_SPL_FIT_ATF} ${QCOM_UBOOT_SPL_FIT_TEE}"
-# Swiv annotates the SPL before signing.
-DEPENDS += "${@bb.utils.contains('QCOM_UBOOT_SPL_FIT', '1', 'swiv-build-utility-native', '', d)}"
+# swiv annotates the SPL before signing, on the platforms that set QCOM_FW_SWIV_PLATFORM.
+DEPENDS += "${@'swiv-build-utility-native' if d.getVar('QCOM_UBOOT_SPL_FIT') == '1' and d.getVar('QCOM_FW_SWIV_PLATFORM') else ''}"
 
 COMPATIBLE_MACHINE:aarch64 = "(qcom)"
 
@@ -55,7 +56,8 @@ uboot_compile_config:append() {
     fi
 }
 
-# Rebuild the SPL ELF after uboot-sign, add the SWIV segment and sign it as TZ.
+# Rebuild the SPL ELF after uboot-sign and sign it as QCOM_SPL_FW_TYPE, adding
+# the SWIV segment first on the platforms that set QCOM_FW_SWIV_PLATFORM.
 uboot_assemble_fitimage_helper:append() {
     if [ "${QCOM_UBOOT_SPL_FIT}" = "1" ]; then
         mbn_header=$(uboot_config_get_indexed_value "${BOARD_MBN_HEADER}" $i)
@@ -65,8 +67,12 @@ uboot_assemble_fitimage_helper:append() {
         (unset LDFLAGS CFLAGS; oe_runmake -C ${S} O=${B}/${builddir} ${UBOOT_MAKE_OPTS} spl/u-boot-spl.elf)
 
         export CRYPTOGRAPHY_OPENSSL_NO_LEGACY=1
-        swiv_build_utility u-boot-spl-swiv.elf spl/u-boot-spl.elf ${QCOM_FW_SWIV_PLATFORM}
-        qtestsign -${mbn_header} tz -o u-boot-spl.mbn u-boot-spl-swiv.elf
+        spl_elf=spl/u-boot-spl.elf
+        if [ -n "${QCOM_FW_SWIV_PLATFORM}" ]; then
+            swiv_build_utility u-boot-spl-swiv.elf spl/u-boot-spl.elf ${QCOM_FW_SWIV_PLATFORM}
+            spl_elf=u-boot-spl-swiv.elf
+        fi
+        qtestsign -${mbn_header} ${QCOM_SPL_FW_TYPE} -o u-boot-spl.mbn ${spl_elf}
         rm -f u-boot-spl-swiv.elf
     fi
 }
