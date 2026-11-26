@@ -1,31 +1,5 @@
 # Known failures for qcom-distro, see README.md for the format.
 
-lemans-evk:
-  # the audio topology is found in both qcom/qcs9100 and qcom/sa8775p, and
-  # the test refuses to choose one
-  - test: AudioRecord
-    comment: https://github.com/qualcomm-linux/meta-qcom/issues/3547
-  - test: AudioRecord_Config01
-    comment: https://github.com/qualcomm-linux/meta-qcom/issues/3547
-  - test: AudioRecord_Config02
-    comment: https://github.com/qualcomm-linux/meta-qcom/issues/3547
-  - test: AudioRecord_Config03
-    comment: https://github.com/qualcomm-linux/meta-qcom/issues/3547
-  - test: AudioRecord_Config04
-    comment: https://github.com/qualcomm-linux/meta-qcom/issues/3547
-  - test: AudioRecord_Config05
-    comment: https://github.com/qualcomm-linux/meta-qcom/issues/3547
-  - test: AudioRecord_Config06
-    comment: https://github.com/qualcomm-linux/meta-qcom/issues/3547
-  - test: AudioRecord_Config07
-    comment: https://github.com/qualcomm-linux/meta-qcom/issues/3547
-  - test: AudioRecord_Config08
-    comment: https://github.com/qualcomm-linux/meta-qcom/issues/3547
-  - test: AudioRecord_Config09
-    comment: https://github.com/qualcomm-linux/meta-qcom/issues/3547
-  - test: AudioRecord_Config10
-    comment: https://github.com/qualcomm-linux/meta-qcom/issues/3547
-
 sm8750-mtp:
   # average FPS stays around 81 on a 120 Hz display, below the 102 threshold
   - test: weston-simple-egl
