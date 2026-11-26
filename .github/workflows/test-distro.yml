@@ -139,15 +139,15 @@ jobs:
           wait_for_job: true
           fail_action_on_failure: true
           fail_action_on_incomplete: true
-          save_result_as_artifact: true
+          save_result_as_artifact: false
           save_job_details: true
-          result_file_name: "${{ matrix.target.result_file }}"
           test_job_file_name_prefix: "${{ inputs.distro_name }}${{ inputs.distro_suffix }}-"
 
       # The submit step stops waiting at its timeout, or when the run is
       # canceled, but the LAVA job keeps its place in the queue or its
       # board. Cancel it.
       - name: Cancel the LAVA job left behind
+        id: cancel
         if: ${{ always() && steps.submit.outcome != 'success' }}
         timeout-minutes: 5
         shell: bash
@@ -163,6 +163,7 @@ jobs:
               JOB_API="https://${LAVA_URL}/api/v0.2/jobs/${JOB_ID}"
               STATE=$(curl -sS --fail-with-body --retry 3 --max-time 60 \
                   -H "Authorization: Token ${LAVA_TOKEN}" "${JOB_API}/" | jq -er '.state')
+              [ "${STATE}" = "Finished" ] || echo "unfinished=true" >> "$GITHUB_OUTPUT"
               case "${STATE}" in
               Submitted|Scheduling|Scheduled|Running)
                   echo "Canceling ${STATE} job https://${LAVA_URL}/scheduler/job/${JOB_ID}"
@@ -175,18 +176,36 @@ jobs:
               esac
           done
 
+      # The submit step does not save the results: for a job canceled in the
+      # LAVA queue it uploads an empty result, which the upload below does
+      # not reliably replace that soon after (409 Conflict).
+      #
       # A job that did not run to the end, usually because it waited in the
       # LAVA queue past the timeout above or was canceled there, leaves no
       # results or an empty result file, and neither can fail the Test
       # Results check. Report it as a failed LAVA job, in the format of the
       # real results.
-      - name: Report missing results as a failure
-        id: missing
+      - name: Get the test results
         if: ${{ !cancelled() }}
         env:
+          LAVA_TOKEN: ${{ secrets.LAVATOKEN }}
+          UNFINISHED: ${{ steps.cancel.outputs.unfinished == 'true' || steps.cancel.outcome == 'failure' }}
           RESULT_FILE: "${{ matrix.target.result_file }}.xml"
           JOB_DETAILS_PREFIX: "${{ inputs.distro_name }}${{ inputs.distro_suffix }}-test-job-"
         run: |
+          # the results of a job that had not finished above are incomplete
+          if [ "${UNFINISHED}" != "true" ]; then
+              for DETAILS in "${JOB_DETAILS_PREFIX}"*.json; do
+                  [ -f "${DETAILS}" ] || continue
+                  JOB_ID="${DETAILS#"${JOB_DETAILS_PREFIX}"}"
+                  JOB_ID="${JOB_ID%.json}"
+                  case "${JOB_ID}" in ''|*[!0-9]*) continue ;; esac
+                  curl -sS --fail-with-body --retry 3 --max-time 60 \
+                      -H "Authorization: Token ${LAVA_TOKEN}" -o "${RESULT_FILE}" \
+                      "https://${LAVA_URL}/api/v0.2/jobs/${JOB_ID}/junit/" \
+                      || rm -f "${RESULT_FILE}"
+              done
+          fi
           if grep -q '<testcase' "${RESULT_FILE}" 2>/dev/null; then
               exit 0
           fi
@@ -206,15 +225,14 @@ jobs:
             </testsuite>
           </testsuites>
           EOF
-          echo "missing=true" >> "$GITHUB_OUTPUT"
 
-      - name: Upload missing results report
-        if: ${{ !cancelled() && steps.missing.outputs.missing == 'true' }}
+      - name: Upload the test results
+        if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v6
         with:
           name: ${{ matrix.target.result_file }}
           path: ${{ matrix.target.result_file }}.xml
-          # replace an empty result, or the result of a previous attempt
+          # replace the result of a previous attempt
           overwrite: true
 
       - uses: qualcomm-linux/github-action-matrix-outputs-write@v3
@@ -336,15 +354,15 @@ jobs:
           wait_for_job: true
           fail_action_on_failure: true
           fail_action_on_incomplete: true
-          save_result_as_artifact: true
+          save_result_as_artifact: false
           save_job_details: true
-          result_file_name: "${{ matrix.target.result_file }}"
           test_job_file_name_prefix: "${{ inputs.distro_name }}${{ inputs.distro_suffix }}-"
 
       # The submit step stops waiting at its timeout, or when the run is
       # canceled, but the LAVA job keeps its place in the queue or its
       # board. Cancel it.
       - name: Cancel the LAVA job left behind
+        id: cancel
         if: ${{ always() && steps.submit.outcome != 'success' }}
         timeout-minutes: 5
         shell: bash
@@ -360,6 +378,7 @@ jobs:
               JOB_API="https://${LAVA_URL}/api/v0.2/jobs/${JOB_ID}"
               STATE=$(curl -sS --fail-with-body --retry 3 --max-time 60 \
                   -H "Authorization: Token ${LAVA_TOKEN}" "${JOB_API}/" | jq -er '.state')
+              [ "${STATE}" = "Finished" ] || echo "unfinished=true" >> "$GITHUB_OUTPUT"
               case "${STATE}" in
               Submitted|Scheduling|Scheduled|Running)
                   echo "Canceling ${STATE} job https://${LAVA_URL}/scheduler/job/${JOB_ID}"
@@ -372,18 +391,36 @@ jobs:
               esac
           done
 
+      # The submit step does not save the results: for a job canceled in the
+      # LAVA queue it uploads an empty result, which the upload below does
+      # not reliably replace that soon after (409 Conflict).
+      #
       # A job that did not run to the end, usually because it waited in the
       # LAVA queue past the timeout above or was canceled there, leaves no
       # results or an empty result file, and neither can fail the Test
       # Results check. Report it as a failed LAVA job, in the format of the
       # real results.
-      - name: Report missing results as a failure
-        id: missing
+      - name: Get the test results
         if: ${{ !cancelled() }}
         env:
+          LAVA_TOKEN: ${{ secrets.LAVATOKEN }}
+          UNFINISHED: ${{ steps.cancel.outputs.unfinished == 'true' || steps.cancel.outcome == 'failure' }}
           RESULT_FILE: "${{ matrix.target.result_file }}.xml"
           JOB_DETAILS_PREFIX: "${{ inputs.distro_name }}${{ inputs.distro_suffix }}-test-job-"
         run: |
+          # the results of a job that had not finished above are incomplete
+          if [ "${UNFINISHED}" != "true" ]; then
+              for DETAILS in "${JOB_DETAILS_PREFIX}"*.json; do
+                  [ -f "${DETAILS}" ] || continue
+                  JOB_ID="${DETAILS#"${JOB_DETAILS_PREFIX}"}"
+                  JOB_ID="${JOB_ID%.json}"
+                  case "${JOB_ID}" in ''|*[!0-9]*) continue ;; esac
+                  curl -sS --fail-with-body --retry 3 --max-time 60 \
+                      -H "Authorization: Token ${LAVA_TOKEN}" -o "${RESULT_FILE}" \
+                      "https://${LAVA_URL}/api/v0.2/jobs/${JOB_ID}/junit/" \
+                      || rm -f "${RESULT_FILE}"
+              done
+          fi
           if grep -q '<testcase' "${RESULT_FILE}" 2>/dev/null; then
               exit 0
           fi
@@ -403,15 +440,14 @@ jobs:
             </testsuite>
           </testsuites>
           EOF
-          echo "missing=true" >> "$GITHUB_OUTPUT"
 
-      - name: Upload missing results report
-        if: ${{ !cancelled() && steps.missing.outputs.missing == 'true' }}
+      - name: Upload the test results
+        if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v6
         with:
           name: ${{ matrix.target.result_file }}
           path: ${{ matrix.target.result_file }}.xml
-          # replace an empty result, or the result of a previous attempt
+          # replace the result of a previous attempt
           overwrite: true
 
   publish-test-summary:
