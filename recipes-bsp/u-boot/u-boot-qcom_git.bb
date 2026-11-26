@@ -1,6 +1,9 @@
 require recipes-bsp/u-boot/u-boot-common.inc
 require recipes-bsp/u-boot/u-boot.inc
 
+# The SPL FIT needs uboot-sign options that oe-core doesn't have yet.
+inherit ${@'qcom-uboot-sign' if d.getVar('QCOM_UBOOT_SPL_FIT') == '1' else ''}
+
 DEPENDS += "bc-native dtc-native gnutls-native python3-pyelftools-native qtestsign-native xxd-native"
 
 QCOM_UBOOT_SPL_FIT ?= "0"
