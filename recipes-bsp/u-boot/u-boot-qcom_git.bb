@@ -11,6 +11,8 @@ QCOM_UBOOT_SPL_FIT_ATF ?= ""
 QCOM_UBOOT_SPL_FIT_TEE ?= ""
 QCOM_UBOOT_SPL_FIT_FIRMWARE ?= ""
 QCOM_SPL_FW_TYPE ?= "tz"
+# "0" when the U-Boot config generates and signs spl/u-boot-spl.mbn itself.
+QCOM_UBOOT_SPL_MBN_SIGN ?= "1"
 
 # The machines using the SPL FIT name the recipes providing the FIT images.
 # The names stay empty for every other machine, so they add nothing there.
@@ -67,24 +69,34 @@ uboot_compile_config:append() {
     fi
 }
 
-# Rebuild the SPL ELF after uboot-sign and sign it as QCOM_SPL_FW_TYPE, adding
-# the SWIV segment first on the platforms that set QCOM_FW_SWIV_PLATFORM.
+# Rebuild the SPL after uboot-sign, and sign it as QCOM_SPL_FW_TYPE (with the
+# SWIV segment if QCOM_FW_SWIV_PLATFORM is set) unless U-Boot signs it.
 uboot_assemble_fitimage_helper:append() {
     if [ "${QCOM_UBOOT_SPL_FIT}" = "1" ]; then
         mbn_header=$(uboot_config_get_indexed_value "${BOARD_MBN_HEADER}" $i)
         [ -n "${mbn_header}" ] || mbn_header="v6"
 
-        rm -f spl/u-boot-spl.elf
-        (unset LDFLAGS CFLAGS; oe_runmake -C ${S} O=${B}/${builddir} ${UBOOT_MAKE_OPTS} spl/u-boot-spl.elf)
-
-        export CRYPTOGRAPHY_OPENSSL_NO_LEGACY=1
-        spl_elf=spl/u-boot-spl.elf
-        if [ -n "${QCOM_FW_SWIV_PLATFORM}" ]; then
-            swiv_build_utility u-boot-spl-swiv.elf spl/u-boot-spl.elf ${QCOM_FW_SWIV_PLATFORM}
-            spl_elf=u-boot-spl-swiv.elf
+        if [ "${QCOM_UBOOT_SPL_MBN_SIGN}" = "1" ]; then
+            spl_target=spl/u-boot-spl.elf
+        else
+            spl_target=spl/u-boot-spl.mbn
         fi
-        qtestsign -${mbn_header} ${QCOM_SPL_FW_TYPE} -o u-boot-spl.mbn ${spl_elf}
-        rm -f u-boot-spl-swiv.elf
+
+        rm -f ${spl_target} u-boot-spl.mbn
+        (unset LDFLAGS CFLAGS; oe_runmake -C ${S} O=${B}/${builddir} ${UBOOT_MAKE_OPTS} ${spl_target})
+
+        if [ "${QCOM_UBOOT_SPL_MBN_SIGN}" = "1" ]; then
+            export CRYPTOGRAPHY_OPENSSL_NO_LEGACY=1
+            spl_elf=spl/u-boot-spl.elf
+            if [ -n "${QCOM_FW_SWIV_PLATFORM}" ]; then
+                swiv_build_utility u-boot-spl-swiv.elf spl/u-boot-spl.elf ${QCOM_FW_SWIV_PLATFORM}
+                spl_elf=u-boot-spl-swiv.elf
+            fi
+            qtestsign -${mbn_header} ${QCOM_SPL_FW_TYPE} -o u-boot-spl.mbn ${spl_elf}
+            rm -f u-boot-spl-swiv.elf
+        else
+            install -m 0644 spl/u-boot-spl.mbn u-boot-spl.mbn
+        fi
     fi
 }
 
