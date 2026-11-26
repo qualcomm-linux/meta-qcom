@@ -10,8 +10,11 @@ QCOM_UBOOT_SPL_FIT ?= "0"
 QCOM_UBOOT_SPL_FIT_ATF ?= ""
 QCOM_UBOOT_SPL_FIT_TEE ?= ""
 
-# BL31 and OP-TEE go into the FIT, swiv annotates the SPL before signing.
-DEPENDS += "${@bb.utils.contains('QCOM_UBOOT_SPL_FIT', '1', '${QCOM_UBOOT_SPL_FIT_ATF} ${QCOM_UBOOT_SPL_FIT_TEE} swiv-build-utility-native', '', d)}"
+# The machines using the SPL FIT name the recipes providing the FIT images.
+# The names stay empty for every other machine, so they add nothing there.
+DEPENDS += "${QCOM_UBOOT_SPL_FIT_ATF} ${QCOM_UBOOT_SPL_FIT_TEE}"
+# Swiv annotates the SPL before signing.
+DEPENDS += "${@bb.utils.contains('QCOM_UBOOT_SPL_FIT', '1', 'swiv-build-utility-native', '', d)}"
 
 COMPATIBLE_MACHINE:aarch64 = "(qcom)"
 
