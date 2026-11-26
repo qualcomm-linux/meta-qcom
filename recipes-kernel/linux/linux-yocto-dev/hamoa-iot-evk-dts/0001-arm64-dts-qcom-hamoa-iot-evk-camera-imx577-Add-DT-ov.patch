@@ -19,12 +19,12 @@ Upstream-Status: Submitted [https://lore.kernel.org/all/20260227-hamoa_evk-v1-2-
  create mode 100644 arch/arm64/boot/dts/qcom/hamoa-iot-evk-camera-imx577.dtso
 
 diff --git a/arch/arm64/boot/dts/qcom/Makefile b/arch/arm64/boot/dts/qcom/Makefile
-index 1c86e7e98f55..a8e443fba7d5 100644
+index 88230c4e00ea..47fa02936d46 100644
 --- a/arch/arm64/boot/dts/qcom/Makefile
 +++ b/arch/arm64/boot/dts/qcom/Makefile
-@@ -19,6 +19,11 @@ dtb-$(CONFIG_ARCH_QCOM)	+= eliza-mtp.dtb
- dtb-$(CONFIG_ARCH_QCOM)	+= glymur-asus-zenbook-a16-ux3607oa.dtb
- dtb-$(CONFIG_ARCH_QCOM)	+= glymur-crd.dtb
+@@ -24,6 +24,11 @@ dtb-$(CONFIG_ARCH_QCOM)	+= glymur-lenovo-yoga-slim7x.dtb
+ dtb-$(CONFIG_ARCH_QCOM)	+= glymur-qcb.dtb
+ dtb-$(CONFIG_ARCH_QCOM)	+= hamoa-advantech-som-db5830.dtb
  dtb-$(CONFIG_ARCH_QCOM)	+= hamoa-iot-evk.dtb
 +dtb-$(CONFIG_ARCH_QCOM)	+= hamoa-iot-evk-camera-imx577.dtbo
 +
@@ -122,10 +122,10 @@ index 000000000000..f45a7fbd14b1
 +	status = "okay";
 +};
 diff --git a/arch/arm64/boot/dts/qcom/hamoa-iot-evk.dts b/arch/arm64/boot/dts/qcom/hamoa-iot-evk.dts
-index 9fa86bb6438e..c4c04cfdb557 100644
+index d0433cc3623f..950a9d545e45 100644
 --- a/arch/arm64/boot/dts/qcom/hamoa-iot-evk.dts
 +++ b/arch/arm64/boot/dts/qcom/hamoa-iot-evk.dts
-@@ -1351,6 +1351,22 @@ right_tweeter: speaker@0,1 {
+@@ -1349,6 +1349,22 @@ right_tweeter: speaker@0,1 {
  };
  
  &tlmm {
