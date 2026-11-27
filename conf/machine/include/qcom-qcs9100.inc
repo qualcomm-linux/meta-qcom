@@ -28,10 +28,6 @@ UBOOT_FIT_TEE_ENTRYPOINT ?= "0x1c300000"
 UBOOT_FIT_UBOOT_LOADADDRESS ?= "0xaf400000"
 UBOOT_FIT_UBOOT_ENTRYPOINT ?= "0xaf400000"
 
-# Recipes providing BL31 and OP-TEE for the FIT.
-QCOM_UBOOT_SPL_FIT_ATF ?= "trusted-firmware-a-qcom-lemans-evk"
-QCOM_UBOOT_SPL_FIT_TEE ?= "optee-os-qcom-lemans"
-
 # Platform name for the SWIV annotation of the firmware ELFs (U-Boot SPL and
 # TF-A BL2).
 QCOM_FW_SWIV_PLATFORM ?= "lemans"
