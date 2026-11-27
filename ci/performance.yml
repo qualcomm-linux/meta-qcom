@@ -7,3 +7,4 @@ local_conf_header:
     KERNEL_CMDLINE_EXTRA:append = " quiet systemd.tty.term.console=dumb initramfs.udev-root-only=1 initramfs.efivarfs=0"
   boot-menu: |
     SYSTEMD_BOOT_TIMEOUT:pn-esp-qcom-image = "menu-disabled"
+    OSTREE_SYSTEMD_BOOT_TIMEOUT = "menu-disabled"
