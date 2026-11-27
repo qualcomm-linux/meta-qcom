@@ -66,6 +66,10 @@ UKI_DEVICETREE ?= "${QCOM_UKI_DEVICETREE}"
 # Default serial console for QCOM devices
 SERIAL_CONSOLES ?= "115200;ttyMSM0"
 
+# The Qualcomm hardware watchdogs accept at most 31-32 seconds, below the
+# OE-Core default of 60 used for systemd RebootWatchdogSec.
+WATCHDOG_TIMEOUT ?= "30"
+
 # Increase INITRAMFS_MAXSIZE to 640 MiB to cover initramfs-kerneltest-full
 # image.  All our boards (except db410c) have 2GiB and db410c has 1GiB of RAM,
 # so this image would fit.
