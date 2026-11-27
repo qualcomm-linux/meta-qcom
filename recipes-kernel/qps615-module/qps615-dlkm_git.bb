@@ -7,7 +7,7 @@ LIC_FILES_CHKSUM = "file://${S}/drivers/net/ethernet/toshiba/tc956x/LICENSE;md5=
 
 inherit module
 
-SRCREV = "2cbd7b9ddf2318d58044dcbd57dc187dfca55034"
+SRCREV = "e6ec5dd1d7147721b1a7cf0e43b3c3fd4b010b98"
 
 SRC_URI = "git://github.com/qualcomm-linux/TC9564_Host_Driver.git;protocol=https;branch=qcom"
 
