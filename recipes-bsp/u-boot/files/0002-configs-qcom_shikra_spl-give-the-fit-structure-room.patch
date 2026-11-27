@@ -1,0 +1,44 @@
+From 42ed961392fc4d3510cdb124232de926e1122613 Mon Sep 17 00:00:00 2001
+From: Viswanath Kraleti <viswanath.kraleti@oss.qualcomm.com>
+Date: Sun, 22 Nov 2026 15:33:30 +0530
+Subject: [PATCH] workaround: configs: qcom_shikra_spl: give the fit structure
+ room for image signatures
+
+The SPL loads the FIT structure at CONFIG_SPL_LOAD_FIT_ADDRESS and keeps
+reading it while it loads and starts QcLib. At 0x0C2C1800 it has 8 KiB
+before qclib_1, which loads at 0x0C2C3800. That is enough for a FIT with
+signed configurations, but with SPL_SIGN_INDIVIDUAL the structure grows
+to about 12 KiB and loading qclib_1 overwrites its end.
+
+Move it to 0x0C2B1800, right after the ECC blob slot (0x0C2B1400 +
+0x400). Nothing else uses 0x0C2B1800-0x0C2C3800, so the structure gets
+72 KB, and it stays inside the BOOTIMEM range flushed before QcLib runs.
+
+Upstream-Status: Submitted [https://github.com/qualcomm-linux/u-boot/pull/243]
+
+Assisted-by: Claude Code:claude-opus-5-5
+Signed-off-by: Viswanath Kraleti <viswanath.kraleti@oss.qualcomm.com>
+---
+ configs/qcom_shikra_spl_defconfig | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/configs/qcom_shikra_spl_defconfig b/configs/qcom_shikra_spl_defconfig
+index 5d1bc5d40fe..9f6cdab0f48 100644
+--- a/configs/qcom_shikra_spl_defconfig
++++ b/configs/qcom_shikra_spl_defconfig
+@@ -59,7 +59,7 @@ CONFIG_SPL_ATF=y
+ CONFIG_SPL_ATF_LOAD_IMAGE_V2=y
+ CONFIG_SPL_ATF_NO_PLATFORM_PARAM=y
+ CONFIG_SPL_HAS_LOAD_FIT_ADDRESS=y
+-CONFIG_SPL_LOAD_FIT_ADDRESS=0x0C2C1800
++CONFIG_SPL_LOAD_FIT_ADDRESS=0x0C2B1800
+ # CONFIG_SPL_SHARES_INIT_SP_ADDR is not set
+ CONFIG_SPL_HAVE_INIT_STACK=y
+ CONFIG_SPL_STACK=0x0C294800
+@@ -81,4 +81,4 @@ CONFIG_QCOM_DDR_TRAINING_SUPPORTED=y
+ CONFIG_QCOM_DDR_TRAINING_USE_PARTITION_NAME=y
+ CONFIG_QCOM_DDR_TRAINING_PARTITION_NAME="ddr"
+ CONFIG_QCOM_SPL_BOOTIMEM_DDR_TRAINING_BASE=0x0c368000
+-CONFIG_QCOM_SPL_BOOTIMEM_DDR_TRAINING_SIZE=0x8000
+\ No newline at end of file
++CONFIG_QCOM_SPL_BOOTIMEM_DDR_TRAINING_SIZE=0x8000
