@@ -24,7 +24,7 @@ on:
         description: "Token used to submit jobs to the LAVA lab"
 env:
   # git sha, tag or branch in lava-test-plans repository
-  LAVA_TEST_PLANS_REF: "ea0d2b04a1abe6332e7c55743dc84e34d672a9f5"
+  LAVA_TEST_PLANS_REF: "ca56cf7a46b0b971131d45188aea2beda262df15"
   # CalVer tag in qcom-linux-testkit repository (format: testkit-YYYY.MM.DD)
   TESTKIT_REF: "testkit-2026.11.13"
 
