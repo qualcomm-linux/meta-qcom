@@ -11,21 +11,5 @@ SRC_URI[camxtest.sha256sum] = "79eae0fc8f3f8a35e5682de37a1c669ad3b4a0afb84a1f9ba
 
 DEPENDS += "opencv userspace-resource-manager"
 
-do_install:append() {
-    # copy skel file
-    install -d ${D}${datadir}/qcom
-    cp -r ${S}/usr/share/qcom/x1e80100 ${D}${datadir}/qcom/
-}
-PACKAGE_BEFORE_PN += "${PN}-skel"
-RDEPENDS:${PN} += "${PN}-skel"
-FILES:${PN}-skel = "${datadir}/qcom"
-# Algo librarires are pre-compiled, pre-stripped.
-# Skipping QA checks: 'already-stripped', 'arch', 'libdir' because:
-# - Library files are Pre-stripped  (already-stripped)
-# - skel binaries/library are not AArch64 (arch mismatch)      (arch)
-# - Files are installed under /usr/share (non-libdir path) (libdir)
-# - .so symlink is used for runtime DSP usage, not a dev artifact (dev-so)
-INSANE_SKIP:${PN}-skel += " arch libdir already-stripped dev-so"
-
-# Preserve ${PN}-skel naming to avoid ambiguity in package identification.
-DEBIAN_NOAUTONAME:${PN}-skel = "1"
+CAMXLIB_SKEL_SOCS = "x1e80100 glymur"
+require camxlib-skel.inc

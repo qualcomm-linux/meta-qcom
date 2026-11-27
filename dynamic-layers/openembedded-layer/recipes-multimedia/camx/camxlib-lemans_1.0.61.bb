@@ -22,10 +22,6 @@ do_install:append() {
         install -d ${D}${sysconfdir}/camera/test/NHX/
         cp -r ${S}/etc/camera/test/NHX/*.json ${D}${sysconfdir}/camera/test/NHX/
     fi
-    # copy Deep Learning based binary
-    cp -r ${S}/usr/share/camx ${D}${datadir}
-    # copy skel file
-    cp -r ${S}/usr/share/qcom ${D}${datadir}
 
     # Remove OpenCL-dependent libraries when opencl is not enabled.
     if ${@bb.utils.contains('DISTRO_FEATURES', 'opencl', 'false', 'true', d)}; then
@@ -36,16 +32,11 @@ do_install:append() {
 }
 
 RPROVIDES:${PN} = "camxlib-monaco"
-PACKAGE_BEFORE_PN += "camx-nhx ${PN}-skel"
-RDEPENDS:${PN} += "${PN}-skel"
+PACKAGE_BEFORE_PN += "camx-nhx"
 
 FILES:camx-nhx = "\
     ${bindir}/camera-nhx \
     ${sysconfdir}/camera/test/NHX/ \
-"
-FILES:${PN}-skel = "\
-    ${datadir}/camx \
-    ${datadir}/qcom \
 "
 # OpenCL-related camx files
 CAMX_OPENCL_FILES = " \
@@ -54,13 +45,5 @@ CAMX_OPENCL_FILES = " \
 "
 FILES:${PN} += "${@bb.utils.contains('DISTRO_FEATURES', 'opencl', '${CAMX_OPENCL_FILES}', '', d)}"
 
-# Algo librarires are pre-compiled, pre-stripped.
-# Skipping QA checks: 'already-stripped', 'arch', 'libdir' because:
-# - Library files are Pre-stripped  (already-stripped)
-# - skel binaries/library are not AArch64 (arch mismatch)      (arch)
-# - Files are installed under /usr/share (non-libdir path) (libdir)
-# - .so symlink is used for runtime DSP usage, not a dev artifact (dev-so)
-INSANE_SKIP:${PN}-skel += " arch libdir already-stripped dev-so"
-
-# Preserve ${PN}-skel naming to avoid ambiguity in package identification.
-DEBIAN_NOAUTONAME:${PN}-skel = "1"
+CAMXLIB_SKEL_SOCS = "qcs8300 sa8775p"
+require camxlib-skel.inc

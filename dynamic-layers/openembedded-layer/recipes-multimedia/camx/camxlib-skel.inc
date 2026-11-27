@@ -1,0 +1,25 @@
+inherit hexagon-dsp
+
+do_install:append() {
+    install -d ${D}${HEXAGON_DSP_DIR}
+    for soc in ${CAMXLIB_SKEL_SOCS}; do
+        cp -r ${S}/usr/share/qcom/$soc ${D}${HEXAGON_DSP_DIR}/
+    done
+
+    # copy Deep Learning based binary
+    if [ -d ${S}/usr/share/camx ]; then
+        cp -r ${S}/usr/share/camx ${D}${datadir}
+    fi
+}
+
+PACKAGE_BEFORE_PN += "${PN}-skel"
+RDEPENDS:${PN} += "${PN}-skel"
+FILES:${PN}-skel += "${datadir}/camx ${HEXAGON_DSP_DIR}"
+
+# The skel libraries are prebuilt Hexagon DSP binaries, loaded by FastRPC from
+# a data directory.
+INSANE_SKIP:${PN}-skel += "arch libdir already-stripped dev-so ldflags"
+SKIP_FILEDEPS:${PN}-skel = "1"
+
+# Preserve ${PN}-skel naming to avoid ambiguity in package identification.
+DEBIAN_NOAUTONAME:${PN}-skel = "1"
