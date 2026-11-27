@@ -50,6 +50,8 @@ FILES:${PN} += " \
 
 FILES:${PN}-dev:remove = "${FILES_SOLIBSDEV}"
 
+RDEPENDS:${PN} += "acl"
+
 RDEPENDS:${PN}-ptest += "${PN}-tests"
 
 # We need to include lib*dsprpc.so into fastrpc for compatibility with Hexagon SDK
