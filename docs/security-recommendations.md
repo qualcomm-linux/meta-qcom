@@ -123,3 +123,31 @@ In production builds, `adbd` must not run as root.
 Limit root ADB access to development/debug use only.
 
 **Deployers are expected to disable root ADB access as part of production deployment customization before commercialization.**
+
+## 6. Read-only root filesystem
+
+Qualcomm Linux root filesystems are read-write by default.
+A read-only root filesystem can be enabled using the Openembedded core read-only-rootfs image feature.
+
+### Recommendation
+
+For commercial/production builds, it is recommended to configure the root filesystem as read-only.
+A read-only root filesystem prevents modifications to the root filesystem at runtime, helping to protect system files against unintended or unauthorized changes.
+
+In a meta-qcom based OE build, enable the feature in the required image recipe. For example, for qcom-minimal-image:
+
+```text
+IMAGE_FEATURES += "read-only-rootfs"
+```
+
+The read-only-rootfs image feature configures the generated root filesystem to be mounted read-only at runtime.
+
+Packages included in a read-only root filesystem image must complete any required configuration during image creation. Packages that rely on delayed post-installation operations that modify the root filesystem at runtime must be updated or otherwise handled appropriately; such packages can cause the image build to fail when read-only-rootfs is enabled.
+
+After building, flashing, and booting the image, verify that the root filesystem is mounted read-only:
+
+```text
+mount | grep " on / "
+```
+
+The mount options for / should indicate ro.
