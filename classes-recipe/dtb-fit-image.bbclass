@@ -96,8 +96,9 @@ python do_generate_qcom_fitimage() {
             existing = base_compats.get(base_dtb_id, "")
             base_compats[base_dtb_id] = (existing + " " + compat_str).strip()
 
-    # Emit DTB/DTBO sections for every entry from KERNEL_DEVICETREE
-    for fname in files_set:
+    # Emit DTB/DTBO sections for every entry from KERNEL_DEVICETREE, sorted
+    # so that the node order and the configuration numbering are stable
+    for fname in sorted(files_set):
         dtb_path = os.path.join(dtb_dir, fname)
         if not os.path.exists(dtb_path):
             bb.fatal(f"Required file '{fname}' not found at '{dtb_path}'.")

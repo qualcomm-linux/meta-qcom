@@ -150,7 +150,7 @@ python do_qcom_img_deploy() {
 
             if initrd:
                 template = "boot-sd-%s-%s-%s-ext-dtb.img" if external else "boot-sd-%s-%s-%s.img"
-                make_initramfs_image(template, rootfs, initrd, d.getVar("INITRAMFS_IMAGE"))
+                make_initramfs_image(template, sd_rootfs, initrd, d.getVar("INITRAMFS_IMAGE"))
 
     if not d.getVar("QCOM_BOOTIMG_DEVICETREE") and not d.getVar("KERNEL_DEVICETREE"):
         bb.fatal("Either QCOM_BOOTIMG_DEVICETREE or KERNEL_DEVICETREE needed for linux-qcom-bootimg.bbclass")
@@ -168,7 +168,7 @@ python do_qcom_img_deploy() {
 }
 
 do_qcom_img_deploy[depends] += "skales-native:do_populate_sysroot"
-do_qcom_img_deploy[vardeps] = "QCOM_BOOTIMG_PAGE_SIZE QCOM_BOOTIMG_KERNEL_BASE KERNEL_CMDLINE_EXTRA QCOM_BOOTIMG_ROOTFS"
+do_qcom_img_deploy[vardeps] = "QCOM_BOOTIMG_PAGE_SIZE QCOM_BOOTIMG_KERNEL_BASE KERNEL_CMDLINE_EXTRA QCOM_BOOTIMG_ROOTFS SD_QCOM_BOOTIMG_ROOTFS SERIAL_CONSOLES"
 
 addtask qcom_img_deploy after do_deploy before do_build
 
