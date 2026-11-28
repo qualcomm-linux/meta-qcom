@@ -21,8 +21,8 @@ KERNEL_PAHOLE ?= '${@bb.utils.contains("BBFILE_COLLECTIONS", "openembedded-layer
 do_configure[depends] += '${@oe.utils.vartrue("KERNEL_PAHOLE", "pahole-native:do_populate_sysroot", "", d)}'
 EXTRA_OEMAKE += '${@oe.utils.vartrue("KERNEL_PAHOLE", "", "PAHOLE=false", d)}'
 
-# tag: qcom-7.3-es-20261127
-SRCREV ?= "f95930c7fa1a7536a199b9cc2a06f6bf20d22f46"
+# tag: qcom-7.3-es-20261128
+SRCREV ?= "9197672118be52d65b89cbafe71ad86af16c82aa"
 
 SRCBRANCH ?= "nobranch=1"
 SRCBRANCH:class-devupstream ?= "branch=qcom-7.3-es"
