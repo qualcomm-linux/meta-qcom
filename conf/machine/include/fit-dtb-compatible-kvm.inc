@@ -19,7 +19,7 @@
 # ---------- nord ----------
 FIT_DTB_COMPATIBLE[qcom_qam8x97p-qam] = "nord-ride-embedded nord-embedded-el2"
 FIT_DTB_COMPATIBLE[qcom_nord-qam] = "nord-rrd nord-embedded-el2"
-FIT_DTB_COMPATIBLE[qcom_qam8x97p-qam-camx] = "nord-ride-embedded nord-embedded-el2 nord-ride-embedded-camx"
-FIT_DTB_COMPATIBLE[qcom_nord-qam-camx] = "nord-rrd nord-embedded-el2 nord-rrd-camx"
+FIT_DTB_COMPATIBLE[qcom_qam8x97p-qam-camx] = "nord-ride-embedded nord-embedded-el2 nord-ride-embedded-camx nord-camx-el2"
+FIT_DTB_COMPATIBLE[qcom_nord-qam-camx] = "nord-rrd nord-embedded-el2 nord-rrd-camx nord-camx-el2"
 FIT_DTB_COMPATIBLE[qcom_iq10800md-qam] = "nord-rrd nord-embedded-el2"
-FIT_DTB_COMPATIBLE[qcom_iq10800md-qam-camx] = "nord-rrd nord-embedded-el2 nord-rrd-camx"
+FIT_DTB_COMPATIBLE[qcom_iq10800md-qam-camx] = "nord-rrd nord-embedded-el2 nord-rrd-camx nord-camx-el2"
