@@ -1,0 +1,54 @@
+From 68395db95263a75054e77f27128e4de85e75f241 Mon Sep 17 00:00:00 2001
+From: Pratik Pachange <ppachang@qti.qualcomm.com>
+Date: Tue, 17 Nov 2026 16:16:13 +0530
+Subject: [PATCH] cmake: skip ort_core patch step when using prebuilt ORT
+
+When onnxruntime_ORT_HOME points to a prebuilt ONNX Runtime, ORT core is
+not built from source, but the ort_core_target ExternalProject still runs
+patch 0004 against the ORT core source tree. In offline builds
+(FETCHCONTENT_FULLY_DISCONNECTED=ON) that tree is never populated, so
+patch fails with "can't find file to patch" and aborts the build.
+
+Patch 0004 only touches ORT core's unit test cmake, which is irrelevant
+for prebuilt ORT, so only apply it when building ORT core from source.
+
+Upstream-Status: Submitted [https://github.com/onnxruntime/onnxruntime-qnn/pull/1104]
+Signed-off-by: Pratik Pachange <ppachang@qti.qualcomm.com>
+---
+ cmake/external/onnxruntime_prebuilt.cmake | 14 ++++++++++++--
+ 1 file changed, 12 insertions(+), 2 deletions(-)
+
+diff --git a/cmake/external/onnxruntime_prebuilt.cmake b/cmake/external/onnxruntime_prebuilt.cmake
+index f4d89054e4..f6e6309350 100644
+--- a/cmake/external/onnxruntime_prebuilt.cmake
++++ b/cmake/external/onnxruntime_prebuilt.cmake
+@@ -224,14 +224,24 @@ foreach(_file IN LISTS ORT_BINARY_FILES)
+     list(APPEND ORT_BUILD_BYPRODUCTS "${ORT_PREBUILT_DEST}/${_file}")
+ endforeach()
+ 
++# Patch 0004 only touches ORT core's own unit test cmake, which is only used when
++# ORT core is built from source. With a prebuilt ORT (onnxruntime_ORT_HOME) the
++# ORT core source tree may not be populated at all (e.g. FETCHCONTENT_FULLY_DISCONNECTED),
++# so skip the patch step in that case.
++if(onnxruntime_ORT_HOME)
++    set(ORT_PATCH_COMMAND "")
++else()
++    set(ORT_PATCH_COMMAND ${Patch_EXECUTABLE} --ignore-whitespace -p1
++        -i "${CMAKE_SOURCE_DIR}/patches/ort_core/0004-Guard-QNN_LIB_FILES-copy-in-onnxruntime-unittests.patch")
++endif()
++
+ message(STATUS "ORT_BUILD_COMMAND for ExternalProject: ${ORT_BUILD_COMMAND}")
+ ExternalProject_Add(
+     ort_core_target
+     SOURCE_DIR ${ORT_SOURCE_DIR}
+     BINARY_DIR ${ORT_BUILD_DIR}
+     DOWNLOAD_COMMAND ""
+-    PATCH_COMMAND ${Patch_EXECUTABLE} --ignore-whitespace -p1
+-                  -i "${CMAKE_SOURCE_DIR}/patches/ort_core/0004-Guard-QNN_LIB_FILES-copy-in-onnxruntime-unittests.patch"
++    PATCH_COMMAND ${ORT_PATCH_COMMAND}
+     CONFIGURE_COMMAND ""
+     BUILD_COMMAND ${ORT_BUILD_COMMAND}
+     BUILD_ALWAYS ON
+-- 
+2.34.1
+
