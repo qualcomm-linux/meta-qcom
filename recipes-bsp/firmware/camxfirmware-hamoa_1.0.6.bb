@@ -5,7 +5,7 @@ LIC_FILES_CHKSUM = "file://usr/share/doc/${BPN}/LICENSE.QCOM-2.txt;md5=165287851
 
 PBT_BUILD_DATE = "260911"
 PBT_BRANCH = "master"
-SRC_URI = "https://qartifactory-edge.qualcomm.com/artifactory/qsc_releases/software/chip/component/camx.qclinux.0.0/${PBT_BUILD_DATE}/prebuilt_yocto_${PBT_BRANCH}/${BPN}_${PV}_armv8-2a.tar.gz"
+SRC_URI = "https://softwarecenter.qualcomm.com/nexus/generic/software/chip/component/camx.qclinux.0.0/${PBT_BUILD_DATE}/prebuilt_yocto_${PBT_BRANCH}/${BPN}_${PV}_armv8-2a.tar.gz"
 SRC_URI[sha256sum] = "21c27f927c8a8d5caa97ae70a49fa57d513c8c6b9232fba2dc0503f6b7fd0fac"
 
 S = "${UNPACKDIR}"
