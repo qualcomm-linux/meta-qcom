@@ -16,6 +16,10 @@ repos:
 
   meta-openembedded:
     url: https://github.com/openembedded/meta-openembedded
+    patches:
+      rsyslog-journal-forward:
+        repo: meta-qcom
+        path: patches/meta-oe/0001-rsyslog-enable-journal-forwarding-to-syslog.socket.patch
     layers:
       meta-filesystems:
       meta-gnome:

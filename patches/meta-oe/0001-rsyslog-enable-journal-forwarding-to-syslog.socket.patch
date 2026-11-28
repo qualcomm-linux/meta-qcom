@@ -1,0 +1,64 @@
+From 4eee65961b80fdeab5ab9a20aa2c16ea31973c82 Mon Sep 17 00:00:00 2001
+From: Ricardo Salveti <ricardo.salveti@oss.qualcomm.com>
+Date: Thu, 26 Nov 2026 03:08:03 +0000
+Subject: [PATCH] rsyslog: enable journal forwarding to syslog.socket
+
+OE-Core 63d049fc71 ("systemd-conf: stop forwarding journal to syslog by
+default") dropped ForwardToSyslog=yes from the default journald
+configuration. rsyslog.service requires syslog.socket and imuxsock
+listens on /run/systemd/journal/syslog, which journald only feeds when
+forwarding is enabled, so rsyslog stopped receiving userspace messages.
+
+Install a journald drop-in enabling it, as OE-Core 6791afe5de did for
+sysklogd. Skip it with the imjournal PACKAGECONFIG, where rsyslog reads
+the journal itself and forwarding would log every message twice.
+
+AI-Generated: Uses Claude Code (Claude Opus 5.5)
+Signed-off-by: Ricardo Salveti <ricardo.salveti@oss.qualcomm.com>
+Upstream-Status: Submitted [https://patchwork.yoctoproject.org/project/oe/patch/20261126232444.2165603-1-ricardo.salveti@oss.qualcomm.com/]
+---
+ meta-oe/recipes-extended/rsyslog/rsyslog/50-rsyslog.conf | 2 ++
+ meta-oe/recipes-extended/rsyslog/rsyslog_8.2610.0.bb     | 8 +++++++-
+ 2 files changed, 9 insertions(+), 1 deletion(-)
+ create mode 100644 meta-oe/recipes-extended/rsyslog/rsyslog/50-rsyslog.conf
+
+diff --git a/meta-oe/recipes-extended/rsyslog/rsyslog/50-rsyslog.conf b/meta-oe/recipes-extended/rsyslog/rsyslog/50-rsyslog.conf
+new file mode 100644
+index 0000000000..29a7331b3c
+--- /dev/null
++++ b/meta-oe/recipes-extended/rsyslog/rsyslog/50-rsyslog.conf
+@@ -0,0 +1,2 @@
++[Journal]
++ForwardToSyslog=yes
+diff --git a/meta-oe/recipes-extended/rsyslog/rsyslog_8.2610.0.bb b/meta-oe/recipes-extended/rsyslog/rsyslog_8.2610.0.bb
+index eb46ef086a..66ff14e746 100644
+--- a/meta-oe/recipes-extended/rsyslog/rsyslog_8.2610.0.bb
++++ b/meta-oe/recipes-extended/rsyslog/rsyslog_8.2610.0.bb
+@@ -22,6 +22,7 @@ SRC_URI = "https://www.rsyslog.com/files/download/rsyslog/${BPN}-${PV}.tar.gz \
+            file://rsyslog.conf \
+            file://rsyslog.logrotate \
+            file://rsyslog.service \
++           file://50-rsyslog.conf \
+            file://run-ptest \
+            file://0001-tests-disable-the-check-for-inotify.patch \
+            file://0001-tests-tcpflood.c-Pass-correct-parameter-type-to-send.patch \
+@@ -168,10 +169,15 @@ do_install:append() {
+         install -d ${D}${systemd_system_unitdir}
+         install -m 644 ${UNPACKDIR}/rsyslog.service ${D}${systemd_system_unitdir}
+         sed -i -e "s,@sbindir@,${sbindir},g" ${D}${systemd_system_unitdir}/rsyslog.service
++        # rsyslog.service reads syslog.socket, which journald only feeds
++        # when ForwardToSyslog is enabled. imjournal reads the journal itself.
++        if ${@bb.utils.contains('PACKAGECONFIG', 'imjournal', 'false', 'true', d)}; then
++            install -D -m 0644 ${UNPACKDIR}/50-rsyslog.conf ${D}${systemd_unitdir}/journald.conf.d/50-rsyslog.conf
++        fi
+     fi
+ }
+ 
+-FILES:${PN} += "${bindir}"
++FILES:${PN} += "${bindir} ${systemd_unitdir}/journald.conf.d/50-rsyslog.conf"
+ 
+ INITSCRIPT_NAME = "syslog"
+ INITSCRIPT_PARAMS = "defaults"
+-- 
+2.43.0
+
