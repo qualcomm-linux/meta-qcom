@@ -107,8 +107,7 @@ FILES:${PN}-common = "${libdir}/libQCGPUCompiler.so.* \
                       ${libdir}/libgsl.so.1 \
                       ${libdir}/libadreno_utils.so.1 \
                       ${libdir}/libq3dtools_*.so.* \
-                      ${sysconfdir}/modprobe.d/qcom-adreno.conf \
-                      ${sysconfdir}/profile.d/qcom-adreno_env.sh"
+                      ${sysconfdir}/modprobe.d/qcom-adreno.conf"
 FILES:${PN}-egl = "${libdir}/libEGL_adreno.so.1 \
                    ${@bb.utils.contains('DISTRO_FEATURES', 'wayland', '${libdir}/libeglSubDriverWayland.so.*', '', d)} \
                    ${@bb.utils.contains('DISTRO_FEATURES', 'x11', '${libdir}/libeglSubDriverX11.so.*', '', d)} \
