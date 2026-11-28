@@ -161,7 +161,7 @@ jobs:
               JOB_ID="${JOB_ID%.json}"
               case "${JOB_ID}" in ''|*[!0-9]*) continue ;; esac
               JOB_API="https://${LAVA_URL}/api/v0.2/jobs/${JOB_ID}"
-              STATE=$(curl -sS --fail-with-body --retry 3 --max-time 60 \
+              STATE=$(curl -sS --fail --retry 3 --max-time 60 \
                   -H "Authorization: Token ${LAVA_TOKEN}" "${JOB_API}/" | jq -er '.state')
               [ "${STATE}" = "Finished" ] || echo "unfinished=true" >> "$GITHUB_OUTPUT"
               case "${STATE}" in
@@ -376,7 +376,7 @@ jobs:
               JOB_ID="${JOB_ID%.json}"
               case "${JOB_ID}" in ''|*[!0-9]*) continue ;; esac
               JOB_API="https://${LAVA_URL}/api/v0.2/jobs/${JOB_ID}"
-              STATE=$(curl -sS --fail-with-body --retry 3 --max-time 60 \
+              STATE=$(curl -sS --fail --retry 3 --max-time 60 \
                   -H "Authorization: Token ${LAVA_TOKEN}" "${JOB_API}/" | jq -er '.state')
               [ "${STATE}" = "Finished" ] || echo "unfinished=true" >> "$GITHUB_OUTPUT"
               case "${STATE}" in
