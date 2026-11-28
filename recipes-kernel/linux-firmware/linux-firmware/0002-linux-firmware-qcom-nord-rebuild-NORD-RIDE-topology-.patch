@@ -1,0 +1,31 @@
+From ca5e7e46ab68d0845b4c044e97fc6ded59034576 Mon Sep 17 00:00:00 2001
+From: Mohammad Rafi Shaik <mohammad.rafi.shaik@oss.qualcomm.com>
+Date: Tue, 24 Nov 2026 14:30:00 +0530
+Subject: [PATCH] linux-firmware: qcom: nord: rebuild NORD-RIDE topology with
+ the playback fix
+
+The NORD-RIDE topology from the v1.0.5 sync is built from an
+audioreach-topology tree whose nord-ride playback device graph is missing
+a comma, so the graph values end up misconfigured and playback fails on
+the Nord RIDE board.
+
+Rebuild NORD-RIDE-tplg.bin from audioreach-topology 44110d19, which is the
+same v1.0.5 content plus that fix.
+
+Link: https://github.com/linux-msm/audioreach-topology/pull/93
+Signed-off-by: Mohammad Rafi Shaik <mohammad.rafi.shaik@oss.qualcomm.com>
+Upstream-Status: Pending [fix merged in audioreach-topology as 44110d19; waiting for the next linux-firmware sync]
+---
+ qcom/nord/NORD-RIDE-tplg.bin | Bin 11116 -> 11116 bytes
+ 1 file changed, 0 insertions(+), 0 deletions(-)
+
+diff --git a/qcom/nord/NORD-RIDE-tplg.bin b/qcom/nord/NORD-RIDE-tplg.bin
+index e8a1920da91bff705824ebe3b2be87e5d4b7191e..159b8e004dcc296f51f568e58f54aabc68b8a0eb 100644
+GIT binary patch
+delta 22
+ecmaD8_9kq@38BdoL^K$gChrtc-z*^<A^`w%#|T0I
+
+delta 78
+zcmaD8_9kq@2_Z)&1_lOhMj!zMJU|-6<c0G2fiy^70LmAH(n3HQ#1sY*n>mG(B>-E@
+B1|a|d
+
