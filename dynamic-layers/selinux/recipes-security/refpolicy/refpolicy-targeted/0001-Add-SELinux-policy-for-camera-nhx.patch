@@ -22,11 +22,14 @@ Upstream-Status: Inappropriate [Qualcomm specific change]
 
 Signed-off-by: Rohit Biradar <rohibira@qti.qualcomm.com>
 ---
- policy/modules.conf                 |  6 ++
- policy/modules/services/qcom_nhx.fc | 10 ++++
- policy/modules/services/qcom_nhx.if | 89 ++++++++++++++++++++++++++++
- policy/modules/services/qcom_nhx.te | 91 +++++++++++++++++++++++++++++
- 4 files changed, 196 insertions(+)
+ policy/modules.conf                 |   6 ++
+ policy/modules/kernel/devices.fc    |   1 +
+ policy/modules/kernel/devices.if    |  36 +++++++++++
+ policy/modules/services/qcom_nhx.fc |  10 ++++
+ policy/modules/services/qcom_nhx.if |  89 ++++++++++++++++++++++++++
+ policy/modules/services/qcom_nhx.te |  86 ++++++++++++++++++++++++++
+ policy/modules/system/init.if       |  18 ++++++
+ 7 files changed, 246 insertions(+)
  create mode 100644 policy/modules.conf
  create mode 100644 policy/modules/services/qcom_nhx.fc
  create mode 100644 policy/modules/services/qcom_nhx.if
@@ -60,6 +63,101 @@ index 0000000..73c0a5a
 +
 +# Label camera cache files
 +/var/cache/camera(/.*)?    gen_context(system_u:object_r:qcom_camera_cache_t,s0)
+diff --git a/policy/modules/kernel/devices.fc b/policy/modules/kernel/devices.fc
+index 2b7f3a1..9d4c8e2 100644
+--- a/policy/modules/kernel/devices.fc
++++ b/policy/modules/kernel/devices.fc
+@@ -178,9 +178,10 @@
+ 
+ /dev/biometric/sensor.*	-c	gen_context(system_u:object_r:event_device_t,s0)
+ 
+ /dev/dri/.+		-c	gen_context(system_u:object_r:dri_device_t,s0)
++/dev/kgsl-3d0		-c	gen_context(system_u:object_r:dri_device_t,s0)
+ 
+ /dev/dvb/.*		-c	gen_context(system_u:object_r:v4l_device_t,s0)
+ 
+ /dev/iio:device[0-9]	-c	gen_context(system_u:object_r:iio_device_t,s0)
+ /dev/infiniband/.*      -c      gen_context(system_u:object_r:infiniband_device_t,s0)
+diff --git a/policy/modules/kernel/devices.if b/policy/modules/kernel/devices.if
+index 964f5f3..f7e5188 100644
+--- a/policy/modules/kernel/devices.if
++++ b/policy/modules/kernel/devices.if
+@@ -6269,6 +6269,24 @@ interface(`dev_read_fastrpc',`
+ 	read_chr_files_pattern($1, device_t, fastrpc_device_t)
+ ')
+ 
++########################################
++## <summary>
++##	Allow read/write/ioctl/open for Qualcomm FastRPC default devices.
++## </summary>
++## <param name="domain">
++##	<summary>
++##	Domain allowed access.
++##	</summary>
++## </param>
++#
++interface(`dev_rw_fastrpc',`
++	gen_require(`
++		type device_t, fastrpc_device_t;
++	')
++
++	rw_chr_files_pattern($1, device_t, fastrpc_device_t)
++')
++
+ ########################################
+ ## <summary>
+ ##	Allow read/ioctl/open for Qualcomm FastRPC secure devices.
+@@ -6297,3 +6315,21 @@ interface(`dev_read_secure_fastrpc',`
+ 
+ 	read_chr_files_pattern($1, device_t, fastrpc_secure_device_t)
+ ')
++
++########################################
++## <summary>
++##	Allow read/write/ioctl/open for Qualcomm FastRPC secure devices.
++## </summary>
++## <param name="domain">
++##	<summary>
++##	Domain allowed access.
++##	</summary>
++## </param>
++#
++interface(`dev_rw_secure_fastrpc',`
++	gen_require(`
++		type device_t, fastrpc_secure_device_t;
++	')
++
++	rw_chr_files_pattern($1, device_t, fastrpc_secure_device_t)
++')
+diff --git a/policy/modules/system/init.if b/policy/modules/system/init.if
+index b38e972..975d150 100644
+--- a/policy/modules/system/init.if
++++ b/policy/modules/system/init.if
+@@ -3281,6 +3281,24 @@ interface(`init_write_runtime_socket',`
+ 	allow $1 init_runtime_t:sock_file write;
+ ')
+ 
++#######################################
++## <summary>
++##	Write init script runtime sock files.
++## </summary>
++## <param name="domain">
++##	<summary>
++##	Domain allowed access.
++##	</summary>
++## </param>
++#
++interface(`init_write_script_runtime_socket',`
++	gen_require(`
++		type initrc_runtime_t;
++	')
++
++	allow $1 initrc_runtime_t:sock_file write;
++')
++
+ #######################################
+ ## <summary>
+ ##  Do not audit attempts to write to
 diff --git a/policy/modules/services/qcom_nhx.if b/policy/modules/services/qcom_nhx.if
 new file mode 100644
 index 0000000..0e491a0
@@ -160,7 +258,7 @@ new file mode 100644
 index 0000000..2815ce2
 --- /dev/null
 +++ b/policy/modules/services/qcom_nhx.te
-@@ -0,0 +1,91 @@
+@@ -0,0 +1,86 @@
 +policy_module(qcom_nhx, 1.0)
 +
 +########################################
@@ -184,10 +282,6 @@ index 0000000..2815ce2
 +# qcom_nhx_launcher local policy (camera-nhx)
 +#
 +
-+gen_require(`
-+	type initrc_t, etc_runtime_t, v4l_device_t, usr_t;
-+')
-+
 +dev_read_sysfs(qcom_nhx_launcher_t)
 +files_read_etc_files(qcom_nhx_launcher_t)
 +corecmd_exec_shell(qcom_nhx_launcher_t)
@@ -195,23 +289,16 @@ index 0000000..2815ce2
 +libs_use_ld_so(qcom_nhx_launcher_t)
 +libs_use_shared_libs(qcom_nhx_launcher_t)
 +allow qcom_nhx_launcher_t qcom_nhx_launcher_t:fifo_file { read write getattr ioctl };
-+allow qcom_nhx_launcher_t usr_t:lnk_file read;
++files_read_usr_symlinks(qcom_nhx_launcher_t)
 +domtrans_pattern(qcom_nhx_launcher_t, qcom_nhx_exec_t, qcom_nhx_t)
-+allow qcom_nhx_launcher_t initrc_t:unix_stream_socket { read write ioctl getattr };
-+allow qcom_nhx_launcher_t etc_runtime_t:file getattr;
-+allow qcom_nhx_launcher_t v4l_device_t:chr_file getattr;
++init_rw_script_stream_sockets(qcom_nhx_launcher_t)
++files_read_etc_runtime_files(qcom_nhx_launcher_t)
++dev_getattr_video_dev(qcom_nhx_launcher_t)
 +
 +########################################
 +#
 +# qcom_nhx local policy (nativehaltest)
 +#
-+
-+gen_require(`
-+	type dma_device_t, fastrpc_device_t, fastrpc_secure_device_t, v4l_device_t;
-+	type var_t, debugfs_t, fs_t, default_t;
-+	type etc_runtime_t, usr_t, node_t, unreserved_port_t, tracefs_t;
-+	type sysctl_vm_overcommit_t, sysctl_vm_t;
-+')
 +
 +dev_read_sysfs(qcom_nhx_t)
 +allow qcom_nhx_t qcom_nhx_exec_t:file { execute execute_no_trans };
@@ -220,38 +307,44 @@ index 0000000..2815ce2
 +corecmd_exec_bin(qcom_nhx_t)
 +libs_use_ld_so(qcom_nhx_t)
 +libs_use_shared_libs(qcom_nhx_t)
-+allow qcom_nhx_t qcom_nhx_t:fifo_file { read write getattr };
++allow qcom_nhx_t qcom_nhx_t:fifo_file { read write getattr ioctl };
 +allow qcom_nhx_t qcom_camera_cache_t:file { read write open getattr create append };
 +allow qcom_nhx_t qcom_camera_cache_t:dir { search read write add_name open getattr create };
-+filetrans_pattern(qcom_nhx_t, var_t, qcom_camera_cache_t, dir, "camera")
-+filetrans_pattern(qcom_nhx_t, qcom_camera_cache_t, qcom_camera_cache_t, file)
 +files_search_var(qcom_nhx_t)
++files_var_filetrans(qcom_nhx_t, qcom_camera_cache_t, dir, "camera")
++filetrans_pattern(qcom_nhx_t, qcom_camera_cache_t, qcom_camera_cache_t, file)
 +allow qcom_nhx_t qcom_nhx_t:unix_dgram_socket { create connect write };
 +logging_send_syslog_msg(qcom_nhx_t)
-+allow qcom_nhx_t dma_device_t:chr_file { read write open ioctl getattr };
-+allow qcom_nhx_t fastrpc_device_t:chr_file { read write open ioctl getattr };
-+allow qcom_nhx_t fastrpc_secure_device_t:chr_file { read write open ioctl getattr };
-+allow qcom_nhx_t v4l_device_t:chr_file { read write open ioctl getattr };
++dev_rw_dma_dev(qcom_nhx_t)
++dev_rw_fastrpc(qcom_nhx_t)
++dev_rw_secure_fastrpc(qcom_nhx_t)
++dev_read_video_dev(qcom_nhx_t)
++dev_write_video_dev(qcom_nhx_t)
++dev_rw_dri(qcom_nhx_t)
 +allow qcom_nhx_t qcom_nhx_t:capability sys_nice;
++dontaudit qcom_nhx_t qcom_nhx_t:capability net_admin;
 +allow qcom_nhx_t qcom_nhx_t:process signal;
-+allow qcom_nhx_t initrc_t:unix_stream_socket { read write ioctl getattr };
-+allow qcom_nhx_t fs_t:filesystem getattr;
-+allow qcom_nhx_t default_t:dir { search read open };
-+allow qcom_nhx_t debugfs_t:dir search;
++init_rw_script_stream_sockets(qcom_nhx_t)
++init_stream_connect_script(qcom_nhx_t)
++fs_getattr_xattr_fs(qcom_nhx_t)
++files_list_default(qcom_nhx_t)
++kernel_search_debugfs(qcom_nhx_t)
 +allow qcom_nhx_t self:process setsched;
-+allow qcom_nhx_t etc_runtime_t:file { open read };
-+allow qcom_nhx_t default_t:file { getattr open write };
-+allow qcom_nhx_t node_t:tcp_socket node_bind;
++files_read_etc_runtime_files(qcom_nhx_t)
++corenet_tcp_bind_generic_node(qcom_nhx_t)
 +allow qcom_nhx_t self:qipcrtr_socket { create getattr read setopt write };
 +allow qcom_nhx_t self:tcp_socket { bind create listen };
-+allow qcom_nhx_t sysctl_vm_overcommit_t:file { open read };
-+allow qcom_nhx_t sysctl_vm_t:dir search;
-+allow qcom_nhx_t tracefs_t:dir search;
-+allow qcom_nhx_t tracefs_t:file { open write };
-+allow qcom_nhx_t unreserved_port_t:tcp_socket name_bind;
-+allow qcom_nhx_t usr_t:dir { read watch };
-+allow qcom_nhx_t usr_t:file { getattr open read };
-+allow qcom_nhx_t usr_t:lnk_file read;
++kernel_read_vm_overcommit_sysctl(qcom_nhx_t)
++kernel_read_vm_sysctls(qcom_nhx_t)
++kernel_read_system_state(qcom_nhx_t)
++kernel_getattr_proc(qcom_nhx_t)
++init_write_script_runtime_socket(qcom_nhx_t)
++init_read_state(qcom_nhx_t)
++init_stream_connect(qcom_nhx_t)
++fs_rw_tracefs_files(qcom_nhx_t)
++corenet_tcp_bind_all_unreserved_ports(qcom_nhx_t)
++files_read_usr_files(qcom_nhx_t)
++files_watch_usr_dirs(qcom_nhx_t)
 -- 
 2.34.1
 
