@@ -609,6 +609,14 @@ jobs:
                 type: default
                 dirname: ""
                 yamlfile: ""
+          - machine: ipq9574-rdp433
+            distro:
+                name: nodistro
+                yamlfile: ""
+            kernel:
+                type: default
+                dirname: ""
+                yamlfile: ""
     uses: $/.github/workflows/compile.yml
     with:
       name: ${{ matrix.machine }}/${{ matrix.distro.name }}${{ matrix.kernel.dirname }}

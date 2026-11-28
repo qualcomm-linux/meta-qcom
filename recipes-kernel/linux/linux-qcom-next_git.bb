@@ -36,6 +36,8 @@ SRC_URI += " \
     file://configs/bsp-additions.cfg \
 "
 
+SRC_URI:append:ipq9574 = " file://configs/ipq9574.cfg"
+
 # To build tip of qcom-next branch set preferred
 # virtual/kernel provider to 'linux-qcom-next-upstream'
 BBCLASSEXTEND = "devupstream:target"
