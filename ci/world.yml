@@ -3,6 +3,12 @@
 header:
   version: 14
 
+repos:
+  meta-arm:
+    url: https://git.yoctoproject.org/meta-arm
+    layers:
+      meta-arm-toolchain:
+
 local_conf_header:
   world_build: |
     EXCLUDE_FROM_WORLD = "1"
