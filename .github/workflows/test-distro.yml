@@ -56,6 +56,10 @@ on:
         required: false
         type: string
         description: "Commit to read the known failures list from, instead of the checked out one. Set to the head of a pull request"
+      known_failures_base:
+        required: false
+        type: string
+        description: "Commit the build merged known_failures_ref into. The known failures list is read from the same merge"
     outputs:
       summary_id:
         description: "ID of the test summary artifact"
@@ -285,12 +289,22 @@ jobs:
     outputs:
       jobmatrix: ${{ steps.lava-test-plans.outputs.jobmatrix }}
       artifact_id: ${{ steps.lava-test-plans.outputs.artifact_id }}
+      known_failures: ${{ steps.known-failures.outputs.known_failures }}
 
     steps:
       - uses: actions/checkout@v6
         with:
           fetch-depth: 0
           persist-credentials: false
+
+      - name: Get the known failures list
+        id: known-failures
+        uses: $/.github/actions/known-failures
+        with:
+          file: ${{ inputs.known_failures_file }}
+          ref: ${{ inputs.known_failures_ref }}
+          base: ${{ inputs.known_failures_base }}
+          kernel: ${{ inputs.kernel }}
 
       - name: Determine device list
         id: determine-device-list
@@ -352,7 +366,8 @@ jobs:
           lava_url: ${{ env.LAVA_URL }}
           job_definition: ${{ matrix.target.path }}
           wait_for_job: true
-          fail_action_on_failure: true
+          # the failed tests are checked against the known failures below
+          fail_action_on_failure: false
           fail_action_on_incomplete: true
           save_result_as_artifact: false
           save_job_details: true
@@ -441,6 +456,79 @@ jobs:
           </testsuites>
           EOF
 
+      # A known failure does not fail the job: it is reported as a skipped
+      # test, with the comment of its entry, so that it does not fail the
+      # Test Results check either. A listed test that passes is reported as
+      # a failure, for the change that fixed it to update the list. Any
+      # other failure fails the job.
+      - name: Apply the known failures
+        if: ${{ !cancelled() }}
+        shell: python
+        env:
+          KNOWN_FAILURES: ${{ needs.prepare-premerge-jobs.outputs.known_failures }}
+          RESULT_FILE: "${{ matrix.target.result_file }}.xml"
+          JOB_DETAILS_PREFIX: "${{ inputs.distro_name }}${{ inputs.distro_suffix }}-test-job-"
+        run: |
+          import glob
+          import json
+          import os
+          import sys
+          import xml.etree.ElementTree as ET
+
+          known = json.loads(os.environ["KNOWN_FAILURES"] or "{}")
+          # the list is keyed by the device type the LAVA job asked for
+          device_type = None
+          for details in glob.glob(os.environ["JOB_DETAILS_PREFIX"] + "*.json"):
+              with open(details) as f:
+                  device_type = json.load(f).get("requested_device_type")
+          if not device_type:
+              print("::warning::device type of the LAVA job unknown, only the entries for all devices apply")
+          # a device specific entry overrides the one listed for all devices
+          known_tests = {**known.get("*", {}), **known.get(device_type, {})}
+
+          def annotation(text):
+              return text.replace("%", "%25").replace("\r", "%0D").replace("\n", "%0A")
+
+          # the comment comes from the pull request: keep it to one line of
+          # characters that fit in the results file and the log
+          def one_line(text):
+              return " ".join("".join(c if c.isprintable() else " " for c in text).split())
+
+          tree = ET.parse(os.environ["RESULT_FILE"])
+          failed = []
+          for suite in tree.getroot().iter("testsuite"):
+              for case in suite.iter("testcase"):
+                  name = case.get("name")
+                  failure = case.find("failure")
+                  if failure is None:
+                      failure = case.find("error")
+                  # the lava suite holds the actions of the job, not tests
+                  if suite.get("name") != "lava" and name in known_tests:
+                      comment = one_line(known_tests[name])
+                      if failure is not None:
+                          case.remove(failure)
+                          message = "known failure: " + comment if comment else "known failure"
+                          ET.SubElement(case, "skipped", message=message)
+                          print(annotation(f"{suite.get('name')}/{name}: {message}"))
+                          continue
+                      if case.find("skipped") is None:
+                          failure = ET.SubElement(case, "failure", type="failure",
+                              message="unexpected pass, remove it from the known failures")
+                  if failure is not None:
+                      failed.append(f"{suite.get('name')}/{name}: {failure.get('message', 'failed')}")
+              cases = list(suite.iter("testcase"))
+              for attr, tag in (("failures", "failure"), ("errors", "error"), ("skipped", "skipped")):
+                  suite.set(attr, str(sum(case.find(tag) is not None for case in cases)))
+          root = tree.getroot()
+          if root.tag == "testsuites":
+              for attr in ("failures", "errors", "skipped"):
+                  root.set(attr, str(sum(int(suite.get(attr, "0")) for suite in root.iter("testsuite"))))
+          tree.write(os.environ["RESULT_FILE"], encoding="utf-8", xml_declaration=True)
+
+          for failure in failed:
+              print(f"::error::{annotation(failure)}")
+          sys.exit(1 if failed else 0)
+
       - name: Upload the test results
         if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v6
@@ -471,20 +559,15 @@ jobs:
           persist-credentials: false
 
       # A pull request may update the known failures list along with the
-      # change that needs it. Take only that file from the pull request; it
-      # is read as data, the action that reads it stays the checked out one.
-      - name: Get known failures list from pull request
-        if: inputs.known_failures_file != '' && inputs.known_failures_ref != ''
-        env:
-          KNOWN_FAILURES_FILE: ${{ inputs.known_failures_file }}
-          KNOWN_FAILURES_REF: ${{ inputs.known_failures_ref }}
-        run: |
-          git fetch --no-tags origin "${KNOWN_FAILURES_REF}"
-          if git cat-file -e "FETCH_HEAD:${KNOWN_FAILURES_FILE}" 2>/dev/null; then
-              git show "FETCH_HEAD:${KNOWN_FAILURES_FILE}" > "${KNOWN_FAILURES_FILE}"
-          else
-              rm -f "${KNOWN_FAILURES_FILE}"
-          fi
+      # change that needs it; the action reads it from the pull request
+      - name: Get the known failures list
+        id: known-failures
+        uses: $/.github/actions/known-failures
+        with:
+          file: ${{ inputs.known_failures_file }}
+          ref: ${{ inputs.known_failures_ref }}
+          base: ${{ inputs.known_failures_base }}
+          kernel: ${{ inputs.kernel }}
 
       - name: Generate Summary
         id: generate-summary
@@ -496,8 +579,7 @@ jobs:
           summary_file_name: "${{ inputs.distro_name }}${{ inputs.distro_suffix }}-test_job_summary"
           summary_title: "${{ inputs.distro_name }}${{ inputs.distro_suffix }}"
           lava_base_url: https://${{ env.LAVA_URL }}
-          known_failures_file: ${{ inputs.known_failures_file }}
-          kernel: ${{ inputs.kernel }}
+          known_failures: ${{ steps.known-failures.outputs.known_failures }}
 
       - name: Publish Test Job Details
         env:

@@ -17,7 +17,11 @@ on:
       pr_head_sha:
         required: false
         type: string
-        description: "Head commit of the pull request. The known failures lists are read from it"
+        description: "Head commit of the pull request. The known failures lists are read from it, merged into pr_base_sha"
+      pr_base_sha:
+        required: false
+        type: string
+        description: "Base commit the pull request was merged into for the build. The known failures lists are read from the same merge"
     outputs:
       summary_ids:
         description: "IDs of the test summary artifact"
@@ -85,6 +89,7 @@ jobs:
       kernel: "linux-qcom-next"
       known_failures_file: "ci/known-failures/qcom-distro.yml"
       known_failures_ref: "${{ inputs.pr_head_sha }}"
+      known_failures_base: "${{ inputs.pr_base_sha }}"
       lava_test_plans_ref: "${{ needs.prepare-env.outputs.lava-test-plans-ref }}"
       testkit_ref: "${{ needs.prepare-env.outputs.testkit-ref }}"
       pr_number: "${{ inputs.pr_number }}"
@@ -110,6 +115,7 @@ jobs:
       kernel: "linux-qcom-6.18"
       known_failures_file: "ci/known-failures/qcom-distro.yml"
       known_failures_ref: "${{ inputs.pr_head_sha }}"
+      known_failures_base: "${{ inputs.pr_base_sha }}"
       lava_test_plans_ref: "${{ needs.prepare-env.outputs.lava-test-plans-ref }}"
       testkit_ref: "${{ needs.prepare-env.outputs.testkit-ref }}"
       pr_number: "${{ inputs.pr_number }}"
@@ -158,6 +164,7 @@ jobs:
       kernel: "linux-qcom-next"
       known_failures_file: "ci/known-failures/qcom-distro.yml"
       known_failures_ref: "${{ inputs.pr_head_sha }}"
+      known_failures_base: "${{ inputs.pr_base_sha }}"
       lava_test_plans_ref: "${{ needs.prepare-env.outputs.lava-test-plans-ref }}"
       testkit_ref: "${{ needs.prepare-env.outputs.testkit-ref }}"
       pr_number: "${{ inputs.pr_number }}"

@@ -20,21 +20,13 @@ inputs:
     description: "Base URL of the LAVA instance the results are read from"
     required: false
     default: https://lava.infra.foundries.io
-  known_failures_file:
+  known_failures:
     description: >
-      Path to a YAML file listing the failures that are known and accepted for
-      the build under test, relative to the workspace. A listed failure is
-      reported as a known failure and counted as a pass, and a listed test that
-      passes is reported as an unexpected pass and counted as a failure, so a
-      stale entry gets noticed. Empty, or a file that does not exist, means no
-      known failure. See the README of the directory it lives in for the
-      format.
-    required: false
-    default: ""
-  kernel:
-    description: >
-      Kernel flavour under test. An entry of the known failures list that names
-      a "kernels" filter only applies to the flavours it lists.
+      The failures that are known and accepted for the build under test, as
+      read by the known-failures action. A listed failure is reported as a
+      known failure and counted as a pass, and a listed test that passes is
+      reported as an unexpected pass and counted as a failure, so a stale
+      entry gets noticed. Empty means no known failure.
     required: false
     default: ""
 outputs:
@@ -66,8 +58,7 @@ runs:
           INPUTS_SUMMARY_FILE_NAME: ${{ inputs.summary_file_name }}
           INPUTS_SUMMARY_TITLE: ${{ inputs.summary_title }}
           INPUTS_LAVA_BASE_URL: ${{ inputs.lava_base_url }}
-          INPUTS_KNOWN_FAILURES_FILE: ${{ inputs.known_failures_file }}
-          INPUTS_KERNEL: ${{ inputs.kernel }}
+          INPUTS_KNOWN_FAILURES: ${{ inputs.known_failures }}
         run: |
           set -x
           # how much of a known failure's note fits in a table cell
@@ -196,36 +187,9 @@ runs:
           done | jq -s -c 'reduce .[] as $i ({}; .[$i.key] = ((.[$i.key] // {}) + $i.value))')
           echo "$INPUT"
 
-          # Load the list of known failures. An entry is either a bare test
-          # name or a mapping with a "test", an optional "comment" holding the
-          # issue it is tracked in, and an optional "kernels" list restricting
-          # it to some kernel flavours. Both forms are normalised to
-          # {device: {test name: comment}}.
-          KNOWN_FAILURES="{}"
-          if [ -n "${INPUTS_KNOWN_FAILURES_FILE}" ]; then
-              if [ -f "${GITHUB_WORKSPACE}/${INPUTS_KNOWN_FAILURES_FILE}" ]; then
-                  KNOWN_FAILURES_RAW=$(yq -o=json -I=0 "${GITHUB_WORKSPACE}/${INPUTS_KNOWN_FAILURES_FILE}" | jq -c '. // {}')
-                  KNOWN_FAILURES=$(echo "${KNOWN_FAILURES_RAW}" | jq -c --arg kernel "${INPUTS_KERNEL}" '
-                    with_entries(.value |= ((. // []) | map(
-                      if type == "string" then {key: ., value: ""}
-                      elif type == "object" and (.test | type) == "string" then
-                        # an entry without a kernels filter applies everywhere
-                        if (.kernels | type) == "array" and ((.kernels | index($kernel)) | not) then empty
-                        else {key: .test, value: (.comment // "" | tostring)}
-                        end
-                      else empty
-                      end) | from_entries))')
-                  # entries filtered out by kernel, and entries matching neither
-                  # form, are dropped by the mapping above
-                  RAW_COUNT=$(echo "${KNOWN_FAILURES_RAW}" | jq --arg kernel "${INPUTS_KERNEL}" '[.[] | (. // []) | map(select((type != "object") or ((.kernels | type) != "array") or ((.kernels | index($kernel)) != null))) | length] | add // 0')
-                  KNOWN_COUNT=$(echo "${KNOWN_FAILURES}" | jq '[.[] | length] | add // 0')
-                  if [ "${RAW_COUNT}" != "${KNOWN_COUNT}" ]; then
-                      echo "::warning::${INPUTS_KNOWN_FAILURES_FILE}: ignored $((RAW_COUNT - KNOWN_COUNT)) malformed entry/entries"
-                  fi
-              else
-                  echo "::warning::known failures file ${INPUTS_KNOWN_FAILURES_FILE} not found"
-              fi
-          fi
+          # the known failures, as {device: {test name: comment}}
+          KNOWN_FAILURES="${INPUTS_KNOWN_FAILURES}"
+          [ -n "${KNOWN_FAILURES}" ] || KNOWN_FAILURES="{}"
           echo "${KNOWN_FAILURES}"
 
           # Turn the LAVA result of every test into the status that is

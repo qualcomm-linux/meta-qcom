@@ -1,10 +1,12 @@
 # Known failures
 
 Each file lists the test failures that are known and accepted for one
-distro tested by `.github/workflows/test.yml`. The test job summary
-reports a listed failure as a known failure and counts it as a pass.
-A listed test that passes is reported as an unexpected pass and counted
-as a failure, so remove the entry once its issue is fixed.
+distro tested by `.github/workflows/test.yml`. A listed failure does
+not fail the pre-merge job that ran it: the test job summary reports it
+as a known failure and counts it as a pass, and the Test Results check
+reports it as skipped. A listed test that passes fails its job, and is
+reported as an unexpected pass and counted as a failure, so remove the
+entry once its issue is fixed.
 
 The top-level keys are LAVA device types, as shown in the summary table
 (for example `hamoa-iot-evk` for iq-x7181-evk), or `*` for all devices.
@@ -25,5 +27,6 @@ the listed kernel flavours, as passed in `kernel` by `test.yml`
 (`linux-qcom-next` or `linux-qcom-6.18`); without it the entry applies to
 every kernel.
 
-For pull requests, the list is read from the head of the pull request,
-so a change can add or remove the entries it affects.
+For pull requests, the list is read from the pull request as it was
+built, its head merged into its base, so a change can add or remove the
+entries it affects.

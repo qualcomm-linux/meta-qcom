@@ -1,0 +1,117 @@
+name: Known failures
+description: "Read a list of known test failures and keep the entries that apply to the kernel under test"
+inputs:
+  file:
+    description: >
+      Path to a YAML file listing the failures that are known and accepted for
+      the build under test, relative to the workspace. Empty, or a file that
+      does not exist, means no known failure. See the README of the directory
+      it lives in for the format.
+    required: false
+    default: ""
+  ref:
+    description: >
+      Commit to read the file from instead of the checked out one, such as the
+      head of a pull request, so that a change can update the entries it
+      affects. Only that file is taken from it, and it is read as data.
+    required: false
+    default: ""
+  base:
+    description: >
+      Commit that the build merged "ref" into, such as the base commit of the
+      pull request event. The file is then read from the same merge, so that
+      entries the base has since changed are not taken from an older "ref".
+      It is ignored unless it is in the history of the checked out commit,
+      at or after the point "ref" branched from it.
+    required: false
+    default: ""
+  kernel:
+    description: >
+      Kernel flavour under test. An entry that names a "kernels" filter only
+      applies to the flavours it lists.
+    required: false
+    default: ""
+outputs:
+  known_failures:
+    description: >
+      The entries that apply, as JSON: an object keyed by LAVA device type, or
+      "*" for all devices, mapping each test case name to the comment of its
+      entry.
+    value: ${{ steps.read.outputs.known_failures }}
+runs:
+  using: "composite"
+
+  steps:
+      - name: Read the known failures list
+        id: read
+        shell: bash
+        env:
+          INPUTS_FILE: ${{ inputs.file }}
+          INPUTS_REF: ${{ inputs.ref }}
+          INPUTS_BASE: ${{ inputs.base }}
+          INPUTS_KERNEL: ${{ inputs.kernel }}
+        run: |
+          set -eo pipefail
+          KNOWN_FAILURES="{}"
+          LIST="${GITHUB_WORKSPACE}/${INPUTS_FILE}"
+          if [ -n "${INPUTS_FILE}" ] && [ -n "${INPUTS_REF}" ]; then
+              LIST="${RUNNER_TEMP}/known-failures.yml"
+              rm -f "${LIST}"
+              git fetch --no-tags origin "${INPUTS_REF}"
+              COMMIT=$(git rev-parse --verify "FETCH_HEAD^{commit}")
+              # The base comes from the event file of the build, which the
+              # pull request can write. Only take a commit of the checked
+              # out history that the ref branched from, so that every entry
+              # comes from the ref or from that history.
+              BASE=""
+              if [ -n "${INPUTS_BASE}" ]; then
+                  if [[ "${INPUTS_BASE}" =~ ^[0-9a-f]{40}$ ]] &&
+                      git fetch --no-tags origin "${INPUTS_BASE}" &&
+                      git merge-base --is-ancestor "${INPUTS_BASE}" HEAD &&
+                      git merge-base --is-ancestor "$(git merge-base HEAD "${COMMIT}")" "${INPUTS_BASE}"; then
+                      BASE="${INPUTS_BASE}"
+                  else
+                      echo "::warning::ignoring the base of ${INPUTS_REF}, not a commit it branched from in the checked out history"
+                  fi
+              fi
+              if [ -n "${BASE}" ]; then
+                  if TREE=$(git merge-tree --write-tree "${BASE}" "${COMMIT}"); then
+                      COMMIT="${TREE}"
+                  else
+                      echo "::warning::${INPUTS_REF} does not merge into ${BASE}, reading ${INPUTS_FILE} from ${INPUTS_REF}"
+                  fi
+              fi
+              if git cat-file -e "${COMMIT}:${INPUTS_FILE}" 2>/dev/null; then
+                  git show "${COMMIT}:${INPUTS_FILE}" > "${LIST}"
+              fi
+          fi
+          # An entry is either a bare test name or a mapping with a "test",
+          # an optional "comment" holding the issue it is tracked in, and an
+          # optional "kernels" list restricting it to some kernel flavours.
+          # Both forms are normalised to {device: {test name: comment}}.
+          if [ -n "${INPUTS_FILE}" ]; then
+              if [ -f "${LIST}" ]; then
+                  KNOWN_FAILURES_RAW=$(yq -o=json -I=0 "${LIST}" | jq -c '. // {}')
+                  KNOWN_FAILURES=$(echo "${KNOWN_FAILURES_RAW}" | jq -c --arg kernel "${INPUTS_KERNEL}" '
+                    with_entries(.value |= ((. // []) | map(
+                      if type == "string" then {key: ., value: ""}
+                      elif type == "object" and (.test | type) == "string" then
+                        # an entry without a kernels filter applies everywhere
+                        if (.kernels | type) == "array" and ((.kernels | index($kernel)) | not) then empty
+                        else {key: .test, value: (.comment // "" | tostring)}
+                        end
+                      else empty
+                      end) | from_entries))')
+                  # entries filtered out by kernel, and entries matching neither
+                  # form, are dropped by the mapping above
+                  RAW_COUNT=$(echo "${KNOWN_FAILURES_RAW}" | jq --arg kernel "${INPUTS_KERNEL}" '[.[] | (. // []) | map(select((type != "object") or ((.kernels | type) != "array") or ((.kernels | index($kernel)) != null))) | length] | add // 0')
+                  KNOWN_COUNT=$(echo "${KNOWN_FAILURES}" | jq '[.[] | length] | add // 0')
+                  if [ "${RAW_COUNT}" != "${KNOWN_COUNT}" ]; then
+                      echo "::warning::${INPUTS_FILE}: ignored $((RAW_COUNT - KNOWN_COUNT)) malformed entry/entries"
+                  fi
+              else
+                  echo "::warning::known failures file ${INPUTS_FILE} not found"
+              fi
+          fi
+          echo "${KNOWN_FAILURES}"
+          echo "known_failures=${KNOWN_FAILURES}" >> "$GITHUB_OUTPUT"
