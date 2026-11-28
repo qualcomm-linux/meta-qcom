@@ -24,9 +24,9 @@ on:
         description: "Token used to submit jobs to the LAVA lab"
 env:
   # git sha, tag or branch in lava-test-plans repository
-  LAVA_TEST_PLANS_REF: "78ad6b5b23ca9870282fae42c0083532355905c9"
+  LAVA_TEST_PLANS_REF: "ca56cf7a46b0b971131d45188aea2beda262df15"
   # CalVer tag in qcom-linux-testkit repository (format: testkit-YYYY.MM.DD)
-  TESTKIT_REF: "testkit-2026.10.12"
+  TESTKIT_REF: "testkit-2026.11.13"
 
 jobs:
   prepare-env:
@@ -53,7 +53,7 @@ jobs:
       LAVATOKEN: ${{ secrets.LAVATOKEN }}
     with:
       build_id: "${{ inputs.build_id }}"
-      devices: "iq-8275-evk,iq-9075-evk,iq-x7181-evk,qcm6490-idp,qcs615-ride,rb3gen2-core-kit,qcs8300-ride-sx,qcs9100-ride-sx,dragonboard-410c,dragonboard-820c,rb1-core-kit"
+      devices: "iq-8275-evk,iq-9075-evk,iq-x5121-evk,iq-x7181-evk,qcm6490-idp,rb3gen2-core-kit,qcs8300-ride-sx,qcs9100-ride-sx,dragonboard-410c,dragonboard-820c,rb1-core-kit"
       project_name: "meta-qcom"
       distro_name: "nodistro"
       lava_test_plans_ref: "${{ needs.prepare-env.outputs.lava-test-plans-ref }}"
@@ -73,8 +73,8 @@ jobs:
       LAVATOKEN: ${{ secrets.LAVATOKEN }}
     with:
       build_id: "${{ inputs.build_id }}"
-      devices: "glymur-crd,iq-8275-evk,iq-9075-evk,iq-x5121-evk,iq-x7181-evk,kaanapali-mtp,qcm6490-idp,qcs615-ride,rb3gen2-core-kit,qcs8300-ride-sx,qcs9100-ride-sx,rb1-core-kit,shikra-evk,sm8750-mtp"
-      devices_premerge: "glymur-crd,iq-8275-evk,iq-9075-evk,iq-x7181-evk,kaanapali-mtp,qcm6490-idp,qcs615-ride,rb3gen2-core-kit,qcs8300-ride-sx,qcs9100-ride-sx,rb1-core-kit,shikra-evk,sm8750-mtp"
+      devices: "glymur-crd,iq-8275-evk,iq-9075-evk,iq-x5121-evk,iq-x7181-evk,kaanapali-mtp,qcm6490-idp,rb3gen2-core-kit,qcs8300-ride-sx,qcs9100-ride-sx,rb1-core-kit,shikra-evk,sm8750-mtp"
+      devices_premerge: "glymur-crd,iq-8275-evk,iq-9075-evk,iq-x7181-evk,kaanapali-mtp,qcm6490-idp,rb3gen2-core-kit,qcs8300-ride-sx,qcs9100-ride-sx,rb1-core-kit,shikra-evk,sm8750-mtp"
       project_name: "meta-qcom"
       distro_name: "qcom-distro"
       distro_suffix: "_linux-qcom-next"
@@ -95,8 +95,8 @@ jobs:
       LAVATOKEN: ${{ secrets.LAVATOKEN }}
     with:
       build_id: "${{ inputs.build_id }}"
-      devices: "iq-8275-evk,iq-9075-evk,iq-x7181-evk,qcm6490-idp,qcs615-ride,rb3gen2-core-kit,qcs8300-ride-sx,qcs9100-ride-sx,rb1-core-kit,shikra-evk"
-      devices_premerge: "iq-8275-evk,iq-9075-evk,iq-x7181-evk,qcm6490-idp,qcs615-ride,rb3gen2-core-kit,qcs8300-ride-sx,qcs9100-ride-sx,rb1-core-kit,shikra-evk"
+      devices: "iq-8275-evk,iq-9075-evk,iq-x5121-evk,iq-x7181-evk,qcm6490-idp,rb3gen2-core-kit,qcs8300-ride-sx,qcs9100-ride-sx,rb1-core-kit,shikra-evk"
+      devices_premerge: "iq-8275-evk,iq-9075-evk,iq-x7181-evk,qcm6490-idp,rb3gen2-core-kit,qcs8300-ride-sx,qcs9100-ride-sx,rb1-core-kit,shikra-evk"
       project_name: "meta-qcom"
       distro_name: "qcom-distro"
       lava_test_plans_ref: "${{ needs.prepare-env.outputs.lava-test-plans-ref }}"

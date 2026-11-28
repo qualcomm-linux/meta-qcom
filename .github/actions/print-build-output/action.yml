@@ -85,8 +85,8 @@ runs:
         summary_file_name = os.environ.get("GITHUB_STEP_SUMMARY")
         if summary_file_name:
             with open(summary_file_name, "a") as summaryfile:
-                summaryfile.write("<summary>Download URLs</summary>\n")
-                summaryfile.write("<details>\n\n")
+                summaryfile.write("<details>\n")
+                summaryfile.write("<summary>Download URLs</summary>\n\n")
                 summaryfile.write(table_str)
                 summaryfile.write("</details>")
         print(table_str)

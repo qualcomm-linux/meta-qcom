@@ -13,9 +13,6 @@ on:
         default: false
         description: "Skip the build matrix if the github actions cache already records a previously-successful run for the same inputs"
     outputs:
-      artifacts_url:
-        description: "URL to retrieve build artifacts"
-        value: ${{ jobs.create-output.outputs.url }}
       build_skipped:
         description: "True when the compile matrix was skipped because the github cache recorded a previously-successful build for the same inputs"
         value: ${{ jobs.github-cache-check.outputs.cache_hit }}
@@ -221,8 +218,9 @@ jobs:
       kernel_dirname: ''
       cache_dir: ${{ needs.compile-env.outputs.CACHE_DIR }}
 
-  # Builds the common core (native tools, toolchain, generic world) once,
-  # so the compile_stage2 seeds reuse it instead of each building it.
+  # Fetches the sources for all the compile jobs and builds the common core
+  # (native tools, toolchain, generic world) once, so the compile_stage2
+  # seeds reuse it instead of each building it.
   compile_stage1:
     needs: [kas-setup, github-cache-check, compile-env]
     if: |
@@ -235,6 +233,8 @@ jobs:
     uses: $/.github/workflows/compile.yml
     with:
       name: qcom-armv8a/nodistro
+      # The catchall distro covers the recipes of every other distro.
+      fetch_distro_yaml: ci/qcom-distro-catchall.yml
       world: true
       machine: 'qcom-armv8a'
       distro_yaml: ''
@@ -344,7 +344,6 @@ jobs:
           - nord-rrd
           - qcm6490-idp
           - qcom-armv8a
-          - qcs615-ride
           - qcs8300-ride-sx
           - qcs9100-ride-sx
           - rb1-core-kit
@@ -615,7 +614,6 @@ jobs:
       fail-fast: false
       matrix:
         machine:
-          - qcs615-ride
           - rb3gen2-core-kit
           - iq-9075-evk
           - iq-615-evk
