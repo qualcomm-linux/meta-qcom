@@ -27,8 +27,6 @@ do_compile:append() {
     qtestsign -v3 aboot -o ${S}/build-${LK_SOC}/emmc_appsboot_signed.mbn ${S}/build-${LK_SOC}/emmc_appsboot.mbn
 }
 
-#ALLOW_EMPTY:${PN} = "1"
-
 inherit deploy
 
 do_deploy() {
