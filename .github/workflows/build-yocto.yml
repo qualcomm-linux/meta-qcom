@@ -601,6 +601,14 @@ jobs:
                 type: 7.3-es
                 dirname: "_linux-qcom-7.3-es"
                 yamlfile: ":ci/linux-qcom-7.3-es.yml"
+          - machine: nord-rrd-open-fw
+            distro:
+                name: qcom-distro
+                yamlfile: ':ci/qcom-distro.yml'
+            kernel:
+                type: 7.3-es
+                dirname: "_linux-qcom-7.3-es"
+                yamlfile: ":ci/linux-qcom-7.3-es.yml"
           - machine: sdx75-idp
             distro:
                 name: nodistro
