@@ -55,6 +55,8 @@ PACKAGE_BEFORE_PN =+ "\
     ${PN}-qcom-iq9075-evk-gdsp \
     ${PN}-qcom-kaanapali-mtp-adsp \
     ${PN}-qcom-kaanapali-mtp-cdsp \
+    ${PN}-qcom-kalambo-crd-adsp \
+    ${PN}-qcom-kalambo-crd-cdsp \
     ${PN}-qcom-lemans-draco-evk-adsp \
     ${PN}-qcom-lemans-draco-evk-cdsp \
     ${PN}-qcom-lemans-draco-evk-gdsp \
@@ -77,8 +79,8 @@ PACKAGE_BEFORE_PN =+ "\
     ${PN}-qcom-sa8775p-ride-adsp \
     ${PN}-qcom-sa8775p-ride-cdsp \
     ${PN}-qcom-sa8775p-ride-gdsp \
-    ${PN}-qcom-sa8797p-ride-embedded-adsp \
-    ${PN}-qcom-sa8797p-ride-embedded-cdsp \
+    ${PN}-qcom-sa8797p-ride-adsp \
+    ${PN}-qcom-sa8797p-ride-cdsp \
     ${PN}-qcom-sdm845-hdk-adsp \
     ${PN}-qcom-sdm845-hdk-cdsp \
     ${PN}-qcom-shikra-cqm-evk-cdsp \
@@ -130,6 +132,8 @@ LICENSE:${PN}-qcom-iq9075-evk-cdsp = "LicenseRef-Firmware-qcom-2"
 LICENSE:${PN}-qcom-iq9075-evk-gdsp = "LicenseRef-Firmware-qcom-2"
 LICENSE:${PN}-qcom-kaanapali-mtp-adsp = "LicenseRef-Firmware-qcom-2"
 LICENSE:${PN}-qcom-kaanapali-mtp-cdsp = "LicenseRef-Firmware-qcom-2"
+LICENSE:${PN}-qcom-kalambo-crd-adsp = "LicenseRef-Firmware-qcom-2"
+LICENSE:${PN}-qcom-kalambo-crd-cdsp = "LicenseRef-Firmware-qcom-2"
 LICENSE:${PN}-qcom-lemans-draco-evk-adsp = "LicenseRef-Firmware-qcom-2"
 LICENSE:${PN}-qcom-lemans-draco-evk-cdsp = "LicenseRef-Firmware-qcom-2"
 LICENSE:${PN}-qcom-lemans-draco-evk-gdsp = "LicenseRef-Firmware-qcom-2"
@@ -152,8 +156,8 @@ LICENSE:${PN}-qcom-qcs8300-ride-gdsp = "LicenseRef-Firmware-qcom-2"
 LICENSE:${PN}-qcom-sa8775p-ride-adsp = "LicenseRef-Firmware-qcom-2"
 LICENSE:${PN}-qcom-sa8775p-ride-cdsp = "LicenseRef-Firmware-qcom-2"
 LICENSE:${PN}-qcom-sa8775p-ride-gdsp = "LicenseRef-Firmware-qcom-2"
-LICENSE:${PN}-qcom-sa8797p-ride-embedded-adsp = "LicenseRef-Firmware-qcom-2"
-LICENSE:${PN}-qcom-sa8797p-ride-embedded-cdsp = "LicenseRef-Firmware-qcom-2"
+LICENSE:${PN}-qcom-sa8797p-ride-adsp = "LicenseRef-Firmware-qcom-2"
+LICENSE:${PN}-qcom-sa8797p-ride-cdsp = "LicenseRef-Firmware-qcom-2"
 LICENSE:${PN}-qcom-sdm845-hdk-adsp = "LicenseRef-Firmware-qcom"
 LICENSE:${PN}-qcom-sdm845-hdk-cdsp = "LicenseRef-Firmware-qcom"
 LICENSE:${PN}-qcom-shikra-cqm-evk-cdsp = "LicenseRef-Firmware-qcom-2"
@@ -202,6 +206,8 @@ RDEPENDS:${PN}-qcom-iq9075-evk-cdsp = "${PN}-qcom-sa8775p-ride-cdsp (= ${PV})"
 RDEPENDS:${PN}-qcom-iq9075-evk-gdsp = "${PN}-qcom-sa8775p-ride-gdsp (= ${PV})"
 RDEPENDS:${PN}-qcom-kaanapali-mtp-adsp = "linux-firmware-qcom-kaanapali-audio (= 1:${PV})"
 RDEPENDS:${PN}-qcom-kaanapali-mtp-cdsp = "linux-firmware-qcom-kaanapali-compute (= 1:${PV})"
+RDEPENDS:${PN}-qcom-kalambo-crd-adsp = "${PN}-qcom-glymur-crd-adsp (= ${PV})"
+RDEPENDS:${PN}-qcom-kalambo-crd-cdsp = "${PN}-qcom-glymur-crd-cdsp (= ${PV})"
 RDEPENDS:${PN}-qcom-lemans-draco-evk-adsp = "${PN}-qcom-sa8775p-ride-adsp (= ${PV})"
 RDEPENDS:${PN}-qcom-lemans-draco-evk-cdsp = "${PN}-qcom-sa8775p-ride-cdsp (= ${PV})"
 RDEPENDS:${PN}-qcom-lemans-draco-evk-gdsp = "${PN}-qcom-sa8775p-ride-gdsp (= ${PV})"
@@ -224,8 +230,8 @@ RDEPENDS:${PN}-qcom-qcs8300-ride-gdsp = "${PN}-qcom-sa8775p-ride-gdsp (= ${PV})"
 RDEPENDS:${PN}-qcom-sa8775p-ride-adsp = "linux-firmware-qcom-sa8775p-audio (= 1:${PV})"
 RDEPENDS:${PN}-qcom-sa8775p-ride-cdsp = "linux-firmware-qcom-sa8775p-compute (= 1:${PV})"
 RDEPENDS:${PN}-qcom-sa8775p-ride-gdsp = "linux-firmware-qcom-sa8775p-generalpurpose (= 1:${PV})"
-RDEPENDS:${PN}-qcom-sa8797p-ride-embedded-adsp = "linux-firmware-qcom-nord-audio (= 1:${PV})"
-RDEPENDS:${PN}-qcom-sa8797p-ride-embedded-cdsp = "linux-firmware-qcom-nord-compute (= 1:${PV})"
+RDEPENDS:${PN}-qcom-sa8797p-ride-adsp = "linux-firmware-qcom-nord-audio (= 1:${PV})"
+RDEPENDS:${PN}-qcom-sa8797p-ride-cdsp = "linux-firmware-qcom-nord-compute (= 1:${PV})"
 RDEPENDS:${PN}-qcom-sdm845-hdk-adsp = "${PN}-thundercomm-db845c-adsp (= ${PV})"
 RDEPENDS:${PN}-qcom-sdm845-hdk-cdsp = "${PN}-thundercomm-db845c-cdsp (= ${PV})"
 RDEPENDS:${PN}-qcom-shikra-cqm-evk-cdsp = "${PN}-qcom-shikra-cqs-evk-cdsp (= ${PV})"
@@ -303,6 +309,8 @@ FILES:${PN}-qcom-iq9075-evk-cdsp = "${datadir}/qcom/sa8775p/Qualcomm/IQ9075-EVK/
 FILES:${PN}-qcom-iq9075-evk-gdsp = "${datadir}/qcom/sa8775p/Qualcomm/IQ9075-EVK/dsp/gdsp*"
 FILES:${PN}-qcom-kaanapali-mtp-adsp = "${datadir}/qcom/kaanapali/Qualcomm/Kaanapali-MTP/dsp/adsp*"
 FILES:${PN}-qcom-kaanapali-mtp-cdsp = "${datadir}/qcom/kaanapali/Qualcomm/Kaanapali-MTP/dsp/cdsp*"
+FILES:${PN}-qcom-kalambo-crd-adsp = "${datadir}/qcom/kalambo/Qualcomm/Kalambo-CRD/dsp/adsp*"
+FILES:${PN}-qcom-kalambo-crd-cdsp = "${datadir}/qcom/kalambo/Qualcomm/Kalambo-CRD/dsp/cdsp*"
 FILES:${PN}-qcom-lemans-draco-evk-adsp = "${datadir}/qcom/sa8775p/Qualcomm/Lemans-Draco-EVK/dsp/adsp"
 FILES:${PN}-qcom-lemans-draco-evk-cdsp = "${datadir}/qcom/sa8775p/Qualcomm/Lemans-Draco-EVK/dsp/cdsp*"
 FILES:${PN}-qcom-lemans-draco-evk-gdsp = "${datadir}/qcom/sa8775p/Qualcomm/Lemans-Draco-EVK/dsp/gdsp*"
@@ -325,8 +333,8 @@ FILES:${PN}-qcom-qcs8300-ride-gdsp = "${datadir}/qcom/qcs8300/Qualcomm/QCS8300-R
 FILES:${PN}-qcom-sa8775p-ride-adsp = "${datadir}/qcom/sa8775p/Qualcomm/SA8775P-RIDE/dsp/adsp"
 FILES:${PN}-qcom-sa8775p-ride-cdsp = "${datadir}/qcom/sa8775p/Qualcomm/SA8775P-RIDE/dsp/cdsp*"
 FILES:${PN}-qcom-sa8775p-ride-gdsp = "${datadir}/qcom/sa8775p/Qualcomm/SA8775P-RIDE/dsp/gdsp*"
-FILES:${PN}-qcom-sa8797p-ride-embedded-adsp = "${datadir}/qcom/nord/Qualcomm/SA8797P-Ride-Embedded/dsp/adsp*"
-FILES:${PN}-qcom-sa8797p-ride-embedded-cdsp = "${datadir}/qcom/nord/Qualcomm/SA8797P-Ride-Embedded/dsp/cdsp*"
+FILES:${PN}-qcom-sa8797p-ride-adsp = "${datadir}/qcom/nord/Qualcomm/SA8797P-Ride/dsp/adsp*"
+FILES:${PN}-qcom-sa8797p-ride-cdsp = "${datadir}/qcom/nord/Qualcomm/SA8797P-Ride/dsp/cdsp*"
 FILES:${PN}-qcom-sdm845-hdk-adsp = "${datadir}/qcom/sdm845/Qualcomm/SDM845-HDK/dsp/adsp"
 FILES:${PN}-qcom-sdm845-hdk-cdsp = "${datadir}/qcom/sdm845/Qualcomm/SDM845-HDK/dsp/cdsp*"
 FILES:${PN}-qcom-shikra-cqm-evk-cdsp = "${datadir}/qcom/shikra/Qualcomm/Shikra-CQM-EVK/dsp/cdsp"
@@ -372,8 +380,8 @@ INSANE_SKIP:${PN}-qcom-qcs8300-ride-gdsp = "arch libdir file-rdeps textrel"
 INSANE_SKIP:${PN}-qcom-sa8775p-ride-adsp = "arch libdir file-rdeps textrel"
 INSANE_SKIP:${PN}-qcom-sa8775p-ride-cdsp = "arch libdir file-rdeps textrel"
 INSANE_SKIP:${PN}-qcom-sa8775p-ride-gdsp = "arch libdir file-rdeps textrel"
-INSANE_SKIP:${PN}-qcom-sa8797p-ride-embedded-adsp = "arch libdir file-rdeps textrel"
-INSANE_SKIP:${PN}-qcom-sa8797p-ride-embedded-cdsp = "arch libdir file-rdeps textrel"
+INSANE_SKIP:${PN}-qcom-sa8797p-ride-adsp = "arch libdir file-rdeps textrel"
+INSANE_SKIP:${PN}-qcom-sa8797p-ride-cdsp = "arch libdir file-rdeps textrel"
 INSANE_SKIP:${PN}-qcom-shikra-cqs-evk-cdsp = "arch libdir file-rdeps textrel"
 INSANE_SKIP:${PN}-qcom-sm8750-mtp-adsp = "arch libdir file-rdeps textrel"
 INSANE_SKIP:${PN}-qcom-sm8750-mtp-cdsp = "arch libdir file-rdeps textrel"
@@ -409,8 +417,8 @@ SKIP_FILEDEPS:${PN}-qcom-qcs8300-ride-gdsp = "1"
 SKIP_FILEDEPS:${PN}-qcom-sa8775p-ride-adsp = "1"
 SKIP_FILEDEPS:${PN}-qcom-sa8775p-ride-cdsp = "1"
 SKIP_FILEDEPS:${PN}-qcom-sa8775p-ride-gdsp = "1"
-SKIP_FILEDEPS:${PN}-qcom-sa8797p-ride-embedded-adsp = "1"
-SKIP_FILEDEPS:${PN}-qcom-sa8797p-ride-embedded-cdsp = "1"
+SKIP_FILEDEPS:${PN}-qcom-sa8797p-ride-adsp = "1"
+SKIP_FILEDEPS:${PN}-qcom-sa8797p-ride-cdsp = "1"
 SKIP_FILEDEPS:${PN}-qcom-shikra-cqs-evk-cdsp = "1"
 SKIP_FILEDEPS:${PN}-qcom-sm8750-mtp-adsp = "1"
 SKIP_FILEDEPS:${PN}-qcom-sm8750-mtp-cdsp = "1"
