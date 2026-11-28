@@ -51,3 +51,4 @@ local_conf_header:
     BB_GIT_SHALLOW:pn-linux-qcom-rt = "1"
     BB_GIT_SHALLOW:pn-linux-qcom-next = "1"
     BB_GIT_SHALLOW:pn-linux-qcom-next-rt = "1"
+    BB_GIT_SHALLOW:pn-linux-qcom-es = "1"

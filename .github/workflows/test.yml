@@ -103,10 +103,32 @@ jobs:
       testkit_ref: "${{ needs.prepare-env.outputs.testkit-ref }}"
       pr_number: "${{ inputs.pr_number }}"
       pr_url: "${{ inputs.pr_url }}"
+  test-qcom-distro_linux-qcom-7-3-es:
+    needs: [prepare-env]
+    name: "Test qcom-distro_linux-qcom-7.3-es"
+    permissions:
+      contents: read
+      actions: read
+      checks: write
+      pull-requests: write
+    uses: $/.github/workflows/test-distro.yml
+    secrets:
+      LAVATOKEN: ${{ secrets.LAVATOKEN }}
+    with:
+      build_id: "${{ inputs.build_id }}"
+      devices: "nord-rrd"
+      project_name: "meta-qcom"
+      distro_name: "qcom-distro"
+      distro_suffix: "_linux-qcom-7.3-es"
+      kernel: "linux-qcom-es"
+      lava_test_plans_ref: "${{ needs.prepare-env.outputs.lava-test-plans-ref }}"
+      testkit_ref: "${{ needs.prepare-env.outputs.testkit-ref }}"
+      pr_number: "${{ inputs.pr_number }}"
+      pr_url: "${{ inputs.pr_url }}"
 
   collect-ids:
     name: "Collect Summary artifact IDs"
-    needs: [test-nodistro, test-qcom-distro, test-qcom-distro_linux-qcom-next]
+    needs: [test-nodistro, test-qcom-distro, test-qcom-distro_linux-qcom-next, test-qcom-distro_linux-qcom-7-3-es]
     if: |
       always()
       && contains(needs.*.result, 'success')
@@ -124,5 +146,6 @@ jobs:
           NODISTRO_SUMMARY_ID: ${{ needs.test-nodistro.outputs.summary_id }}
           QCOM_DISTRO_SUMMARY_ID: ${{ needs.test-qcom-distro.outputs.summary_id }}
           QCOM_DISTRO_NEXT_SUMMARY_ID: ${{ needs.test-qcom-distro_linux-qcom-next.outputs.summary_id }}
+          QCOM_DISTRO_7_3_ES_SUMMARY_ID: ${{ needs.test-qcom-distro_linux-qcom-7-3-es.outputs.summary_id }}
         run: |
-          echo "artifact_ids=${NODISTRO_SUMMARY_ID},${QCOM_DISTRO_SUMMARY_ID},${QCOM_DISTRO_NEXT_SUMMARY_ID}" >> $GITHUB_OUTPUT
+          echo "artifact_ids=${NODISTRO_SUMMARY_ID},${QCOM_DISTRO_SUMMARY_ID},${QCOM_DISTRO_NEXT_SUMMARY_ID},${QCOM_DISTRO_7_3_ES_SUMMARY_ID}" >> $GITHUB_OUTPUT

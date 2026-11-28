@@ -87,7 +87,7 @@ fi
 if [ -n "$GIT_CLONEDIR_JOB_LOCAL" ]; then
     echo "GITDIR = \"\${TMPDIR}/git2\"" >> conf/local.conf
     echo "BB_GENERATE_MIRROR_TARBALLS = \"1\"" >> conf/local.conf
-    for pn in linux-qcom linux-qcom-rt linux-qcom-next linux-qcom-next-rt; do
+    for pn in linux-qcom linux-qcom-rt linux-qcom-next linux-qcom-next-rt linux-qcom-es; do
         echo "BB_GIT_SHALLOW:pn-$pn = \"1\"" >> conf/local.conf
     done
 fi
